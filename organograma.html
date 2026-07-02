@@ -3,479 +3,473 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Organograma SEAGRI - Secretaria de Estado da Agricultura</title>
+<title>Organograma SEAGRI 2026</title>
 <style>
-  :root{
-    --roxo:#7030A0; --amarelo:#FFC000; --azul:#4472C4; --verde:#70AD47; --laranja:#ED7D31;
-    --verde-seagri:#1b5e20; --verde-seagri2:#2e7d32;
-    --borda:#444; --linha:#555; --fundo:#fafafa; --texto:#212121;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:"Segoe UI","Roboto",Arial,sans-serif;background:var(--fundo);color:var(--texto);overflow:hidden;height:100vh;display:flex;flex-direction:column;}
-  header{background:linear-gradient(135deg,var(--verde-seagri),var(--verde-seagri2));color:#fff;padding:14px 24px;box-shadow:0 4px 12px rgba(27,94,32,0.2);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;flex-shrink:0;z-index:10;}
-  header h1{margin:0;font-size:18px;font-weight:500;}
-  header p{margin:2px 0 0;font-size:12px;opacity:.9;}
-  .logo-seagri{background:#fff;border:2px solid #000;padding:4px 12px;text-align:center;line-height:1.1;}
-  .logo-seagri .l1{color:#555;font-size:10px;letter-spacing:1px;font-weight:600;border-bottom:3px solid var(--amarelo);display:block;padding-bottom:2px;}
-  .logo-seagri .l2{color:#1e7d34;font-size:18px;font-weight:800;letter-spacing:1px;display:block;}
-  .toolbar{padding:8px 24px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex-shrink:0;z-index:10;background:#fff;border-bottom:1px solid #e0e0e0;}
-  .toolbar button{padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;color:#fff;background:var(--verde-seagri2);transition:all .2s;box-shadow:0 2px 6px rgba(27,94,32,0.15);}
-  .toolbar button:hover{background:var(--verde-seagri);transform:translateY(-1px);}
-  .toolbar a.voltar{padding:6px 14px;border-radius:6px;font-weight:600;font-size:12px;color:var(--verde-seagri);background:#fff;border:1px solid var(--verde-seagri2);text-decoration:none;transition:all .2s;}
-  .toolbar a.voltar:hover{background:#e8f5e9;}
-  .toolbar .sep{width:1px;height:20px;background:#ddd;margin:0 4px;}
-  .zoom-controls{display:flex;align-items:center;gap:4px;}
-  .zoom-controls button{padding:4px 10px;font-size:14px;min-width:32px;background:#f5f5f5;color:#333;border:1px solid #ccc;}
-  .zoom-controls button:hover{background:#e0e0e0;transform:none;}
-  .zoom-controls span{font-size:11px;min-width:40px;text-align:center;color:#666;font-weight:600;}
-  .legenda{display:flex;gap:10px;flex-wrap:wrap;padding:4px 24px 4px;font-size:10px;align-items:center;flex-shrink:0;z-index:10;background:#fff;}
-  .legenda span{display:inline-flex;align-items:center;gap:4px;}
-  .legenda i{width:10px;height:10px;display:inline-block;border:1px solid #666;}
-  .dica{padding:2px 24px 6px;font-size:10px;color:#666;flex-shrink:0;z-index:10;background:#fff;border-bottom:1px solid #eee;}
-
-  /* Viewport de zoom/pan */
-  .viewport{flex:1;overflow:hidden;position:relative;cursor:grab;background:#f0f0f0;background-image:radial-gradient(circle,#ddd 1px,transparent 1px);background-size:20px 20px;}
-  .viewport.dragging{cursor:grabbing;}
-  .canvas{transform-origin:0 0;position:absolute;top:0;left:0;padding:40px 60px 80px;}
-
-  footer{padding:10px 24px;font-size:10px;color:#999;text-align:center;border-top:1px solid #e0e0e0;flex-shrink:0;z-index:10;background:#fff;}
-
-  /* ===== Árvore CSS puro ===== */
-  .tree,.tree ul{list-style:none;padding:0;margin:0;display:flex;justify-content:center;position:relative;}
-
-  .tree li{display:flex;flex-direction:column;align-items:center;position:relative;padding:0 6px;text-align:center;}
-
-  .tree li .conector{width:1.5px;height:20px;background:var(--linha);flex-shrink:0;}
-  .tree > li > .conector{display:none;}
-
-  .linha-h{position:absolute;height:1.5px;background:var(--linha);top:0;pointer-events:none;}
-
-  .tree li.tem-filhos > .linha-desc{width:1.5px;height:20px;background:var(--linha);flex-shrink:0;}
-  .tree li.tem-filhos.fechado > .linha-desc{display:none;}
-  .tree li.tem-filhos.fechado > ul{display:none;}
-
-  /* ===== Caixas ===== */
-  .no-box{border:1.5px solid var(--borda);background:#fff;min-width:150px;max-width:190px;text-align:center;font-size:11px;box-shadow:1px 1px 4px rgba(0,0,0,0.12);flex-shrink:0;}
-  .no-box .titulo{color:#fff;font-weight:700;padding:5px 6px;font-size:10.5px;line-height:1.2;border-bottom:1.5px solid var(--borda);user-select:none;}
-  .no-box .pessoa{padding:5px 6px;line-height:1.35;background:#fff;font-size:10.5px;}
-  .no-box .pessoa b{display:block;font-size:11px;}
-  .no-box .pessoa .vazio{color:#999;font-style:italic;}
-  .no-box.roxo .titulo{background:var(--roxo);}
-  .no-box.amarelo .titulo{background:var(--amarelo);color:#000;}
-  .no-box.azul .titulo{background:var(--azul);}
-  .no-box.verde .titulo{background:var(--verde);}
-  .no-box.laranja .titulo{background:var(--laranja);}
-
-  .tree li.tem-filhos > .no-box .titulo{cursor:pointer;position:relative;padding-right:20px;}
-  .tree li.tem-filhos > .no-box .titulo:hover{filter:brightness(1.15);}
-  .tree li.tem-filhos > .no-box .titulo::after{content:"\2212";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-weight:900;font-size:11px;background:rgba(255,255,255,0.3);width:14px;height:14px;line-height:14px;border-radius:50%;text-align:center;}
-  .tree li.tem-filhos.fechado > .no-box .titulo::after{content:"+";}
-
-  ul.grade{flex-wrap:wrap;width:2200px;justify-content:center;padding-top:20px;}
-  ul.grade::before{content:"";position:absolute;top:0;left:50%;width:1.5px;height:20px;background:var(--linha);}
-  ul.grade > li::before, ul.grade > li::after{display:none;}
-  ul.grade > li{padding:6px 6px 0;flex:0 0 auto;}
-
-  .comissao .no-box{min-width:170px;max-width:215px;}
-  .comissao .no-box .titulo{font-size:9.5px;padding:4px 5px;}
-
-  @media(max-width:700px){
-    header{padding:10px 12px;}
-    header h1{font-size:14px;}
-    .toolbar,.legenda,.dica{padding-left:12px;padding-right:12px;}
-    .no-box{min-width:120px;max-width:160px;font-size:10px;}
-  }
+:root{--purple:#7030a0;--yellow:#ffc000;--blue:#4472c4;--green:#70ad47;--orange:#ed7d31;--line:#111827;--ink:#1f2933;--panel:#fff;--border:#cfd6dc;--verde:#1b5e20;--verde2:#2e7d32;--radius:6px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column;background:#f3f5f0;color:var(--ink)}
+.topbar{height:54px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.topbar__title{display:grid;line-height:1;text-transform:uppercase;white-space:nowrap}
+.topbar__title span{font-size:11px;letter-spacing:.5px;color:#2f3a45}
+.topbar__title strong{color:#229142;font-size:24px}
+.toolbar{display:flex;align-items:center;gap:6px}
+.tool-button,.icon-button{border:1px solid #b7c0c8;background:#fff;color:#1f2933;cursor:pointer;border-radius:var(--radius);min-height:32px;transition:background .16s,transform .16s}
+.tool-button{display:inline-flex;align-items:center;gap:5px;padding:0 10px;font-size:12px;font-weight:700}
+.icon-button{width:32px;padding:0;font-size:16px;font-weight:700;text-align:center}
+.tool-button:hover,.icon-button:hover{background:#edf2f7}
+.tool-button:active,.icon-button:active{transform:translateY(1px)}
+.zoom-range{width:100px;accent-color:#229142}
+.nav-row{display:flex;align-items:center;gap:10px;padding:6px 16px;background:#f9fafb;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;font-size:11px;flex-wrap:wrap}
+.legend{display:flex;gap:8px;align-items:center;white-space:nowrap}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.swatch{display:inline-block;width:10px;height:10px;border:1px solid #111827}
+.nav-row a.voltar{padding:4px 10px;border-radius:var(--radius);font-weight:600;font-size:11px;color:var(--verde);background:#fff;border:1px solid var(--verde2);text-decoration:none;transition:all .2s}
+.nav-row a.voltar:hover{background:#e8f5e9}
+.zoom-label{font-size:11px;font-weight:700;color:#667085;min-width:36px;text-align:center}
+.viewport{flex:1;position:relative;overflow:hidden;cursor:grab;background:linear-gradient(rgba(255,255,255,.72),rgba(255,255,255,.72)),repeating-linear-gradient(0deg,transparent 0,transparent 39px,rgba(46,74,91,.05) 40px),repeating-linear-gradient(90deg,transparent 0,transparent 39px,rgba(46,74,91,.05) 40px)}
+.viewport.dragging{cursor:grabbing}
+.canvas{position:absolute;top:0;left:0;transform-origin:0 0;width:2400px;height:1350px;background:#fff;box-shadow:0 12px 30px rgba(31,41,51,.12);overflow:hidden}
+.canvas::before{content:"AC";position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);font-size:390px;font-weight:800;color:rgba(112,173,71,.05);pointer-events:none}
+.line-layer{position:absolute;inset:0;width:2400px;height:1350px;overflow:visible;z-index:1}
+.line-layer path{fill:none;stroke:var(--line);stroke-width:2.1;stroke-linecap:square;stroke-linejoin:miter;opacity:.9}
+.org-node{position:absolute;z-index:2;border:1.4px solid #111827;background:#fff;color:#111827;cursor:pointer;overflow:hidden;box-shadow:0 2px 4px rgba(17,24,39,.08);transition:opacity .16s,filter .16s,transform .16s;padding:0;font:inherit;text-align:left}
+.org-node:hover{transform:translateY(-1px);z-index:5;box-shadow:0 8px 20px rgba(17,24,39,.18)}
+.org-node.hidden{display:none}
+.org-node.dimmed{opacity:.32;filter:grayscale(.55)}
+.node-header{position:relative;display:grid;place-items:center;height:var(--hh);padding:2px 7px;color:#111827;text-align:center;font-size:9px;font-weight:700;line-height:1.08;border-bottom:1.4px solid #111827}
+.node-body{display:grid;place-items:center;height:var(--bh);padding:2px 7px;background:#fff;color:#111827;text-align:center;white-space:pre-line;font-size:8px;line-height:1.12}
+.node-toggle{position:absolute;right:3px;top:3px;display:grid;place-items:center;width:11px;height:11px;background:rgba(255,255,255,.86);border:1px solid rgba(17,24,39,.72);border-radius:50%;color:#111827;font-size:8px;font-weight:700;line-height:1}
+.org-node[data-color="purple"] .node-header{background:var(--purple);color:#fff}
+.org-node[data-color="yellow"] .node-header{background:var(--yellow)}
+.org-node[data-color="blue"] .node-header{background:var(--blue);color:#fff}
+.org-node[data-color="green"] .node-header{background:var(--green)}
+.org-node[data-color="orange"] .node-header{background:var(--orange)}
+.org-node[data-kind="secretaria"] .node-header{font-size:10px;text-transform:uppercase}
+.org-node[data-kind="diretoria"] .node-header,.org-node[data-kind="departamento"] .node-header{font-size:8px}
+.org-node[data-kind="divisao"] .node-header,.org-node[data-kind="nucleo"] .node-header{padding:2px 3px;font-size:6.4px}
+.org-node[data-kind="divisao"] .node-body,.org-node[data-kind="nucleo"] .node-body{padding:2px 3px;font-size:6.5px}
+.org-node[data-kind="escritorio"] .node-header,.org-node[data-kind="escritorio"] .node-body{font-size:7px}
+.org-node[data-long="true"] .node-header{font-size:5.7px;line-height:1.02}
+.slide-brand{position:absolute;top:38px;right:88px;z-index:0;width:500px;text-align:center;text-transform:uppercase;line-height:.95;color:#222;pointer-events:none;display:grid}
+.slide-brand span{font-size:26px;letter-spacing:.4px}
+.slide-brand strong{color:#239044;font-size:54px}
+.source-note{position:absolute;right:104px;bottom:36px;color:rgba(31,41,51,.48);font-size:16px;font-weight:700;z-index:0}
+.tooltip{position:fixed;z-index:50;max-width:300px;padding:10px 12px;border:1px solid #111827;border-radius:var(--radius);background:#fff;box-shadow:0 12px 30px rgba(17,24,39,.22);color:#111827;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;font-size:12px}
+.tooltip.show{opacity:1;transform:translateY(0)}
+.tooltip strong{display:block;margin-bottom:4px}
+.tooltip span{display:block;color:#4b5563;white-space:pre-line}
+@media(max-width:700px){.topbar{height:auto;flex-direction:column;padding:8px}.toolbar{flex-wrap:wrap}.nav-row{padding:4px 8px}}
 </style>
 </head>
 <body>
-<header>
-  <div>
-    <h1>Organograma &ndash; SEAGRI</h1>
-    <p>Secretaria de Estado de Agricultura &ndash; Estado do Acre &middot; Atualizado em 01/07/2026</p>
+<header class="topbar">
+  <div class="topbar__title">
+    <span>Secretaria de Estado da</span>
+    <strong>Agricultura</strong>
   </div>
-  <div class="logo-seagri">
-    <span class="l1">SECRETARIA DE ESTADO DA</span>
-    <span class="l2">AGRICULTURA</span>
+  <div class="toolbar">
+    <button class="tool-button" id="btnExpand" type="button">+ Expandir</button>
+    <button class="tool-button" id="btnCollapse" type="button">&minus; Recolher</button>
+    <button class="tool-button" id="btnFit" type="button">&square; Ajustar</button>
+    <button class="icon-button" id="btnZoomOut" type="button">&minus;</button>
+    <input id="zoomRange" class="zoom-range" type="range" min="20" max="150" step="5" value="70">
+    <button class="icon-button" id="btnZoomIn" type="button">+</button>
+    <span class="zoom-label" id="zoomLabel">70%</span>
   </div>
 </header>
-
-<div class="toolbar">
+<nav class="nav-row">
   <a class="voltar" href="index.html">&larr; Menu</a>
-  <button id="btnExpandir">Expandir tudo</button>
-  <button id="btnRecolher">Recolher tudo</button>
-  <div class="sep"></div>
-  <div class="zoom-controls">
-    <button id="btnZoomOut" title="Diminuir zoom">&minus;</button>
-    <span id="zoomLevel">100%</span>
-    <button id="btnZoomIn" title="Aumentar zoom">+</button>
-    <button id="btnZoomFit" title="Ajustar &agrave; tela" style="font-size:11px;padding:4px 8px;">Ajustar</button>
-    <button id="btnZoomReset" title="Zoom 100%" style="font-size:11px;padding:4px 8px;">100%</button>
+  <div class="legend">
+    <span><i class="swatch" style="background:#7030a0"></i>Secretaria</span>
+    <span><i class="swatch" style="background:#ffc000"></i>Assessorias</span>
+    <span><i class="swatch" style="background:#4472c4"></i>DAF</span>
+    <span><i class="swatch" style="background:#70ad47"></i>DPA</span>
+    <span><i class="swatch" style="background:#ed7d31"></i>DPTEC</span>
   </div>
-</div>
-
-<div class="legenda">
-  <span><i style="background:#7030A0"></i> Secret&aacute;ria</span>
-  <span><i style="background:#FFC000"></i> Gabinetes / Assessorias</span>
-  <span><i style="background:#4472C4"></i> Adm. e Finan&ccedil;as</span>
-  <span><i style="background:#70AD47"></i> Produ&ccedil;&atilde;o e Agroneg&oacute;cio</span>
-  <span><i style="background:#ED7D31"></i> Pesquisa e Tecnologia</span>
-</div>
-<div class="dica">Scroll do mouse para zoom. Clique e arraste para mover. Clique no t&iacute;tulo com <b>+/&minus;</b> para expandir ou recolher.</div>
-
+  <span style="color:#888;margin-left:auto">Scroll para zoom &middot; Clique e arraste para mover &middot; Clique na caixa para expandir/recolher</span>
+</nav>
 <div class="viewport" id="viewport">
   <div class="canvas" id="canvas">
-    <ul class="tree" id="arvore"></ul>
+    <svg class="line-layer" id="lineLayer"></svg>
+    <div class="slide-brand"><span>Secretaria de Estado da</span><strong>Agricultura</strong></div>
+    <div class="source-note">Portaria SEAGRI N&ordm; 187/2026</div>
   </div>
 </div>
-
-<footer>Reprodu&ccedil;&atilde;o do organograma oficial da SEAGRI (slide de 01/07/2026) &middot; P&aacute;gina de apoio interno</footer>
-
+<div class="tooltip" id="tooltip"></div>
 <script>
-const org = {
-  t:"Secretária", cor:"roxo", p:"Temyllis Lima da Silva", d:"Decreto Nº 12457-P/2026",
-  filhos:[
-    {t:"Gabinete da Secretária", cor:"amarelo", p:"Francisco Diego", d:"Portaria Nº 24/2026"},
-    {t:"Secretário Adjunto", cor:"amarelo", p:"Edivan Maciel", d:"Decreto Nº1.307-P/2023", filhos:[
-      {t:"Gabinete do Secretário Adjunto", cor:"amarelo", p:"Josilda Lima", d:"Portaria Nº214/2023"}
-    ]},
-    {t:"Controle Interno", cor:"amarelo", p:"Lilian Vitoria", d:"Portaria Nº285/2024"},
-    {t:"Consultoria Jurídica", cor:"amarelo", p:"Thais Ferreira", d:"Portaria Nº35/2023"},
-    {t:"Assessoria de Comunicação", cor:"amarelo", p:"Dionisio Neto", d:"Portaria Nº192/2026"},
-    {t:"Ouvidoria", cor:"amarelo", p:"Maria Socorro", d:"Portaria Nº110/2023"},
-    {t:"Comissão do Programa Estadual de Compras Governamentais da Agricultura Familiar e Economia Solidária no Estado do Acre", cor:"amarelo", p:"", d:"", comissao:true},
-    {t:"Comissão Permanente de Processo Administrativo Sancionador", cor:"amarelo", p:"", d:"", comissao:true},
-    {t:"Diretoria de Administração e Finanças", cor:"azul", p:"Nivia Cristina", d:"Decreto Nº12.182-P/2026", filhos:[
-      {t:"Departamento de Escritórios Locais", cor:"azul", p:"Jorge Ney Pontes", d:"Portaria Nº 45/2023", grade:true, filhos:[
-        {t:"Escritório Local de Acrelândia", cor:"azul", p:"Max Teodoro", d:"Portaria Nº298/2025"},
-        {t:"Escritório Local de Assis Brasil", cor:"azul", p:"Wilker Nazareno", d:"Portaria Nº187/2023"},
-        {t:"Escritório Local da Baixa Verde", cor:"azul", p:"", d:""},
-        {t:"Escritório Local de Brasiléia", cor:"azul", p:"Antônio Francisco", d:"Portaria Nº153/2023"},
-        {t:"Escritório Local de Bujari", cor:"azul", p:"Luciano Queiroz", d:"Portaria Nº 86/2025"},
-        {t:"Escritório Local de Campinas", cor:"azul", p:"", d:""},
-        {t:"Escritório Local de Capixaba", cor:"azul", p:"Kemy Fernandes", d:"Portaria Nº329/2024"},
-        {t:"Escritório Local de Cruzeiro do Sul", cor:"azul", p:"Marcos Pereira", d:"Portaria Nº136/2023"},
-        {t:"Escritório Local de Epitaciolândia", cor:"azul", p:"Jose Menezes", d:"Portaria Nº138/2023"},
-        {t:"Escritório Local de Feijó", cor:"azul", p:"João Paulo", d:"Portaria Nº134/2023"},
-        {t:"Escritório Local do Humaitá", cor:"azul", p:"Wilson Brito", d:"Portaria Nº30/2025"},
-        {t:"Escritório Local de Jordão", cor:"azul", p:"Cintia Araujo", d:"Portaria Nº127/2026"},
-        {t:"Escritório Local de Mâncio Lima", cor:"azul", p:"Magno Corrêa", d:"Portaria Nº177/2024"},
-        {t:"Escritório Local de Manoel Urbano", cor:"azul", p:"Denes Bruno", d:"Portaria Nº175/2023"},
-        {t:"Escritório Local de Marechal Thaumaturgo", cor:"azul", p:"Marcos Pereira", d:"Portaria Nº290/2025"},
-        {t:"Escritório Local de Porto Acre", cor:"azul", p:"Wilson de Brito", d:"Portaria Nº191/2023"},
-        {t:"Escritório Local de Plácido de Castro", cor:"azul", p:"Antonio Pinto", d:"Portaria Nº101/2025"},
-        {t:"Escritório Local de Porto Walter", cor:"azul", p:"Eriânio Melo", d:"Portaria Nº255/2024"},
-        {t:"Escritório Local de Rio Branco", cor:"azul", p:"Risomar Freire", d:"Portaria Nº179/2023"},
-        {t:"Escritório Local de Rodrigues Alves", cor:"azul", p:"", d:""},
-        {t:"Escritório Local de Santa Rosa do Purus", cor:"azul", p:"Lugma Fernanda", d:"Portaria Nº181/2026"},
-        {t:"Escritório Local de Sena Madureira", cor:"azul", p:"Adoneyson Campos", d:"Portaria Nº118/2024"},
-        {t:"Escritório Local de Senador Guiomard", cor:"azul", p:"Carlos Casas", d:"Portaria Nº269/2025"},
-        {t:"Escritório Local de Tarauacá", cor:"azul", p:"Leocélia Monteiro", d:"Portaria Nº 141/2026"},
-        {t:"Escritório Local da Transacreana", cor:"azul", p:"Lucas Paiva", d:"Portaria Nº 180/2023"},
-        {t:"Escritório Local de Xapuri", cor:"azul", p:"Antonio Alves", d:"Portaria Nº32/2025"}
-      ]},
-      {t:"Departamento de Gestão", cor:"azul", p:"Mayssa Diniz", d:"Portaria Nº 83/2026", filhos:[
-        {t:"Divisão de Serviços Gerais", cor:"azul", p:"Renata Carvalho", d:"Portaria Nº151/2025"},
-        {t:"Divisão de Patrimônio e Materiais", cor:"azul", p:"Rosimeire Cavalcante", d:"Portaria Nº 06/2023"},
-        {t:"Divisão de Arquivo e Protocolo", cor:"azul", p:"Maria do Socorro", d:"Portaria Nº 07/2023"},
-        {t:"Divisão de Recursos Humanos", cor:"azul", p:"Marcleide Tavares", d:"Portaria Nº 04/2023"},
-        {t:"Divisão de Transporte", cor:"azul", p:"Pedro Alencar", d:"Portaria Nº 173/2026"},
-        {t:"Divisão de Modernização Tecnológica", cor:"azul", p:"Luan Dourado", d:"Portaria Nº 213/2023"},
-        {t:"Divisão de Licitações, Compras e Contratos", cor:"azul", p:"João Paulo", d:"Portaria Nº 30/2026"}
-      ]},
-      {t:"Departamento de Planejamento", cor:"azul", p:"Natalia Cristina", d:"Portaria Nº 60/2025", filhos:[
-        {t:"Divisão de Convênios", cor:"azul", p:"Pâmela Galvão", d:"Portaria Nº 280/2024"},
-        {t:"Divisão de Programas", cor:"azul", p:"Marcos Santana", d:"Portaria Nº132/2025"},
-        {t:"Divisão de Monitoramento", cor:"azul", p:"Éllen Abud", d:"Portaria Nº 97/2023"}
-      ]},
-      {t:"Departamento de Orçamento e Finanças", cor:"azul", p:"Heloneyda Marques", d:"Portaria Nº 193/2026", filhos:[
-        {t:"Divisão de Finanças", cor:"azul", p:"Karin Gomes", d:"Portaria Nº 194/2026"},
-        {t:"Divisão de Contabilidade", cor:"azul", p:"Camila Arruda", d:"Portaria Nº 195/2026"}
-      ]}
-    ]},
-    {t:"Diretoria de Produção e Agronegócio", cor:"verde", p:"Cláudio Malveira", d:"Decreto 1.855-P/2023", filhos:[
-      {t:"Departamento Socioprodutivo e Segurança Alimentar", cor:"verde", p:"Igor Honorato", d:"Portaria Nº 196/2026", filhos:[
-        {t:"Divisão de Inclusão Socioprodutiva", cor:"verde", p:"Ariane Gadelha", d:"Portaria Nº197/2026", filhos:[
-          {t:"Núcleo de Apoio Logístico", cor:"verde", p:"Antônio José", d:"Portaria Nº 198/2026"},
-          {t:"Núcleo de Cadastro da Agricultura Familiar", cor:"verde", p:"Conceição", d:"Portaria Nº 199/2026"},
-          {t:"Núcleo de Pólos Agroflorestais", cor:"verde", p:"Carlos Antonio", d:"Portaria Nº 200/2026"}
-        ]},
-        {t:"Divisão de Segurança Alimentar", cor:"verde", p:"Marcela", d:"Portaria Nº 201/2026", filhos:[
-          {t:"Núcleo do Programa de Aquisição de Alimentos", cor:"verde", p:"Claiton", d:"Portaria Nº 202/2026"},
-          {t:"Núcleo do Programa de Aquisição de Alimentos Indígena", cor:"verde", p:"José Paulo", d:"Portaria Nº 204/2026"},
-          {t:"Núcleo do Programa de Aquisição de Alimentos Extrativista", cor:"verde", p:"Yanná", d:"Portaria Nº 205/2026"}
-        ]}
-      ]},
-      {t:"Departamento de Agronegócio", cor:"verde", p:"Jalceyr Pessoa", d:"Portaria Nº 94/2023", filhos:[
-        {t:"Divisão de Agricultura", cor:"verde", p:"Nilton César", d:"Portaria Nº 207/2026", filhos:[
-          {t:"Núcleo do Café", cor:"verde", p:"Michelma Silva", d:"Portaria Nº 206/2026"},
-          {t:"Núcleo de Armazenamento e Silos", cor:"verde", p:"Nilton César", d:"Portaria Nº 207/2026"}
-        ]},
-        {t:"Divisão de Pecuária", cor:"verde", p:"Willian Junis", d:"Portaria Nº 227/2025", filhos:[
-          {t:"Núcleo de Aquicultura e Pesca", cor:"verde", p:"Wallace Santos", d:"Portaria Nº 208/2026"},
-          {t:"Núcleo da Avicultura", cor:"verde", p:"Wallace Santos", d:"Portaria Nº 209/2026"}
-        ]}
-      ]},
-      {t:"Departamento de Produção Familiar", cor:"verde", p:"Josicley Azevedo", d:"Portaria Nº 244/2026", filhos:[
-        {t:"Divisão de Produção Indígena", cor:"verde", p:"Adriano Dias", d:"Portaria Nº 107/2023"},
-        {t:"Divisão de Produção Familiar", cor:"verde", p:"Wally Stanley", d:"Portaria Nº 245/2026"},
-        {t:"Divisão de Sociobiodiversidade", cor:"verde", p:"Eneide Thaumaturgo", d:"Portaria Nº 246/2026", filhos:[
-          {t:"Núcleo Socioprodutivo Indígena", cor:"verde", p:"Hidelk Farias", d:"Portaria Nº 210/2026"},
-          {t:"Núcleo do Cacau", cor:"verde", p:"Marcos Rocha", d:"Portaria Nº 211/2026"},
-          {t:"Núcleo do Mel", cor:"verde", p:"Rubia Mara", d:"Portaria Nº 212/2026"},
-          {t:"Núcleo da Mandioca", cor:"verde", p:"Murilo Matos", d:"Portaria Nº 213/2026"},
-          {t:"Núcleo da Olericultura", cor:"verde", p:"Adriana Melo", d:"Portaria Nº 214/2026"},
-          {t:"Núcleo de Extrativismo", cor:"verde", p:"Angelina Lima", d:"Portaria Nº 215/2026"}
-        ]}
-      ]},
-      {t:"Departamento de Mecanização", cor:"verde", p:"Richarler Aguiar", d:"Portaria Nº 124/2024", filhos:[
-        {t:"Divisão de Manutenção de Equipamentos", cor:"verde", p:"", d:""},
-        {t:"Divisão de Escoamento e Operações", cor:"verde", p:"", d:""}
-      ]}
-    ]},
-    {t:"Diretoria de Pesquisa, Tecnologia e Inovação do Agronegócio", cor:"laranja", p:"Thiago de Almeida", d:"Decreto Nº2525-P/2023", filhos:[
-      {t:"Departamento de Tecnologia", cor:"laranja", p:"Luan Sobral", d:"Portaria Nº 216/2026", filhos:[
-        {t:"Divisão de Agricultura de Precisão", cor:"laranja", p:"", d:""},
-        {t:"Divisão de Dados Estatísticos", cor:"laranja", p:"", d:""},
-        {t:"Divisão de Geoprocessamento e Telemetria", cor:"laranja", p:"Izaura Cardoso", d:"Portaria Nº 218/2026"},
-        {t:"Divisão de Sistema de Informação", cor:"laranja", p:"Gabriane Vaz", d:"Portaria Nº 219/2026"}
-      ]},
-      {t:"Departamento de Pesquisa e Inovação", cor:"laranja", p:"Roger Recco", d:"Portaria Nº 53/2024", filhos:[
-        {t:"Divisão de Transferência de Tecnologia", cor:"laranja", p:"Ediu Carlos", d:"Portaria Nº 220/2026"},
-        {t:"Divisão de Pesquisa Agropecuária", cor:"laranja", p:"Marcos Vinicius", d:"Portaria Nº 217/2026"},
-        {t:"Divisão de Certificação de Produtos", cor:"laranja", p:"Yanná Thaumaturgo", d:"Portaria Nº 102/2025"}
-      ]}
-    ]}
-  ]
-};
+const SW=9144000,SH=5143500,RW=2400,RH=1350;
+function xPx(v){return v/SW*RW}
+function yPx(v){return v/SH*RH}
 
-function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+// [id,parent,kind,color,title,holder,x,y,w,hh,bh]
+const RAW=[
+["sec",null,"secretaria","purple","Secretária","Temyllis Lima da Silva\nDecreto Nº 12.457-P/2026",4685896,156319,531692,107821,118927],
+["gab","sec","assessoria","yellow","Gabinete da Secretária","Francisco Diego\nPortaria Nº 24/2026",4076554,487016,531692,108000,0],
+["secad","sec","secretaria-adjunta","yellow","Secretário Adjunto","Edivan Maciel\nDecreto Nº 1.307-P/2023",5269338,489807,531692,107821,0],
+["gabsecad","secad","assessoria","yellow","Gabinete do Secretário Adjunto","Josilda Lima\nPortaria Nº 214/2023",5943414,489025,531693,107756,0],
+["ci","sec","assessoria","yellow","Controle Interno","Lilian Vitoria\nPortaria Nº 285/2024",4080840,796098,531692,108000,0],
+["conjur","sec","assessoria","yellow","Consultoria Jurídica","Thais Ferreira\nPortaria Nº 35/2023",5266558,806357,531692,108000,0],
+["ascom","sec","assessoria","yellow","Assessoria de Comunicação","Dionisio Neto\nPortaria Nº 192/2026",4078314,1095317,531692,108000,0],
+["ouvid","sec","assessoria","yellow","Ouvidoria","Maria Socorro\nPortaria Nº 110/2023",5256916,1100835,531692,108000,0],
+["pecafes","sec","comissao","yellow","Comissão do Programa Estadual de Compras Governamentais da Agricultura Familiar e Economia Solidária no Estado do Acre","",4078314,1396231,531692,108000,0],
+["cppas","sec","comissao","yellow","Comissão Permanente de Processo Administrativo Sancionador","",5274297,1405574,531692,108000,0],
+["daf","sec","diretoria","blue","Diretoria de Administração e Finanças","Nivia Cristina\nDecreto Nº 12.182-P/2026",1849751,1848197,531692,108000,0],
+["dpa","sec","diretoria","green","Diretoria de Produção e Agronegócio","Cláudio Malveira\nDecreto Nº 1.855-P/2023",4679298,1835765,529087,108000,0],
+["dptec","sec","diretoria","orange","Diretoria de Pesquisa, Tecnologia e Inovação do Agronegócio","Thiago de Almeida\nDecreto Nº 2.525-P/2023",7137044,1837112,531692,108000,0],
+["del","daf","departamento","blue","Departamento de Escritórios Locais","Jorge Ney Pontes\nPortaria Nº 45/2023",400566,2169841,531692,108000,0],
+["deg","daf","departamento","blue","Departamento de Gestão","Mayssa Diniz\nPortaria Nº 83/2026",1324530,2171404,531692,108000,0],
+["deplan","daf","departamento","blue","Departamento de Planejamento","Natalia Cristina\nPortaria Nº 60/2025",2625520,2169036,531692,108000,0],
+["deof","daf","departamento","blue","Departamento de Orçamento e Finanças","Heloneyda Marques\nPortaria Nº 193/2026",3283570,2172608,531692,108000,0],
+["disg","deg","divisao","blue","Divisão de Serviços Gerais","Renata Carvalho\nPortaria Nº 151/2025",727949,2547403,232615,162000,189000],
+["dipm","deg","divisao","blue","Divisão de Patrimônio e Materiais","Rosimeire Cavalcante\nPortaria Nº 06/2023",974619,2547485,232615,162000,189000],
+["diarp","deg","divisao","blue","Divisão de Arquivo e Protocolo","Maria do Socorro\nPortaria Nº 07/2023",1223778,2547992,232615,162000,189000],
+["dirh","deg","divisao","blue","Divisão de Recursos Humanos","Marcleide Tavares\nPortaria Nº 04/2023",1471454,2546320,232615,162000,189000],
+["dit","deg","divisao","blue","Divisão de Transporte","Pedro Alencar\nPortaria Nº 173/2026",1715870,2546212,232621,162000,189000],
+["dimt","deg","divisao","blue","Divisão de Modernização Tecnológica","Luan Dourado\nPortaria Nº 213/2023",1965521,2545129,232615,162000,189000],
+["dicompras","deg","divisao","blue","Divisão de Licitações, Compras e Contratos","João Paulo\nPortaria Nº 30/2026",2212029,2545724,232615,162000,189000],
+["dicon","deplan","divisao","blue","Divisão de Convênios","Pâmela Galvão\nPortaria Nº 280/2024",2523199,2545651,232616,162000,189000],
+["dipro","deplan","divisao","blue","Divisão de Programas","Marcos Santana\nPortaria Nº 132/2025",2773177,2545325,232615,162000,189000],
+["dimon","deplan","divisao","blue","Divisão de Monitoramento","Éllen Abud\nPortaria Nº 97/2023",3020592,2545586,232615,162000,189000],
+["dif","deof","divisao","blue","Divisão de Finanças","Karin Gomes\nPortaria Nº 194/2026",3309023,2546080,232615,162000,189000],
+["dic","deof","divisao","blue","Divisão de Contabilidade","Camila Arruda\nPortaria Nº 195/2026",3558646,2546080,232615,162000,189000],
+["desan","dpa","departamento","green","Departamento Socioprodutivo e Segurança Alimentar","Igor Honorato\nPortaria Nº 196/2026",3861852,2175010,531692,108000,0],
+["deagro","dpa","departamento","green","Departamento de Agronegócio","Jalceyr Pessoa\nPortaria Nº 94/2023",4589190,2176531,531692,108000,0],
+["deprof","dpa","departamento","green","Departamento de Produção Familiar","Josicley Azevedo\nPortaria Nº 244/2026",5466975,2174568,531692,108000,0],
+["dem","dpa","departamento","green","Departamento de Mecanização","Richarler Aguiar\nPortaria Nº 124/2024",6354393,2171352,531692,108000,0],
+["diis","desan","divisao","green","Divisão de Inclusão Socioprodutiva","Ariane Gadelha\nPortaria Nº 197/2026",3906561,2541713,232615,162000,232615],
+["disan","desan","divisao","green","Divisão de Segurança Alimentar","Marcela\nPortaria Nº 201/2026",4157364,2542010,232615,162000,232615],
+["dia","deagro","divisao","green","Divisão de Agricultura","Nilton Cesar\nPortaria Nº 207/2026",4472136,2548414,232614,162000,189000],
+["dipec","deagro","divisao","green","Divisão de Pecuária","Willian Junis\nPortaria Nº 227/2025",4737977,2546962,232615,162000,189000],
+["divpi","deprof","divisao","green","Divisão de Produção Indígena","Adriano Dias\nPortaria Nº 107/2023",5370596,2553577,232615,162000,189000],
+["divpf","deprof","divisao","green","Divisão de Produção Familiar","Wally Stanley\nPortaria Nº 245/2026",5617138,2553577,232616,162000,189000],
+["disbio","deprof","divisao","green","Divisão de Sociobiodiversidade","Eneide Thaumaturgo\nPortaria Nº 246/2026",5871698,2554074,232598,158307,228600],
+["divma","dem","divisao","green","Divisão de Manutenção de Equipamentos","",6380930,2557225,232615,162000,189000],
+["diveo","dem","divisao","green","Divisão de Escoamento e Operações","",6627248,2558014,232615,162000,189000],
+["nap","diis","nucleo","green","Núcleo de Apoio Logístico","Antônio José\nPortaria Nº 198/2026",2804203,3181082,235004,162000,232615],
+["ncaf","diis","nucleo","green","Núcleo de Cadastro da Agricultura Familiar","Conceição\nPortaria Nº 199/2026",3070058,3179892,209474,162000,232615],
+["npolo","diis","nucleo","green","Núcleo de Polos Agroflorestais","Carlos Antonio\nPortaria Nº 200/2026",3309070,3180487,210784,162000,232615],
+["npaa","disan","nucleo","green","Núcleo do Programa de Aquisição de Alimentos","Claiton\nPortaria Nº 202/2026",3552641,3176514,204606,162000,206939],
+["npaai","disan","nucleo","green","Núcleo do Programa de Aquisição de Alimentos Indígena","José Paulo\nPortaria Nº 204/2026",3785082,3172719,218348,162000,218661],
+["npaaex","disan","nucleo","green","Núcleo do Programa de Aquisição de Alimentos Extrativista","Yanná\nPortaria Nº 205/2026",4020124,3169674,238284,162000,236244],
+["nucaf","dia","nucleo","green","Núcleo do Café","Michelma Silva\nPortaria Nº 206/2026",4315725,3171362,221106,162000,214800],
+["nuars","dia","nucleo","green","Núcleo de Armazenamento e Silos","Nilton César\nPortaria Nº 207/2026",4556966,3171962,236405,164462,242100],
+["nuapes","dipec","nucleo","green","Núcleo de Aquicultura e Pesca","Wallace Santos\nPortaria Nº 208/2026",4829669,3180425,232522,162000,270000],
+["nuav","dipec","nucleo","green","Núcleo da Avicultura","Wallace Santos\nPortaria Nº 209/2026",5086898,3179830,250056,162000,251700],
+["nuspi","divpi","nucleo","green","Núcleo Socioprodutivo Indígena","Hidelk Farias\nPortaria Nº 210/2026",5370007,3189006,232621,146788,154090],
+["nucac","divpf","nucleo","green","Núcleo do Cacau","Marcos Rocha\nPortaria Nº 211/2026",5617613,3193305,232621,146709,154066],
+["numel","divpf","nucleo","green","Núcleo do Mel","Rubia Mara\nPortaria Nº 212/2026",5867281,3191461,232621,152061,156085],
+["numan","divpf","nucleo","green","Núcleo da Mandioca","Murilo Matos\nPortaria Nº 213/2026",6119530,3189962,217088,156821,146801],
+["nuole","divpf","nucleo","green","Núcleo da Olericultura","Adriana Melo\nPortaria Nº 214/2026",6363736,3189938,226170,149650,156085],
+["nuex","disbio","nucleo","green","Núcleo de Extrativismo","Angelina Lima\nPortaria Nº 215/2026",6609502,3187763,208771,147370,215100],
+["det","dptec","departamento","orange","Departamento de Tecnologia","Luan Sobral\nPortaria Nº 216/2026",7137442,2166671,528369,108000,0],
+["depi","dptec","departamento","orange","Departamento de Pesquisa e Inovação","Roger Recco\nPortaria Nº 53/2024",7878132,2165653,528369,108000,0],
+["diap","det","divisao","orange","Divisão de Agricultura de Precisão","",7110285,2550506,232615,162000,232200],
+["dida","det","divisao","orange","Divisão de Dados Estatísticos","",7360919,2550503,232615,162000,232200],
+["digt","det","divisao","orange","Divisão de Geoprocessamento e Telemetria","Izaura Cardoso\nPortaria Nº 218/2026",7614507,2550238,232615,162000,232500],
+["disoft","det","divisao","orange","Divisão de Sistema de Informação","Gabriane Vaz\nPortaria Nº 219/2026",7863537,2551049,232500,162000,234000],
+["ditt","depi","divisao","orange","Divisão de Transferência de Tecnologia","Ediu Carlos\nPortaria Nº 220/2026",8133783,2550082,232615,162000,232200],
+["dipa","depi","divisao","orange","Divisão de Pesquisa Agropecuária","Marcos Vinicius\nPortaria Nº 217/2026",8384132,2550082,232500,162000,232076],
+["dicp","depi","divisao","orange","Divisão de Certificação de Produtos","Yanná Thaumaturgo\nPortaria Nº 102/2025",8635267,2550082,232615,162000,231806],
+["el-acld","del","escritorio","blue","Escritório Local de Acrelândia","Max Teodoro\nPortaria Nº 298/2025",598233,3960995,481846,135000,135000],
+["el-abl","del","escritorio","blue","Escritório Local de Assis Brasil","Wilker Nazareno\nPortaria Nº 187/2023",1133241,3958613,481846,135000,135000],
+["el-bxvd","del","escritorio","blue","Escritório Local da Baixa Verde","",1661181,3959438,481846,135000,135000],
+["el-bli","del","escritorio","blue","Escritório Local de Brasiléia","Antônio Francisco\nPortaria Nº 153/2023",2192857,3958613,481846,135000,135000],
+["el-bjri","del","escritorio","blue","Escritório Local de Bujari","Luciano Queiroz\nPortaria Nº 86/2025",2727865,3958613,481846,135000,135000],
+["el-camp","del","escritorio","blue","Escritório Local de Campinas","",3270725,3958021,481846,135000,135000],
+["el-cpxb","del","escritorio","blue","Escritório Local de Capixaba","Kemy Fernandes\nPortaria Nº 329/2024",3829038,3954677,481846,135000,135000],
+["el-czs","del","escritorio","blue","Escritório Local de Cruzeiro do Sul","Marcos Pereira\nPortaria Nº 136/2023",4348696,3952068,481846,135000,135000],
+["el-ept","del","escritorio","blue","Escritório Local de Epitaciolândia","Jose Menezes\nPortaria Nº 138/2023",4887684,3949687,481846,135000,135000],
+["el-fjo","del","escritorio","blue","Escritório Local de Feijó","João Paulo\nPortaria Nº 134/2023",5431484,3949687,481846,135000,135000],
+["el-pdht","del","escritorio","blue","Escritório Local do Humaitá","Wilson Brito\nPortaria Nº 30/2025",5972342,3948723,481846,135000,135000],
+["el-joao","del","escritorio","blue","Escritório Local de Jordão","Cintia Araujo\nPortaria Nº 127/2026",6511338,3950278,481846,135000,135000],
+["el-mli","del","escritorio","blue","Escritório Local de Mâncio Lima","Magno Corrêa\nPortaria Nº 177/2024",7055590,3948634,481846,135000,135000],
+["el-mlu","del","escritorio","blue","Escritório Local de Manoel Urbano","Denes Bruno\nPortaria Nº 175/2023",593952,4436651,481846,135000,135000],
+["el-mlto","del","escritorio","blue","Escritório Local de Marechal Thaumaturgo","Marcos Pereira\nPortaria Nº 290/2025",1129199,4436653,481846,135000,135000],
+["el-poac","del","escritorio","blue","Escritório Local de Porto Acre","Wilson de Brito\nPortaria Nº 191/2023",1655254,4435697,481846,135000,135000],
+["el-pcy","del","escritorio","blue","Escritório Local de Plácido de Castro","Antonio Pinto\nPortaria Nº 101/2025",2186106,4435697,481846,135000,135000],
+["el-pwtr","del","escritorio","blue","Escritório Local de Porto Walter","Eriânio Melo\nPortaria Nº 255/2024",2724717,4435697,481846,135000,135000],
+["el-rbo","del","escritorio","blue","Escritório Local de Rio Branco","Risomar Freire\nPortaria Nº 179/2023",3267150,4435697,481846,135000,135000],
+["el-rgas","del","escritorio","blue","Escritório Local de Rodrigues Alves","",3809115,4437699,481846,135000,135000],
+["el-srju","del","escritorio","blue","Escritório Local de Santa Rosa do Purus","Lugma Fernanda\nPortaria Nº 181/2026",4345032,4435689,481846,135000,135000],
+["el-smd","del","escritorio","blue","Escritório Local de Sena Madureira","Adoneyson Campos\nPortaria Nº 118/2024",4880087,4436118,481846,135000,135000],
+["el-swd","del","escritorio","blue","Escritório Local de Senador Guiomard","Carlos Casas\nPortaria Nº 269/2025",5418759,4433904,481846,135000,135000],
+["el-tau","del","escritorio","blue","Escritório Local de Tarauacá","Leocélia Monteiro\nPortaria Nº 141/2026",5960149,4433904,481846,135000,135000],
+["el-trcr","del","escritorio","blue","Escritório Local da Transacreana","Lucas Paiva\nPortaria Nº 180/2023",6514497,4430333,481846,135000,135000],
+["el-xpi","del","escritorio","blue","Escritório Local de Xapuri","Antonio Alves\nPortaria Nº 32/2025",7053032,4430333,481846,135000,135000]
+];
 
-function criarNo(node){
-  const li = document.createElement("li");
-  const temFilhos = node.filhos && node.filhos.length;
-  if(temFilhos) li.className = "tem-filhos";
-  if(node.comissao) li.classList.add("comissao");
+const nodes=RAW.map(d=>({id:d[0],parent:d[1],kind:d[2],color:d[3],title:d[4],holder:d[5],x:d[6],y:d[7],w:d[8],hh:d[9],bh:d[10]||d[9],children:[]}));
+const byId=new Map(nodes.map(n=>[n.id,n]));
+nodes.forEach(n=>{if(n.parent&&byId.has(n.parent))byId.get(n.parent).children.push(n.id)});
 
-  const conector = document.createElement("div");
-  conector.className = "conector";
-  li.appendChild(conector);
+const collapsed=new Set();
+const rendered=new Map();
+const canvas=document.getElementById("canvas");
+const lineLayer=document.getElementById("lineLayer");
+const viewport=document.getElementById("viewport");
+const tooltip=document.getElementById("tooltip");
+const zoomRange=document.getElementById("zoomRange");
+const zoomLabel=document.getElementById("zoomLabel");
 
-  const box = document.createElement("div");
-  box.className = "no-box " + node.cor;
-  let corpo = node.p
-    ? "<b>"+esc(node.p)+"</b>" + (node.d ? esc(node.d) : "")
-    : "<span class='vazio'>&mdash;</span>";
-  box.innerHTML = "<div class='titulo'>"+esc(node.t)+"</div><div class='pessoa'>"+corpo+"</div>";
-  li.appendChild(box);
+function rectFor(n){
+  const x=xPx(n.x),y=yPx(n.y),w=xPx(n.w),hh=yPx(n.hh),bh=yPx(n.bh);
+  return{x,y,w,hh,bh,h:hh+bh,cx:x+w/2,top:y,bottom:y+hh+bh};
+}
 
-  if(temFilhos){
-    const linhaDesc = document.createElement("div");
-    linhaDesc.className = "linha-desc";
-    li.appendChild(linhaDesc);
+function hasCollapsedAncestor(n){
+  let p=n.parent;
+  while(p){if(collapsed.has(p))return true;p=byId.get(p)?.parent}
+  return false;
+}
+function isVisible(n){return!hasCollapsedAncestor(n)}
 
-    const ul = document.createElement("ul");
-    if(node.grade) ul.className = "grade";
-    node.filhos.forEach(f => ul.appendChild(criarNo(f)));
-    li.appendChild(ul);
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 
-    box.querySelector(".titulo").addEventListener("click", (e) => {
-      e.stopPropagation();
-      li.classList.toggle("fechado");
-      setTimeout(posicionarLinhasH,20);
-    });
+function createNode(n){
+  const r=rectFor(n);
+  const el=document.createElement("button");
+  el.type="button";el.className="org-node";
+  el.dataset.id=n.id;el.dataset.kind=n.kind;el.dataset.color=n.color;
+  el.dataset.long=String(n.title.length>42);
+  el.style.cssText=`left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--hh:${r.hh}px;--bh:${r.bh}px`;
+  const hdr=document.createElement("div");hdr.className="node-header";hdr.textContent=n.title;
+  if(n.children.length>0){const tg=document.createElement("span");tg.className="node-toggle";tg.textContent="−";hdr.appendChild(tg)}
+  const body=document.createElement("div");body.className="node-body";body.textContent=n.holder||"—";
+  el.append(hdr,body);
+  el.addEventListener("click",()=>handleClick(n));
+  el.addEventListener("mouseenter",e=>showTip(e,n));
+  el.addEventListener("mousemove",moveTip);
+  el.addEventListener("mouseleave",hideTip);
+  canvas.appendChild(el);
+  rendered.set(n.id,el);
+}
+
+function handleClick(n){
+  if(n.children.length>0){
+    if(collapsed.has(n.id))collapsed.delete(n.id);else collapsed.add(n.id);
+    refresh();
   }
-  return li;
 }
 
-const arvore = document.getElementById("arvore");
-arvore.appendChild(criarNo(org));
+function showTip(e,n){
+  tooltip.innerHTML=`<strong>${esc(n.title)}</strong><span>${esc(n.holder||n.kind)}</span>`;
+  tooltip.classList.add("show");moveTip(e);
+}
+function moveTip(e){
+  let l=e.clientX+16,t=e.clientY+16;
+  const r=tooltip.getBoundingClientRect();
+  if(l+r.width>window.innerWidth)l=e.clientX-r.width-16;
+  if(t+r.height>window.innerHeight)t=e.clientY-r.height-16;
+  tooltip.style.left=l+"px";tooltip.style.top=t+"px";
+}
+function hideTip(){tooltip.classList.remove("show")}
 
-function definirTodos(fechar){
-  document.querySelectorAll(".tree li.tem-filhos").forEach(li => {
-    li.classList.toggle("fechado", fechar);
+function addPath(d){
+  const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+  p.setAttribute("d",d);lineLayer.appendChild(p);
+}
+
+function drawLines(){
+  lineLayer.replaceChildren();
+  const childrenByParent=new Map();
+  nodes.forEach(n=>{
+    if(!n.parent||!isVisible(n))return;
+    const par=byId.get(n.parent);
+    if(!par||!isVisible(par))return;
+    if(!childrenByParent.has(n.parent))childrenByParent.set(n.parent,[]);
+    childrenByParent.get(n.parent).push(n);
+  });
+
+  childrenByParent.forEach((children,pid)=>{
+    const par=byId.get(pid);
+    const pr=rectFor(par);
+
+    if(pid==="del"){
+      drawGridLines(pr,children);
+      return;
+    }
+
+    // Check for horizontal siblings (child top within parent vertical range)
+    const below=[];
+    const beside=[];
+    children.forEach(c=>{
+      const cr=rectFor(c);
+      if(cr.top<pr.bottom-5) beside.push(c); else below.push(c);
+    });
+
+    // Draw horizontal connections
+    beside.forEach(c=>{
+      const cr=rectFor(c);
+      const fromX=cr.cx>pr.cx?pr.x+pr.w:pr.x;
+      const toX=cr.cx>pr.cx?cr.x:cr.x+cr.w;
+      const midY=(pr.y+pr.h/2+cr.y+cr.h/2)/2;
+      addPath(`M ${fromX.toFixed(1)} ${midY.toFixed(1)} H ${toX.toFixed(1)}`);
+    });
+
+    // Draw vertical connections using grouped approach
+    if(below.length===0)return;
+    if(below.length===1){
+      const cr=rectFor(below[0]);
+      const gap=Math.max(24,cr.top-pr.bottom);
+      const midY=pr.bottom+gap*.5;
+      addPath(`M ${pr.cx.toFixed(1)} ${pr.bottom.toFixed(1)} V ${midY.toFixed(1)} H ${cr.cx.toFixed(1)} V ${cr.top.toFixed(1)}`);
+      return;
+    }
+    // Group by row (30px tolerance)
+    const rows=[];
+    below.forEach(c=>{
+      const cr=rectFor(c);
+      let row=rows.find(r=>Math.abs(r.topY-cr.top)<30);
+      if(!row){row={topY:cr.top,nodes:[]};rows.push(row)}
+      row.nodes.push({node:c,rect:cr});
+    });
+    rows.sort((a,b)=>a.topY-b.topY);
+    rows.forEach(r=>r.nodes.sort((a,b)=>a.rect.cx-b.rect.cx));
+
+    let trunkX=pr.cx,currentY=pr.bottom;
+    rows.forEach(row=>{
+      const minTop=Math.min(...row.nodes.map(n=>n.rect.top));
+      const gap=Math.max(24,minTop-currentY);
+      const barY=currentY+gap*.5;
+      addPath(`M ${trunkX.toFixed(1)} ${currentY.toFixed(1)} V ${barY.toFixed(1)}`);
+      const leftX=Math.min(trunkX,row.nodes[0].rect.cx);
+      const rightX=Math.max(trunkX,row.nodes[row.nodes.length-1].rect.cx);
+      if(Math.abs(leftX-rightX)>1)addPath(`M ${leftX.toFixed(1)} ${barY.toFixed(1)} H ${rightX.toFixed(1)}`);
+      row.nodes.forEach(({rect})=>{addPath(`M ${rect.cx.toFixed(1)} ${barY.toFixed(1)} V ${rect.top.toFixed(1)}`)});
+      currentY=barY;
+    });
   });
 }
 
-function posicionarLinhasH(){
-  document.querySelectorAll(".linha-h").forEach(el => el.remove());
-  document.querySelectorAll(".tree ul:not(.grade)").forEach(ul => {
-    if(ul.offsetParent === null) return;
-    const lis = [...ul.children];
-    if(lis.length < 2) return;
-    const ulRect = ul.getBoundingClientRect();
-    const firstConn = lis[0].querySelector(".conector");
-    const lastConn = lis[lis.length - 1].querySelector(".conector");
-    if(!firstConn || !lastConn) return;
-    const fr = firstConn.getBoundingClientRect();
-    const lr = lastConn.getBoundingClientRect();
-    const left = (fr.left + fr.width / 2) - ulRect.left;
-    const right = ulRect.right - (lr.left + lr.width / 2);
-    const div = document.createElement("div");
-    div.className = "linha-h";
-    div.style.left = left + "px";
-    div.style.right = right + "px";
-    ul.appendChild(div);
+function drawGridLines(pr,children){
+  // Group escritórios into rows by Y (200px tolerance in render coords for 2 distinct rows)
+  const rows=[];
+  children.forEach(c=>{
+    const cr=rectFor(c);
+    let row=rows.find(r=>Math.abs(r.topY-cr.top)<80);
+    if(!row){row={topY:cr.top,nodes:[]};rows.push(row)}
+    row.nodes.push({node:c,rect:cr});
+  });
+  rows.sort((a,b)=>a.topY-b.topY);
+  rows.forEach(r=>r.nodes.sort((a,b)=>a.rect.cx-b.rect.cx));
+
+  // Trunk X = parent center (at far left, outside most boxes)
+  const trunkX=pr.cx;
+  let currentY=pr.bottom;
+
+  rows.forEach(row=>{
+    const minTop=Math.min(...row.nodes.map(n=>n.rect.top));
+    const gap=Math.max(24,minTop-currentY);
+    const barY=minTop-15; // Bar just above the row
+
+    // Trunk segment
+    addPath(`M ${trunkX.toFixed(1)} ${currentY.toFixed(1)} V ${barY.toFixed(1)}`);
+
+    // Horizontal bar spanning all nodes in this row
+    const leftX=row.nodes[0].rect.cx;
+    const rightX=row.nodes[row.nodes.length-1].rect.cx;
+
+    // Connect trunk to bar (if trunk is outside bar range)
+    if(trunkX<leftX)addPath(`M ${trunkX.toFixed(1)} ${barY.toFixed(1)} H ${rightX.toFixed(1)}`);
+    else if(trunkX>rightX)addPath(`M ${leftX.toFixed(1)} ${barY.toFixed(1)} H ${trunkX.toFixed(1)}`);
+    else addPath(`M ${leftX.toFixed(1)} ${barY.toFixed(1)} H ${rightX.toFixed(1)}`);
+
+    // Stubs from bar to each box
+    row.nodes.forEach(({rect})=>{addPath(`M ${rect.cx.toFixed(1)} ${barY.toFixed(1)} V ${rect.top.toFixed(1)}`)});
+
+    currentY=barY;
   });
 }
 
-// ===== Zoom e Pan =====
-const viewport = document.getElementById("viewport");
-const canvas = document.getElementById("canvas");
+function refresh(){
+  rendered.forEach((el,id)=>{
+    const n=byId.get(id);
+    el.classList.toggle("hidden",!isVisible(n));
+    const tg=el.querySelector(".node-toggle");
+    if(tg)tg.textContent=collapsed.has(id)?"+":"−";
+  });
+  drawLines();
+}
 
-let scale = 1;
-let panX = 0, panY = 0;
-let isDragging = false;
-let dragStartX, dragStartY, panStartX, panStartY;
-const MIN_SCALE = 0.1;
-const MAX_SCALE = 2;
-const ZOOM_STEP = 0.1;
+// Render all nodes
+nodes.forEach(createNode);
+
+// ===== Zoom & Pan =====
+let scale=0.7,panX=0,panY=0;
+let isDrag=false,dragSX,dragSY,panSX,panSY;
 
 function applyTransform(){
-  canvas.style.transform = "translate("+panX+"px,"+panY+"px) scale("+scale+")";
-  document.getElementById("zoomLevel").textContent = Math.round(scale*100)+"%";
+  canvas.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;
+  const pct=Math.round(scale*100);
+  zoomRange.value=String(pct);
+  zoomLabel.textContent=pct+"%";
 }
 
-function zoomAtCenter(newScale){
-  const vr = viewport.getBoundingClientRect();
-  const cx = vr.width/2;
-  const cy = vr.height/2;
-  zoomAtPoint(newScale, cx, cy);
-}
-
-function zoomAtPoint(newScale, px, py){
-  newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
-  const ratio = newScale / scale;
-  panX = px - ratio * (px - panX);
-  panY = py - ratio * (py - panY);
-  scale = newScale;
+function zoomAt(newScale,px,py){
+  newScale=Math.max(.2,Math.min(1.5,newScale));
+  const ratio=newScale/scale;
+  panX=px-ratio*(px-panX);
+  panY=py-ratio*(py-panY);
+  scale=newScale;
   applyTransform();
+}
+function zoomCenter(ns){
+  const vr=viewport.getBoundingClientRect();
+  zoomAt(ns,vr.width/2,vr.height/2);
 }
 
 function fitToScreen(){
-  const vr = viewport.getBoundingClientRect();
-  const cw = canvas.scrollWidth;
-  const ch = canvas.scrollHeight;
-  const sx = vr.width / cw;
-  const sy = vr.height / ch;
-  scale = Math.min(sx, sy, 1) * 0.95;
-  panX = (vr.width - cw * scale) / 2;
-  panY = (vr.height - ch * scale) / 2;
+  const vr=viewport.getBoundingClientRect();
+  const sx=(vr.width-48)/RW,sy=(vr.height-48)/RH;
+  scale=Math.max(.2,Math.min(1,Math.min(sx,sy)));
+  panX=(vr.width-RW*scale)/2;
+  panY=(vr.height-RH*scale)/2;
   applyTransform();
 }
 
-// Mouse wheel zoom
-viewport.addEventListener("wheel", function(e){
+viewport.addEventListener("wheel",e=>{
   e.preventDefault();
-  const rect = viewport.getBoundingClientRect();
-  const px = e.clientX - rect.left;
-  const py = e.clientY - rect.top;
-  const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-  zoomAtPoint(scale + delta, px, py);
-}, {passive:false});
+  const vr=viewport.getBoundingClientRect();
+  zoomAt(scale+(e.deltaY<0?.05:-.05),e.clientX-vr.left,e.clientY-vr.top);
+},{passive:false});
 
-// Drag to pan
-viewport.addEventListener("mousedown", function(e){
-  if(e.target.closest(".no-box .titulo")){return;}
-  isDragging = true;
-  dragStartX = e.clientX;
-  dragStartY = e.clientY;
-  panStartX = panX;
-  panStartY = panY;
-  viewport.classList.add("dragging");
+viewport.addEventListener("mousedown",e=>{
+  if(e.target.closest(".org-node"))return;
+  isDrag=true;dragSX=e.clientX;dragSY=e.clientY;panSX=panX;panSY=panY;
+  viewport.classList.add("dragging");e.preventDefault();
+});
+window.addEventListener("mousemove",e=>{if(!isDrag)return;panX=panSX+(e.clientX-dragSX);panY=panSY+(e.clientY-dragSY);applyTransform()});
+window.addEventListener("mouseup",()=>{isDrag=false;viewport.classList.remove("dragging")});
+
+// Touch
+let lastDist=0,lastCenter=null;
+viewport.addEventListener("touchstart",e=>{
+  if(e.target.closest(".org-node"))return;
+  if(e.touches.length===1){isDrag=true;dragSX=e.touches[0].clientX;dragSY=e.touches[0].clientY;panSX=panX;panSY=panY}
+  else if(e.touches.length===2){isDrag=false;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;lastDist=Math.sqrt(dx*dx+dy*dy);const vr=viewport.getBoundingClientRect();lastCenter={x:(e.touches[0].clientX+e.touches[1].clientX)/2-vr.left,y:(e.touches[0].clientY+e.touches[1].clientY)/2-vr.top}}
   e.preventDefault();
-});
-window.addEventListener("mousemove", function(e){
-  if(!isDragging) return;
-  panX = panStartX + (e.clientX - dragStartX);
-  panY = panStartY + (e.clientY - dragStartY);
-  applyTransform();
-});
-window.addEventListener("mouseup", function(){
-  isDragging = false;
-  viewport.classList.remove("dragging");
-});
-
-// Touch support
-let lastTouchDist = 0;
-let lastTouchCenter = null;
-viewport.addEventListener("touchstart", function(e){
-  if(e.target.closest(".no-box .titulo")) return;
-  if(e.touches.length === 1){
-    isDragging = true;
-    dragStartX = e.touches[0].clientX;
-    dragStartY = e.touches[0].clientY;
-    panStartX = panX;
-    panStartY = panY;
-  } else if(e.touches.length === 2){
-    isDragging = false;
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    lastTouchDist = Math.sqrt(dx*dx + dy*dy);
-    const rect = viewport.getBoundingClientRect();
-    lastTouchCenter = {
-      x: (e.touches[0].clientX + e.touches[1].clientX)/2 - rect.left,
-      y: (e.touches[0].clientY + e.touches[1].clientY)/2 - rect.top
-    };
-  }
+},{passive:false});
+viewport.addEventListener("touchmove",e=>{
+  if(e.touches.length===1&&isDrag){panX=panSX+(e.touches[0].clientX-dragSX);panY=panSY+(e.touches[0].clientY-dragSY);applyTransform()}
+  else if(e.touches.length===2&&lastDist>0&&lastCenter){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,dist=Math.sqrt(dx*dx+dy*dy);zoomAt(scale*(dist/lastDist),lastCenter.x,lastCenter.y);lastDist=dist;const vr=viewport.getBoundingClientRect();lastCenter={x:(e.touches[0].clientX+e.touches[1].clientX)/2-vr.left,y:(e.touches[0].clientY+e.touches[1].clientY)/2-vr.top}}
   e.preventDefault();
-}, {passive:false});
-viewport.addEventListener("touchmove", function(e){
-  if(e.touches.length === 1 && isDragging){
-    panX = panStartX + (e.touches[0].clientX - dragStartX);
-    panY = panStartY + (e.touches[0].clientY - dragStartY);
-    applyTransform();
-  } else if(e.touches.length === 2){
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if(lastTouchDist > 0 && lastTouchCenter){
-      const newScale = scale * (dist / lastTouchDist);
-      zoomAtPoint(newScale, lastTouchCenter.x, lastTouchCenter.y);
-    }
-    lastTouchDist = dist;
-    const rect = viewport.getBoundingClientRect();
-    lastTouchCenter = {
-      x: (e.touches[0].clientX + e.touches[1].clientX)/2 - rect.left,
-      y: (e.touches[0].clientY + e.touches[1].clientY)/2 - rect.top
-    };
-  }
-  e.preventDefault();
-}, {passive:false});
-viewport.addEventListener("touchend", function(){
-  isDragging = false;
-  lastTouchDist = 0;
-  lastTouchCenter = null;
+},{passive:false});
+viewport.addEventListener("touchend",()=>{isDrag=false;lastDist=0;lastCenter=null});
+
+// Toolbar
+document.getElementById("btnZoomIn").addEventListener("click",()=>zoomCenter(scale+.05));
+document.getElementById("btnZoomOut").addEventListener("click",()=>zoomCenter(scale-.05));
+zoomRange.addEventListener("input",()=>{zoomCenter(Number(zoomRange.value)/100)});
+document.getElementById("btnFit").addEventListener("click",fitToScreen);
+document.getElementById("btnExpand").addEventListener("click",()=>{collapsed.clear();refresh()});
+document.getElementById("btnCollapse").addEventListener("click",()=>{
+  nodes.forEach(n=>{if(n.id!=="sec"&&n.children.length>0)collapsed.add(n.id)});
+  refresh();
 });
 
-// Buttons
-document.getElementById("btnZoomIn").addEventListener("click", () => zoomAtCenter(scale + ZOOM_STEP));
-document.getElementById("btnZoomOut").addEventListener("click", () => zoomAtCenter(scale - ZOOM_STEP));
-document.getElementById("btnZoomReset").addEventListener("click", () => {
-  scale = 1;
-  panX = 0;
-  panY = 0;
-  applyTransform();
-});
-document.getElementById("btnZoomFit").addEventListener("click", () => {
-  setTimeout(fitToScreen, 30);
-});
-
-document.getElementById("btnExpandir").addEventListener("click", () => {
-  definirTodos(false);
-  setTimeout(() => { posicionarLinhasH(); fitToScreen(); }, 50);
-});
-document.getElementById("btnRecolher").addEventListener("click", () => {
-  definirTodos(true);
-  arvore.querySelector("li.tem-filhos").classList.remove("fechado");
-  setTimeout(() => { posicionarLinhasH(); fitToScreen(); }, 50);
-});
-
-// Estado inicial: tudo expandido, ajustar à tela
-setTimeout(() => {
-  posicionarLinhasH();
-  fitToScreen();
-}, 100);
-window.addEventListener("resize", () => setTimeout(posicionarLinhasH,20));
+// Init: fully expanded, fit to screen
+drawLines();
+setTimeout(fitToScreen,60);
 </script>
 </body>
 </html>
