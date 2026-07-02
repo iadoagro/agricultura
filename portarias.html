@@ -3,589 +3,447 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portarias SEAGRI - Solicitações de Lotação e Habilitação de Assinatura</title>
+<title>Portarias SEAGRI 2026</title>
 <style>
-  :root{
-    --verde:#1b5e20; --verde2:#2e7d32; --verde-claro:#e8f5e9; --cinza:#f5f5f5; --linha:#e0e0e0;
-    --texto:#212121; --azul:#0b5394; --sombra:0 2px 8px rgba(27,94,32,0.1);
+  :root {
+    --verde: #1b5e20;
+    --verde2: #2e7d32;
+    --verde-claro: #e8f5e9;
+    --linha: #e0e0e0;
+    --texto: #212121;
+    --sombra: 0 2px 8px rgba(27, 94, 32, 0.1);
   }
-  *{box-sizing:border-box;}
-  body{font-family:"Roboto","Segoe UI",Arial,sans-serif;margin:0;color:var(--texto);background:#fafafa;}
-  header{background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:32px;box-shadow:0 4px 12px rgba(27,94,32,0.2);}
-  header h1{margin:0 0 8px;font-size:28px;font-weight:500;}
-  header p{margin:4px 0;font-size:14px;opacity:.9;}
-  .btn-voltar{display:inline-block;margin-top:14px;padding:10px 20px;background:#fff;color:var(--verde);font-weight:600;font-size:14px;border-radius:8px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:all .2s;}
-  .btn-voltar:hover{background:var(--verde-claro);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.2);}
-  .wrap{padding:32px;max-width:100%;margin:0;}
-  .meta{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 32px;padding:0;}
-  .card{background:#fff;border:none;border-radius:12px;padding:16px 20px;font-size:13px;box-shadow:var(--sombra);}
-  .card b{color:var(--verde);}
-  .tools{margin:0 0 24px;font-size:14px;padding:0;}
-  .progresso-container{margin-bottom:20px;}
-  .progresso-titulo{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;font-weight:500;}
-  .progresso-barra{width:100%;height:8px;background:var(--linha);border-radius:10px;overflow:hidden;}
-  .progresso-fill{height:100%;background:linear-gradient(90deg,var(--verde),var(--verde2));width:0%;transition:width 0.3s ease;border-radius:10px;}
-  .tools input{padding:12px 16px;border:1px solid var(--linha);border-radius:8px;width:100%;max-width:400px;font-size:14px;background:#fff;box-shadow:var(--sombra);margin-top:12px;}
-  .tools input:focus{outline:none;border-color:var(--verde);box-shadow:0 0 0 4px rgba(27,94,32,0.1);}
-  table{border-collapse:separate;border-spacing:0;width:100%;background:transparent;border-radius:0;overflow:visible;box-shadow:none;margin:0;padding:0;}
-  thead{display:none;}
-  tbody{display:grid;grid-template-columns:1fr;gap:16px;width:100%;padding:0;}
-  tbody td{border:none;padding:16px;font-size:14px;vertical-align:top;background:#fff;box-shadow:var(--sombra);border-radius:8px;width:100%;}
-  tbody tr:nth-child(even){background:#fff;}
-  tbody tr:hover{background:#f1f8e9;}
-  tbody tr{background:#fff;box-shadow:var(--sombra);overflow:hidden;display:flex;margin:0;border:none;}
-  tbody tr > td:first-child{width:30%;border-radius:0;}
-  tbody tr > td:last-child{flex:1;border-radius:0;padding:16px;}
-  .num{font-weight:600;color:var(--verde);white-space:nowrap;font-size:13px;}
-  .status-badge{display:inline-block;margin-top:6px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;}
-  .status-badge.pendente{background:#fff3e0;color:#e65100;}
-  .status-badge.concluido{background:#e8f5e9;color:#2e7d32;}
-  .arq{flex:0 0 30%;min-width:200px;}
-  .arq a{color:var(--azul);text-decoration:none;font-weight:600;word-break:break-word;transition:color 0.2s;}
-  .arq a:hover{color:var(--verde);text-decoration:underline;}
-  .texto{line-height:1.8;font-size:14px;}
-  .texto .u{font-weight:600;color:var(--verde);}
-  .texto-container{display:flex;flex-direction:column;gap:16px;}
-  .texto-titulo{display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--verde-claro);border-radius:8px;border-left:4px solid var(--verde);}
-  .texto-titulo-text{flex:1;font-weight:500;color:var(--texto);cursor:pointer;transition:opacity 0.2s;}
-  .texto-titulo-text:hover{opacity:0.7;}
-  .texto-corpo-text{font-size:14px;cursor:pointer;transition:opacity 0.2s;}
-  .texto-corpo-text:hover{opacity:0.7;}
-  .toast-notificacao{position:fixed;bottom:20px;right:20px;background:var(--verde);color:#fff;padding:16px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-weight:500;z-index:9999;animation:slideIn 0.3s ease-out;}
-  @keyframes slideIn{from{transform:translateY(100px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-  @keyframes slideOut{from{transform:translateY(0);opacity:1;}to{transform:translateY(100px);opacity:0;}}
-  .toast-saindo{animation:slideOut 0.3s ease-out forwards;}
-  .copy{font-size:12px;color:#fff;background:var(--verde2);border:none;border-radius:8px;padding:8px 16px;cursor:pointer;white-space:nowrap;font-weight:500;transition:all 0.2s;box-shadow:var(--sombra);position:relative;}
-  .copy:hover{background:var(--verde);transform:translateY(-2px);box-shadow:0 4px 12px rgba(27,94,32,0.2);}
-  .copy:active{transform:translateY(0);}
-  .copy.copiado{background:#4caf50;position:relative;}
-  .copy.copiado::after{content:"\2713";margin-left:6px;font-weight:bold;}
-  .obs{margin-top:32px;background:#fff8e1;border:1px solid #f0d98a;border-radius:12px;padding:16px 20px;font-size:13px;line-height:1.6;box-shadow:var(--sombra);}
-  .obs b{color:#9a6b00;}
-  .modal-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;z-index:10000;}
-  .modal-backdrop.ativo{display:flex;}
-  .modal-conteudo{background:#fff;border-radius:16px;padding:40px;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-width:500px;text-align:center;position:relative;animation:modalEntrada 0.3s ease-out;}
-  @keyframes modalEntrada{from{transform:scale(0.8);opacity:0;}to{transform:scale(1);opacity:1;}}
-  .modal-titulo{font-size:32px;margin:0 0 20px;color:var(--verde);font-weight:500;}
-  .modal-emoji{font-size:80px;margin-bottom:20px;}
-  .modal-fechar{position:absolute;top:12px;right:12px;background:none;border:none;font-size:28px;cursor:pointer;color:#999;transition:color 0.2s;}
-  .modal-fechar:hover{color:var(--verde);}
-  footer{padding:24px 32px;font-size:12px;color:#999;text-align:center;border-top:1px solid var(--linha);}
-  @media(max-width:900px){
-    .wrap{padding:16px;}
-    header{padding:20px 16px;}
-    header h1{font-size:22px;}
-    table{padding:0;}
-    tbody{grid-template-columns:1fr;gap:12px;}
-    tbody tr{flex-direction:column;}
-    tbody tr > td{width:100%;}
-    tbody tr > td:last-child{flex:1;}
-    .arq{width:100%;}
-    .texto{font-size:13px;}
-    .copy{padding:6px 12px;font-size:11px;}
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
-  @media(max-width:600px){
-    .wrap{padding:12px;}
-    header{padding:16px 12px;}
-    header h1{font-size:20px;}
-    header p{font-size:12px;}
-    .meta{gap:8px;margin-bottom:16px;}
-    .card{padding:12px;font-size:12px;}
-    table{padding:0;}
-    tbody{grid-template-columns:1fr;gap:8px;}
-    tbody tr{flex-direction:column;border-radius:8px;}
-    tbody tr > td{padding:12px;}
-    .arq{width:100%;}
-    .num{font-size:12px;}
-    .texto{font-size:13px;}
-    .texto-titulo{padding:10px;gap:8px;}
-    .texto-corpo-text{font-size:13px;}
-    .copy{padding:6px 10px;font-size:10px;}
+  body {
+    font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+    background: #fafafa;
+    color: var(--texto);
+  }
+  header {
+    background: linear-gradient(135deg, var(--verde), var(--verde2));
+    color: #fff;
+    padding: 40px 32px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+  header p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin: 0;
+  }
+  .nav-buttons {
+    display: flex;
+    gap: 16px;
+    padding: 20px 32px;
+    background: #fff;
+    border-bottom: 1px solid var(--linha);
+    flex-wrap: wrap;
+  }
+  .nav-buttons a {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid var(--verde2);
+    color: var(--verde);
+    background: #fff;
+    transition: all 0.2s;
+  }
+  .nav-buttons a:hover {
+    background: var(--verde-claro);
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+  .search-box {
+    margin-bottom: 32px;
+  }
+  .search-box input {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1px solid var(--linha);
+    border-radius: 6px;
+    background: #fff;
+  }
+  .search-box input::placeholder {
+    color: #999;
+  }
+  .setores {
+    display: grid;
+    gap: 32px;
+  }
+  .setor {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+  .setor-header {
+    background: var(--verde-claro);
+    padding: 16px 20px;
+    border-left: 4px solid var(--verde);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .setor-header:hover {
+    background: #dcedc8;
+  }
+  .setor-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--verde);
+    margin: 0;
+  }
+  .setor-header .count {
+    font-size: 13px;
+    color: #666;
+    margin-left: 12px;
+  }
+  .setor-header .toggle {
+    font-size: 18px;
+    color: var(--verde);
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+  }
+  .setor.collapsed .portarias-list {
+    display: none;
+  }
+  .portarias-list {
+    padding: 16px 20px;
+  }
+  .portaria-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+  }
+  .portaria-item:last-child {
+    border-bottom: none;
+  }
+  .portaria-item:hover {
+    background: #fafafa;
+  }
+  .portaria-info h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--texto);
+    margin: 0 0 4px;
+  }
+  .portaria-info p {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .portaria-link {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    white-space: nowrap;
+    min-width: 120px;
+    transition: all 0.2s;
+  }
+  .portaria-link.has-pdf {
+    background: var(--verde);
+    color: #fff;
+    cursor: pointer;
+  }
+  .portaria-link.has-pdf:hover {
+    background: var(--verde2);
+  }
+  .portaria-link.no-pdf {
+    background: #f5f5f5;
+    color: #999;
+    border: 1px solid #ddd;
+    cursor: default;
+  }
+  footer {
+    padding: 20px 32px;
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+    border-top: 1px solid var(--linha);
+    margin-top: 40px;
+  }
+  @media (max-width: 600px) {
+    header {
+      padding: 28px 16px;
+    }
+    header h1 {
+      font-size: 22px;
+    }
+    .container {
+      padding: 24px 16px;
+    }
+    .portaria-item {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 </head>
 <body>
 <header>
-  <h1>Portarias SEAGRI &ndash; Solicita&ccedil;&otilde;es de Lota&ccedil;&atilde;o e Habilita&ccedil;&atilde;o de Assinatura</h1>
-  <p>Secretaria de Estado de Agricultura &ndash; SEAGRI / Estado do Acre</p>
-  <p>Di&aacute;rio Oficial n&ordm; 14.293 &mdash; Ter&ccedil;a-feira, 23 de junho de 2026 &middot; Processo SEI n&ordm; 0853.012621.00155/2026-14 &middot; Despacho n&ordm; 2079/2026/SEAGRI-DEG</p>
-  <a href="index.html" class="btn-voltar">&larr; Voltar ao Menu</a>
+  <h1>SEAGRI &ndash; Portarias 2026</h1>
+  <p>Documentos de nomeação e portarias de lotação da Secretaria de Estado de Agricultura</p>
 </header>
 
-<div class="wrap">
-  <div class="meta">
-    <div class="card"><b>Total de portarias:</b> 28 (n&ordm; 192 a 220)</div>
-    <div class="card"><b>Data das portarias:</b> 19 de junho de 2026</div>
-    <div class="card"><b>Publica&ccedil;&atilde;o:</b> 23 de junho de 2026</div>
-    <div class="card"><b>Autoridade:</b> Temyllis Lima da Silva &ndash; Secret&aacute;ria de Estado de Agricultura</div>
-  </div>
-
-  <div class="tools">
-    <div class="progresso-container">
-      <div class="progresso-titulo">
-        <span>Progresso: <strong id="progresso-texto">0/28</strong></span>
-        <span id="progresso-percentual">0%</span>
-      </div>
-      <div class="progresso-barra">
-        <div class="progresso-fill" id="progresso-fill"></div>
-      </div>
-    </div>
-    <input id="busca" type="text" placeholder="Filtrar por nome, unidade ou n&uacute;mero da portaria...">
-    <button id="limparProgresso" style="margin-top:10px;padding:8px 16px;background:#ff9800;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500;">Limpar Progresso</button>
-  </div>
-
-  <table id="tabela">
-    <thead>
-      <tr>
-        <th style="width:30%">Arquivo</th>
-        <th style="width:70%">Texto da solicita&ccedil;&atilde;o</th>
-      </tr>
-    </thead>
-    <tbody>
-<!--LINHAS-->
-    </tbody>
-  </table>
-
-  <h2 style="margin:48px 0 8px;font-size:20px;color:var(--verde);font-weight:500;">Acesso a Setores Subordinados &ndash; Chefes de Departamento/Divis&atilde;o</h2>
-  <p style="margin:0 0 24px;font-size:13px;color:#666;">Solicita&ccedil;&otilde;es adicionais para que chefes de Departamento e/ou Divis&atilde;o tenham acesso aos setores (Divis&otilde;es e/ou N&uacute;cleos) subordinados a eles, conforme o encadeamento da Portaria SEAGRI n&ordm; 187/2026. Apenas chefias com setores subordinados constam nesta se&ccedil;&atilde;o.</p>
-
-  <div class="tools">
-    <div class="progresso-container">
-      <div class="progresso-titulo">
-        <span>Progresso: <strong id="progresso-texto2">0/7</strong></span>
-        <span id="progresso-percentual2">0%</span>
-      </div>
-      <div class="progresso-barra">
-        <div class="progresso-fill" id="progresso-fill2"></div>
-      </div>
-    </div>
-    <input id="busca2" type="text" placeholder="Filtrar por nome, unidade ou n&uacute;mero da portaria...">
-    <button id="limparProgresso2" style="margin-top:10px;padding:8px 16px;background:#ff9800;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500;">Limpar Progresso</button>
-  </div>
-
-  <table id="tabela2">
-    <thead>
-      <tr>
-        <th style="width:30%">Chefia</th>
-        <th style="width:70%">Texto da solicita&ccedil;&atilde;o</th>
-      </tr>
-    </thead>
-    <tbody>
-<!--LINHAS2-->
-    </tbody>
-  </table>
+<div class="nav-buttons">
+  <a href="index.html">&larr; Menu</a>
+  <a href="organograma.html">Organograma</a>
+  <a href="chamados.html">Chamados</a>
 </div>
+
+<div class="container">
+  <div class="search-box">
+    <input id="searchInput" type="text" placeholder="Buscar por nome da pessoa, cargo ou número de portaria...">
+  </div>
+
+  <div class="setores" id="setoresContainer"></div>
+</div>
+
+<footer>
+  Secretaria de Estado de Agricultura &ndash; SEAGRI / Acre &nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <strong>Nota:</strong> Portarias vigentes com base no organograma de 2026.
+  Total de 55 portarias com anexo disponível para download.
+</footer>
+
 <script>
-const dados = [
- {n:"192", arq:"Portaria 192 - Dionisio Ferreira do Vale Neto.pdf", orig:"[03]-0021487054_Publicacao.pdf", nome:"Dionisio Ferreira do Vale Neto", chefia:"Chefe da Assessoria de Comunicação – ASCOM"},
- {n:"193", arq:"Portaria 193 - Heloneyda Marques de Oliveira.pdf", orig:"[05]-0021487149_Publicacao.pdf", nome:"Heloneyda Marques de Oliveira", chefia:"Chefe do Departamento de Orçamento e Finanças – DEOF"},
- {n:"194", arq:"Portaria 194 - Karin Gomes Barlatti.pdf", orig:"[07]-0021487244_Publicacao.pdf", nome:"Karin Gomes Barlatti", chefia:"Chefe da Divisão de Finanças – DIF"},
- {n:"195", arq:"Portaria 195 - Camila de Melo Pires Arruda Oliveira.pdf", orig:"[09]-0021487390_Publicacao.pdf", nome:"Camila de Melo Pires Arruda Oliveira", chefia:"Chefe da Divisão de Contabilidade – DIC"},
- {n:"196", arq:"Portaria 196 - Igor Honorato Leduino da Silva.pdf", orig:"[11]-0021487550_Publicacao.pdf", nome:"Igor Honorato Leduino da Silva", chefia:"Chefe do Departamento Socioprodutivo e Segurança Alimentar – DESAN"},
- {n:"197", arq:"Portaria 197 - Ariane Gadelha dos Santos.pdf", orig:"[13]-0021487748_Publicacao.pdf", nome:"Ariane Gadelha dos Santos", chefia:"Chefe da Divisão de Inclusão Socioprodutiva – DIIS"},
- {n:"198", arq:"Portaria 198 - Antonio Jose Pereira da Silva.pdf", orig:"[15]-0021487877_Publicacao.pdf", nome:"Antônio José Pereira da Silva", chefia:"Chefe do Núcleo de Apoio Logístico – NAP"},
- {n:"199", arq:"Portaria 199 - Maria da Conceicao Almeida.pdf", orig:"[17]-0021487975_Publicacao.pdf", nome:"Maria da Conceição Almeida", chefia:"Chefe do Núcleo de Cadastro da Agricultura Familiar – NCAF"},
- {n:"200", arq:"Portaria 200 - Carlos Antonio Pinheiro da Silva.pdf", orig:"[19]-0021488051_Publicacao.pdf", nome:"Carlos Antônio Pinheiro da Silva", chefia:"Chefe do Núcleo de Polos Agroflorestais – NPOLO"},
- {n:"201", arq:"Portaria 201 - Marcela Rocha da Silva.pdf", orig:"[21]-0021488125_Publicacao.pdf", nome:"Marcela Rocha da Silva", chefia:"Chefe da Divisão de Segurança Alimentar – DISAN"},
- {n:"202", arq:"Portaria 202 - Claiton Roniere Oliveira.pdf", orig:"[23]-0021488206_Publicacao.pdf", nome:"Claiton Roniere Oliveira", chefia:"Chefe do Núcleo do Programa de Aquisição de Alimentos – NPAA"},
- {n:"204", arq:"Portaria 204 - Jose Paulo dos Santos Silva.pdf", orig:"[25]-0021488298_Publicacao.pdf", nome:"José Paulo dos Santos Silva", chefia:"Chefe do Núcleo do Programa de Aquisição de Alimentos Indígena – NPAAI"},
- {n:"205", arq:"Portaria 205 - Yanna Thaumaturgo Motta.pdf", orig:"[27]-0021488361_Publicacao.pdf", nome:"Yanna Thaumaturgo Motta", chefia:"Chefe do Núcleo do Programa de Aquisição de Alimentos Extrativista – NPAAEX e Chefe da Divisão de Certificação de Produtos – DICP"},
- {n:"206", arq:"Portaria 206 - Michelma Neves de Lima.pdf", orig:"[29]-0021488488_Publicacao.pdf", nome:"Michelma Neves de Lima", chefia:"Chefe do Núcleo do Café – NUCAF"},
- {n:"207", arq:"Portaria 207 - Nilton Cesar de Souza.pdf", orig:"[31]-0021488659_Publicacao.pdf", nome:"Nilton César de Souza", chefia:"Chefe da Divisão de Agricultura – DIA e Chefe do Núcleo de Armazenamento e Silos – NUARS"},
- {n:"208", arq:"Portaria 208 - Wallace Santos Batista.pdf", orig:"[33]-0021488757_Publicacao.pdf", nome:"Wallace Santos Batista", chefia:"Chefe da Divisão de Aquicultura e Pesca – DIAPES e Chefe do Núcleo de Aquicultura e Pesca – NUAPES"},
- {n:"209", arq:"Portaria 209 - Bruna da Silva Diogo.pdf", orig:"[35]-0021489141_Publicacao.pdf", nome:"Bruna da Silva Diogo", chefia:"Chefe do Núcleo de Avicultura – NUAV"},
- {n:"210", arq:"Portaria 210 - Hidelk Dinarte Farias de Albuquerque.pdf", orig:"[37]-0021489250_Publicacao.pdf", nome:"Hidelk Dinarte Farias de Albuquerque", chefia:"Chefe do Núcleo Socioprodutivo Indígena – NUSPI"},
- {n:"211", arq:"Portaria 211 - Marcos Rocha da Silva.pdf", orig:"[39]-0021489376_Publicacao.pdf", nome:"Marcos Rocha da Silva", chefia:"Chefe do Núcleo do Cacau – NUCAC"},
- {n:"212", arq:"Portaria 212 - Rubia Mara Pessoa da Costa Lima.pdf", orig:"[41]-0021489429_Publicacao.pdf", nome:"Rúbia Mara Pessoa da Costa Lima", chefia:"Chefe do Núcleo do Mel – NUMEL"},
- {n:"213", arq:"Portaria 213 - Murilo de Araujo Matos Filho.pdf", orig:"[43]-0021489498_Publicacao.pdf", nome:"Murilo de Araújo Matos Filho", chefia:"Chefe do Núcleo da Mandioca – NUMAN"},
- {n:"214", arq:"Portaria 214 - Adriana da Silva Melo.pdf", orig:"[45]-0021489594_Publicacao.pdf", nome:"Adriana da Silva Melo", chefia:"Chefe do Núcleo da Olericultura – NUOLE"},
- {n:"215", arq:"Portaria 215 - Angelina Frota de Lima.pdf", orig:"[47]-0021489672_Publicacao.pdf", nome:"Angelina Frota de Lima", chefia:"Chefe do Núcleo de Extrativismo – NUEX"},
- {n:"216", arq:"Portaria 216 - Luan Sobral Dourado.pdf", orig:"[49]-0021489739_Publicacao.pdf", nome:"Luan Sobral Dourado", chefia:"Chefe do Departamento de Tecnologia – DET e Chefe da Divisão de Modernização Tecnológica – DIMT"},
- {n:"217", arq:"Portaria 217 - Marcos Vinicius Rodrigues Santana.pdf", orig:"[51]-0021489820_Publicacao.pdf", nome:"Marcos Vinicius Rodrigues Santana", chefia:"Chefe da Divisão de Programas – DIPRO e Chefe da Divisão de Pesquisa Agropecuária – DIPA"},
- {n:"218", arq:"Portaria 218 - Izaura Maria Cardoso Barros de Sa.pdf", orig:"[53]-0021489909_Publicacao.pdf", nome:"Izaura Maria Cardoso Barros de Sá", chefia:"Chefe da Divisão de Geoprocessamento e Telemetria – DIGT"},
- {n:"219", arq:"Portaria 219 - Gabriane Morais Vaz.pdf", orig:"[55]-0021490028_Publicacao.pdf", nome:"Gabriane Morais Vaz", chefia:"Chefe da Divisão de Sistema de Informação – DISOFT"},
- {n:"220", arq:"Portaria 220 - Ediu Carlos da Silva Junior.pdf", orig:"[57]-0021490099_Publicacao.pdf", nome:"Ediu Carlos da Silva Junior", chefia:"Chefe da Divisão de Transferência de Tecnologia – DITT"}
+const portariasPDFMap = {
+  "04/2023": "portarias/portarias 2023/[015]-5958327_Publicacao.pdf",
+  "06/2023": "portarias/portarias 2023/[015]-5958327_Publicacao.pdf",
+  "07/2023": "portarias/portarias 2023/[015]-5958327_Publicacao.pdf",
+  "35/2023": "portarias/portarias 2023/[066]-6025855_Publicacao.pdf",
+  "45/2023": "portarias/portarias 2023/[082]-6065080_Publicacao.pdf",
+  "94/2023": "portarias/portarias 2023/[149]-6204238_Publicacao.pdf",
+  "97/2023": "portarias/portarias 2023/[149]-6204238_Publicacao.pdf",
+  "107/2023": "portarias/portarias 2023/[159]-6204795_Publicacao.pdf",
+  "110/2023": "portarias/portarias 2023/[127]-6188760_Publicacao.pdf",
+  "134/2023": "portarias/portarias 2023/[199]-6355713_Publicacao.pdf",
+  "136/2023": "portarias/portarias 2023/[199]-6355713_Publicacao.pdf",
+  "138/2023": "portarias/portarias 2023/[199]-6355713_Publicacao.pdf",
+  "153/2023": "portarias/portarias 2023/[218]-6444113_Publicacao.pdf",
+  "175/2023": "portarias/portarias 2023/[252]-6499223_Publicacao.pdf",
+  "179/2023": "portarias/portarias 2023/[259]-6501228_Publicacao.pdf",
+  "180/2023": "portarias/portarias 2023/[259]-6501228_Publicacao.pdf",
+  "187/2023": "portarias/portarias 2023/[264]-6501405_Publicacao.pdf",
+  "191/2023": "portarias/portarias 2023/[266]-6508343_Publicacao.pdf",
+  "213/2023": "portarias/portarias 2023/[272]-6736012_Publicacao.pdf",
+  "214/2023": "portarias/portarias 2023/[274]-6751629_Publicacao.pdf",
+  "118/2024": "portarias/portarias 2024/[094]-0011286402_Publicacao.pdf",
+  "124/2024": "portarias/portarias 2024/[100]-0011304172_Publicacao.pdf",
+  "177/2024": "portarias/portarias 2024/[110]-0011990282_Publicacao.pdf",
+  "255/2024": "portarias/portarias 2024/[144]-0012930490_Publicacao.pdf",
+  "280/2024": "portarias/portarias 2024/[158]-0013209229_Publicacao.pdf",
+  "285/2024": "portarias/portarias 2024/[161]-0013278709_Publicacao_Portaria_285___Republicado___Chefe.pdf",
+  "329/2024": "portarias/portarias 2024/[217]-0013616259_Publicacao.pdf",
+  "192/2026": "portarias/portarias 2026/Portaria 192 - Dionisio Ferreira do Vale Neto.pdf",
+  "193/2026": "portarias/portarias 2026/Portaria 193 - Heloneyda Marques de Oliveira.pdf",
+  "194/2026": "portarias/portarias 2026/Portaria 194 - Karin Gomes Barlatti.pdf",
+  "195/2026": "portarias/portarias 2026/Portaria 195 - Camila de Melo Pires Arruda Oliveira.pdf",
+  "196/2026": "portarias/portarias 2026/Portaria 196 - Igor Honorato Leduino da Silva.pdf",
+  "197/2026": "portarias/portarias 2026/Portaria 197 - Ariane Gadelha dos Santos.pdf",
+  "198/2026": "portarias/portarias 2026/Portaria 198 - Antonio Jose Pereira da Silva.pdf",
+  "199/2026": "portarias/portarias 2026/Portaria 199 - Maria da Conceicao Almeida.pdf",
+  "200/2026": "portarias/portarias 2026/Portaria 200 - Carlos Antonio Pinheiro da Silva.pdf",
+  "201/2026": "portarias/portarias 2026/Portaria 201 - Marcela Rocha da Silva.pdf",
+  "202/2026": "portarias/portarias 2026/Portaria 202 - Claiton Roniere Oliveira.pdf",
+  "204/2026": "portarias/portarias 2026/Portaria 204 - Jose Paulo dos Santos Silva.pdf",
+  "205/2026": "portarias/portarias 2026/Portaria 205 - Yanna Thaumaturgo Motta.pdf",
+  "206/2026": "portarias/portarias 2026/Portaria 206 - Michelma Neves de Lima.pdf",
+  "207/2026": "portarias/portarias 2026/Portaria 207 - Nilton Cesar de Souza.pdf",
+  "208/2026": "portarias/portarias 2026/Portaria 208 - Wallace Santos Batista.pdf",
+  "209/2026": "portarias/portarias 2026/Portaria 209 - Bruna da Silva Diogo.pdf",
+  "210/2026": "portarias/portarias 2026/Portaria 210 - Hidelk Dinarte Farias de Albuquerque.pdf",
+  "211/2026": "portarias/portarias 2026/Portaria 211 - Marcos Rocha da Silva.pdf",
+  "212/2026": "portarias/portarias 2026/Portaria 212 - Rubia Mara Pessoa da Costa Lima.pdf",
+  "213/2026": "portarias/portarias 2026/Portaria 213 - Murilo de Araujo Matos Filho.pdf",
+  "214/2026": "portarias/portarias 2026/Portaria 214 - Adriana da Silva Melo.pdf",
+  "215/2026": "portarias/portarias 2026/Portaria 215 - Angelina Frota de Lima.pdf",
+  "216/2026": "portarias/portarias 2026/Portaria 216 - Luan Sobral Dourado.pdf",
+  "217/2026": "portarias/portarias 2026/Portaria 217 - Marcos Vinicius Rodrigues Santana.pdf",
+  "218/2026": "portarias/portarias 2026/Portaria 218 - Izaura Maria Cardoso Barros de Sa.pdf",
+  "219/2026": "portarias/portarias 2026/Portaria 219 - Gabriane Morais Vaz.pdf",
+  "220/2026": "portarias/portarias 2026/Portaria 220 - Ediu Carlos da Silva Junior.pdf"
+};
+
+const portariasDados = [
+  {titulo:"Secretária",pessoa:"Temyllis Lima da Silva",portaria:"Decreto Nº 12.457-P/2026"},
+  {titulo:"Gabinete da Secretária",pessoa:"Francisco Diego",portaria:"Portaria Nº 24/2026"},
+  {titulo:"Secretário Adjunto",pessoa:"Edivan Maciel",portaria:"Decreto Nº 1.307-P/2023"},
+  {titulo:"Gabinete do Secretário Adjunto",pessoa:"Josilda Lima",portaria:"Portaria Nº 214/2023"},
+  {titulo:"Controle Interno",pessoa:"Lilian Vitoria",portaria:"Portaria Nº 285/2024"},
+  {titulo:"Consultoria Jurídica",pessoa:"Thais Ferreira",portaria:"Portaria Nº 35/2023"},
+  {titulo:"Assessoria de Comunicação",pessoa:"Dionisio Neto",portaria:"Portaria Nº 192/2026"},
+  {titulo:"Ouvidoria",pessoa:"Maria Socorro",portaria:"Portaria Nº 110/2023"},
+  {titulo:"Diretoria de Administração e Finanças",pessoa:"Nivia Cristina",portaria:"Decreto Nº 12.182-P/2026"},
+  {titulo:"Diretoria de Produção e Agronegócio",pessoa:"Cláudio Malveira",portaria:"Decreto Nº 1.855-P/2023"},
+  {titulo:"Diretoria de Pesquisa, Tecnologia e Inovação do Agronegócio",pessoa:"Thiago de Almeida",portaria:"Decreto Nº 2.525-P/2023"},
+  {titulo:"Departamento de Escritórios Locais",pessoa:"Jorge Ney Pontes",portaria:"Portaria Nº 45/2023"},
+  {titulo:"Departamento de Gestão",pessoa:"Mayssa Diniz",portaria:"Portaria Nº 83/2026"},
+  {titulo:"Departamento de Planejamento",pessoa:"Natalia Cristina",portaria:"Portaria Nº 60/2025"},
+  {titulo:"Departamento de Orçamento e Finanças",pessoa:"Heloneyda Marques",portaria:"Portaria Nº 193/2026"},
+  {titulo:"Divisão de Serviços Gerais",pessoa:"Renata Carvalho",portaria:"Portaria Nº 151/2025"},
+  {titulo:"Divisão de Patrimônio e Materiais",pessoa:"Rosimeire Cavalcante",portaria:"Portaria Nº 06/2023"},
+  {titulo:"Divisão de Arquivo e Protocolo",pessoa:"Maria do Socorro",portaria:"Portaria Nº 07/2023"},
+  {titulo:"Divisão de Recursos Humanos",pessoa:"Marcleide Tavares",portaria:"Portaria Nº 04/2023"},
+  {titulo:"Divisão de Transporte",pessoa:"Pedro Alencar",portaria:"Portaria Nº 173/2026"},
+  {titulo:"Divisão de Modernização Tecnológica",pessoa:"Luan Dourado",portaria:"Portaria Nº 213/2023"},
+  {titulo:"Divisão de Licitações, Compras e Contratos",pessoa:"João Paulo",portaria:"Portaria Nº 30/2026"},
+  {titulo:"Divisão de Convênios",pessoa:"Pâmela Galvão",portaria:"Portaria Nº 280/2024"},
+  {titulo:"Divisão de Programas",pessoa:"Marcos Santana",portaria:"Portaria Nº 132/2025"},
+  {titulo:"Divisão de Monitoramento",pessoa:"Éllen Abud",portaria:"Portaria Nº 97/2023"},
+  {titulo:"Divisão de Finanças",pessoa:"Karin Gomes",portaria:"Portaria Nº 194/2026"},
+  {titulo:"Divisão de Contabilidade",pessoa:"Camila Arruda",portaria:"Portaria Nº 195/2026"},
+  {titulo:"Departamento Socioprodutivo e Segurança Alimentar",pessoa:"Igor Honorato",portaria:"Portaria Nº 196/2026"},
+  {titulo:"Departamento de Agronegócio",pessoa:"Jalceyr Pessoa",portaria:"Portaria Nº 94/2023"},
+  {titulo:"Departamento de Produção Familiar",pessoa:"Josicley Azevedo",portaria:"Portaria Nº 244/2026"},
+  {titulo:"Departamento de Mecanização",pessoa:"Richarler Aguiar",portaria:"Portaria Nº 124/2024"},
+  {titulo:"Divisão de Inclusão Socioprodutiva",pessoa:"Ariane Gadelha",portaria:"Portaria Nº 197/2026"},
+  {titulo:"Divisão de Segurança Alimentar",pessoa:"Marcela",portaria:"Portaria Nº 201/2026"},
+  {titulo:"Divisão de Agricultura",pessoa:"Nilton Cesar",portaria:"Portaria Nº 207/2026"},
+  {titulo:"Divisão de Pecuária",pessoa:"Willian Junis",portaria:"Portaria Nº 227/2025"},
+  {titulo:"Divisão de Produção Indígena",pessoa:"Adriano Dias",portaria:"Portaria Nº 107/2023"},
+  {titulo:"Divisão de Produção Familiar",pessoa:"Wally Stanley",portaria:"Portaria Nº 245/2026"},
+  {titulo:"Divisão de Sociobiodiversidade",pessoa:"Eneide Thaumaturgo",portaria:"Portaria Nº 246/2026"},
+  {titulo:"Núcleo de Apoio Logístico",pessoa:"Antônio José",portaria:"Portaria Nº 198/2026"},
+  {titulo:"Núcleo de Cadastro da Agricultura Familiar",pessoa:"Conceição",portaria:"Portaria Nº 199/2026"},
+  {titulo:"Núcleo de Polos Agroflorestais",pessoa:"Carlos Antonio",portaria:"Portaria Nº 200/2026"},
+  {titulo:"Núcleo do Programa de Aquisição de Alimentos",pessoa:"Claiton",portaria:"Portaria Nº 202/2026"},
+  {titulo:"Núcleo do Programa de Aquisição de Alimentos Indígena",pessoa:"José Paulo",portaria:"Portaria Nº 204/2026"},
+  {titulo:"Núcleo do Programa de Aquisição de Alimentos Extrativista",pessoa:"Yanná",portaria:"Portaria Nº 205/2026"},
+  {titulo:"Núcleo do Café",pessoa:"Michelma Silva",portaria:"Portaria Nº 206/2026"},
+  {titulo:"Núcleo de Armazenamento e Silos",pessoa:"Nilton César",portaria:"Portaria Nº 207/2026"},
+  {titulo:"Núcleo de Aquicultura e Pesca",pessoa:"Wallace Santos",portaria:"Portaria Nº 208/2026"},
+  {titulo:"Núcleo da Avicultura",pessoa:"Wallace Santos",portaria:"Portaria Nº 209/2026"},
+  {titulo:"Núcleo Socioprodutivo Indígena",pessoa:"Hidelk Farias",portaria:"Portaria Nº 210/2026"},
+  {titulo:"Núcleo do Cacau",pessoa:"Marcos Rocha",portaria:"Portaria Nº 211/2026"},
+  {titulo:"Núcleo do Mel",pessoa:"Rubia Mara",portaria:"Portaria Nº 212/2026"},
+  {titulo:"Núcleo da Mandioca",pessoa:"Murilo Matos",portaria:"Portaria Nº 213/2026"},
+  {titulo:"Núcleo da Olericultura",pessoa:"Adriana Melo",portaria:"Portaria Nº 214/2026"},
+  {titulo:"Núcleo de Extrativismo",pessoa:"Angelina Lima",portaria:"Portaria Nº 215/2026"},
+  {titulo:"Departamento de Tecnologia",pessoa:"Luan Sobral",portaria:"Portaria Nº 216/2026"},
+  {titulo:"Departamento de Pesquisa e Inovação",pessoa:"Roger Recco",portaria:"Portaria Nº 53/2024"},
+  {titulo:"Divisão de Geoprocessamento e Telemetria",pessoa:"Izaura Cardoso",portaria:"Portaria Nº 218/2026"},
+  {titulo:"Divisão de Sistema de Informação",pessoa:"Gabriane Vaz",portaria:"Portaria Nº 219/2026"},
+  {titulo:"Divisão de Transferência de Tecnologia",pessoa:"Ediu Carlos",portaria:"Portaria Nº 220/2026"},
+  {titulo:"Divisão de Pesquisa Agropecuária",pessoa:"Marcos Vinicius",portaria:"Portaria Nº 217/2026"},
+  {titulo:"Divisão de Certificação de Produtos",pessoa:"Yanná Thaumaturgo",portaria:"Portaria Nº 102/2025"},
+  {titulo:"Escritório Local de Acrelândia",pessoa:"Max Teodoro",portaria:"Portaria Nº 298/2025"},
+  {titulo:"Escritório Local de Assis Brasil",pessoa:"Wilker Nazareno",portaria:"Portaria Nº 187/2023"},
+  {titulo:"Escritório Local de Brasiléia",pessoa:"Antônio Francisco",portaria:"Portaria Nº 153/2023"},
+  {titulo:"Escritório Local de Bujari",pessoa:"Luciano Queiroz",portaria:"Portaria Nº 86/2025"},
+  {titulo:"Escritório Local de Capixaba",pessoa:"Kemy Fernandes",portaria:"Portaria Nº 329/2024"},
+  {titulo:"Escritório Local de Cruzeiro do Sul",pessoa:"Marcos Pereira",portaria:"Portaria Nº 136/2023"},
+  {titulo:"Escritório Local de Epitaciolândia",pessoa:"Jose Menezes",portaria:"Portaria Nº 138/2023"},
+  {titulo:"Escritório Local de Feijó",pessoa:"João Paulo",portaria:"Portaria Nº 134/2023"},
+  {titulo:"Escritório Local do Humaitá",pessoa:"Wilson Brito",portaria:"Portaria Nº 30/2025"},
+  {titulo:"Escritório Local de Jordão",pessoa:"Cintia Araujo",portaria:"Portaria Nº 127/2026"},
+  {titulo:"Escritório Local de Mâncio Lima",pessoa:"Magno Corrêa",portaria:"Portaria Nº 177/2024"},
+  {titulo:"Escritório Local de Manoel Urbano",pessoa:"Denes Bruno",portaria:"Portaria Nº 175/2023"},
+  {titulo:"Escritório Local de Marechal Thaumaturgo",pessoa:"Marcos Pereira",portaria:"Portaria Nº 290/2025"},
+  {titulo:"Escritório Local de Porto Acre",pessoa:"Wilson de Brito",portaria:"Portaria Nº 191/2023"},
+  {titulo:"Escritório Local de Plácido de Castro",pessoa:"Antonio Pinto",portaria:"Portaria Nº 101/2025"},
+  {titulo:"Escritório Local de Porto Walter",pessoa:"Eriânio Melo",portaria:"Portaria Nº 255/2024"},
+  {titulo:"Escritório Local de Rio Branco",pessoa:"Risomar Freire",portaria:"Portaria Nº 179/2023"},
+  {titulo:"Escritório Local de Santa Rosa do Purus",pessoa:"Lugma Fernanda",portaria:"Portaria Nº 181/2026"},
+  {titulo:"Escritório Local de Sena Madureira",pessoa:"Adoneyson Campos",portaria:"Portaria Nº 118/2024"},
+  {titulo:"Escritório Local de Senador Guiomard",pessoa:"Carlos Casas",portaria:"Portaria Nº 269/2025"},
+  {titulo:"Escritório Local de Tarauacá",pessoa:"Leocélia Monteiro",portaria:"Portaria Nº 141/2026"},
+  {titulo:"Escritório Local da Transacreana",pessoa:"Lucas Paiva",portaria:"Portaria Nº 180/2023"},
+  {titulo:"Escritório Local de Xapuri",pessoa:"Antonio Alves",portaria:"Portaria Nº 32/2025"}
 ];
 
-function gerarTitulo(d){
-  return "<b>Alteração de Cadastro de Usuario - Chefia "+d.nome+"</b>";
-}
-function gerarTituloPlano(d){
-  return "Alteração de Cadastro de Usuario - Chefia "+d.nome;
-}
-function gerarTextoMaior(d){
-  let setor = d.chefia.replace(/^Chefe\s+/i, "");
-  return "Solicito que o seguinte servidor <span class='u'>"+d.nome+"</span> seja lotado na seguinte unidade <span class='u'>"+setor+"</span> e que tenha permissão para assinar como <span class='u'>"+d.chefia+"</span>, de acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026  Conforme portaria em anexo Portaria "+d.n+" - "+d.nome;
-}
-function gerarTextoMaiorPlano(d){
-  let setor = d.chefia.replace(/^Chefe\s+/i, "");
-  return "Solicito que o seguinte servidor "+d.nome+" seja lotado na seguinte unidade "+setor+" e que tenha permissão para assinar como "+d.chefia+", de acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026  Conforme portaria em anexo Portaria "+d.n+" - "+d.nome;}
-function gerarTextoMenor(d){
-  return "Solicito que o seguinte servidor "+d.nome+" seja lotado na seguinte unidade Secretaria de Estado de Agricultura – SEAGRI e que tenha permissão para assinar como "+d.chefia+", de acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026, conforme anexo \""+d.arq+"\".";}
-function gerarTextoMenorPlano(d){
-  return "Solicito que o seguinte servidor "+d.nome+" seja lotado na seguinte unidade Secretaria de Estado de Agricultura – SEAGRI e que tenha permissão para assinar como "+d.chefia+", de acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026, conforme anexo \""+d.arq+"\".";}
-
-const tbody = document.querySelector("#tabela tbody");
-
-const estadoSalvo = JSON.parse(localStorage.getItem("portariasCompletas") || "{}");
-const portarias = [];
-
-dados.forEach(d=>{
-  const tr=document.createElement("tr");
-  const nomeArquivoSemExtensao = d.arq.replace(/\.pdf$/i, "");
-
-  tr.innerHTML =
-    "<td class='arq'><span class='num'>Portaria nº "+d.n+"</span><br>"+
-      "<span class='status-badge pendente'>Pendente</span><br>"+
-      "<a href=\""+encodeURI(d.arq)+"\" target=\"_blank\">"+nomeArquivoSemExtensao+"</a></td>"+
-    "<td><div class='texto-container'>"+
-      "<div class='texto-titulo'>"+
-        "<div class='texto-titulo-text'>"+gerarTitulo(d)+"</div>"+
-        "<button class='copy copy-titulo' style='flex-shrink:0;'>Copiar texto</button>"+
-      "</div>"+
-      "<div class='texto-corpo'>"+
-        "<div class='texto-corpo-text'>"+gerarTextoMaior(d)+"</div>"+
-        "<button class='copy copy-corpo' style='flex-shrink:0;'>Copiar texto</button>"+
-      "</div>"+
-    "</div></td>";
-
-  const statusBadge = tr.querySelector(".status-badge");
-  const btnTitulo = tr.querySelector(".copy-titulo");
-  const btnCorpo = tr.querySelector(".copy-corpo");
-  const textoTitulo = tr.querySelector(".texto-titulo-text");
-  const textoCorpo = tr.querySelector(".texto-corpo-text");
-
-  if(estadoSalvo[d.n]){
-    statusBadge.textContent = "Concluído";
-    statusBadge.classList.remove("pendente");
-    statusBadge.classList.add("concluido");
-  }
-
-  const portaria = {
-    numero: d.n,
-    tr: tr,
-    statusBadge: statusBadge,
-    btnTitulo: btnTitulo,
-    btnCorpo: btnCorpo,
-    textoTitulo: textoTitulo,
-    textoCorpo: textoCorpo,
-    clicouTitulo: false,
-    clicouCorpo: false
-  };
-
-  portarias.push(portaria);
-  tbody.appendChild(tr);
-});
-
-function mostrarToast(){
-  const toastAntigo = document.querySelector(".toast-notificacao");
-  if(toastAntigo){
-    toastAntigo.classList.add("toast-saindo");
-    setTimeout(()=>toastAntigo.remove(),300);
-  }
-  const toast = document.createElement("div");
-  toast.className = "toast-notificacao";
-  toast.textContent = "✓ Copiado para a área de transferência!";
-  document.body.appendChild(toast);
-  setTimeout(()=>{
-    toast.classList.add("toast-saindo");
-    setTimeout(()=>toast.remove(),300);
-  },3000);
+function getPortariaKey(portariaStr) {
+  const match = portariaStr.match(/(\d+)\/(\d{4})/);
+  return match ? `${match[1]}/${match[2]}` : null;
 }
 
-function abrirModalCopiaManual(texto){
-  let backdrop = document.getElementById("modal-copia-manual");
-  if(!backdrop){
-    backdrop = document.createElement("div");
-    backdrop.id = "modal-copia-manual";
-    backdrop.className = "modal-backdrop";
-    backdrop.innerHTML =
-      "<div class='modal-conteudo' style='max-width:600px;text-align:left;'>"+
-        "<button class='modal-fechar' id='modal-copia-fechar'>&times;</button>"+
-        "<div class='modal-titulo' style='font-size:18px;margin-bottom:12px;'>Copie o texto manualmente</div>"+
-        "<p style='font-size:13px;color:#666;margin:0 0 12px;'>Não foi possível copiar automaticamente (restrição do navegador). Toque no campo abaixo — o texto já vem selecionado — e use Ctrl+C (ou Cmd+C no Mac) para copiar.</p>"+
-        "<textarea id='modal-copia-texto' style='width:100%;min-height:160px;padding:12px;border:1px solid var(--linha);border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;' readonly></textarea>"+
-      "</div>";
-    document.body.appendChild(backdrop);
-    backdrop.addEventListener("click", function(e){
-      if(e.target === backdrop){ backdrop.classList.remove("ativo"); }
+function renderPortarias() {
+  const container = document.getElementById('setoresContainer');
+  const grouped = {};
+
+  portariasDados.forEach(p => {
+    const area = p.titulo.split(' - ')[0].trim();
+    if (!grouped[area]) grouped[area] = [];
+    grouped[area].push(p);
+  });
+
+  Object.keys(grouped).sort().forEach(area => {
+    const setorDiv = document.createElement('div');
+    setorDiv.className = 'setor';
+    const header = document.createElement('div');
+    header.className = 'setor-header';
+    header.innerHTML = `<h2>${area}</h2><span class="count">${grouped[area].length}</span><span class="toggle">−</span>`;
+    header.addEventListener('click', () => {
+      setorDiv.classList.toggle('collapsed');
+      header.querySelector('.toggle').textContent = setorDiv.classList.contains('collapsed') ? '+' : '−';
     });
-    document.getElementById("modal-copia-fechar").addEventListener("click", function(){
-      backdrop.classList.remove("ativo");
+
+    const list = document.createElement('div');
+    list.className = 'portarias-list';
+    grouped[area].forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'portaria-item';
+
+      const key = getPortariaKey(p.portaria);
+      const pdfPath = portariasPDFMap[key];
+
+      const linkHTML = pdfPath
+        ? `<a href="${pdfPath}" download class="portaria-link has-pdf" title="Baixar PDF">⬇ Download</a>`
+        : `<span class="portaria-link no-pdf" title="Em breve">Aguardando anexo</span>`;
+
+      item.innerHTML = `
+        <div class="portaria-info">
+          <h3>${p.titulo}</h3>
+          <p><strong>${p.pessoa}</strong></p>
+          <p style="font-size:11px;color:#999">${p.portaria}</p>
+        </div>
+        ${linkHTML}
+      `;
+      list.appendChild(item);
     });
-  }
-  const area = document.getElementById("modal-copia-texto");
-  area.value = texto;
-  backdrop.classList.add("ativo");
-  setTimeout(()=>{ area.focus(); area.select(); }, 50);
+
+    setorDiv.appendChild(header);
+    setorDiv.appendChild(list);
+    container.appendChild(setorDiv);
+  });
 }
 
-function copiarTexto(texto){
-  function viaExecCommand(){
-    try{
-      const textArea = document.createElement("textarea");
-      textArea.value = texto;
-      textArea.style.position = "fixed";
-      textArea.style.opacity = "0";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(textArea);
-      return ok;
-    }catch(e){
-      return false;
-    }
-  }
-
-  if(navigator.clipboard && window.isSecureContext){
-    navigator.clipboard.writeText(texto).then(()=>{
-      mostrarToast();
-    }).catch(()=>{
-      if(viaExecCommand()){ mostrarToast(); }
-      else{ abrirModalCopiaManual(texto); }
-    });
-  } else {
-    if(viaExecCommand()){ mostrarToast(); }
-    else{ abrirModalCopiaManual(texto); }
-  }
-}
-
-portarias.forEach((portaria, indice)=>{
-  const d = dados[indice];
-
-  function atualizarBarraProgresso(){
-    const concluidas = Object.keys(estadoSalvo).length;
-    const total = dados.length;
-    const percentual = Math.round((concluidas / total) * 100);
-
-    document.getElementById("progresso-fill").style.width = percentual + "%";
-    document.getElementById("progresso-texto").textContent = concluidas + "/" + total;
-    document.getElementById("progresso-percentual").textContent = percentual + "%";
-  }
-
-  function marcarAnteriorComoConcluida(){
-    if(indice > 0){
-      const portariaAnterior = portarias[indice - 1];
-      portariaAnterior.statusBadge.textContent = "Concluído";
-      portariaAnterior.statusBadge.classList.remove("pendente");
-      portariaAnterior.statusBadge.classList.add("concluido");
-      estadoSalvo[portariaAnterior.numero] = true;
-      localStorage.setItem("portariasCompletas", JSON.stringify(estadoSalvo));
-      atualizarBarraProgresso();
-    }
-  }
-
-  portaria.btnTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloPlano(d));
-    portaria.clicouTitulo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-
-    if(portaria.clicouTitulo && portaria.clicouCorpo){
-      marcarAnteriorComoConcluida();
-    }
-  });
-
-  portaria.btnCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoMaiorPlano(d));
-    portaria.clicouCorpo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-
-    if(portaria.clicouTitulo && portaria.clicouCorpo){
-      marcarAnteriorComoConcluida();
-    }
-  });
-
-  portaria.textoTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloPlano(d));
-    portaria.clicouTitulo = true;
-    portaria.btnTitulo.classList.add("copiado");
-    setTimeout(()=>portaria.btnTitulo.classList.remove("copiado"),1500);
-
-    if(portaria.clicouTitulo && portaria.clicouCorpo){
-      marcarAnteriorComoConcluida();
-    }
-  });
-
-  portaria.textoCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoMaiorPlano(d));
-    portaria.clicouCorpo = true;
-    portaria.btnCorpo.classList.add("copiado");
-    setTimeout(()=>portaria.btnCorpo.classList.remove("copiado"),1500);
-
-    if(portaria.clicouTitulo && portaria.clicouCorpo){
-      marcarAnteriorComoConcluida();
-    }
+document.getElementById('searchInput').addEventListener('input', e => {
+  const term = e.target.value.toLowerCase();
+  document.querySelectorAll('.portaria-item').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = term === '' || text.includes(term) ? 'grid' : 'none';
   });
 });
 
-const concluidas = Object.keys(estadoSalvo).length;
-const total = dados.length;
-const percentual = Math.round((concluidas / total) * 100);
-document.getElementById("progresso-fill").style.width = percentual + "%";
-document.getElementById("progresso-texto").textContent = concluidas + "/" + total;
-document.getElementById("progresso-percentual").textContent = percentual + "%";
-
-document.getElementById("limparProgresso").addEventListener("click",function(){
-  if(confirm("Tem certeza que deseja limpar todo o progresso?")){
-    localStorage.removeItem("portariasCompletas");
-    location.reload();
-  }
-});
-
-document.getElementById("busca").addEventListener("input",function(){
-  const q=this.value.toLowerCase();
-  document.querySelectorAll("#tabela tbody tr").forEach(tr=>{
-    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
-  });
-});
-
-// ===================== SEÇÃO 2: Acesso a Setores Subordinados =====================
-const dadosDept = [
- {n:"193", nome:"Heloneyda Marques de Oliveira", chefia:"Chefe do Departamento de Orçamento e Finanças – DEOF", setores:["Divisão de Finanças (DIF)","Divisão de Contabilidade (DIC)"]},
- {n:"196", nome:"Igor Honorato Leduino da Silva", chefia:"Chefe do Departamento Socioprodutivo e Segurança Alimentar – DESAN", setores:["Divisão de Inclusão Socioprodutiva (DIIS)","Núcleo de Apoio Logístico (NAP)","Núcleo de Cadastro da Agricultura Familiar (NCAF)","Núcleo de Polos Agroflorestais (NPOLO)","Divisão de Segurança Alimentar (DISAN)","Núcleo do Programa de Aquisição de Alimentos (NPAA)","Núcleo do Programa de Aquisição de Alimentos Indígena (NPAAI)","Núcleo do Programa de Aquisição de Alimentos Extrativista (NPAAEX)"]},
- {n:"197", nome:"Ariane Gadelha dos Santos", chefia:"Chefe da Divisão de Inclusão Socioprodutiva – DIIS", setores:["Núcleo de Apoio Logístico (NAP)","Núcleo de Cadastro da Agricultura Familiar (NCAF)","Núcleo de Polos Agroflorestais (NPOLO)"]},
- {n:"201", nome:"Marcela Rocha da Silva", chefia:"Chefe da Divisão de Segurança Alimentar – DISAN", setores:["Núcleo do Programa de Aquisição de Alimentos (NPAA)","Núcleo do Programa de Aquisição de Alimentos Indígena (NPAAI)","Núcleo do Programa de Aquisição de Alimentos Extrativista (NPAAEX)"]},
- {n:"207", nome:"Nilton César de Souza", chefia:"Chefe da Divisão de Agricultura – DIA", setores:["Núcleo do Café (NUCAF)","Núcleo de Armazenamento e Silos (NUARS)"]},
- {n:"208", nome:"Wallace Santos Batista", chefia:"Chefe da Divisão de Pecuária/Aquicultura e Pesca – DIPEC/DIAPES", setores:["Núcleo de Aquicultura e Pesca (NUAPES)","Núcleo de Avicultura (NUAV)"]},
- {n:"216", nome:"Luan Sobral Dourado", chefia:"Chefe do Departamento de Tecnologia – DET", setores:["Divisão de Agricultura de Precisão (DIAP)","Divisão de Dados Estatísticos (DIDA)","Divisão de Geoprocessamento e Telemetria (DIGT)","Divisão de Sistema de Informação (DISOFT)"]}
-];
-
-function gerarTituloDept(d){
-  return "<b>Lotação de Usuário - "+d.nome+"</b>";
-}
-function gerarTituloDeptPlano(d){
-  return "Lotação de Usuário - "+d.nome;
-}
-function gerarTextoDept(d){
-  const lista = d.setores.map(s=>"<span class='u'>"+s+"</span>").join("<br>");
-  return "Solicito que "+d.nome+" seja adicionado(a) aos seguintes setores de lotação:<br>"+lista+"<br>de acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026.";
-}
-function gerarTextoDeptPlano(d){
-  const lista = d.setores.join("\n");
-  return "Solicito que "+d.nome+" seja adicionado(a) aos seguintes setores de lotação:\n"+lista+"\nde acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026.";
-}
-
-const tbody2 = document.querySelector("#tabela2 tbody");
-const estadoSalvo2 = JSON.parse(localStorage.getItem("portariasDeptCompletas") || "{}");
-const portariasDept = [];
-
-dadosDept.forEach(d=>{
-  const tr=document.createElement("tr");
-
-  tr.innerHTML =
-    "<td class='arq'><span class='num'>Portaria nº "+d.n+"</span><br>"+
-      "<span class='status-badge pendente'>Pendente</span><br>"+
-      "<span style='font-size:13px;color:#555;'>"+d.chefia+"</span></td>"+
-    "<td><div class='texto-container'>"+
-      "<div class='texto-titulo'>"+
-        "<div class='texto-titulo-text'>"+gerarTituloDept(d)+"</div>"+
-        "<button class='copy copy-titulo' style='flex-shrink:0;'>Copiar texto</button>"+
-      "</div>"+
-      "<div class='texto-corpo'>"+
-        "<div class='texto-corpo-text'>"+gerarTextoDept(d)+"</div>"+
-        "<button class='copy copy-corpo' style='flex-shrink:0;'>Copiar texto</button>"+
-      "</div>"+
-    "</div></td>";
-
-  const statusBadge = tr.querySelector(".status-badge");
-  const btnTitulo = tr.querySelector(".copy-titulo");
-  const btnCorpo = tr.querySelector(".copy-corpo");
-  const textoTitulo = tr.querySelector(".texto-titulo-text");
-  const textoCorpo = tr.querySelector(".texto-corpo-text");
-
-  if(estadoSalvo2[d.n]){
-    statusBadge.textContent = "Concluído";
-    statusBadge.classList.remove("pendente");
-    statusBadge.classList.add("concluido");
-  }
-
-  const portaria = {
-    numero: d.n,
-    statusBadge: statusBadge,
-    btnTitulo: btnTitulo,
-    btnCorpo: btnCorpo,
-    textoTitulo: textoTitulo,
-    textoCorpo: textoCorpo,
-    clicouTitulo: false,
-    clicouCorpo: false
-  };
-
-  portariasDept.push(portaria);
-  tbody2.appendChild(tr);
-});
-
-function atualizarBarraProgresso2(){
-  const concluidas = Object.keys(estadoSalvo2).length;
-  const total = dadosDept.length;
-  const percentual = Math.round((concluidas / total) * 100);
-  document.getElementById("progresso-fill2").style.width = percentual + "%";
-  document.getElementById("progresso-texto2").textContent = concluidas + "/" + total;
-  document.getElementById("progresso-percentual2").textContent = percentual + "%";
-}
-
-function marcarConcluida2(portaria){
-  portaria.statusBadge.textContent = "Concluído";
-  portaria.statusBadge.classList.remove("pendente");
-  portaria.statusBadge.classList.add("concluido");
-  estadoSalvo2[portaria.numero] = true;
-  localStorage.setItem("portariasDeptCompletas", JSON.stringify(estadoSalvo2));
-  atualizarBarraProgresso2();
-}
-
-portariasDept.forEach((portaria, indice)=>{
-  const d = dadosDept[indice];
-
-  portaria.btnTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloDeptPlano(d));
-    portaria.clicouTitulo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida2(portaria); }
-  });
-
-  portaria.btnCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoDeptPlano(d));
-    portaria.clicouCorpo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida2(portaria); }
-  });
-
-  portaria.textoTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloDeptPlano(d));
-    portaria.clicouTitulo = true;
-    portaria.btnTitulo.classList.add("copiado");
-    setTimeout(()=>portaria.btnTitulo.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida2(portaria); }
-  });
-
-  portaria.textoCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoDeptPlano(d));
-    portaria.clicouCorpo = true;
-    portaria.btnCorpo.classList.add("copiado");
-    setTimeout(()=>portaria.btnCorpo.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida2(portaria); }
-  });
-});
-
-atualizarBarraProgresso2();
-
-document.getElementById("limparProgresso2").addEventListener("click",function(){
-  if(confirm("Tem certeza que deseja limpar todo o progresso desta seção?")){
-    localStorage.removeItem("portariasDeptCompletas");
-    location.reload();
-  }
-});
-
-document.getElementById("busca2").addEventListener("input",function(){
-  const q=this.value.toLowerCase();
-  document.querySelectorAll("#tabela2 tbody tr").forEach(tr=>{
-    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
-  });
-});
+renderPortarias();
 </script>
 </body>
 </html>
