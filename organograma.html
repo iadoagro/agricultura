@@ -10,10 +10,10 @@
 :root{--purple:#7030a0;--yellow:#ffc000;--blue:#4472c4;--green:#70ad47;--orange:#ed7d31;--line:#111827;--ink:#1f2933;--panel:#fff;--border:#cfd6dc;--verde:#1b5e20;--verde2:#2e7d32;--radius:6px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,Helvetica,sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column;background:#f3f5f0;color:var(--ink)}
-.topbar{height:54px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.topbar{height:54px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;background:linear-gradient(135deg,var(--verde),var(--verde2));border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
 .topbar__title{display:grid;line-height:1;text-transform:uppercase;white-space:nowrap}
-.topbar__title span{font-size:11px;letter-spacing:.5px;color:#2f3a45}
-.topbar__title strong{color:#229142;font-size:24px}
+.topbar__title span{font-size:11px;letter-spacing:.5px;color:rgba(255,255,255,0.85)}
+.topbar__title strong{color:#fff;font-size:24px}
 .toolbar{display:flex;align-items:center;gap:6px}
 .tool-button,.icon-button{border:1px solid #b7c0c8;background:#fff;color:#1f2933;cursor:pointer;border-radius:var(--radius);min-height:32px;transition:background .16s,transform .16s}
 .tool-button{display:inline-flex;align-items:center;gap:5px;padding:0 10px;font-size:12px;font-weight:700}
@@ -236,6 +236,7 @@ const RAW=[
 ["divpi","deprof","divisao","green","Divisão de Produção Indígena","Adriano Dias\nPortaria Nº 107/2023",5370596,2553577,232615,162000,189000],
 ["divpf","deprof","divisao","green","Divisão de Produção Familiar","Wally Stanley\nPortaria Nº 245/2026",5617138,2553577,232616,162000,189000],
 ["disbio","deprof","divisao","green","Divisão de Sociobiodiversidade","Eneide Thaumaturgo\nPortaria Nº 246/2026",5871698,2554074,232598,158307,228600],
+["divrsa","deprof","divisao","green","Divisão de Remuneração de Serviços Ambientais","",6124000,2554074,232615,162000,189000],
 ["divma","dem","divisao","green","Divisão de Manutenção de Equipamentos","",6380930,2557225,232615,162000,189000],
 ["diveo","dem","divisao","green","Divisão de Escoamento e Operações","",6627248,2558014,232615,162000,189000],
 ["nap","diis","nucleo","green","Núcleo de Apoio Logístico","Antônio José\nPortaria Nº 198/2026",2804203,3181082,235004,162000,232615],
