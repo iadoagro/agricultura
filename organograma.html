@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Organograma SEAGRI 2026</title>
 <link rel="stylesheet" href="organograma.css">
+<style>
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body { overflow: visible; height: auto; background: #fff; }
+  .topbar, .nav-row, .tooltip, .toast, .filter-panel, .detail-panel { display: none !important; }
+  .viewport { overflow: visible; position: static; width: 100%; height: auto; background: none; cursor: default; }
+  .canvas { position: static; transform: none !important; width: 100% !important; height: auto !important; box-shadow: none; overflow: visible; }
+  .line-layer { width: 100% !important; height: 100% !important; }
+}
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -15,11 +25,13 @@
     <strong>Agricultura</strong>
   </div>
   <div class="toolbar">
+    <button class="tool-button" id="btnFilter" type="button">&#128269; Filtros</button>
     <button class="tool-button" id="btnExpand" type="button">+ Expandir</button>
     <button class="tool-button" id="btnCollapse" type="button">&minus; Recolher</button>
-    <button class="tool-button" id="btnFit" type="button">&square; Ajustar</button>
+    <button class="tool-button" id="btnFit" type="button">&#x21BB; Redefinir</button>
     <button class="tool-button" id="btnJPG" type="button">&#128247; JPG</button>
     <button class="tool-button" id="btnPDF" type="button">&#128196; PDF</button>
+    <button class="tool-button" id="btnPrint" type="button">&#128424; Imprimir</button>
     <button class="icon-button" id="btnZoomOut" type="button">&minus;</button>
     <input id="zoomRange" class="zoom-range" type="range" min="20" max="150" step="5" value="70">
     <button class="icon-button" id="btnZoomIn" type="button">+</button>
@@ -35,8 +47,17 @@
     <span><i class="swatch" style="background:#70ad47"></i>DPA</span>
     <span><i class="swatch" style="background:#ed7d31"></i>DPTEC</span>
   </div>
-  <span style="color:#888;margin-left:auto">Scroll para zoom &middot; Clique e arraste para mover &middot; Clique na caixa para baixar a portaria &middot; Clique em &minus;/+ para expandir/recolher</span>
+  <span style="color:#888;margin-left:auto">Scroll para zoom &middot; Clique e arraste para mover &middot; Clique na caixa para ver detalhes &middot; Clique em &minus;/+ para expandir/recolher</span>
 </nav>
+<div class="main-row">
+<aside class="filter-panel" id="filterPanel">
+  <div class="detail-header">
+    <span class="detail-kind-badge" style="background:var(--verde)">Filtros</span>
+    <button class="detail-close" id="filterClose" type="button" title="Fechar">&#10005;</button>
+  </div>
+  <div class="detail-title" style="font-size:13px">Exibir no organograma</div>
+  <div id="filterContent" style="padding:4px 0 16px"></div>
+</aside>
 <div class="viewport" id="viewport">
   <div class="canvas" id="canvas">
     <img class="watermark" src="LOGO GOVERNO DO ACRE 2023-2026 brasão.png" alt="">
@@ -44,6 +65,15 @@
     <div class="slide-brand"><span>Secretaria de Estado da</span><strong>Agricultura</strong></div>
     <div class="source-note">Portaria SEAGRI N&ordm; 187/2026</div>
   </div>
+</div>
+<aside class="detail-panel" id="detailPanel">
+  <div class="detail-header">
+    <span class="detail-kind-badge" id="detailKind"></span>
+    <button class="detail-close" id="detailClose" type="button" title="Fechar">&#10005;</button>
+  </div>
+  <div class="detail-title" id="detailTitle"></div>
+  <div class="detail-body" id="detailBody"></div>
+</aside>
 </div>
 <div class="tooltip" id="tooltip"></div>
 <script>
@@ -124,6 +154,94 @@ const PORTARIA_PDF={
   "244/2026":"portarias/portarias 2026/Portaria 244-246 - Josicley, Wally, Eneide.pdf",
   "245/2026":"portarias/portarias 2026/Portaria 244-246 - Josicley, Wally, Eneide.pdf",
   "246/2026":"portarias/portarias 2026/Portaria 244-246 - Josicley, Wally, Eneide.pdf"
+};
+
+// Matrícula por setor
+const MATRICULAS={
+  "sec":"",
+  "gab":"9610286-3",
+  "secad":"",
+  "gabsecad":"9592083-2",
+  "ci":"9557385-3",
+  "conjur":"9595716-2",
+  "ascom":"9206370-3",
+  "ouvid":"9507540-2",
+  "daf":"",
+  "dpa":"",
+  "dptec":"",
+  "del":"9470700-3",
+  "deg":"9608990-1",
+  "deplan":"9095012-5",
+  "deof":"9072837-11",
+  "disg":"9610944-2",
+  "dipm":"73725-1",
+  "diarp":"",
+  "dirh":"212598-1",
+  "dit":"",
+  "dimt":"9617973-2",
+  "dicompras":"9128123-5",
+  "dicon":"9572350-4",
+  "dipro":"9683477-1",
+  "dimon":"9332154-1",
+  "dif":"9612114-4",
+  "dic":"9572350-4",
+  "desan":"9348476-1",
+  "deagro":"9353720-1",
+  "deprof":"9094393-3",
+  "dem":"9610499-3",
+  "diis":"9508643-3",
+  "disan":"9310690-2",
+  "dia":"9249362-2",
+  "dipec":"",
+  "divpi":"",
+  "divpf":"9109595-4",
+  "disbio":"9182152-3",
+  "nap":"201278-1",
+  "ncaf":"291978-1",
+  "npolo":"150304-1",
+  "npaa":"9353674-1",
+  "npaai":"9111476-2",
+  "npaaex":"9626867-2",
+  "nucaf":"9312480-2",
+  "nuars":"9249362-2",
+  "nuapes":"9213317-1",
+  "nuav":"9626816-1",
+  "nuspi":"9098879-9",
+  "nucac":"9628576-1",
+  "numel":"9086870-6",
+  "numan":"265101-2",
+  "nuole":"9610936-3",
+  "nuex":"71153-1",
+  "det":"9617973-2",
+  "depi":"9213880-1",
+  "digt":"9189599-9",
+  "disoft":"9617230-1",
+  "ditt":"9683836-1",
+  "dipa":"9683477-1",
+  "dicp":"9626867-2",
+  "el-acld":"9407456-4",
+  "el-abl":"",
+  "el-bli":"",
+  "el-bjri":"9624643-2",
+  "el-cpxb":"",
+  "el-czs":"189391-2",
+  "el-ept":"263176-3",
+  "el-fjo":"9304762-2",
+  "el-pdht":"9102337-8",
+  "el-joao":"9470271-3",
+  "el-mli":"",
+  "el-mlu":"9334947-3",
+  "el-mlto":"9334866-2",
+  "el-poac":"9102337-8",
+  "el-pcy":"9235701-5",
+  "el-pwtr":"",
+  "el-rbo":"",
+  "el-srju":"",
+  "el-smd":"9437509-3",
+  "el-swd":"",
+  "el-tau":"",
+  "el-trcr":"",
+  "el-xpi":""
 };
 
 function getPDFPath(holder){
@@ -234,7 +352,7 @@ const RAW=[
 ["el-xpi","del","escritorio","blue","Escritório Local de Xapuri","Antonio Alves\nPortaria Nº 32/2025",7053032,4430333,481846,135000,135000]
 ];
 
-const nodes=RAW.map(d=>({id:d[0],parent:d[1],kind:d[2],color:d[3],title:d[4],holder:d[5],x:d[6],y:d[7],w:d[8],hh:d[9],bh:d[10]||d[9],sigla:d[0].toUpperCase(),children:[]}));
+const nodes=RAW.map(d=>({id:d[0],parent:d[1],kind:d[2],color:d[3],title:d[4],holder:d[5],x:d[6],y:d[7],w:d[8],hh:d[9],bh:d[10]||d[9],sigla:d[0].toUpperCase(),matricula:MATRICULAS[d[0]]||'',children:[]}));
 const byId=new Map(nodes.map(n=>[n.id,n]));
 nodes.forEach(n=>{if(n.parent&&byId.has(n.parent))byId.get(n.parent).children.push(n.id)});
 
@@ -257,7 +375,23 @@ function hasCollapsedAncestor(n){
   while(p){if(collapsed.has(p))return true;p=byId.get(p)?.parent}
   return false;
 }
-function isVisible(n){return!hasCollapsedAncestor(n)}
+const selectedKinds=new Set();
+const selectedNodes=new Set();
+let filterVisible=null;
+function computeFilterVisible(){
+  if(selectedKinds.size===0&&selectedNodes.size===0){filterVisible=null;return;}
+  const vis=new Set();
+  nodes.forEach(n=>{
+    if(!selectedKinds.has(n.kind)&&!selectedNodes.has(n.id))return;
+    vis.add(n.id);
+    let p=n.parent?byId.get(n.parent):null;
+    while(p){vis.add(p.id);p=p.parent?byId.get(p.parent):null;}
+    function addDesc(nd){nd.children.forEach(cid=>{const c=byId.get(cid);if(c){vis.add(c.id);addDesc(c);}});}
+    addDesc(n);
+  });
+  filterVisible=vis;
+}
+function isVisible(n){if(hasCollapsedAncestor(n))return false;if(filterVisible===null)return true;return filterVisible.has(n.id);}
 
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 
@@ -279,8 +413,7 @@ function createNode(n){
   el.addEventListener("click",e=>{
     if(e.target.closest(".node-toggle")){e.stopPropagation();toggleNode(n);return}
     e.stopPropagation();
-    if(pdfPath){downloadLink(pdfPath,pdfPath.split("/").pop())}
-    else{showToast("PDF não disponível para este cargo")}
+    openDetailPanel(n,pdfPath);
   });
   el.addEventListener("mouseenter",e=>showTip(e,n));
   el.addEventListener("mousemove",moveTip);
@@ -339,6 +472,155 @@ function moveTip(e){
 }
 function hideTip(){tooltip.classList.remove("show")}
 
+const detailPanel=document.getElementById("detailPanel");
+const KIND_LABEL={secretaria:"Secretaria",diretoria:"Diretoria","secretaria-adjunta":"Secretaria Adjunta",departamento:"Departamento",divisao:"Divisão",nucleo:"Núcleo",escritorio:"Escritório Local",assessoria:"Assessoria",comissao:"Comissão"};
+const KIND_COLOR={secretaria:"#c0392b",diretoria:"#c0392b","secretaria-adjunta":"#ffc000",assessoria:"#ffc000",comissao:"#ffc000",departamento:"#4472c4",divisao:"#70ad47",nucleo:"#ed7d31",escritorio:"#888"};
+
+function makeDetailTreeItem(node){
+  const wrap=document.createElement("div");wrap.className="detail-tree-item";
+  const row=document.createElement("div");row.className="detail-tree-row";
+  const kids=node.children.map(id=>byId.get(id)).filter(Boolean);
+  let childDiv=null;
+  if(kids.length){
+    const tog=document.createElement("button");tog.type="button";tog.className="detail-tree-tog";tog.textContent="▶";
+    childDiv=document.createElement("div");childDiv.className="detail-tree-children";
+    kids.forEach(k=>childDiv.appendChild(makeDetailTreeItem(k)));
+    tog.addEventListener("click",e=>{
+      e.stopPropagation();
+      const open=childDiv.classList.toggle("open");
+      tog.textContent=open?"▼":"▶";
+    });
+    row.appendChild(tog);
+  }else{
+    const sp=document.createElement("span");sp.className="detail-tree-spacer";row.appendChild(sp);
+  }
+  const btn=document.createElement("button");btn.className="detail-nav-btn";
+  const dot=document.createElement("i");dot.className="detail-sub-dot";dot.style.background=KIND_COLOR[node.kind]||"#888";
+  const lbl=document.createElement("span");lbl.textContent=node.title;
+  const arr=document.createElement("span");arr.className="detail-nav-arrow";arr.textContent="→";
+  btn.appendChild(dot);btn.appendChild(lbl);btn.appendChild(arr);
+  btn.addEventListener("click",()=>{panToNode(node);openDetailPanel(node,getPDFPath(node.holder));});
+  row.appendChild(btn);
+  wrap.appendChild(row);
+  if(childDiv)wrap.appendChild(childDiv);
+  return wrap;
+}
+
+function openDetailPanel(n,pdfPath){
+  document.getElementById("detailKind").textContent=KIND_LABEL[n.kind]||n.kind;
+  document.getElementById("detailKind").style.background=KIND_COLOR[n.kind]||'#888';
+  document.getElementById("detailTitle").textContent=n.title;
+
+  const body=document.getElementById("detailBody");
+  body.innerHTML='';
+
+  // Servidor responsável
+  if(n.holder){
+    const sec=makeDetailSection("Servidor responsável","👤");
+    const lines=n.holder.split("\n");
+    // Nome (primeira linha) em destaque
+    const nome=document.createElement("p");
+    nome.className="detail-info-line detail-holder-name";
+    nome.textContent=lines[0].trim();
+    sec.appendChild(nome);
+    // Matrícula logo abaixo do nome
+    if(n.matricula){
+      const mat=document.createElement("p");
+      mat.className="detail-info-line detail-matricula";
+      mat.textContent="Matrícula: "+n.matricula;
+      sec.appendChild(mat);
+    }
+    // Demais linhas (portaria/decreto)
+    lines.slice(1).forEach(line=>{
+      const p=document.createElement("p");p.className="detail-info-line detail-portaria";
+      p.textContent=line.trim();
+      sec.appendChild(p);
+    });
+    body.appendChild(sec);
+  }
+
+  // Vinculado a
+  const parent=n.parent?byId.get(n.parent):null;
+  if(parent){
+    const sec=makeDetailSection("Vinculado a","🔗");
+    const btn=document.createElement("button");
+    btn.className="detail-nav-btn";
+    const dot=document.createElement("i");dot.className="detail-sub-dot";
+    dot.style.background=KIND_COLOR[parent.kind]||'#888';
+    const lbl=document.createElement("span");
+    lbl.textContent=(KIND_LABEL[parent.kind]||parent.kind)+': '+parent.title;
+    const arr=document.createElement("span");arr.className="detail-nav-arrow";arr.textContent="→";
+    btn.appendChild(dot);btn.appendChild(lbl);btn.appendChild(arr);
+    btn.addEventListener("click",()=>{panToNode(parent);openDetailPanel(parent,getPDFPath(parent.holder));});
+    sec.appendChild(btn);
+    body.appendChild(sec);
+  }
+
+  // Setores subordinados (sempre expandidos; cada item tem ▶ para sub-itens)
+  const subs=n.children.map(id=>byId.get(id)).filter(Boolean);
+  if(subs.length){
+    const sec=document.createElement("div");sec.className="detail-section";
+    const secHdr=document.createElement("div");secHdr.className="detail-section-title";
+    secHdr.textContent="🏢 Setores subordinados ("+subs.length+")";
+    sec.appendChild(secHdr);
+    const treeWrap=document.createElement("div");treeWrap.className="detail-tree-wrap";
+    subs.forEach(c=>treeWrap.appendChild(makeDetailTreeItem(c)));
+    sec.appendChild(treeWrap);
+    body.appendChild(sec);
+  }
+
+  // PDF / Portaria / Decreto
+  const decM=n.holder&&n.holder.match(/Decreto\s+N[°oº\.]\s*([\d\.\-P\/]+)/i);
+  if(pdfPath){
+    const sec=makeDetailSection("Portaria","📄");
+    const btn=document.createElement("button");
+    btn.className="detail-pdf-btn";
+    btn.textContent="Baixar portaria";
+    btn.onclick=()=>downloadLink(pdfPath,pdfPath.split("/").pop());
+    sec.appendChild(btn);
+    body.appendChild(sec);
+  }else if(decM){
+    const sec=makeDetailSection("Decreto","📜");
+    const p=document.createElement("p");p.className="detail-info-line detail-portaria";
+    p.textContent="Nomeação por Decreto Nº "+decM[1];
+    sec.appendChild(p);
+    body.appendChild(sec);
+  }
+
+  detailPanel.classList.add("open");
+}
+
+function panToNode(n){
+  const r=rectFor(n);
+  const cx=r.x+r.w/2, cy=r.y+r.h/2;
+  const vr=viewport.getBoundingClientRect();
+  panX=vr.width/2-cx*scale;
+  panY=vr.height/2-cy*scale;
+  applyTransform();
+}
+
+function makeDetailSection(title,icon){
+  const wrap=document.createElement("div");wrap.className="detail-section";
+  const hdr=document.createElement("div");hdr.className="detail-section-title";
+  hdr.textContent=(icon?icon+' ':'')+title;
+  wrap.appendChild(hdr);
+  return wrap;
+}
+
+document.getElementById("detailClose").addEventListener("click",()=>{
+  detailPanel.classList.remove("open");
+});
+document.getElementById("viewport").addEventListener("click",()=>{
+  detailPanel.classList.remove("open");
+});
+const filterPanel=document.getElementById("filterPanel");
+document.getElementById("btnFilter").addEventListener("click",()=>{
+  filterPanel.classList.toggle("open");
+});
+document.getElementById("filterClose").addEventListener("click",()=>{
+  filterPanel.classList.remove("open");
+});
+
 function addPath(d){
   const p=document.createElementNS("http://www.w3.org/2000/svg","path");
   p.setAttribute("d",d);lineLayer.appendChild(p);
@@ -384,15 +666,16 @@ function drawLines(){
     // Draw vertical connections using grouped approach
     if(below.length===0)return;
 
-    // SEC children: individual lines only (no horizontal bar between siblings)
+    // SEC children: individual lines only (no horizontal bar between siblings).
+    // Route the elbow into the gap just ABOVE each child so the short vertical
+    // stub stays in that gap and never runs through the box stacked above it in
+    // the same column (fixes the apparent line between ASCOM/PECAFES and
+    // OUVID/CPPAS). SEC's centre line sits in the clear gutter between columns.
     if(pid==="sec"){
       below.forEach(c=>{
         const cr=rectFor(c);
-        const gap=Math.max(24,cr.top-pr.bottom);
-        const hDist=Math.abs(cr.cx-pr.cx);
-        const ratio=hDist>50?.85:.5;
-        const midY=pr.bottom+gap*ratio;
-        addPath(`M ${pr.cx.toFixed(1)} ${pr.bottom.toFixed(1)} V ${midY.toFixed(1)} H ${cr.cx.toFixed(1)} V ${cr.top.toFixed(1)}`);
+        const branchY=cr.top-Math.min(10,(cr.top-pr.bottom)*.4);
+        addPath(`M ${pr.cx.toFixed(1)} ${pr.bottom.toFixed(1)} V ${branchY.toFixed(1)} H ${cr.cx.toFixed(1)} V ${cr.top.toFixed(1)}`);
       });
       return;
     }
@@ -401,7 +684,9 @@ function drawLines(){
       const cr=rectFor(below[0]);
       const gap=Math.max(24,cr.top-pr.bottom);
       const hDist=Math.abs(cr.cx-pr.cx);
-      const ratio=hDist>50?.85:.5;
+      // When child is far to the side, elbow close to parent so horizontal
+      // segment stays above sibling connector bars in the gap below.
+      const ratio=hDist>50?.15:.5;
       const midY=pr.bottom+gap*ratio;
       addPath(`M ${pr.cx.toFixed(1)} ${pr.bottom.toFixed(1)} V ${midY.toFixed(1)} H ${cr.cx.toFixed(1)} V ${cr.top.toFixed(1)}`);
       return;
@@ -473,6 +758,7 @@ function drawGridLines(pr,children){
 }
 
 function refresh(){
+  computeFilterVisible();
   rendered.forEach((el,id)=>{
     const n=byId.get(id);
     el.classList.toggle("hidden",!isVisible(n));
@@ -587,7 +873,9 @@ normalizeBoxes();
 // visual row (regardless of parent) can now touch/overlap. Push them apart in x-order.
 function resolveRowOverlaps(){
   const minGapPx=6;
+  const crossParentGapPx=20; // larger gap when adjacent nodes have different parents
   const minGapEmu=minGapPx/xPx(1);
+  const crossParentGapEmu=crossParentGapPx/xPx(1);
   const byKind=new Map();
   nodes.forEach(n=>{
     if(!byKind.has(n.kind))byKind.set(n.kind,[]);
@@ -604,7 +892,8 @@ function resolveRowOverlaps(){
       row.list.sort((a,b)=>a.x-b.x);
       for(let i=1;i<row.list.length;i++){
         const prev=row.list[i-1],cur=row.list[i];
-        const needed=prev.x+prev.w+minGapEmu;
+        const gap=prev.parent!==cur.parent?crossParentGapEmu:minGapEmu;
+        const needed=prev.x+prev.w+gap;
         if(cur.x<needed){
           const shift=needed-cur.x;
           for(let j=i;j<row.list.length;j++)row.list[j].x+=shift;
@@ -619,6 +908,35 @@ function resolveRowOverlaps(){
 }
 resolveRowOverlaps();
 
+// Departments (and other internal nodes) can end up positioned off to the side of
+// their own children — so their connector trunk drops down into a SIBLING subtree's
+// children and the two horizontal bars overlap, making it look like one department
+// owns all the divisions. Center each internal node horizontally over the span of
+// its OWN "below" children so every trunk drops into the middle of its own group.
+// Processed deepest-first so children settle before their parent is centered.
+function centerParentsOverChildren(){
+  const depthOf=n=>{let d=0,p=n;while(p&&p.parent){d++;p=byId.get(p.parent)}return d;};
+  const parents=nodes.filter(n=>n.children.length>0&&CENTER_KINDS.has(n.kind));
+  parents.sort((a,b)=>depthOf(b)-depthOf(a));
+  parents.forEach(n=>{
+    const pr=rectFor(n);
+    const below=n.children.map(id=>byId.get(id)).filter(c=>rectFor(c).top>=pr.bottom-5);
+    if(!below.length)return;
+    // Skip the escritórios grid parent (children span the whole width; centering
+    // it would drop it into the middle and overlap sibling departments).
+    if(below.some(c=>c.kind==="escritorio"))return;
+    let minL=Infinity,maxR=-Infinity;
+    below.forEach(c=>{if(c.x<minL)minL=c.x;if(c.x+c.w>maxR)maxR=c.x+c.w;});
+    n.x=(minL+maxR)/2-n.w/2;
+  });
+  nodes.forEach(n=>{
+    const el=rendered.get(n.id);
+    if(el){const r=rectFor(n);el.style.left=r.x+'px';}
+  });
+}
+const CENTER_KINDS=new Set(["departamento","diretoria"]);
+centerParentsOverChildren();
+
 // Box resizing can leave too little vertical room between a parent's bottom edge
 // and its children's top edge, so the connector bar ends up drawn inside the child
 // box instead of in the gap above it. This also happens BETWEEN stacked rows of
@@ -627,7 +945,7 @@ resolveRowOverlaps();
 // row (and everything under it) down as a rigid block until a safe gap is restored.
 // Siblings drawn "beside" the parent (same row as the parent itself) are untouched.
 function fixVerticalGaps(){
-  const MIN_GAP=80;
+  const MIN_GAP=50;
   const ROW_TOL=30;
   const emuPerPx=1/yPx(1);
 
@@ -836,6 +1154,190 @@ document.getElementById("btnPDF").addEventListener("click",()=>{
     pdf.save("Organograma_SEAGRI_2026.pdf");
     btn.disabled=false;btn.innerHTML="&#128196; PDF";
   });
+});
+
+function buildFilterPanel(){
+  const container=document.getElementById('filterContent');
+  container.innerHTML='';
+  const colorMap={purple:'#c0392b',yellow:'#ffc000',blue:'#4472c4',green:'#70ad47',orange:'#ed7d31'};
+
+  // -- Campo de busca --
+  const searchWrap=document.createElement('div');
+  searchWrap.className='filter-search-wrap';
+  const searchInput=document.createElement('input');
+  searchInput.type='text';searchInput.className='filter-search';
+  searchInput.placeholder='Pesquisar setor...';
+  searchWrap.appendChild(searchInput);
+  container.appendChild(searchWrap);
+
+  // -- Seção TIPOS --
+  const kindSec=document.createElement('div');
+  kindSec.className='filter-section';
+  kindSec.innerHTML='<div class="filter-section-title">Tipos</div>';
+  [
+    {kinds:['nucleo'],label:'Núcleos'},
+    {kinds:['escritorio'],label:'Escritórios Locais'},
+    {kinds:['assessoria','secretaria-adjunta','comissao'],label:'Assessorias'},
+  ].forEach(({kinds,label})=>{
+    const count=nodes.filter(n=>kinds.includes(n.kind)).length;
+    const lbl=document.createElement('label');
+    lbl.className='filter-item';
+    const chk=document.createElement('input');
+    chk.type='checkbox';chk.checked=false;
+    lbl.appendChild(chk);
+    lbl.appendChild(document.createTextNode(' '+label+' '));
+    const badge=document.createElement('span');badge.className='filter-count';badge.textContent='('+count+')';
+    lbl.appendChild(badge);
+    chk.addEventListener('change',e=>{
+      kinds.forEach(k=>e.target.checked?selectedKinds.add(k):selectedKinds.delete(k));
+      refresh();
+    });
+    kindSec.appendChild(lbl);
+  });
+  container.appendChild(kindSec);
+
+  // -- Seção ESTRUTURA: árvore com expand/collapse por diretoria --
+  const treeSec=document.createElement('div');
+  treeSec.className='filter-section';
+
+  const masterChk=document.createElement('input');
+  masterChk.type='checkbox';masterChk.checked=false;
+  const hdrLbl=document.createElement('label');
+  hdrLbl.className='filter-section-title filter-section-hdr';
+  hdrLbl.appendChild(masterChk);
+  const dirCount=nodes.filter(n=>n.kind==='diretoria').length;
+  const deptCount=nodes.filter(n=>n.kind==='departamento').length;
+  const divCount=nodes.filter(n=>n.kind==='divisao').length;
+  hdrLbl.appendChild(document.createTextNode(' Estrutura '));
+  const masterBadge=document.createElement('span');masterBadge.className='filter-count';
+  masterBadge.textContent='('+dirCount+' dir · '+deptCount+' dep · '+divCount+' div)';
+  hdrLbl.appendChild(masterBadge);
+  treeSec.appendChild(hdrLbl);
+
+  const treeChks=[];
+  const dirWrappers=[];
+
+  function makeItemLabel(n,level){
+    const lbl=document.createElement('label');
+    lbl.className='filter-item filter-node-item';
+    lbl.style.paddingLeft=(8+level*14)+'px';
+    lbl.title=n.title;
+    const chk=document.createElement('input');
+    chk.type='checkbox';chk.checked=false;
+    const dot=document.createElement('i');dot.className='filter-dot';
+    dot.style.background=colorMap[n.color]||'#888';
+    lbl.appendChild(chk);lbl.appendChild(dot);
+    lbl.appendChild(document.createTextNode(' '+n.sigla));
+    chk.addEventListener('change',()=>{
+      chk.checked?selectedNodes.add(n.id):selectedNodes.delete(n.id);
+      const all=treeChks.every(c=>c.checked),none=treeChks.every(c=>!c.checked);
+      masterChk.checked=all;masterChk.indeterminate=!all&&!none;
+      refresh();
+    });
+    treeChks.push(chk);
+    return lbl;
+  }
+
+  nodes.filter(n=>n.kind==='diretoria').forEach(dir=>{
+    const wrapper=document.createElement('div');
+    wrapper.className='filter-dir-wrapper';
+
+    // Linha da diretoria com botão de expand
+    const dirRow=document.createElement('div');
+    dirRow.className='filter-dir-row';
+
+    const toggleBtn=document.createElement('button');
+    toggleBtn.type='button';toggleBtn.className='filter-tree-toggle';
+    toggleBtn.textContent='▶';toggleBtn.title='Expandir';
+
+    const dirLbl=makeItemLabel(dir,0);
+    dirRow.appendChild(toggleBtn);dirRow.appendChild(dirLbl);
+    wrapper.appendChild(dirRow);
+
+    // Container dos filhos (recolhido por padrão)
+    const childrenDiv=document.createElement('div');
+    childrenDiv.className='filter-dir-children';
+
+    const childItems=[];
+    dir.children.map(id=>byId.get(id)).filter(c=>c&&c.kind==='departamento').forEach(dept=>{
+      const deptLbl=makeItemLabel(dept,1);
+      childrenDiv.appendChild(deptLbl);
+      childItems.push({n:dept,lbl:deptLbl});
+      dept.children.map(id=>byId.get(id)).filter(c=>c&&c.kind==='divisao').forEach(div=>{
+        const divLbl=makeItemLabel(div,2);
+        childrenDiv.appendChild(divLbl);
+        childItems.push({n:div,lbl:divLbl});
+      });
+    });
+
+    toggleBtn.addEventListener('click',()=>{
+      const open=childrenDiv.classList.toggle('open');
+      toggleBtn.textContent=open?'▼':'▶';
+      toggleBtn.title=open?'Recolher':'Expandir';
+    });
+
+    wrapper.appendChild(childrenDiv);
+    treeSec.appendChild(wrapper);
+    dirWrappers.push({dir,dirLbl,childrenDiv,toggleBtn,childItems,wrapper});
+  });
+
+  masterChk.addEventListener('change',()=>{
+    treeChks.forEach(chk=>{chk.checked=masterChk.checked;});
+    nodes.filter(n=>['diretoria','departamento','divisao'].includes(n.kind))
+      .forEach(n=>masterChk.checked?selectedNodes.add(n.id):selectedNodes.delete(n.id));
+    masterChk.indeterminate=false;
+    refresh();
+  });
+
+  container.appendChild(treeSec);
+
+  // -- Busca em tempo real --
+  searchInput.addEventListener('input',()=>{
+    const q=searchInput.value.toLowerCase().trim();
+    if(!q){
+      dirWrappers.forEach(({wrapper,childItems,childrenDiv,toggleBtn,dirLbl})=>{
+        wrapper.style.display='';
+        dirLbl.style.display='';
+        childItems.forEach(({lbl})=>lbl.style.display='');
+      });
+      return;
+    }
+    dirWrappers.forEach(({dir,dirLbl,childrenDiv,toggleBtn,childItems,wrapper})=>{
+      const dirMatch=dir.title.toLowerCase().includes(q)||dir.sigla.toLowerCase().includes(q);
+      let anyChild=false;
+      childItems.forEach(({n,lbl})=>{
+        const m=n.title.toLowerCase().includes(q)||n.sigla.toLowerCase().includes(q);
+        lbl.style.display=m?'':'none';
+        if(m)anyChild=true;
+      });
+      wrapper.style.display=(dirMatch||anyChild)?'':'none';
+      if(anyChild){
+        childrenDiv.classList.add('open');
+        toggleBtn.textContent='▼';toggleBtn.title='Recolher';
+      }
+    });
+  });
+}
+buildFilterPanel();
+
+document.getElementById("btnPrint").addEventListener("click",()=>{
+  const canvas=document.getElementById("canvas");
+  const vp=document.getElementById("viewport");
+  // Save current transform
+  const savedTransform=canvas.style.transform;
+  const savedLeft=canvas.style.left;
+  const savedTop=canvas.style.top;
+  // Reset to natural size so @media print renders all nodes correctly
+  canvas.style.transform="scale(1)";
+  canvas.style.left="0px";
+  canvas.style.top="0px";
+  canvas.style.width=CANVAS_W+"px";
+  canvas.style.height=CANVAS_H+"px";
+  window.print();
+  // Restore after print dialog closes
+  canvas.style.transform=savedTransform;
+  canvas.style.left=savedLeft;
+  canvas.style.top=savedTop;
 });
 </script>
 </body>

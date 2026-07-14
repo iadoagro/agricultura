@@ -131,20 +131,25 @@
 </div>
 <script>
 (function(){
-  var SENHA="admin";
+  var H="8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
   var input=document.getElementById("gateSenha");
   var btn=document.getElementById("gateBtn");
   var erro=document.getElementById("gateErro");
   function tentar(){
-    if(input.value===SENHA){
-      document.body.classList.remove("locked");
-      var g=document.getElementById("gate");
-      if(g)g.parentNode.removeChild(g);
-    }else{
-      erro.textContent="Senha incorreta. Tente novamente.";
-      input.value="";
-      input.focus();
-    }
+    var v=input.value;
+    if(!v)return;
+    btn.disabled=true;
+    crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(buf){
+      var hex=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");
+      if(hex===H){
+        document.body.classList.remove("locked");
+        var g=document.getElementById("gate");
+        if(g)g.parentNode.removeChild(g);
+      }else{
+        erro.textContent="Senha incorreta. Tente novamente.";
+        input.value="";input.focus();btn.disabled=false;
+      }
+    });
   }
   btn.addEventListener("click",tentar);
   input.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();tentar();}});
