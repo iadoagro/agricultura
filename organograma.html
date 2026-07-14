@@ -6,6 +6,30 @@
 <title>Organograma SEAGRI 2026</title>
 <link rel="stylesheet" href="organograma.css">
 <style>
+.admin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center}
+.admin-overlay.show{display:flex}
+.admin-box{background:#fff;border-radius:14px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+.admin-box-title{font-size:17px;font-weight:700;color:#212121;margin-bottom:8px}
+.admin-box-desc{font-size:13px;color:#666;margin-bottom:16px;line-height:1.5}
+.admin-pwd{width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;margin-bottom:6px;box-sizing:border-box}
+.admin-pwd:focus{border-color:#2e7d32}
+.admin-errmsg{font-size:12px;color:#c0392b;min-height:18px;margin-bottom:12px}
+.admin-btns{display:flex;gap:8px;justify-content:flex-end}
+.admin-btn-ok{padding:9px 22px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+.admin-btn-ok:hover{background:#1b5e20}
+.admin-btn-cancel{padding:9px 16px;background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer;transition:background .2s}
+.admin-btn-cancel:hover{background:#e0e0e0}
+#btnAdmin.admin-ativo{background:#25d366 !important;color:#fff !important;border-color:#1aab52 !important}
+.detail-wa-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:#25d366;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:background .2s;margin-top:4px}
+.detail-wa-btn:hover{background:#1ebe5c}
+.detail-wa-btn svg{flex-shrink:0}
+.detail-copyable{display:flex;align-items:center;gap:6px}
+.detail-copyable .detail-copy-text{flex:1;min-width:0}
+.detail-copy-btn{flex-shrink:0;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:#aaa;cursor:pointer;border-radius:5px;transition:all .15s;padding:0}
+.detail-copy-btn:hover{background:#e8f5e9;color:#2e7d32}
+.detail-copy-btn:active{transform:scale(.9)}
+.detail-copy-btn.copiado{color:#2e7d32;background:#e8f5e9}
+.detail-copy-btn svg{width:14px;height:14px;pointer-events:none}
 @media print {
   @page { size: A4 landscape; margin: 0; }
   body { overflow: visible; height: auto; background: #fff; }
@@ -32,6 +56,7 @@
     <button class="tool-button" id="btnJPG" type="button">&#128247; JPG</button>
     <button class="tool-button" id="btnPDF" type="button">&#128196; PDF</button>
     <button class="tool-button" id="btnPrint" type="button">&#128424; Imprimir</button>
+    <button class="tool-button" id="btnAdmin" type="button">&#128274; Admin</button>
     <button class="icon-button" id="btnZoomOut" type="button">&minus;</button>
     <input id="zoomRange" class="zoom-range" type="range" min="20" max="150" step="5" value="70">
     <button class="icon-button" id="btnZoomIn" type="button">+</button>
@@ -76,6 +101,18 @@
 </aside>
 </div>
 <div class="tooltip" id="tooltip"></div>
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-box">
+    <div class="admin-box-title">&#128274; Acesso Administrativo</div>
+    <p class="admin-box-desc">Digite a senha para habilitar a exibição de contatos no organograma.</p>
+    <input type="password" id="adminPwdInput" class="admin-pwd" placeholder="Senha">
+    <p class="admin-errmsg" id="adminErr"></p>
+    <div class="admin-btns">
+      <button class="admin-btn-ok" id="adminOk">Entrar</button>
+      <button class="admin-btn-cancel" id="adminCancel">Cancelar</button>
+    </div>
+  </div>
+</div>
 <script>
 const PORTARIA_PDF={
   "04/2023":"portarias/portarias 2023/[015]-5958327_Publicacao.pdf",
@@ -506,6 +543,44 @@ function makeDetailTreeItem(node){
   return wrap;
 }
 
+const COPY_ICON='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M10 1.5H6a.5.5 0 0 0-.5.5v1H4.5A1.5 1.5 0 0 0 3 5v8.5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5V5a1.5 1.5 0 0 0-1.5-1.5h-1V2a.5.5 0 0 0-.5-.5zm.5 2V4h-5v-.5h5zM4.5 5h7a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5z"/></svg>';
+const CHECK_ICON='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 3.5L6 11 2.5 7.5 3.5 6.5 6 9l6.5-6.5z"/></svg>';
+
+function copyText(text,btn){
+  function done(){
+    if(btn){
+      btn.innerHTML=CHECK_ICON;btn.classList.add("copiado");
+      setTimeout(()=>{btn.innerHTML=COPY_ICON;btn.classList.remove("copiado")},1400);
+    }
+    showToast("Copiado!");
+  }
+  function fallback(){
+    try{
+      const ta=document.createElement("textarea");ta.value=text;ta.style.cssText="position:fixed;left:-9999px;opacity:0";
+      document.body.appendChild(ta);ta.focus();ta.select();document.execCommand("copy");ta.remove();
+    }catch(e){}
+    done();
+  }
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(fallback);
+    }else{fallback()}
+  }catch(e){fallback()}
+}
+
+function makeCopyableLine(displayText,copyValue,extraClass){
+  const p=document.createElement("p");
+  p.className="detail-info-line detail-copyable"+(extraClass?" "+extraClass:"");
+  const span=document.createElement("span");
+  span.className="detail-copy-text";span.textContent=displayText;
+  const btn=document.createElement("button");
+  btn.type="button";btn.className="detail-copy-btn";btn.title="Copiar";
+  btn.setAttribute("aria-label","Copiar");btn.innerHTML=COPY_ICON;
+  btn.addEventListener("click",e=>{e.stopPropagation();copyText(copyValue,btn)});
+  p.appendChild(span);p.appendChild(btn);
+  return p;
+}
+
 function openDetailPanel(n,pdfPath){
   document.getElementById("detailKind").textContent=KIND_LABEL[n.kind]||n.kind;
   document.getElementById("detailKind").style.background=KIND_COLOR[n.kind]||'#888';
@@ -518,23 +593,17 @@ function openDetailPanel(n,pdfPath){
   if(n.holder){
     const sec=makeDetailSection("Servidor responsável","👤");
     const lines=n.holder.split("\n");
-    // Nome (primeira linha) em destaque
-    const nome=document.createElement("p");
-    nome.className="detail-info-line detail-holder-name";
-    nome.textContent=lines[0].trim();
-    sec.appendChild(nome);
-    // Matrícula logo abaixo do nome
+    // Nome (primeira linha) em destaque, com ícone de copiar
+    const nomeTxt=lines[0].trim();
+    sec.appendChild(makeCopyableLine(nomeTxt,nomeTxt,"detail-holder-name"));
+    // Matrícula logo abaixo do nome, com ícone de copiar (copia só o número)
     if(n.matricula){
-      const mat=document.createElement("p");
-      mat.className="detail-info-line detail-matricula";
-      mat.textContent="Matrícula: "+n.matricula;
-      sec.appendChild(mat);
+      sec.appendChild(makeCopyableLine("Matrícula: "+n.matricula,n.matricula,"detail-matricula"));
     }
-    // Demais linhas (portaria/decreto)
+    // Demais linhas (portaria/decreto), com ícone de copiar
     lines.slice(1).forEach(line=>{
-      const p=document.createElement("p");p.className="detail-info-line detail-portaria";
-      p.textContent=line.trim();
-      sec.appendChild(p);
+      const txt=line.trim();
+      sec.appendChild(makeCopyableLine(txt,txt,"detail-portaria"));
     });
     body.appendChild(sec);
   }
@@ -584,6 +653,32 @@ function openDetailPanel(n,pdfPath){
     const p=document.createElement("p");p.className="detail-info-line detail-portaria";
     p.textContent="Nomeação por Decreto Nº "+decM[1];
     sec.appendChild(p);
+    body.appendChild(sec);
+  }
+
+  // Contato (admin)
+  if(adminMode){
+    const telefones=loadContatosAdmin();
+    const tel=telefones[n.id]||'';
+    const sec=makeDetailSection("Contato","📞");
+    if(tel){
+      const num=document.createElement("p");
+      num.className="detail-info-line";
+      num.textContent=formatTelDisplay(tel);
+      sec.appendChild(num);
+      const wa=document.createElement("a");
+      wa.className="detail-wa-btn";
+      wa.innerHTML=WA_ICON+"<span>WhatsApp</span>";
+      wa.href=formatWALink(tel);
+      wa.target="_blank";wa.rel="noopener";
+      sec.appendChild(wa);
+    }else{
+      const p=document.createElement("p");
+      p.className="detail-info-line";
+      p.style.color="#999";
+      p.textContent="Sem telefone cadastrado";
+      sec.appendChild(p);
+    }
     body.appendChild(sec);
   }
 
@@ -1323,22 +1418,79 @@ buildFilterPanel();
 document.getElementById("btnPrint").addEventListener("click",()=>{
   const canvas=document.getElementById("canvas");
   const vp=document.getElementById("viewport");
-  // Save current transform
   const savedTransform=canvas.style.transform;
   const savedLeft=canvas.style.left;
   const savedTop=canvas.style.top;
-  // Reset to natural size so @media print renders all nodes correctly
   canvas.style.transform="scale(1)";
   canvas.style.left="0px";
   canvas.style.top="0px";
   canvas.style.width=CANVAS_W+"px";
   canvas.style.height=CANVAS_H+"px";
   window.print();
-  // Restore after print dialog closes
   canvas.style.transform=savedTransform;
   canvas.style.left=savedLeft;
   canvas.style.top=savedTop;
 });
+
+// ===== Admin Mode =====
+let adminMode=sessionStorage.getItem('seagri_admin')==='1';
+const WA_ICON='<svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.002-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
+
+// Telefones vêm do arquivo compartilhado contatos.json (via salvar_contatos.php).
+// Mantém um cache do localStorage para leitura imediata e como fallback offline.
+let CONTATOS_DATA={};
+try{CONTATOS_DATA=JSON.parse(localStorage.getItem('seagri_contatos')||'{}')}catch(e){}
+fetch('salvar_contatos.php',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{
+  if(d&&typeof d==='object'){CONTATOS_DATA=d;try{localStorage.setItem('seagri_contatos',JSON.stringify(d))}catch(e){}}
+}).catch(()=>{});
+function loadContatosAdmin(){return CONTATOS_DATA;}
+function formatWALink(tel){const d=tel.replace(/\D/g,'');if(!d)return'#';return'https://wa.me/'+(d.startsWith('55')&&d.length>=12?d:'55'+d);}
+function formatTelDisplay(tel){const d=tel.replace(/\D/g,'');if(d.length===11)return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return tel;}
+
+function updateAdminBtn(){
+  const btn=document.getElementById('btnAdmin');
+  if(adminMode){btn.textContent='✅ Admin';btn.classList.add('admin-ativo')}
+  else{btn.innerHTML='&#128274; Admin';btn.classList.remove('admin-ativo')}
+}
+updateAdminBtn();
+
+const adminOverlay=document.getElementById('adminOverlay');
+const adminPwdInput=document.getElementById('adminPwdInput');
+const adminErr=document.getElementById('adminErr');
+
+function openAdminModal(){
+  if(adminMode){
+    adminMode=false;
+    sessionStorage.removeItem('seagri_admin');
+    updateAdminBtn();
+    showToast('Modo admin desativado');
+    return;
+  }
+  adminPwdInput.value='';
+  adminErr.textContent='';
+  adminOverlay.classList.add('show');
+  setTimeout(()=>adminPwdInput.focus(),80);
+}
+
+function submitAdminPwd(){
+  if(adminPwdInput.value==='admin'){
+    adminMode=true;
+    sessionStorage.setItem('seagri_admin','1');
+    updateAdminBtn();
+    adminOverlay.classList.remove('show');
+    showToast('Modo admin ativado — clique em uma caixa para ver o contato');
+  }else{
+    adminErr.textContent='Senha incorreta. Tente novamente.';
+    adminPwdInput.value='';
+    adminPwdInput.focus();
+  }
+}
+
+document.getElementById('btnAdmin').addEventListener('click',openAdminModal);
+document.getElementById('adminOk').addEventListener('click',submitAdminPwd);
+document.getElementById('adminCancel').addEventListener('click',()=>adminOverlay.classList.remove('show'));
+adminPwdInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitAdminPwd();if(e.key==='Escape')adminOverlay.classList.remove('show');});
+adminOverlay.addEventListener('click',e=>{if(e.target===adminOverlay)adminOverlay.classList.remove('show');});
 </script>
 </body>
 </html>

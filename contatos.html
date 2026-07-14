@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contatos – SEAGRI</title>
+<script>
+  // Proteção: só acessa quem fez login admin na página inicial
+  if(sessionStorage.getItem('seagri_admin')!=='1'){
+    window.location.replace('index.html');
+  }
+</script>
+<script src="pessoas.js"></script>
+<style>
+:root{
+  --verde:#1b5e20;--verde2:#2e7d32;--verde-claro:#e8f5e9;
+  --azul:#4472c4;--laranja:#ed7d31;--roxo:#c0392b;
+  --amarelo:#ffc000;--cinza:#888;
+  --texto:#212121;--borda:#e0e0e0;--sombra:0 2px 8px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Roboto","Segoe UI",Arial,sans-serif;background:#f5f5f5;color:var(--texto);min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:20px 24px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 8px rgba(27,94,32,.25)}
+.voltar{color:#fff;text-decoration:none;font-size:14px;opacity:.85;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.voltar:hover{opacity:1}
+header h1{font-size:20px;font-weight:500;flex:1}
+.header-stats{font-size:13px;opacity:.8;white-space:nowrap}
+.controles{background:#fff;padding:16px 24px;border-bottom:1px solid var(--borda);display:flex;flex-wrap:wrap;gap:12px;align-items:center;position:sticky;top:0;z-index:10;box-shadow:var(--sombra)}
+.busca{flex:1;min-width:200px;padding:9px 14px 9px 38px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;outline:none;background:#fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.44 1.151a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") 12px center no-repeat}
+.busca:focus{border-color:var(--verde2);background-color:#fff}
+.filtros{display:flex;gap:6px;flex-wrap:wrap}
+.filtro-btn{padding:7px 14px;border:1.5px solid var(--borda);border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;background:#fff;color:#555;transition:all .2s}
+.filtro-btn:hover{border-color:var(--verde2);color:var(--verde2)}
+.filtro-btn.ativo{background:var(--verde);color:#fff;border-color:var(--verde)}
+.filtro-btn[data-grupo="Secretaria"].ativo{background:var(--roxo);border-color:var(--roxo)}
+.filtro-btn[data-grupo="DAF"].ativo{background:var(--azul);border-color:var(--azul)}
+.filtro-btn[data-grupo="DPA"].ativo{background:#388e3c;border-color:#388e3c}
+.filtro-btn[data-grupo="DPTEC"].ativo{background:var(--laranja);border-color:var(--laranja)}
+.filtro-btn[data-grupo="Escritórios Locais"].ativo{background:var(--cinza);border-color:var(--cinza)}
+main{flex:1;padding:24px;max-width:1400px;margin:0 auto;width:100%}
+.grupo-secao{margin-bottom:32px}
+.grupo-titulo{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;padding:6px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:8px;margin-bottom:12px}
+.grupo-titulo.Secretaria{background:var(--roxo)}
+.grupo-titulo.DAF{background:var(--azul)}
+.grupo-titulo.DPA{background:#388e3c}
+.grupo-titulo.DPTEC{background:var(--laranja)}
+.grupo-titulo.Escritórios{background:var(--cinza)}
+.subgrupo-titulo{font-size:12px;font-weight:600;color:#555;margin:16px 0 8px;padding-left:4px;border-left:3px solid #cfcfcf;padding:2px 0 2px 10px;text-transform:uppercase;letter-spacing:.04em}
+.grupo-secao .subgrupo-titulo:first-of-type{margin-top:4px}
+.cards-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:1200px){.cards-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:960px){.cards-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:720px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.cards-grid{grid-template-columns:1fr}}
+.card-contato{background:#fff;border-radius:12px;padding:16px;box-shadow:var(--sombra);border:1.5px solid var(--borda);transition:border-color .2s}
+.card-contato:hover{border-color:#bbb}
+.card-nome{font-size:15px;font-weight:600;color:var(--texto);margin-bottom:2px}
+.card-setor{font-size:12px;color:#666;margin-bottom:12px;line-height:1.4}
+.campo-tel{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.campo-tel .input-tel{min-width:120px}
+.input-tel{flex:1;padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;color:var(--texto);background:#fff}
+.input-tel:focus{border-color:var(--verde2)}
+.input-tel.salvo{border-color:#66bb6a}
+.input-tel:disabled,.input-tel.locked{background:#f5f5f5;color:#333;border-color:#e0e0e0;cursor:default}
+.btn-salvar{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:var(--verde2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
+.btn-salvar:hover{background:var(--verde)}
+.btn-salvar:disabled{background:#a5c7a7;cursor:default}
+.btn-salvar.oculto{display:none}
+.btn-editar{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0;background:#fff;color:#666;border:1.5px solid var(--borda);border-radius:8px;cursor:pointer;transition:all .2s;padding:0}
+.btn-editar:hover{border-color:var(--verde2);color:var(--verde2);background:var(--verde-claro)}
+.btn-editar.oculto{display:none}
+.btn-editar svg{width:16px;height:16px;pointer-events:none}
+.btn-wa{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:#25d366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .2s}
+.btn-wa:hover{background:#1ebe5c}
+.btn-wa.oculto{display:none}
+.sem-resultado{text-align:center;color:#999;padding:48px 16px;font-size:15px}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999}
+.toast.show{opacity:1}
+@media(max-width:600px){
+  header{padding:16px}
+  header h1{font-size:16px}
+  .controles{padding:12px 16px}
+  main{padding:16px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="voltar" href="index.html">&#8592; Menu</a>
+  <h1>&#128222; Contatos dos Servidores</h1>
+  <span class="header-stats" id="statsLabel"></span>
+</header>
+<div class="controles">
+  <input class="busca" id="busca" type="search" placeholder="Buscar por nome ou setor...">
+  <div class="filtros">
+    <button class="filtro-btn ativo" data-grupo="">Todos</button>
+    <button class="filtro-btn" data-grupo="Secretaria">Secretaria</button>
+    <button class="filtro-btn" data-grupo="DAF">DAF</button>
+    <button class="filtro-btn" data-grupo="DPA">DPA</button>
+    <button class="filtro-btn" data-grupo="DPTEC">DPTEC</button>
+    <button class="filtro-btn" data-grupo="Escritórios Locais">Escritórios</button>
+  </div>
+</div>
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+<script>
+const LS_KEY='seagri_contatos';
+const API='salvar_contatos.php';
+const PENCIL_ICON='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>';
+
+function loadLocal(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}')}catch(e){return{}}}
+function mirrorLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(contatos))}catch(e){}}
+
+// Salva no servidor (arquivo contatos.json). Retorna Promise.
+function salvarServidor(id,tel){
+  return fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id:id,telefone:tel})
+  }).then(r=>r.json());
+}
+
+function formatWA(tel){
+  const d=tel.replace(/\D/g,'');
+  if(!d)return null;
+  return'https://wa.me/'+(d.startsWith('55')&&d.length>=12?d:'55'+d);
+}
+
+function formatDisplay(tel){
+  const d=tel.replace(/\D/g,'');
+  if(d.length===11)return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  if(d.length===10)return`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return tel;
+}
+
+let grupoAtivo='',buscaAtiva='';
+let contatos=loadLocal();
+
+function atualizarStats(){
+  const preenchidos=Object.keys(contatos).filter(k=>contatos[k]).length;
+  document.getElementById('statsLabel').textContent=preenchidos+' de '+SEAGRI_PESSOAS.length+' com telefone';
+}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;clearTimeout(toastTimer);
+  t.classList.add('show');toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function renderCard(p){
+  const card=document.createElement('div');
+  card.className='card-contato';
+  card.dataset.id=p.id;
+  card.dataset.nome=p.nome.toLowerCase();
+  card.dataset.setor=p.setor.toLowerCase();
+  card.dataset.grupo=p.grupo;
+
+  const nome=document.createElement('div');nome.className='card-nome';nome.textContent=p.nome;
+  const setor=document.createElement('div');setor.className='card-setor';setor.textContent=p.setor;
+
+  const campo=document.createElement('div');campo.className='campo-tel';
+  const inp=document.createElement('input');
+  inp.type='tel';inp.className='input-tel';inp.placeholder='(68) 9XXXX-XXXX';
+
+  const btnSalvar=document.createElement('button');
+  btnSalvar.type='button';btnSalvar.className='btn-salvar';btnSalvar.textContent='Salvar';
+
+  const btnEditar=document.createElement('button');
+  btnEditar.type='button';btnEditar.className='btn-editar';btnEditar.title='Editar';
+  btnEditar.setAttribute('aria-label','Editar');btnEditar.innerHTML=PENCIL_ICON;
+
+  const wa=document.createElement('a');
+  wa.className='btn-wa';wa.textContent='WhatsApp';wa.target='_blank';wa.rel='noopener';
+
+  // Modo VISUALIZAÇÃO: input travado, mostra lápis + WhatsApp (se houver número)
+  function modoVisual(){
+    const tel=contatos[p.id]||'';
+    inp.value=tel?formatDisplay(tel):'';
+    inp.disabled=true;inp.classList.add('locked');
+    inp.classList.toggle('salvo',!!tel);
+    btnSalvar.classList.add('oculto');
+    if(tel){
+      btnEditar.classList.remove('oculto');
+      wa.href=formatWA(tel);wa.classList.remove('oculto');
+    }else{
+      // Sem número ainda: continua editável para o primeiro cadastro
+      modoEdicao(false);
+    }
+  }
+
+  // Modo EDIÇÃO: input liberado, mostra botão Salvar, esconde lápis e WhatsApp
+  function modoEdicao(foco){
+    inp.disabled=false;inp.classList.remove('locked');
+    btnSalvar.classList.remove('oculto');
+    btnEditar.classList.add('oculto');
+    wa.classList.add('oculto');
+    if(foco)setTimeout(()=>inp.focus(),0);
+  }
+
+  btnEditar.addEventListener('click',()=>modoEdicao(true));
+
+  function salvar(){
+    const v=inp.value.trim();
+    const digitos=v?v.replace(/\D/g,''):'';
+    btnSalvar.disabled=true;btnSalvar.textContent='Salvando...';
+    salvarServidor(p.id,digitos).then(res=>{
+      if(res&&res.ok){
+        if(digitos)contatos[p.id]=digitos;else delete contatos[p.id];
+        mirrorLocal();
+        atualizarStats();
+        showToast(digitos?'Telefone salvo!':'Telefone removido');
+        modoVisual();
+      }else{
+        showToast('Erro ao salvar: '+((res&&res.erro)||'tente novamente'));
+      }
+    }).catch(()=>{
+      showToast('Erro de conexão ao salvar');
+    }).finally(()=>{
+      btnSalvar.disabled=false;btnSalvar.textContent='Salvar';
+    });
+  }
+
+  btnSalvar.addEventListener('click',salvar);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();salvar();}});
+
+  campo.appendChild(inp);campo.appendChild(btnSalvar);campo.appendChild(btnEditar);campo.appendChild(wa);
+  card.appendChild(nome);card.appendChild(setor);card.appendChild(campo);
+
+  // Estado inicial conforme já exista telefone salvo
+  if(contatos[p.id])modoVisual();else modoEdicao(false);
+  return card;
+}
+
+// Hierarquia igual ao organograma: diretoria › departamento › divisão › núcleo
+const KIND_ORDER=['secretaria','secretaria-adjunta','assessoria','diretoria','departamento','divisao','nucleo','escritorio'];
+const KIND_LABEL={
+  'secretaria':'Secretaria',
+  'secretaria-adjunta':'Secretaria Adjunta',
+  'assessoria':'Assessorias',
+  'diretoria':'Diretoria',
+  'departamento':'Departamentos',
+  'divisao':'Divisões',
+  'nucleo':'Núcleos',
+  'escritorio':'Escritórios Locais'
+};
+
+function render(){
+  const main=document.getElementById('main');
+  main.innerHTML='';
+  const q=buscaAtiva.toLowerCase().trim();
+  const grupos=['Secretaria','DAF','DPA','DPTEC','Escritórios Locais'];
+  const gruposNomes={'Escritórios Locais':'Escritórios'};
+  let totalVisiveis=0;
+
+  grupos.forEach(g=>{
+    if(grupoAtivo&&grupoAtivo!==g)return;
+    const lista=SEAGRI_PESSOAS.filter(p=>{
+      if(p.grupo!==g)return false;
+      if(q&&!p.nome.toLowerCase().includes(q)&&!p.setor.toLowerCase().includes(q))return false;
+      return true;
+    });
+    if(!lista.length)return;
+    totalVisiveis+=lista.length;
+
+    const secao=document.createElement('div');secao.className='grupo-secao';
+    const titulo=document.createElement('div');
+    const cls=g==='Escritórios Locais'?'Escritórios':g;
+    titulo.className='grupo-titulo '+cls;
+    titulo.textContent=(gruposNomes[g]||g)+' ('+lista.length+')';
+    secao.appendChild(titulo);
+
+    // Separa por tipo (diretoria/departamento/divisão/núcleo), como no organograma
+    KIND_ORDER.forEach(kind=>{
+      const doTipo=lista.filter(p=>p.kind===kind);
+      if(!doTipo.length)return;
+      // Só mostra o rótulo do tipo quando o grupo tem mais de um tipo
+      const tiposNoGrupo=new Set(lista.map(p=>p.kind));
+      if(tiposNoGrupo.size>1){
+        const sub=document.createElement('div');sub.className='subgrupo-titulo';
+        sub.textContent=(KIND_LABEL[kind]||kind)+' ('+doTipo.length+')';
+        secao.appendChild(sub);
+      }
+      const grid=document.createElement('div');grid.className='cards-grid';
+      doTipo.forEach(p=>grid.appendChild(renderCard(p)));
+      secao.appendChild(grid);
+    });
+
+    main.appendChild(secao);
+  });
+
+  if(!totalVisiveis){
+    const s=document.createElement('div');s.className='sem-resultado';
+    s.textContent='Nenhuma pessoa encontrada.';main.appendChild(s);
+  }
+  atualizarStats();
+}
+
+document.getElementById('busca').addEventListener('input',e=>{buscaAtiva=e.target.value;render()});
+
+document.querySelectorAll('.filtro-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    grupoAtivo=btn.dataset.grupo;
+    render();
+  });
+});
+
+// Carrega os telefones do servidor (contatos.json). Usa o cache local enquanto carrega.
+render();
+fetch(API,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{
+  if(d&&typeof d==='object'){
+    contatos=d;
+    mirrorLocal();
+    render();
+  }
+}).catch(()=>{/* mantém dados do localStorage */});
+</script>
+</body>
+</html>
