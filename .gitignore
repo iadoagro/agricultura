@@ -1,3 +1,10 @@
 __pycache__/
 *.pyc
 ~$*.xlsx
+
+# Planilhas de origem: contem CPF, telefone, data de nascimento e e-mail.
+# Ficam so na maquina de quem gera os dados. Os arquivos publicados
+# (js/dados-*.js) sao gerados a partir delas ja sem esses campos.
+DEAGRO.xlsx
+mecanizacao26.xlsx
+*.xlsx
