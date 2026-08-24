@@ -5,9 +5,9 @@ Gera js/dados-mecanizacao.js a partir da aba "dados" de mecanizacao26.xlsx.
 Uso (na raiz do projeto):
     python tools/gerar_dados_mecanizacao.py
 
-Somente a aba "dados" e considerada. Campos sensiveis (CPF, telefone,
-data de nascimento, e-mail) NAO sao exportados: o CPF e usado apenas para
-gerar um id anonimo de produtor, que permite contar produtores distintos.
+Somente a aba "dados" e considerada. Dados pessoais sensiveis (numero de CPF,
+telefone, data de nascimento, e-mail) NAO sao lidos nem exportados — nem mesmo
+em forma derivada: produtores distintos sao contados pelo nome normalizado.
 Do e-mail sai so o usuario (o que vem antes do @), que e o "alimentador" —
 quem lancou a linha. E o mesmo rotulo que as abas "Insercoes por ..." da
 planilha usam, e alimenta as abas de insercao do painel (visiveis so ao admin).
@@ -70,22 +70,6 @@ def numero(v):
     n = float(t)
     # sequencias de zeros usadas como preenchimento
     return 0.0 if re.fullmatch(r"0+(\.0+)?", t) else n
-
-
-def pid_cpf(cpf):
-    """Id anonimo e ESTAVEL do produtor, derivado do CPF (FNV-1a de 32 bits,
-    duas passadas combinadas em 53 bits — cabe num Number do JavaScript).
-
-    Precisa ser estavel porque os dados de 2026 e os anos anteriores sao
-    gerados por scripts diferentes: contar produtores distintos no consolidado
-    so funciona se o mesmo CPF virar o mesmo id nos dois arquivos.
-    O mesmo algoritmo esta em js/importar.js — mexeu aqui, mexa la."""
-    def fnv(base):
-        h = base
-        for ch in cpf:
-            h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
-        return h
-    return fnv(2166136261) * 2097152 + (fnv(2166136269) & 0x1FFFFF)
 
 
 def data_iso(v):
@@ -226,7 +210,6 @@ def main():
         "tecnico": idx("Nome do responsável técnico"),
         "produtor": idx("Nome do produtor"),
         "sexo": idx("Sexo"),
-        "cpf": idx("CPF"),
         "civil": idx("Estado Civil"),
         "assoc": idx("Nome da Associação/Cooperativa:"),
         "dap": idx("Possui DAP:"),
@@ -251,9 +234,9 @@ def main():
                 (idx("Quarta cultura"), idx("Área (hectare)", 3), idx("Sistema de Cultivo", 3))]
     DAE_VALORES = [idx("Informe o valor da DAE - %d" % n) for n in range(1, 11)]
 
-    cpfs = {}
+    produtores = set()
     registros = []
-    qualidade = {"cpf_invalido": 0, "sem_data_valida": 0, "vistoria_outro_ano": 0,
+    qualidade = {"sem_data_valida": 0, "vistoria_outro_ano": 0,
                  "sem_geo": 0, "sem_formulario": 0, "acudes_texto": 0}
 
     i_geox, i_geoy = idx("Geo X"), idx("Geo Y")
@@ -262,14 +245,6 @@ def main():
         def v(k):
             j = I[k]
             return r[j] if 0 <= j < len(r) else None   # -1 = coluna ausente
-
-        cpf = texto(v("cpf"))
-        if not re.fullmatch(r"\d{3}\.\d{3}\.\d{3}-\d{2}", cpf) or cpf == "***.***.***-**":
-            qualidade["cpf_invalido"] += 1
-            pid = -1
-        else:
-            pid = pid_cpf(cpf)
-            cpfs[cpf] = pid
 
         # A data de referencia do painel e a de INSERCAO (Carimbo de data/hora):
         # e a unica confiavel na planilha. A Data da Vistoria vai junto, apenas
@@ -307,6 +282,12 @@ def main():
         if not isinstance(bruto_ac, (int, float)) and numero(bruto_ac) > 0:
             qualidade["acudes_texto"] += 1
 
+        # Produtores distintos pelo NOME normalizado — a mesma chave que o
+        # painel usa. Antes vinha do CPF; a coluna nao e mais lida.
+        nome_prod = texto(v("produtor"))
+        if nome_prod:
+            produtores.add(" ".join(sem_acento(nome_prod).lower().split()))
+
         registros.append({
             "d": data,        # data de insercao (Carimbo de data/hora)
             "ex": data[:4],   # exercicio (ano) a que o registro pertence
@@ -317,7 +298,6 @@ def main():
             "rt": norm_tecnico(v("tecnico")),
             "alim": norm_alimentador(v("email"), v("email2")),
             "prod": titulo(texto(v("produtor"))) if texto(v("produtor")).isupper() else texto(v("produtor")),
-            "pid": pid,
             "sexo": rotulo(v("sexo")),
             "ec": norm_estado_civil(v("civil")),
             # "Não" aqui significa "nao possui DAP" — nao pode ser tratado como ausencia
@@ -344,7 +324,7 @@ def main():
         "aba": ABA,
         "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "registros": len(registros),
-        "produtores": len(cpfs),
+        "produtores": len(produtores),
         "periodo": [registros[0]["d"], registros[-1]["d"]] if registros else ["", ""],
         "qualidade": qualidade,
     }

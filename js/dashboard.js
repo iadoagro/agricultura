@@ -205,8 +205,8 @@
   }
 
   /** Identidade do produtor: o NOME, normalizado (sem acento, sem caixa, sem
-      espaço dobrado). Vale para todo mundo, com ou sem CPF — 2025 veio sem a
-      coluna de CPF e 1.349 registros da base não têm CPF utilizável.
+      espaço dobrado). É a única identidade que o painel conhece — documentos
+      pessoais não são lidos da planilha nem publicados nos dados.
       Não usamos nome+imóvel: 209 produtores aparecem com o imóvel grafado de
       formas diferentes (ou em branco num registro e preenchido noutro), o que
       inflava a contagem em 307 pessoas que não existem. */
@@ -1959,7 +1959,6 @@
   /* ======================================================== ABA: REGISTROS */
   function abaRegistros(C) {
     var D = C.D;
-    var comCpf   = D.filter(function (r) { return r.pid >= 0; }).length;
     var comDap   = D.filter(function (r) { return r.dap !== NI; }).length;
     var comPropr = D.filter(function (r) { return r.propr && r.propr !== NI; }).length;
     var comObs   = D.filter(function (r) { return r.obs; }).length;
@@ -1995,8 +1994,6 @@
       /* Quanto do cadastro está de fato preenchido. Antes isso só existia no
          texto da nota, que quase ninguém abre — e não respondia aos filtros. */
       { _sec: 'Qualidade do cadastro' },
-      { rot: 'CPF válido', val: C.pct(comCpf, D.length), cls: 'texto',
-        sub: G.num(D.length - comCpf) + ' registros sem CPF utilizável' },
       { rot: 'DAP informada', val: C.pct(comDap, D.length), cls: 'texto',
         sub: G.num(D.length - comDap) + ' sem resposta sobre DAP' },
       { rot: 'Propriedade informada', val: C.pct(comPropr, D.length), cls: 'texto',
@@ -2948,8 +2945,8 @@
       '<li>' + G.num(semVistoria) + ' registros têm <em>Data da Vistoria</em> impossível ' +
       '(ano digitado errado ou data futura) e entraram pela data de lançamento — ' +
       'aparecem destacados na coluna Vistoria da listagem;</li>' +
-      '<li>' + G.num(somar('cpf_invalido')) + ' registros sem CPF válido; por isso os produtores distintos ' +
-      'são contados pelo <em>nome</em> normalizado, e não pelo CPF;</li>' +
+      '<li>os produtores distintos são contados pelo <em>nome</em> normalizado: ' +
+      'nenhum documento pessoal é lido da planilha nem publicado nos dados do painel;</li>' +
       '<li>' + G.num(somar('sem_geo')) + ' registros sem coordenada geográfica utilizável, por isso não há mapa;</li>' +
       '<li>' + G.num(somar('sem_formulario')) + ' registros sem link do formulário digitalizado.</li>' +
       '</ul>' +
@@ -3278,12 +3275,9 @@
         ['Registros no painel agora', G.num(antes)],
         ['Registros na planilha enviada', G.num(depois)],
         ['Diferença', (novos > 0 ? '+' : '') + G.num(novos) + (novos < 0 ? ' (a planilha tem menos linhas!)' : '')],
-        // é a contagem de CPFs válidos que importar.js sabe fazer; o painel
-        // conta produtores por nome, então rotular "produtores" aqui daria
-        // dois números diferentes para a mesma palavra
-        ['CPFs distintos', G.num(pacote.meta.produtores || 0)],
+        ['Produtores distintos', G.num(pacote.meta.produtores || 0)],
         ['Período de inserção', dataBR(pacote.meta.periodo[0]) + ' a ' + dataBR(pacote.meta.periodo[1])],
-        ['Sem CPF válido', G.num(q.cpf_invalido || 0)]
+        ['Registros sem data válida', G.num(q.sem_data_valida || 0)]
       ].map(function (i) {
         return '<div class="ficha-item"><div class="ficha-rot">' + i[0] + '</div>' +
           '<div class="ficha-val">' + i[1] + '</div></div>';

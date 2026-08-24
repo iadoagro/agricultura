@@ -13,14 +13,13 @@ Por que um arquivo separado do de 2026:
   - a aba "geral" nao tem a mesma estrutura de colunas da aba "dados", e o
     layout das colunas de cultura MUDA de um ano para o outro (ver CULTURAS).
 
-As normalizacoes (escritorio, tecnico, maquinas, implementos, id do produtor)
+As normalizacoes (escritorio, tecnico, maquinas, implementos)
 sao reaproveitadas de gerar_dados_mecanizacao.py para que os dois arquivos
 falem a mesma lingua e o consolidado nao conte a mesma coisa duas vezes.
 """
 import io
 import json
 import os
-import re
 import sys
 from datetime import datetime
 
@@ -42,7 +41,8 @@ NAO_INF = base.NAO_INF
 C = {
     "ano": 0, "carimbo": 1, "email": 2, "email2": 3,
     "escritorio": 4, "vistoria": 5, "tecnico": 6,
-    "produtor": 7, "sexo": 8, "cpf": 9, "civil": 10, "assoc": 13, "dap": 14,
+    # a coluna 9 e o CPF: nao e lida, para que nenhum dado pessoal saia daqui
+    "produtor": 7, "sexo": 8, "civil": 10, "assoc": 13, "dap": 14,
     "municipio": 17, "endereco": 18, "propriedade": 19, "ponto": 20,
     "horas": 21, "maquina": 22, "total_mec": 38, "geox": 39, "geoy": 40,
     "trator": 43, "tipo_trator": 44, "tipo_impl": 45, "nome_impl": 46,
@@ -77,10 +77,10 @@ def main():
     linhas = ws.iter_rows(values_only=True)
     next(linhas)  # cabecalho
 
-    cpfs = set()
+    produtores = set()
     registros = []
     por_ano = {}
-    qualidade = {"cpf_invalido": 0, "sem_data_valida": 0, "vistoria_outro_ano": 0,
+    qualidade = {"sem_data_valida": 0, "vistoria_outro_ano": 0,
                  "sem_geo": 0, "sem_formulario": 0, "fora_do_periodo": 0}
 
     for r in linhas:
@@ -95,14 +95,6 @@ def main():
         def v(k):
             j = C[k]
             return r[j] if j < len(r) else None
-
-        cpf = base.texto(v("cpf"))
-        if not re.fullmatch(r"\d{3}\.\d{3}\.\d{3}-\d{2}", cpf) or cpf == "***.***.***-**":
-            qualidade["cpf_invalido"] += 1
-            pid = -1
-        else:
-            pid = base.pid_cpf(cpf)
-            cpfs.add(cpf)
 
         data = base.data_iso(v("carimbo"))
         vistoria = base.data_iso(v("vistoria"))
@@ -139,6 +131,9 @@ def main():
             qualidade["sem_formulario"] += 1
 
         produtor = base.texto(v("produtor"))
+        # produtores distintos pelo NOME normalizado (antes vinha do CPF)
+        if produtor:
+            produtores.add(" ".join(base.sem_acento(produtor).lower().split()))
         dap = base.texto(v("dap"))
 
         registros.append({
@@ -151,7 +146,6 @@ def main():
             "rt": base.norm_tecnico(v("tecnico")),
             "alim": base.norm_alimentador(v("email"), v("email2")),
             "prod": base.titulo(produtor) if produtor.isupper() else produtor,
-            "pid": pid,
             "sexo": base.rotulo(v("sexo")),
             "ec": base.norm_estado_civil(v("civil")),
             "dap": dap if dap in ("Sim", "Não", "Vencida") else NAO_INF,
@@ -178,7 +172,7 @@ def main():
         "aba": ABA,
         "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "registros": len(registros),
-        "produtores": len(cpfs),
+        "produtores": len(produtores),
         "anos": sorted(por_ano),
         "por_ano": por_ano,
         "qualidade": qualidade,

@@ -148,21 +148,6 @@
     m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
     return m ? m[0].slice(0, 10) : '';
   }
-  /** Id anônimo e ESTÁVEL do produtor, derivado do CPF (FNV-1a de 32 bits, duas
-      passadas combinadas em 53 bits). Precisa casar com o pid_cpf() de
-      tools/gerar_dados_mecanizacao.py: é o que permite contar produtores
-      distintos somando o ano corrente com os exercícios já encerrados. */
-  function pidCpf(cpf) {
-    function fnv(base) {
-      var h = base;
-      for (var i = 0; i < cpf.length; i++) {
-        h = Math.imul(h ^ cpf.charCodeAt(i), 16777619) >>> 0;
-      }
-      return h;
-    }
-    return fnv(2166136261) * 2097152 + (fnv(2166136269) & 0x1FFFFF);
-  }
-
   function normEscritorio(s) {
     s = txt(s).replace(/^Escrit[óo]rio\s+Local\s+(de|da|do)?\s*/i, '');
     var mapa = { transacrena: 'Transacreana', transacreana: 'Transacreana', brasileia: 'Brasiléia' };
@@ -271,7 +256,7 @@
       email: idxOpc('Endereço de e-mail'), email2: idxOpc('Email'),
       escritorio: idx('Escritório Local'),
       vistoria: idx('Data da Vistoria'), tecnico: idx('Nome do responsável técnico'),
-      produtor: idx('Nome do produtor'), sexo: idx('Sexo'), cpf: idx('CPF'),
+      produtor: idx('Nome do produtor'), sexo: idx('Sexo'),
       civil: idx('Estado Civil'), assoc: idx('Nome da Associação/Cooperativa:'),
       dap: idx('Possui DAP:'), municipio: idx('Município:'),
       endereco: idx('Endereço (Projeto de Assentamento/Comunidade, BR/Ramal, Km, nº do lote):'),
@@ -292,21 +277,14 @@
     var DAE = [];
     for (var n = 1; n <= 10; n++) DAE.push(idx('Informe o valor da DAE - ' + n));
 
-    var cpfs = {}, nCpf = 0, registros = [];
-    var qualidade = { cpf_invalido: 0, sem_data_valida: 0, vistoria_outro_ano: 0,
+    /* Produtores distintos pelo NOME normalizado — a mesma chave do painel.
+       A coluna CPF da planilha não é lida: nenhum dado pessoal sensível entra
+       no pacote publicado, nem em forma derivada. */
+    var produtores = Object.create(null), nProd = 0, registros = [];
+    var qualidade = { sem_data_valida: 0, vistoria_outro_ano: 0,
       sem_geo: 0, sem_formulario: 0, acudes_texto: 0 };
 
     dados.forEach(function (r) {
-      var cpf = txt(r[I.cpf]);
-      var pid;
-      if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf) || cpf === '***.***.***-**') {
-        qualidade.cpf_invalido++;
-        pid = -1;
-      } else {
-        if (!(cpf in cpfs)) { cpfs[cpf] = pidCpf(cpf); nCpf++; }
-        pid = cpfs[cpf];
-      }
-
       var data = dataIso(r[I.carimbo]);
       var vistoria = dataIso(r[I.vistoria]);
       if (!data) { data = vistoria; qualidade.sem_data_valida++; }
@@ -329,6 +307,8 @@
       var form = txt(r[I.formulario]);
       if (form.indexOf('http') !== 0) { form = ''; qualidade.sem_formulario++; }
       var prod = txt(r[I.produtor]);
+      var chaveProd = semAcento(prod).toLowerCase().replace(/\s+/g, ' ').trim();
+      if (chaveProd && !(chaveProd in produtores)) { produtores[chaveProd] = 1; nProd++; }
       var dapBruto = txt(r[I.dap]);
 
       registros.push({
@@ -337,7 +317,7 @@
         rt: normTecnico(r[I.tecnico]),
         alim: normAlimentador(I.email < 0 ? '' : r[I.email], I.email2 < 0 ? '' : r[I.email2]),
         prod: ehMaiuscula(prod) ? titulo(prod) : prod,
-        pid: pid, sexo: rotulo(r[I.sexo]), ec: normEstadoCivil(r[I.civil]),
+        sexo: rotulo(r[I.sexo]), ec: normEstadoCivil(r[I.civil]),
         dap: ['Sim', 'Não', 'Vencida'].indexOf(dapBruto) >= 0 ? dapBruto : NI,
         assoc: rotulo(r[I.assoc]), loc: txt(r[I.endereco]), propr: rotulo(r[I.propriedade]),
         cult: cult,
@@ -362,7 +342,7 @@
         gerado_em: pad(agora.getDate()) + '/' + pad(agora.getMonth() + 1) + '/' + agora.getFullYear() +
           ' ' + pad(agora.getHours()) + ':' + pad(agora.getMinutes()),
         registros: registros.length,
-        produtores: nCpf,
+        produtores: nProd,
         periodo: registros.length ? [registros[0].d, registros[registros.length - 1].d] : ['', ''],
         qualidade: qualidade
       },

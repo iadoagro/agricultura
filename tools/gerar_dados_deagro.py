@@ -11,8 +11,9 @@ colunas mudam de significado de uma para outra. Este script normaliza cada aba
 num "conjunto" com chaves curtas e estaveis, que o painel (js/deagro.js) agrega
 sem precisar conhecer o layout original.
 
-Campos sensiveis (CPF, telefone, e-mail) NAO sao exportados — a mesma regra de
-tools/gerar_dados_mecanizacao.py. Nome do produtor e mantido, como no painel da
+Dados pessoais sensiveis (documento de identificacao, telefone, e-mail)
+NAO sao exportados: o numero de CPF e removido ate de campos de texto
+livre — a mesma regra de tools/gerar_dados_mecanizacao.py. Nome do produtor e mantido, como no painel da
 mecanizacao, porque e o que identifica o atendimento.
 """
 import json
@@ -35,6 +36,41 @@ def sem_acento(s):
                    if unicodedata.category(c) != "Mn")
 
 
+# Duas formas de CPF aparecem na planilha, e so essas duas sao removidas:
+# com rotulo ("CPF: NNN.NNN.NNN-NN" ou "cpf NNNNNNNNNNN") e a formatada por
+# inteiro ("NNN.NNN.NNN-NN"). Uma sequencia solta de 11 digitos NAO e tocada:
+# codigos CAR e coordenadas tambem tem digitos em sequencia.
+RE_CPF = re.compile(
+    r"\s*[(\[]?\s*[-–]?\s*(?:"
+    r"C\.?\s?P\.?\s?F\.?\s*n?[º°.:№]*\s*\d{3}\.?\d{3}\.?\d{3}\s?-?\s?\d{2}"
+    r"|\d{3}\.\d{3}\.\d{3}-\d{2}"
+    r")\s*[)\]]?",
+    re.IGNORECASE)
+
+
+def sem_cpf(s):
+    """Remove qualquer CPF (com ou sem o rotulo) de um texto livre.
+
+    A planilha traz CPF no meio de campos descritivos como o cessionario dos
+    silos; nada disso pode chegar ao arquivo publicado. Textos sem CPF voltam
+    intactos — a limpeza nao pode mexer em CAR, CNPJ nem coordenada."""
+    if not RE_CPF.search(s):
+        return s
+    limpo = re.sub(r"\s{2,}", " ", RE_CPF.sub(" ", s))
+    return limpo.strip().strip(" -–,;").strip()
+
+
+def limpar_cpf(o):
+    """Passada final: varre o pacote inteiro antes de gravar."""
+    if isinstance(o, str):
+        return sem_cpf(o)
+    if isinstance(o, list):
+        return [limpar_cpf(i) for i in o]
+    if isinstance(o, dict):
+        return {k: limpar_cpf(v) for k, v in o.items()}
+    return o
+
+
 def texto(v):
     """Valor de celula -> string limpa. '-', 'n/a' e afins viram vazio."""
     if v is None:
@@ -48,7 +84,7 @@ def texto(v):
                                              "nao informado", "nao informada",
                                              "sem informacao"):
         return ""
-    return s
+    return sem_cpf(s)
 
 
 def numero(v):
@@ -613,13 +649,15 @@ dados = {
     "conjuntos": CONJ,
 }
 
+dados = limpar_cpf(dados)
+
 os.makedirs(os.path.dirname(SAIDA), exist_ok=True)
 with open(SAIDA, "w", encoding="utf-8") as f:
     f.write("/* Dados do DEAGRO — SEAGRI/AC\n"
             "   GERADO AUTOMATICAMENTE por tools/gerar_dados_deagro.py\n"
             "   Fonte: %s — %s\n"
             "   Nao editar a mao: rode o script novamente apos atualizar a planilha.\n"
-            "   CPF, telefone e e-mail nao sao exportados. */\n"
+            "   Dados pessoais (documento, telefone, e-mail) nao sao exportados. */\n"
             % (os.path.basename(XLSX), dados["meta"]["gerado_em"]))
     f.write("window.DADOS_DEAGRO = ")
     json.dump(dados, f, ensure_ascii=False, separators=(",", ":"))
