@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEAGRI - Cadastro de Mecaniza&ccedil;&atilde;o 2026</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="theme-color" content="#1b5e20">
+<meta property="og:title" content="SEAGRI &ndash; Cadastro de Mecaniza&ccedil;&atilde;o 2026">
+<meta property="og:description" content="Cadastro interno do formul&aacute;rio de mecaniza&ccedil;&atilde;o 2026.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="../assets/brasao.png">
+<link rel="stylesheet" href="../css/base.css?v=2026081307">
+<link rel="stylesheet" href="../css/cadastro-mecanizacao.css?v=202609052245">
+</head>
+<body>
+
+<header>
+  <a class="voltar-btn" href="mecanizacao-secoes.html?ano=2026">&#8592; Se&ccedil;&otilde;es</a>
+  <h1>Cadastro de Mecaniza&ccedil;&atilde;o 2026</h1>
+  <p>Formul&aacute;rio com as colunas da aba dados</p>
+</header>
+
+<main class="cadastro-wrap">
+  <form class="cadastro-form" id="formMecanizacao" autocomplete="on">
+    <section class="form-card">
+      <div class="form-card-cab">
+        <h2>Dados do formul&aacute;rio</h2>
+      </div>
+      <div class="campos-grid" id="camposMecanizacao"></div>
+    </section>
+
+    <div class="form-acoes">
+      <button class="btn btn-verde" type="submit">Salvar cadastro</button>
+      <button class="btn" id="btnExportarCsv" type="button">Exportar CSV</button>
+      <button class="btn" type="reset">Limpar</button>
+    </div>
+    <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+  </form>
+</main>
+
+<footer>Secretaria de Estado de Agricultura &ndash; SEAGRI / Acre &middot; P&aacute;gina de apoio interno</footer>
+
+<script src="../js/cadastro-mecanizacao.js?v=202609052305"></script>
+</body>
+</html>
