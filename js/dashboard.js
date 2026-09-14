@@ -658,8 +658,7 @@
     if (cfg) { cfg.sel = F.ano.slice(); desenharMulti('fExercicio'); }
     var tit = el('tituloPainel');
     if (tit) {
-      tit.innerHTML = 'Painel da Mecaniza&ccedil;&atilde;o &mdash; ' +
-        (F.ano.length ? G.esc(rotuloAno()) : 'Geral (' + G.esc(rotuloAno()) + ')');
+      tit.textContent = 'SISTEMA';
     }
     atualizarCadastroMecanizacao();
   }

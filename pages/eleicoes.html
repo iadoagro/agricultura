@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SISTEMA</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091406">
+</head>
+<body>
+  <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
+  <main class="eleicoes">
+    <div class="barra-acesso"><a class="voltar" href="index.html">← Página inicial</a><button id="banco-abrir" type="button" hidden>Entrar no banco online</button></div>
+    <div class="area-municipios">
+    <nav class="municipios-lateral" aria-label="Municípios do Acre"><h2>Municípios</h2><div id="municipios-lista"></div></nav>
+    <section class="mapa-card" aria-labelledby="mapa-titulo">
+      <div class="mapa-topo"><div><h2 id="mapa-titulo">Municípios do Acre</h2><p>Clique em um município para abrir os cadastros.</p></div>
+        <label>Selecionar município<select id="municipio"><option value="">Escolha um município</option></select></label>
+      </div>
+      <p id="mapa-status" role="status">Carregando mapa…</p>
+      <svg id="mapa" viewBox="0 0 1000 600" aria-label="Mapa interativo dos municípios do Acre"></svg>
+      <section id="consulta-eleitoral" hidden aria-label="Zonas e seções do município">
+        <h3>Zonas e locais de votação</h3>
+        <div class="filtros-eleitorais">
+          <label>Zona<select id="consulta-zona"><option value="">Todas as zonas</option></select></label>
+          <label>Local de votação<select id="consulta-local"><option value="">Todos os locais</option></select></label>
+          <label>Seção<select id="consulta-secao"><option value="">Todas as seções</option></select></label>
+        </div>
+        <p id="local-detalhes" aria-live="polite"></p>
+        <p class="fonte-eleitoral">Fonte: anexos de locais de votação · 14/09/2026. As seleções filtram os cadastros à direita.</p>
+      </section>
+      <div class="mapa-rodape"><span id="municipio-hover">22 municípios · Acre</span><a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" target="_blank" rel="noopener">Malha municipal: IBGE</a></div>
+    </section>
+  <aside id="painel" aria-labelledby="painel-titulo">
+    <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
+    <form id="cadastro" hidden>
+      <h3>Adicionar cadastro</h3>
+      <label for="nome">Nome</label><input id="nome" name="nome" autocomplete="name" maxlength="160" required>
+      <label for="telefone">Telefone</label><input id="telefone" name="telefone" type="tel" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required>
+      <label for="regional">Regional</label>
+      <select id="regional" name="regional" required>
+        <option value="">Selecione a regional</option>
+        <option>Alto Acre</option><option>Baixo Acre</option><option>Purus</option><option>Tarauacá/Envira</option><option>Juruá</option>
+      </select>
+      <label for="bairro">Bairro</label><input id="bairro" name="bairro" maxlength="120">
+      <label for="zona">Zona eleitoral</label><select id="zona" name="zona" required><option value="">Selecione a zona</option></select>
+      <label for="secao">Seção eleitoral</label><select id="secao" name="secao" required disabled><option value="">Selecione a zona primeiro</option></select>
+      <button class="salvar" type="submit">Salvar cadastro</button>
+      <p id="mensagem" role="status"></p>
+    </form>
+    <section aria-labelledby="lista-titulo"><h3 id="lista-titulo">Cadastros do município</h3><ul id="cadastros"></ul><div id="paginacao" hidden><button id="anterior" type="button" aria-label="Cadastro anterior">←</button><span id="pagina-atual" aria-live="polite"></span><button id="proximo" type="button" aria-label="Próximo cadastro">→</button></div></section>
+  </aside>
+    </div>
+    <p class="aviso" id="aviso-dados">Os cadastros são salvos somente neste navegador.</p>
+  </main>
+  <dialog id="banco-dialogo" aria-labelledby="banco-titulo">
+    <button id="banco-fechar" type="button" aria-label="Fechar acesso ao banco">×</button>
+    <h2 id="banco-titulo">Banco online</h2>
+    <form id="banco-acesso">
+      <p>Entre com a conta autorizada para consultar e salvar os cadastros.</p>
+      <label for="banco-email">E-mail</label><input id="banco-email" name="email" type="email" autocomplete="username" required>
+      <label for="banco-senha">Senha</label><input id="banco-senha" name="senha" type="password" autocomplete="current-password" required>
+      <button type="submit">Entrar</button>
+    </form>
+    <div id="banco-acoes" hidden>
+      <p>Importe os cadastros no mesmo navegador e endereço em que foram criados. A cópia local será preservada.</p>
+      <button id="banco-importar" type="button">Importar cadastros deste navegador</button>
+      <button id="banco-atualizar" type="button">Atualizar cadastros</button>
+      <button id="banco-sair" type="button">Sair do banco online</button>
+    </div>
+    <p id="banco-mensagem" role="status"></p>
+  </dialog>
+  <script src="../js/mapa-acre.js?v=2026091402"></script>
+  <script src="../js/locais-votacao.js?v=2026091405"></script>
+  <script src="../js/banco-config.js?v=2026091406"></script>
+  <script src="../js/banco-eleicoes.js?v=2026091406"></script>
+  <script src="../js/eleicoes.js?v=2026091406"></script>
+</body>
+</html>
