@@ -660,13 +660,6 @@
     if (tit) {
       tit.textContent = 'SISTEMA';
     }
-    atualizarCadastroMecanizacao();
-  }
-
-  function atualizarCadastroMecanizacao() {
-    var a = el('cadastroMecanizacaoBtn');
-    if (!a) return;
-    a.hidden = !(F.ano.length === 1 && F.ano[0] === '2026');
   }
 
   /** Troca o período. Os demais filtros são zerados porque foram escolhidos

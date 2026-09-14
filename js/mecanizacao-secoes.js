@@ -17,7 +17,6 @@
      este endereço nos favoritos sem o parâmetro. */
   if (ano) {
     document.querySelectorAll('#grade .card-link').forEach(function (a) {
-      if (a.id === 'cardCadastroMecanizacao') return;
       a.href = 'dashboard.html#' + a.getAttribute('data-aba') +
         '?ano=' + encodeURIComponent(ano);
     });
@@ -28,7 +27,4 @@
     var voltar = document.querySelector('.voltar-btn');
     if (voltar) voltar.href = 'mecanizacao.html';
   }
-
-  var cadastro = document.getElementById('cardCadastroMecanizacao');
-  if (cadastro) cadastro.hidden = ano !== '2026';
 })();
