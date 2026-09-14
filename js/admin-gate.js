@@ -1,7 +1,7 @@
-/* Tranca a página inteira até o login aprovado, e — para quem não é
-   responsável — até a página estar entre as "paginas" liberadas pra ele.
-   Carregar depois de banco-config.js e admin-auth.js, o mais cedo possível
-   no <head>. */
+/* Tranca a página inteira até o login aprovado, até a senha temporária ser
+   trocada (quando exigido) e — para quem não é responsável — até a página
+   estar entre as "paginas" liberadas pra ele. Carregar depois de
+   banco-config.js e admin-auth.js, o mais cedo possível no <head>. */
 (function () {
   'use strict';
   var auth = window.ADMIN_AUTH;
@@ -22,6 +22,7 @@
   };
   var arquivo = location.pathname.split('/').pop();
   var chave = CHAVES_POR_ARQUIVO[arquivo] || null;
+  var ehTrocaSenha = arquivo === 'admin-trocar-senha.html';
 
   function paraLogin() {
     if (!/(^|\/)admin-login\.html$/.test(location.pathname)) location.replace('admin-login.html');
@@ -29,11 +30,15 @@
   function paraInicio() {
     if (!/(^|\/)index\.html$/.test(location.pathname)) location.replace('index.html');
   }
+  function paraTrocaSenha() {
+    if (!ehTrocaSenha) location.replace('admin-trocar-senha.html');
+  }
   function checar() {
     var sessao = auth.sessaoAtual();
     if (!sessao) { paraLogin(); return; }
     var papel = auth.papel();
     if (papel !== 'responsavel' && papel !== 'aprovado') { paraLogin(); return; }
+    if (auth.deveTrocarSenha()) { paraTrocaSenha(); return; }
     if (chave && !auth.podeAcessar(chave)) { paraInicio(); return; }
   }
   checar();

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SISTEMA</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026091404"></script>
+<script src="../js/admin-gate.js?v=2026091402"></script>
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091405">
+</head>
+<body>
+<header><h1>SISTEMA</h1><p>Trocar senha</p></header>
+<main class="admin-auth">
+  <div class="admin-card">
+    <form id="formTrocar">
+      <p class="admin-desc">Sua conta foi cadastrada com uma senha temporária. Escolha uma nova senha para continuar.</p>
+      <label for="senha1">Nova senha</label>
+      <input id="senha1" type="password" autocomplete="new-password" minlength="6" required>
+      <label for="senha2">Confirmar nova senha</label>
+      <input id="senha2" type="password" autocomplete="new-password" minlength="6" required>
+      <button class="admin-submit" type="submit">Trocar senha</button>
+    </form>
+    <p class="admin-msg" id="adminMsg" role="status"></p>
+  </div>
+</main>
+<script src="../js/admin-trocar-senha.js?v=2026091401"></script>
+</body>
+</html>

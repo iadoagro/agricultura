@@ -6,7 +6,7 @@
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026091404">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091405">
 </head>
 <body>
 <header><h1>SISTEMA</h1><p>Acesso administrativo</p></header>
@@ -19,8 +19,8 @@
     <div id="painelFormularios">
       <form id="formEntrar">
         <p class="admin-desc">Entre com sua conta.</p>
-        <label for="entEmail">E-mail</label>
-        <input id="entEmail" type="email" autocomplete="username" required>
+        <label for="entEmail">E-mail ou usuário</label>
+        <input id="entEmail" type="text" autocomplete="username" required>
         <label for="entSenha">Senha</label>
         <input id="entSenha" type="password" autocomplete="current-password" required>
         <button class="admin-submit" type="submit">Entrar</button>
@@ -28,8 +28,12 @@
       </form>
       <form id="formCadastrar" hidden>
         <p class="admin-desc">Crie sua conta. O acesso fica pendente até o responsável aprovar o cadastro.</p>
-        <label for="cadEmail">E-mail</label>
-        <input id="cadEmail" type="email" autocomplete="username" required>
+        <label for="cadNome">Nome</label>
+        <input id="cadNome" type="text" autocomplete="off" required>
+        <label for="cadSobrenome">Sobrenome</label>
+        <input id="cadSobrenome" type="text" autocomplete="off" required>
+        <label for="cadLogin">Login (gerado automaticamente)</label>
+        <input id="cadLogin" type="text" disabled>
         <label for="cadSenha">Senha</label>
         <input id="cadSenha" type="password" autocomplete="new-password" minlength="6" required>
         <button class="admin-submit" type="submit">Cadastrar</button>
@@ -40,7 +44,7 @@
   </div>
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/admin-auth.js?v=2026091401"></script>
-<script src="../js/admin-login.js?v=2026091402"></script>
+<script src="../js/admin-auth.js?v=2026091404"></script>
+<script src="../js/admin-login.js?v=2026091404"></script>
 </body>
 </html>

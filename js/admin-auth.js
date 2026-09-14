@@ -7,10 +7,35 @@
   const cfg = window.BANCO_CONFIG || {};
   const RESPONSAVEL_EMAIL = 'luansobraldourado5@gmail.com';
   const PAGINAS_PADRAO = ['eleicoes', 'dashboards'];
+  const SENHA_PADRAO = '123456';
+  const DOMINIO_USUARIO = 'sistema.local';
   const online = Boolean(cfg.url || cfg.chavePublica);
   const sessionKey = 'seagri_admin_sessao:' + cfg.url;
   let sessao = null;
   const avisar = () => window.dispatchEvent(new Event('admin-auth-atualizado'));
+
+  // Contas cadastradas pelo responsável usam nome.sobrenome como login, sem
+  // e-mail de verdade por trás — normaliza pra um endereço válido (mesmo
+  // domínio sempre) só pra satisfazer o formato que o Supabase Auth exige.
+  function normalizarParte(s) {
+    return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+  function gerarLogin(nome, sobrenome) {
+    const n = normalizarParte(nome), s = normalizarParte(sobrenome);
+    if (!n || !s) throw new Error('Informe nome e sobrenome.');
+    return n + '.' + s;
+  }
+  // Pra pré-visualizar o login enquanto a pessoa digita, sem travar em campo
+  // incompleto (ao contrário de gerarLogin, que exige nome e sobrenome).
+  function previewLogin(nome, sobrenome) {
+    const n = normalizarParte(nome), s = normalizarParte(sobrenome);
+    return n && s ? n + '.' + s : (n || s || '');
+  }
+  function normalizarEmailLogin(valor) {
+    valor = (valor || '').trim();
+    return valor.indexOf('@') !== -1 ? valor : valor.toLowerCase() + '@' + DOMINIO_USUARIO;
+  }
 
   function configurar() {
     if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(cfg.url || '') || !/^sb_publishable_/.test(cfg.chavePublica || '')) throw new Error('A configuração do banco online está incompleta.');
@@ -44,6 +69,7 @@
         resposta.status === 403 ? 'Esta conta não tem autorização.' :
         resposta.status === 404 ? 'A tabela admin_solicitacoes não existe nesse banco. Rode database/admin.sql no SQL Editor do Supabase.' :
         resposta.status === 422 ? (motivo || 'Não foi possível concluir o cadastro.') :
+        resposta.status === 429 ? 'O Supabase limitou o envio de e-mails por agora (muitos cadastros/redefinições em pouco tempo). Espere um pouco e tente de novo, ou configure um SMTP próprio em Authentication > Settings.' :
         'O banco não concluiu a operação (' + resposta.status + (motivo ? ': ' + motivo : '') + '). Tente novamente.'
       );
     }
@@ -55,18 +81,24 @@
   }
 
   async function buscarPerfil() {
-    if (ehResponsavel(sessao.user.email)) return { papel: 'responsavel', paginas: null, ativo: true };
-    let linha;
-    try {
-      linha = (await requisicao('/rest/v1/admin_solicitacoes?select=status,paginas,ativo&id=eq.' + encodeURIComponent(sessao.user.id)))[0];
-    } catch (e) {
-      // "ativo" pode não existir ainda (database/admin-usuarios.sql não rodou) — segue sem travar o login.
-      linha = (await requisicao('/rest/v1/admin_solicitacoes?select=status,paginas&id=eq.' + encodeURIComponent(sessao.user.id)))[0];
+    if (ehResponsavel(sessao.user.email)) return { papel: 'responsavel', paginas: null, ativo: true, deveTrocarSenha: false };
+    // As colunas "ativo" e "deve_trocar_senha" podem não existir ainda (as
+    // migrações admin-usuarios.sql/admin-troca-senha.sql não rodaram) — cai
+    // pra uma seleção mais simples em vez de travar o login.
+    const tentativas = ['status,paginas,ativo,deve_trocar_senha', 'status,paginas,ativo', 'status,paginas'];
+    let linha, erro;
+    for (let i = 0; i < tentativas.length; i++) {
+      try {
+        linha = (await requisicao('/rest/v1/admin_solicitacoes?select=' + tentativas[i] + '&id=eq.' + encodeURIComponent(sessao.user.id)))[0];
+        erro = null; break;
+      } catch (e) { erro = e; }
     }
+    if (erro) throw erro;
     return {
       papel: (linha && linha.status) || 'pendente',
       paginas: (linha && linha.paginas) || PAGINAS_PADRAO,
-      ativo: !(linha && linha.ativo === false)
+      ativo: !(linha && linha.ativo === false),
+      deveTrocarSenha: Boolean(linha && linha.deve_trocar_senha)
     };
   }
 
@@ -76,23 +108,14 @@
     sessao.papel = perfil.papel;
     sessao.paginas = perfil.paginas;
     sessao.ativo = perfil.ativo;
+    sessao.deveTrocarSenha = perfil.deveTrocarSenha;
     sessionStorage.setItem(sessionKey, JSON.stringify(sessao));
     avisar();
   }
 
-  async function cadastrar(email, senha) {
+  async function entrar(login, senha) {
     configurar();
-    const r = await requisicao('/auth/v1/signup', { method: 'POST', body: JSON.stringify({ email, password: senha }) }, false);
-    if (r && r.access_token) {
-      sessao = { access_token: r.access_token, expires_at: r.expires_at || Math.floor(Date.now() / 1000) + r.expires_in, user: { id: r.user.id, email: r.user.email } };
-      await atualizarStatus();
-      return 'Cadastro criado. Aguarde a aprovação do responsável.';
-    }
-    return 'Cadastro recebido. Confirme seu e-mail e depois entre — o acesso fica pendente até a aprovação do responsável.';
-  }
-
-  async function entrar(email, senha) {
-    configurar();
+    const email = normalizarEmailLogin(login);
     const r = await requisicao('/auth/v1/token?grant_type=password', { method: 'POST', body: JSON.stringify({ email, password: senha }) }, false);
     sessao = { access_token: r.access_token, expires_at: r.expires_at || Math.floor(Date.now() / 1000) + r.expires_in, user: { id: r.user.id, email: r.user.email } };
     try { await atualizarStatus(); }
@@ -130,16 +153,54 @@
     });
   }
 
-  async function cadastrarUsuario(email, senha) {
-    const r = await requisicao('/auth/v1/signup', { method: 'POST', body: JSON.stringify({ email, password: senha }) }, false);
-    const id = (r && r.user && r.user.id) || (r && r.id);
-    if (!id) throw new Error('O banco não retornou o cadastro criado. Tente novamente.');
-    await decidir(id, true);
-    return id;
+  async function definirDeveTrocarSenha(id, valor) {
+    await requisicao('/rest/v1/admin_solicitacoes?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ deve_trocar_senha: valor })
+    });
+  }
+
+  async function chamarPHPPublico(acao, dados) {
+    let resposta;
+    try {
+      resposta = await fetch('../admin_usuarios.php', {
+        method: 'POST', signal: AbortSignal.timeout(20000),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao, ...dados })
+      });
+    } catch (e) { throw new Error('Sem conexão com o servidor. Tente novamente.'); }
+    let corpo = null;
+    try { corpo = await resposta.json(); } catch (e) {}
+    if (!resposta.ok || !corpo || corpo.ok !== true) throw new Error((corpo && corpo.erro) || 'Não foi possível concluir a operação (' + resposta.status + ').');
+    return corpo;
+  }
+
+  async function cadastrarConta(nome, sobrenome, senha) {
+    const login = gerarLogin(nome, sobrenome);
+    const email = login + '@' + DOMINIO_USUARIO;
+    await chamarPHPPublico('autocadastro', { email, senha });
+    await entrar(login, senha);
+    return login;
+  }
+
+  async function cadastrarUsuario(nome, sobrenome, senha) {
+    const login = gerarLogin(nome, sobrenome);
+    const email = login + '@' + DOMINIO_USUARIO;
+    const r = await chamarAdminPHP('criar_usuario', { email, senha: senha || SENHA_PADRAO });
+    if (!r.id) throw new Error('O servidor não retornou o cadastro criado. Tente novamente.');
+    await decidir(r.id, true);
+    try { await definirDeveTrocarSenha(r.id, true); } catch (e) {}
+    return login;
   }
 
   async function redefinirSenha(email) {
     await requisicao('/auth/v1/recover', { method: 'POST', body: JSON.stringify({ email }) }, false);
+  }
+
+  async function alterarPropriaSenha(novaSenha) {
+    await requisicao('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password: novaSenha }) });
+    try { await requisicao('/rest/v1/rpc/confirmar_troca_senha', { method: 'POST', body: '{}' }); } catch (e) {}
+    if (sessao) { sessao.deveTrocarSenha = false; sessionStorage.setItem(sessionKey, JSON.stringify(sessao)); avisar(); }
   }
 
   async function chamarAdminPHP(acao, dados) {
@@ -161,12 +222,13 @@
   async function editarEmail(id, email) { await chamarAdminPHP('editar_email', { id, email }); }
 
   window.ADMIN_AUTH = {
-    online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO,
-    cadastrar, entrar, sair, listarSolicitacoes, decidir, definirPaginas, definirAtivo,
-    cadastrarUsuario, redefinirSenha, excluirUsuario, editarEmail,
+    online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SENHA_PADRAO,
+    cadastrarConta, entrar, sair, listarSolicitacoes, decidir, definirPaginas, definirAtivo, previewLogin,
+    cadastrarUsuario, redefinirSenha, excluirUsuario, editarEmail, alterarPropriaSenha,
     sessaoAtual: () => sessao,
     papel: () => sessao ? sessao.papel : null,
     liberado: () => Boolean(sessao) && (sessao.papel === 'responsavel' || (sessao.papel === 'aprovado' && sessao.ativo !== false)),
+    deveTrocarSenha: () => Boolean(sessao) && Boolean(sessao.deveTrocarSenha),
     podeAcessar: (chave) => {
       if (!sessao) return false;
       if (sessao.papel === 'responsavel') return true;

@@ -49,13 +49,39 @@
     cache = registros; carregado = true; avisar();
   }
   async function salvar(registro) {
-    if (!online) { const dados = local(); dados.push(registro); localStorage.setItem(localKey, JSON.stringify(dados)); return; }
+    if (!online) { const dados = local(); registro._id = crypto.randomUUID(); dados.push(registro); localStorage.setItem(localKey, JSON.stringify(dados)); return; }
     const assinatura = JSON.stringify(registro);
     const id = pendentes.get(assinatura) || crypto.randomUUID();
     pendentes.set(assinatura, id);
     await requisicao('/rest/v1/eleicoes_cadastros?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates' }, body: JSON.stringify({ id, dados: registro }) });
     pendentes.delete(assinatura);
     cache.push({ ...registro, _id: id }); carregado = true; avisar();
+  }
+  async function editar(id, registro) {
+    if (!online) {
+      const dados = local();
+      const idx = dados.findIndex(r => r._id === id);
+      if (idx === -1) throw new Error('Não foi possível encontrar esse cadastro para editar.');
+      registro._id = id;
+      dados[idx] = registro;
+      localStorage.setItem(localKey, JSON.stringify(dados));
+      return;
+    }
+    await requisicao('/rest/v1/eleicoes_cadastros?id=eq.' + encodeURIComponent(id), { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ dados: registro }) });
+    const idx = cache.findIndex(r => r._id === id);
+    if (idx !== -1) cache[idx] = { ...registro, _id: id };
+    avisar();
+  }
+  async function excluir(id) {
+    if (!online) {
+      const dados = local().filter(r => r._id !== id);
+      localStorage.setItem(localKey, JSON.stringify(dados));
+      avisar();
+      return;
+    }
+    await requisicao('/rest/v1/eleicoes_cadastros?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    cache = cache.filter(r => r._id !== id);
+    avisar();
   }
   async function importar() {
     const registros = local(), repetidos = new Map(), lote = [];
@@ -73,7 +99,7 @@
     await atualizar(); return registros.length;
   }
   const banco = window.BANCO_ELEICOES = {
-    online, atualizar, importar, salvar,
+    online, atualizar, importar, salvar, editar, excluir,
     ler() { if (!online) return local(); if (!carregado) throw new Error('Carregando os cadastros do banco online…'); return cache; },
     conectado: () => Boolean(sessao && carregado)
   };

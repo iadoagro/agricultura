@@ -6,9 +6,18 @@
   var aviso = document.getElementById('avisoAcesso');
   var painel = document.getElementById('painelUsuarios');
   var formNovo = document.getElementById('formNovo');
+  var novoNome = document.getElementById('novoNome');
+  var novoSobrenome = document.getElementById('novoSobrenome');
+  var novoLogin = document.getElementById('novoLogin');
+  var DOMINIO_USUARIO = '@sistema.local';
+
+  function atualizarPreviaLogin() { novoLogin.value = auth.previewLogin(novoNome.value, novoSobrenome.value); }
+  novoNome.addEventListener('input', atualizarPreviaLogin);
+  novoSobrenome.addEventListener('input', atualizarPreviaLogin);
 
   function escapar(s) { return s.replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }); }
   function rotuloStatus(s) { return s === 'pendente' ? 'Pendente' : s === 'aprovado' ? 'Aprovado' : 'Recusado'; }
+  function mostrarLogin(email) { return email.toLowerCase().endsWith(DOMINIO_USUARIO) ? email.slice(0, -DOMINIO_USUARIO.length) : email; }
 
   function render(linhas) {
     linhas = linhas.filter(function (l) { return l.email.toLowerCase() !== auth.RESPONSAVEL_EMAIL; });
@@ -28,10 +37,10 @@
           : '<button type="button" class="ativar" data-acao="ativar">Reativar</button>');
       }
       botoes.push('<button type="button" class="redefinir" data-acao="redefinir">Redefinir senha</button>');
-      botoes.push('<button type="button" class="editar" data-acao="editar">Editar e-mail</button>');
+      botoes.push('<button type="button" class="editar" data-acao="editar">Editar login/e-mail</button>');
       botoes.push('<button type="button" class="excluir" data-acao="excluir">Excluir</button>');
       li.innerHTML =
-        '<div class="sol-info"><strong>' + escapar(l.email) + '</strong>' +
+        '<div class="sol-info"><strong>' + escapar(mostrarLogin(l.email)) + '</strong>' +
         '<span><span class="sol-status ' + l.status + '">' + rotuloStatus(l.status) + '</span> ' +
         '<span class="sol-status ' + (ativo ? 'ativo' : 'inativo') + '">' + (ativo ? 'Ativo' : 'Desativado') + '</span></span></div>' +
         '<div class="sol-acoes" data-id="' + l.id + '" data-email="' + escapar(l.email) + '">' + botoes.join('') + '</div>';
@@ -51,13 +60,18 @@
     else if (acao === 'recusar') tarefa = function () { return auth.decidir(id, false).then(function () { return 'Cadastro recusado.'; }); };
     else if (acao === 'ativar') tarefa = function () { return auth.definirAtivo(id, true).then(function () { return 'Usuário reativado.'; }); };
     else if (acao === 'desativar') tarefa = function () { return auth.definirAtivo(id, false).then(function () { return 'Usuário desativado.'; }); };
-    else if (acao === 'redefinir') tarefa = function () { return auth.redefinirSenha(email).then(function () { return 'E-mail de redefinição de senha enviado para ' + email + '.'; }); };
-    else if (acao === 'editar') {
-      var novoEmail = window.prompt('Novo e-mail para ' + email + ':', email);
-      if (!novoEmail || novoEmail === email) return;
-      tarefa = function () { return auth.editarEmail(id, novoEmail.trim()).then(function () { return 'E-mail atualizado.'; }); };
+    else if (acao === 'redefinir') {
+      if (email.toLowerCase().endsWith(DOMINIO_USUARIO)) { msg.textContent = 'Esse login não tem e-mail de verdade — peça pro responsável excluir e cadastrar de novo se precisar trocar a senha.'; msg.className = 'admin-msg erro'; return; }
+      tarefa = function () { return auth.redefinirSenha(email).then(function () { return 'E-mail de redefinição de senha enviado para ' + email + '.'; }); };
+    } else if (acao === 'editar') {
+      var atual = mostrarLogin(email);
+      var novo = window.prompt('Novo login (nome.sobrenome) ou e-mail para ' + atual + ':', atual);
+      if (!novo || novo === atual) return;
+      novo = novo.trim();
+      var novoEmail = novo.indexOf('@') !== -1 ? novo : novo.toLowerCase() + DOMINIO_USUARIO;
+      tarefa = function () { return auth.editarEmail(id, novoEmail).then(function () { return 'Login/e-mail atualizado.'; }); };
     } else if (acao === 'excluir') {
-      if (!window.confirm('Excluir a conta de ' + email + ' de vez? Essa ação não pode ser desfeita.')) return;
+      if (!window.confirm('Excluir a conta de ' + mostrarLogin(email) + ' de vez? Essa ação não pode ser desfeita.')) return;
       tarefa = function () { return auth.excluirUsuario(id).then(function () { return 'Usuário excluído.'; }); };
     } else return;
 
@@ -72,10 +86,10 @@
     e.preventDefault();
     var botao = formNovo.querySelector('button'); botao.disabled = true;
     msg.textContent = 'Aguarde…'; msg.className = 'admin-msg';
-    var email = document.getElementById('novoEmail').value.trim();
-    var senha = document.getElementById('novaSenha').value;
-    auth.cadastrarUsuario(email, senha)
-      .then(function () { msg.textContent = 'Usuário cadastrado e aprovado.'; formNovo.reset(); carregar(); })
+    var nome = novoNome.value.trim();
+    var sobrenome = novoSobrenome.value.trim();
+    auth.cadastrarUsuario(nome, sobrenome)
+      .then(function (login) { msg.textContent = 'Usuário cadastrado e aprovado. Login: ' + login + ' — senha: ' + auth.SENHA_PADRAO + '. Informe pra pessoa; ela vai ser obrigada a trocar no primeiro acesso.'; formNovo.reset(); novoLogin.value = ''; carregar(); })
       .catch(function (err) { msg.textContent = err.message; msg.className = 'admin-msg erro'; })
       .finally(function () { botao.disabled = false; });
   });

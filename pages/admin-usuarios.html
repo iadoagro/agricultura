@@ -6,7 +6,7 @@
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026091404">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091405">
 </head>
 <body>
 <header><h1>SISTEMA</h1><p>Usuários</p></header>
@@ -15,11 +15,13 @@
     <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável.</p>
     <div id="painelUsuarios">
       <form id="formNovo">
-        <p class="admin-desc">Cadastrar um novo usuário já aprovado (não passa pela fila de pendentes).</p>
-        <label for="novoEmail">E-mail</label>
-        <input id="novoEmail" type="email" autocomplete="off" required>
-        <label for="novaSenha">Senha</label>
-        <input id="novaSenha" type="password" autocomplete="new-password" minlength="6" required>
+        <p class="admin-desc">Cadastrar um novo usuário já aprovado (não passa pela fila de pendentes). A senha padrão é 123456; a pessoa é obrigada a trocá-la no primeiro acesso.</p>
+        <label for="novoNome">Nome</label>
+        <input id="novoNome" type="text" autocomplete="off" required>
+        <label for="novoSobrenome">Sobrenome</label>
+        <input id="novoSobrenome" type="text" autocomplete="off" required>
+        <label for="novoLogin">Login (gerado automaticamente)</label>
+        <input id="novoLogin" type="text" disabled>
         <button class="admin-submit" type="submit">Cadastrar usuário</button>
       </form>
       <ul class="lista-solicitacoes" id="listaUsuarios"></ul>
@@ -28,7 +30,7 @@
   </div>
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/admin-auth.js?v=2026091401"></script>
-<script src="../js/admin-usuarios.js?v=2026091401"></script>
+<script src="../js/admin-auth.js?v=2026091404"></script>
+<script src="../js/admin-usuarios.js?v=2026091403"></script>
 </body>
 </html>

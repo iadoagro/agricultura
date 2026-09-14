@@ -6,10 +6,10 @@
   <title>SISTEMA</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/admin-auth.js?v=2026091401"></script>
-  <script src="../js/admin-gate.js?v=2026091401"></script>
+  <script src="../js/admin-auth.js?v=2026091404"></script>
+  <script src="../js/admin-gate.js?v=2026091402"></script>
   <link rel="stylesheet" href="../css/base.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091406">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091408">
 </head>
 <body>
   <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
@@ -38,7 +38,7 @@
   <aside id="painel" aria-labelledby="painel-titulo">
     <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
     <form id="cadastro" hidden>
-      <h3>Adicionar cadastro</h3>
+      <h3 id="cadastro-titulo">Adicionar cadastro</h3>
       <label for="nome">Nome</label><input id="nome" name="nome" autocomplete="name" maxlength="160" required>
       <label for="telefone">Telefone</label><input id="telefone" name="telefone" type="tel" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required>
       <label for="regional">Regional</label>
@@ -50,6 +50,7 @@
       <label for="zona">Zona eleitoral</label><select id="zona" name="zona" required><option value="">Selecione a zona</option></select>
       <label for="secao">Seção eleitoral</label><select id="secao" name="secao" required disabled><option value="">Selecione a zona primeiro</option></select>
       <button class="salvar" type="submit">Salvar cadastro</button>
+      <button class="cancelar-edicao" type="button" id="cancelarEdicao" hidden>Cancelar edição</button>
       <p id="mensagem" role="status"></p>
     </form>
     <section aria-labelledby="lista-titulo"><h3 id="lista-titulo">Cadastros do município</h3><ul id="cadastros"></ul><div id="paginacao" hidden><button id="anterior" type="button" aria-label="Cadastro anterior">←</button><span id="pagina-atual" aria-live="polite"></span><button id="proximo" type="button" aria-label="Próximo cadastro">→</button></div></section>
@@ -70,7 +71,7 @@
   <script src="../js/mapa-acre.js?v=2026091402"></script>
   <script src="../js/locais-votacao.js?v=2026091405"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026091406"></script>
-  <script src="../js/eleicoes.js?v=2026091406"></script>
+  <script src="../js/banco-eleicoes.js?v=2026091408"></script>
+  <script src="../js/eleicoes.js?v=2026091408"></script>
 </body>
 </html>

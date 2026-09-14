@@ -9,10 +9,12 @@
   var painelStatus = document.getElementById('painelStatus');
   var painelFormularios = document.getElementById('painelFormularios');
   var statusTexto = document.getElementById('statusTexto');
+  var cadNome = document.getElementById('cadNome');
+  var cadSobrenome = document.getElementById('cadSobrenome');
+  var cadLogin = document.getElementById('cadLogin');
 
   function limparMsg() { msg.textContent = ''; msg.className = 'admin-msg'; }
   function mostrarErro(texto) { msg.textContent = texto; msg.className = 'admin-msg erro'; }
-  function mostrarOk(texto) { msg.textContent = texto; msg.className = 'admin-msg'; }
 
   if (!auth || !auth.online) {
     mostrarErro('O banco online ainda não foi configurado.');
@@ -20,7 +22,7 @@
     return;
   }
 
-  function redirecionar() { location.href = 'index.html'; }
+  function redirecionar() { location.href = auth.deveTrocarSenha() ? 'admin-trocar-senha.html' : 'index.html'; }
 
   function avaliarSessao() {
     var papel = auth.papel();
@@ -45,14 +47,17 @@
   linkParaCadastro.addEventListener('click', function (e) { e.preventDefault(); mostrar('cadastrar'); });
   linkParaEntrar.addEventListener('click', function (e) { e.preventDefault(); mostrar('entrar'); });
 
+  function atualizarPreviaLogin() { cadLogin.value = auth.previewLogin(cadNome.value, cadSobrenome.value); }
+  cadNome.addEventListener('input', atualizarPreviaLogin);
+  cadSobrenome.addEventListener('input', atualizarPreviaLogin);
+
   formCadastrar.addEventListener('submit', function (e) {
     e.preventDefault();
     var botao = formCadastrar.querySelector('button'); botao.disabled = true;
     limparMsg();
-    auth.cadastrar(document.getElementById('cadEmail').value.trim(), document.getElementById('cadSenha').value)
-      .then(function (texto) {
-        mostrarOk(texto);
-        formCadastrar.reset();
+    auth.cadastrarConta(cadNome.value.trim(), cadSobrenome.value.trim(), document.getElementById('cadSenha').value)
+      .then(function () {
+        formCadastrar.reset(); cadLogin.value = '';
         avaliarSessao();
       })
       .catch(function (err) { mostrarErro(err.message); })

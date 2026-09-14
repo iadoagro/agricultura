@@ -10,6 +10,7 @@
   const nomes = new Map();
   let selecionado = '';
   let pagina = 0;
+  let editandoId = null;
   const locais = window.LOCAIS_VOTACAO.locais;
   const cz = document.getElementById('consulta-zona'), cl = document.getElementById('consulta-local'), cs = document.getElementById('consulta-secao');
   const zona = form.elements.zona, secao = form.elements.secao;
@@ -90,12 +91,64 @@
           }
           li.append(item);
         });
+        const acoes = document.createElement('div');
+        acoes.className = 'acoes-cadastro';
+        const btnEditar = document.createElement('button');
+        btnEditar.type = 'button'; btnEditar.className = 'editar-cadastro'; btnEditar.textContent = 'Editar cadastro';
+        btnEditar.onclick = () => iniciarEdicao(r);
+        const btnExcluir = document.createElement('button');
+        btnExcluir.type = 'button'; btnExcluir.className = 'excluir-cadastro'; btnExcluir.textContent = 'Excluir cadastro';
+        btnExcluir.onclick = () => excluirRegistro(r);
+        acoes.append(btnEditar, btnExcluir);
+        li.append(acoes);
         lista.append(li);
       });
     } catch (e) { lista.textContent = e.message; document.getElementById('paginacao').hidden = true; }
   }
+  function iniciarEdicao(r) {
+    if (!window.BANCO_ELEICOES.online && !r._id) {
+      mensagem.className = 'erro'; mensagem.textContent = 'Este cadastro salvo localmente é antigo demais e não pode ser editado. Exclua e cadastre de novo.';
+      return;
+    }
+    editandoId = r._id;
+    form.elements.nome.value = r.nome || '';
+    form.elements.telefone.value = r.telefone || '';
+    form.elements.regional.value = r.regional || '';
+    form.elements.bairro.value = r.bairro || '';
+    form.elements.zona.value = r.zona || '';
+    prepararSecoes();
+    form.elements.secao.value = r.secao || '';
+    document.getElementById('cadastro-titulo').textContent = 'Editar cadastro';
+    form.querySelector('.salvar').textContent = 'Salvar edição';
+    document.getElementById('cancelarEdicao').hidden = false;
+    mensagem.textContent = ''; mensagem.className = '';
+    form.hidden = false;
+    if (window.innerWidth < 1000) form.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  function excluirRegistro(r) {
+    if (!window.BANCO_ELEICOES.online && !r._id) {
+      mensagem.className = 'erro'; mensagem.textContent = 'Este cadastro salvo localmente é antigo demais e não pode ser excluído por aqui.';
+      return;
+    }
+    if (!window.confirm('Excluir o cadastro de ' + r.nome + '? Essa ação não poderá ser revertida.')) return;
+    mensagem.textContent = 'Excluindo…'; mensagem.className = '';
+    window.BANCO_ELEICOES.excluir(r._id).then(() => {
+      if (editandoId === r._id) encerrarEdicao();
+      mensagem.className = ''; mensagem.textContent = 'Cadastro excluído.';
+    }).catch(e => { mensagem.className = 'erro'; mensagem.textContent = e.message; });
+  }
+  function encerrarEdicao() {
+    editandoId = null;
+    form.reset();
+    document.getElementById('cadastro-titulo').textContent = 'Adicionar cadastro';
+    form.querySelector('.salvar').textContent = 'Salvar cadastro';
+    document.getElementById('cancelarEdicao').hidden = true;
+    mensagem.textContent = ''; mensagem.className = '';
+  }
+  document.getElementById('cancelarEdicao').onclick = encerrarEdicao;
   function abrir(id) {
     if (!nomes.has(id)) return;
+    encerrarEdicao();
     selecionado = id;
     pagina = 0;
     seletor.value = id;
@@ -105,7 +158,6 @@
       b.classList.toggle('selecionado', b.dataset.id === id);
       b.setAttribute('aria-pressed', String(b.dataset.id === id));
     });
-    form.reset(); mensagem.textContent = '';
     const zonas = [...new Set(doMunicipio().map(l=>l.zona))].sort((a,b)=>Number(a)-Number(b)).map(z=>[z,'Zona '+z]);
     opcoes(cz, zonas, 'Todas as zonas'); opcoes(zona, zonas, 'Selecione a zona');
     document.getElementById('consulta-eleitoral').hidden = false;
@@ -133,9 +185,15 @@
     if (botaoSalvar.disabled) return;
     botaoSalvar.disabled = true;
     try {
-      await window.BANCO_ELEICOES.salvar(registro);
-      form.reset(); atualizarConsulta('secao'); mensagem.className = ''; mensagem.textContent = window.BANCO_ELEICOES.online ? 'Cadastro salvo no banco online.' : 'Cadastro salvo neste navegador.';
-      document.getElementById('nome').focus();
+      if (editandoId) {
+        await window.BANCO_ELEICOES.editar(editandoId, registro);
+        encerrarEdicao(); atualizarConsulta('secao');
+        mensagem.className = ''; mensagem.textContent = 'Cadastro atualizado.';
+      } else {
+        await window.BANCO_ELEICOES.salvar(registro);
+        form.reset(); atualizarConsulta('secao'); mensagem.className = ''; mensagem.textContent = window.BANCO_ELEICOES.online ? 'Cadastro salvo no banco online.' : 'Cadastro salvo neste navegador.';
+        document.getElementById('nome').focus();
+      }
     } catch (e) { mensagem.className = 'erro'; mensagem.textContent = e.message; }
     finally { botaoSalvar.disabled = false; }
   });
