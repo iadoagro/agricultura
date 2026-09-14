@@ -6,12 +6,15 @@
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <meta name="theme-color" content="#1b5e20">
-<meta property="og:title" content="SEAGRI &ndash; Painel da Mecaniza&ccedil;&atilde;o">
-<meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem da SEAGRI/AC.">
+<meta property="og:title" content="Painel da Mecaniza&ccedil;&atilde;o">
+<meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="../assets/brasao.png">
 <link rel="stylesheet" href="../css/base.css?v=2026081307">
 <link rel="stylesheet" href="../css/dashboard.css?v=2026081307">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026091401"></script>
+<script src="../js/admin-gate.js?v=2026091401"></script>
 <script>
   /* aplica o tema antes da pintura para não piscar branco */
   (function () {
@@ -27,7 +30,7 @@
 
 <header>
   <h1 id="tituloPainel">SISTEMA</h1>
-  <p>Secretaria de Agricultura do Acre &middot; mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem</p>
+  <p>Mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem</p>
   <div class="header-acoes">
     <a class="tema-btn" id="voltarSecoes" href="mecanizacao.html">&#8592;<span>Se&ccedil;&otilde;es</span></a>
     <button class="tema-btn" id="temaBtn" type="button" aria-label="Alternar tema"></button>
@@ -749,7 +752,7 @@
 
 </div>
 
-<footer>Secretaria de Estado de Agricultura &ndash; SEAGRI / Acre &middot; P&aacute;gina de apoio interno</footer>
+<footer>P&aacute;gina de apoio interno</footer>
 
 <div class="admin-overlay" id="admOverlay">
   <div class="admin-box">

@@ -5,60 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<meta property="og:title" content="SEAGRI – Sistema de Apoio Interno">
-<meta property="og:description" content="Portal interno da Secretaria de Estado de Agricultura do Acre — organograma, portarias, chamados e contatos.">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026091401"></script>
+<script src="../js/admin-gate.js?v=2026091401"></script>
+<meta property="og:title" content="SISTEMA">
+<meta property="og:description" content="Portal interno — organograma, portarias, chamados e contatos.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="../assets/brasao.png">
 <link rel="stylesheet" href="../css/base.css?v=2026081307">
-<link rel="stylesheet" href="../css/index.css?v=2026081307">
+<link rel="stylesheet" href="../css/index.css?v=2026091401">
 </head>
 <body>
 <header>
-  <button class="admin-login-btn" id="adminLoginBtn" type="button">&#128274; Admin</button>
+  <button class="admin-login-btn" id="adminLoginBtn" type="button">Sair</button>
   <h1>SISTEMA</h1>
-  <p>Secretaria de Agricultura do Acre</p>
 </header>
 
 <div class="container">
   <div class="cards">
-    <a href="eleicoes.html" class="card-link" id="cardEleicoes" hidden>
+    <a href="admin-usuarios.html" class="card-link" id="cardUsuarios" hidden>
+      <div class="card">
+        <span class="card-icon">&#128101;</span>
+        <h2>Usuários</h2>
+        <p>Cadastrar, aprovar e gerenciar contas</p>
+      </div>
+    </a>
+    <a href="admin-permissoes.html" class="card-link" id="cardAcessos" hidden>
+      <div class="card">
+        <span class="card-icon">&#128274;</span>
+        <h2>Acessos</h2>
+        <p>Escolher o que cada usuário vê</p>
+      </div>
+    </a>
+    <a href="eleicoes.html" class="card-link" data-chave="eleicoes">
       <div class="card">
         <span class="card-icon">&#128499;</span>
-        <h2>Eleições</h2>
+        <h2>Fiscais</h2>
         <p>Cadastros por município do Acre</p>
       </div>
     </a>
-    <a href="portarias.html" class="card-link">
+    <a href="portarias.html" class="card-link" data-chave="portarias">
       <div class="card">
         <span class="card-icon">&#128203;</span>
         <h2>Portarias</h2>
         <p>Portarias de nomeação</p>
-        
       </div>
     </a>
-    <a href="organograma.html" class="card-link">
+    <a href="organograma.html" class="card-link" data-chave="organograma">
       <div class="card">
         <span class="card-icon">&#127963;</span>
         <h2>Organograma</h2>
         <p>Estrutura organizacional</p>
-        
       </div>
     </a>
-    <a href="chamados.html" class="card-link" id="cardChamados">
+    <a href="chamados.html" class="card-link" data-chave="chamados">
       <div class="card">
         <span class="card-icon">&#128187;</span>
         <h2>Chamados</h2>
         <p>Sistema de Chamados</p>
       </div>
     </a>
-    <a href="dashboards.html" class="card-link">
+    <a href="dashboards.html" class="card-link" data-chave="dashboards">
       <div class="card">
         <span class="card-icon">&#128202;</span>
         <h2>Dashboards</h2>
         <p>Mecanização e DEAGRO</p>
       </div>
     </a>
-    <a href="contatos.html" class="card-link" id="cardContatos">
+    <a href="contatos.html" class="card-link" data-chave="contatos">
       <div class="card">
         <span class="card-icon">&#128222;</span>
         <h2>Contatos</h2>
@@ -68,80 +82,8 @@
   </div>
 </div>
 
-<footer>Secretaria de Estado de Agricultura &ndash; SEAGRI / Acre &middot; P&aacute;gina de apoio interno</footer>
+<footer>Página de apoio interno</footer>
 
-<div class="admin-overlay" id="adminOverlay">
-  <div class="admin-box">
-    <div class="admin-box-title">&#128274; Acesso Administrativo</div>
-    <p class="admin-box-desc">Digite a senha para liberar o acesso &agrave; p&aacute;gina de contatos.</p>
-    <input type="password" id="adminPwdInput" class="admin-pwd" placeholder="Senha">
-    <p class="admin-errmsg" id="adminErr"></p>
-    <div class="admin-btns">
-      <button class="admin-btn-ok" id="adminOk" type="button">Entrar</button>
-      <button class="admin-btn-cancel" id="adminCancel" type="button">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<script>
-let adminLogado=sessionStorage.getItem('seagri_admin')==='1';
-const loginBtn=document.getElementById('adminLoginBtn');
-const cardContatos=document.getElementById('cardContatos');
-const cardChamados=document.getElementById('cardChamados');
-const cardEleicoes=document.getElementById('cardEleicoes');
-const overlay=document.getElementById('adminOverlay');
-const pwdInput=document.getElementById('adminPwdInput');
-const errMsg=document.getElementById('adminErr');
-
-function aplicarEstado(){
-  cardEleicoes.hidden = !adminLogado;
-  if(adminLogado){
-    cardContatos.classList.add('visivel');
-    cardChamados.classList.add('visivel');
-    loginBtn.innerHTML='&#9989; Admin (sair)';
-    loginBtn.classList.add('logado');
-  }else{
-    cardContatos.classList.remove('visivel');
-    cardChamados.classList.remove('visivel');
-    loginBtn.innerHTML='&#128274; Admin';
-    loginBtn.classList.remove('logado');
-  }
-}
-aplicarEstado();
-
-loginBtn.addEventListener('click',()=>{
-  if(adminLogado){
-    adminLogado=false;
-    sessionStorage.removeItem('seagri_admin');
-    aplicarEstado();
-    return;
-  }
-  pwdInput.value='';errMsg.textContent='';
-  overlay.classList.add('show');
-  setTimeout(()=>pwdInput.focus(),80);
-});
-
-const ADMIN_HASH='8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
-function entrar(){
-  const v=pwdInput.value;
-  crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)).then(buf=>{
-    const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-    if(hex===ADMIN_HASH){
-      adminLogado=true;
-      sessionStorage.setItem('seagri_admin','1');
-      overlay.classList.remove('show');
-      aplicarEstado();
-    }else{
-      errMsg.textContent='Senha incorreta. Tente novamente.';
-      pwdInput.value='';pwdInput.focus();
-    }
-  });
-}
-
-document.getElementById('adminOk').addEventListener('click',entrar);
-document.getElementById('adminCancel').addEventListener('click',()=>overlay.classList.remove('show'));
-pwdInput.addEventListener('keydown',e=>{if(e.key==='Enter')entrar();if(e.key==='Escape')overlay.classList.remove('show');});
-overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('show');});
-</script>
+<script src="../js/admin-home.js?v=2026091401"></script>
 </body>
 </html>

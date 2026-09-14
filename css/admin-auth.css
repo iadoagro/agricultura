@@ -1,0 +1,50 @@
+/* Login de Admin com aprovação — admin-login.html, admin-usuarios.html e admin-permissoes.html */
+header{background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:22px 20px;text-align:center}
+header h1{font-size:22px;margin-bottom:4px}
+header p{font-size:13px;opacity:.9}
+.admin-auth{max-width:420px;margin:36px auto;padding:0 20px}
+.admin-auth-larga{max-width:640px}
+.admin-card{background:#fff;border:1px solid var(--linha);border-radius:14px;padding:26px}
+.admin-desc{font-size:13px;color:#666;line-height:1.5;margin-bottom:6px}
+.admin-troca{margin-top:16px;font-size:13px;color:#666;text-align:center}
+.admin-troca a{color:var(--verde2);font-weight:600;text-decoration:none}
+.admin-troca a:hover{text-decoration:underline}
+.admin-card form label{display:block;margin:14px 0 6px;font-size:13px;font-weight:600;color:#333}
+.admin-card form input{width:100%;padding:10px 12px;border:1.5px solid var(--linha);border-radius:8px;font-size:14px;font:inherit}
+.admin-card form input:focus{outline:none;border-color:var(--verde2)}
+.admin-submit{margin-top:20px;width:100%;padding:11px;background:var(--verde2);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+.admin-submit:hover{background:var(--verde)}
+.admin-submit:disabled{opacity:.6;cursor:wait}
+.admin-msg{margin-top:14px;font-size:13px;line-height:1.5;min-height:18px;color:var(--verde)}
+.admin-msg.erro{color:#c0392b}
+.lista-solicitacoes{list-style:none;padding:0;margin-top:6px}
+.lista-solicitacoes li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #eee;flex-wrap:wrap}
+.lista-solicitacoes li.vazio{color:#666;font-size:13px;justify-content:flex-start}
+.sol-info strong{display:block;font-size:14px;word-break:break-all}
+.sol-info span{font-size:12px;color:#666}
+.sol-status{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.sol-status.pendente{background:#fff3cd;color:#8a6100}
+.sol-status.aprovado{background:#d4edda;color:var(--verde)}
+.sol-status.recusado{background:#f8d7da;color:#842029}
+.sol-status.ativo{background:#d4edda;color:var(--verde)}
+.sol-status.inativo{background:#eee;color:#666}
+.sol-acoes{display:flex;flex-wrap:wrap;gap:6px;flex:none}
+.sol-acoes button{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.sol-acoes button:disabled{opacity:.6;cursor:wait}
+.sol-acoes .aprovar{background:#e8f5e9;border:1px solid var(--verde);color:var(--verde)}
+.sol-acoes .aprovar:hover{background:#d4edda}
+.sol-acoes .recusar,.sol-acoes .desativar{background:#fdecea;border:1px solid #c0392b;color:#c0392b}
+.sol-acoes .recusar:hover,.sol-acoes .desativar:hover{background:#f8d7da}
+.sol-acoes .ativar{background:#e8f5e9;border:1px solid var(--verde);color:var(--verde)}
+.sol-acoes .ativar:hover{background:#d4edda}
+.sol-acoes .redefinir,.sol-acoes .editar{background:#eef2fb;border:1px solid #4472c4;color:#2f4f9e}
+.sol-acoes .redefinir:hover,.sol-acoes .editar:hover{background:#dce4f6}
+.sol-acoes .excluir{background:#c0392b;border:1px solid #a52a20;color:#fff}
+.sol-acoes .excluir:hover{background:#a52a20}
+.sol-paginas{display:flex;flex-wrap:wrap;gap:6px 16px;flex-basis:100%;margin-top:8px}
+.sol-paginas label{display:flex;align-items:center;gap:5px;font-size:12px;color:#333;cursor:pointer}
+.sol-paginas input{width:auto;padding:0;margin:0}
+@media(max-width:480px){
+  .admin-auth{margin:20px auto}
+  .admin-card{padding:20px}
+}

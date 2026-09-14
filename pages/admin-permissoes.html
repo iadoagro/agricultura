@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SISTEMA</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091404">
+</head>
+<body>
+<header><h1>SISTEMA</h1><p>Controle de acessos por usuário</p></header>
+<main class="admin-auth admin-auth-larga">
+  <div class="admin-card">
+    <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável pelas aprovações.</p>
+    <ul class="lista-solicitacoes" id="listaPermissoes"></ul>
+    <p class="admin-msg" id="adminMsg" role="status"></p>
+  </div>
+</main>
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026091401"></script>
+<script src="../js/admin-permissoes.js?v=2026091402"></script>
+</body>
+</html>

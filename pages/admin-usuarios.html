@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SISTEMA</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091404">
+</head>
+<body>
+<header><h1>SISTEMA</h1><p>Usuários</p></header>
+<main class="admin-auth admin-auth-larga">
+  <div class="admin-card">
+    <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável.</p>
+    <div id="painelUsuarios">
+      <form id="formNovo">
+        <p class="admin-desc">Cadastrar um novo usuário já aprovado (não passa pela fila de pendentes).</p>
+        <label for="novoEmail">E-mail</label>
+        <input id="novoEmail" type="email" autocomplete="off" required>
+        <label for="novaSenha">Senha</label>
+        <input id="novaSenha" type="password" autocomplete="new-password" minlength="6" required>
+        <button class="admin-submit" type="submit">Cadastrar usuário</button>
+      </form>
+      <ul class="lista-solicitacoes" id="listaUsuarios"></ul>
+    </div>
+    <p class="admin-msg" id="adminMsg" role="status"></p>
+  </div>
+</main>
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026091401"></script>
+<script src="../js/admin-usuarios.js?v=2026091401"></script>
+</body>
+</html>

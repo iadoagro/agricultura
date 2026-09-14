@@ -11,3 +11,7 @@ __pycache__/
 DEAGRO.xlsx
 mecanizacao26.xlsx
 *.xlsx
+
+# Chave service_role do Supabase (acesso total ao banco) — só existe no
+# servidor. Veja admin_config.example.php e database/CONFIGURAR-ADMIN.md.
+admin_config.php

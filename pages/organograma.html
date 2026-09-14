@@ -5,10 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<meta property="og:title" content="Organograma SEAGRI 2026">
-<meta property="og:description" content="Estrutura organizacional da Secretaria de Estado de Agricultura do Acre — 2026.">
+<meta property="og:title" content="Organograma 2026">
+<meta property="og:description" content="Estrutura organizacional — 2026.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="../assets/brasao.png">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026091401"></script>
+<script src="../js/admin-gate.js?v=2026091401"></script>
 <link rel="stylesheet" href="../css/organograma.css?v=2026081307">
 <script src="../js/dados-seagri.js?v=2026081307"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -56,7 +59,6 @@
   <div class="canvas" id="canvas">
     <svg class="line-layer" id="lineLayer"></svg>
     <div class="slide-brand">
-      <img class="slide-brand-wordmark" src="../assets/agricultura.png" alt="Secretaria de Estado da Agricultura">
       <img class="slide-brand-mark" src="../assets/brasao.png" alt="Brasão do Governo do Acre">
     </div>
     <div class="source-note">Portaria SEAGRI N&ordm; 187/2026</div>
@@ -1148,7 +1150,7 @@ document.getElementById("btnJPG").addEventListener("click",()=>{
   const btn=document.getElementById("btnJPG");
   btn.disabled=true;btn.textContent="Gerando...";
   captureCanvas().then(c=>{
-    downloadLink(c.toDataURL("image/jpeg",0.95),"Organograma_SEAGRI_2026.jpg");
+    downloadLink(c.toDataURL("image/jpeg",0.95),"Organograma_2026.jpg");
     btn.disabled=false;btn.innerHTML="&#128247; JPG";
   });
 });
@@ -1160,7 +1162,7 @@ document.getElementById("btnPDF").addEventListener("click",()=>{
     const imgData=c.toDataURL("image/jpeg",0.95);
     const pdf=new jspdf.jsPDF({orientation:"landscape",unit:"px",format:[CANVAS_W,CANVAS_H]});
     pdf.addImage(imgData,"JPEG",0,0,CANVAS_W,CANVAS_H);
-    pdf.save("Organograma_SEAGRI_2026.pdf");
+    pdf.save("Organograma_2026.pdf");
     btn.disabled=false;btn.innerHTML="&#128196; PDF";
   });
 });

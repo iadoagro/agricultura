@@ -24,6 +24,18 @@
         "C:/xampp/htdocs/organograma/organograma"
       ],
       "port": 8736
+    },
+    {
+      "name": "organograma-atual",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8738",
+        "--directory",
+        "C:/xampp/htdocs/organograma"
+      ],
+      "port": 8738
     }
   ]
 }

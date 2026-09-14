@@ -5,13 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SISTEMA</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <script src="../js/banco-config.js?v=2026091406"></script>
+  <script src="../js/admin-auth.js?v=2026091401"></script>
+  <script src="../js/admin-gate.js?v=2026091401"></script>
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/eleicoes.css?v=2026091406">
 </head>
 <body>
   <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
   <main class="eleicoes">
-    <div class="barra-acesso"><a class="voltar" href="index.html">← Página inicial</a><button id="banco-abrir" type="button" hidden>Entrar no banco online</button></div>
+    <div class="barra-acesso"><a class="voltar" href="index.html">← Página inicial</a><button id="banco-abrir" type="button" hidden>Banco online</button></div>
     <div class="area-municipios">
     <nav class="municipios-lateral" aria-label="Municípios do Acre"><h2>Municípios</h2><div id="municipios-lista"></div></nav>
     <section class="mapa-card" aria-labelledby="mapa-titulo">
@@ -57,17 +60,10 @@
   <dialog id="banco-dialogo" aria-labelledby="banco-titulo">
     <button id="banco-fechar" type="button" aria-label="Fechar acesso ao banco">×</button>
     <h2 id="banco-titulo">Banco online</h2>
-    <form id="banco-acesso">
-      <p>Entre com a conta autorizada para consultar e salvar os cadastros.</p>
-      <label for="banco-email">E-mail</label><input id="banco-email" name="email" type="email" autocomplete="username" required>
-      <label for="banco-senha">Senha</label><input id="banco-senha" name="senha" type="password" autocomplete="current-password" required>
-      <button type="submit">Entrar</button>
-    </form>
-    <div id="banco-acoes" hidden>
+    <div id="banco-acoes">
       <p>Importe os cadastros no mesmo navegador e endereço em que foram criados. A cópia local será preservada.</p>
       <button id="banco-importar" type="button">Importar cadastros deste navegador</button>
       <button id="banco-atualizar" type="button">Atualizar cadastros</button>
-      <button id="banco-sair" type="button">Sair do banco online</button>
     </div>
     <p id="banco-mensagem" role="status"></p>
   </dialog>

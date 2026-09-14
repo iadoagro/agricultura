@@ -5,54 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<meta property="og:title" content="Chamados SEAGRI">
-<meta property="og:description" content="Sistema de chamados de lotação e habilitação de assinatura – SEAGRI Acre.">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026091401"></script>
+<script src="../js/admin-gate.js?v=2026091401"></script>
+<meta property="og:title" content="Chamados">
+<meta property="og:description" content="Sistema de chamados de lotação e habilitação de assinatura.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026081307">
 <link rel="stylesheet" href="../css/chamados.css?v=2026081307">
 </head>
-<body class="locked">
-<div id="gate">
-  <div class="gate-box">
-    <div class="gate-icon">&#128274;</div>
-    <h2>Acesso Restrito</h2>
-    <p>Digite a senha para acessar a p&aacute;gina de Chamados.</p>
-    <input id="gateSenha" type="password" placeholder="Senha" autocomplete="off" autofocus>
-    <button id="gateBtn" type="button">Entrar</button>
-    <div class="gate-erro" id="gateErro"></div>
-  </div>
-</div>
-<script>
-(function(){
-  var H="8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
-  var input=document.getElementById("gateSenha");
-  var btn=document.getElementById("gateBtn");
-  var erro=document.getElementById("gateErro");
-  function tentar(){
-    var v=input.value;
-    if(!v)return;
-    btn.disabled=true;
-    crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(buf){
-      var hex=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");
-      if(hex===H){
-        document.body.classList.remove("locked");
-        var g=document.getElementById("gate");
-        if(g)g.parentNode.removeChild(g);
-      }else{
-        erro.textContent="Senha incorreta. Tente novamente.";
-        input.value="";input.focus();btn.disabled=false;
-      }
-    });
-  }
-  btn.addEventListener("click",tentar);
-  input.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();tentar();}});
-  input.focus();
-})();
-</script>
+<body>
 <header>
   <a class="voltar-btn" href="index.html">&#8592; In&iacute;cio</a>
   <h1>SISTEMA</h1>
-  <p>Secretaria de Agricultura do Acre</p>
 </header>
 
 <div class="wrap">

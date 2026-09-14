@@ -6,23 +6,8 @@ header p{font-size:12px;opacity:.9;margin:0}
 .admin-login-btn{position:absolute;top:12px;right:16px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s;max-width:calc(100% - 100px)}
 .admin-login-btn:hover{background:rgba(255,255,255,.28)}
 .admin-login-btn.logado{background:#25d366;border-color:#1aab52}
-#cardContatos,#cardChamados{display:none}
-#cardContatos.visivel,#cardChamados.visivel{display:block}
-.admin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center}
-.admin-overlay.show{display:flex}
-.admin-box{background:#fff;border-radius:14px;padding:28px;max-width:360px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);text-align:left}
-.admin-box-title{font-size:17px;font-weight:700;color:#212121;margin:0 0 8px}
-.admin-box-desc{font-size:13px;color:#666;margin:0 0 16px;line-height:1.5}
-.admin-pwd{width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;margin-bottom:6px}
-.admin-pwd:focus{border-color:var(--verde2)}
-.admin-errmsg{font-size:12px;color:#c0392b;min-height:18px;margin-bottom:12px}
-.admin-btns{display:flex;gap:8px;justify-content:flex-end}
-.admin-btn-ok{padding:9px 22px;background:var(--verde2);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
-.admin-btn-ok:hover{background:var(--verde)}
-.admin-btn-cancel{padding:9px 16px;background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer}
-.admin-btn-cancel:hover{background:#e0e0e0}
-.container{flex:1;display:flex;justify-content:center;align-items:center;padding:40px 24px}
-.cards{display:grid;grid-template-columns:repeat(3,minmax(0,295px));gap:20px;justify-content:center;max-width:925px;width:100%}
+.container{flex:1;display:flex;justify-content:center;align-items:center;padding:40px clamp(24px,5vw,72px)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;width:100%}
 .card-link{text-decoration:none;color:inherit;display:block}
 .card{background:#fff;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:2px solid transparent;transition:all .3s ease;height:100%}
 .card:hover{transform:translateY(-6px);box-shadow:0 8px 32px rgba(27,94,32,0.15);border-color:var(--verde2)}
@@ -48,4 +33,4 @@ footer{padding:20px 32px;font-size:12px;color:#999;text-align:center;border-top:
   .card{padding:18px 16px}
   .container{padding:20px 12px}
 }
-#cardEleicoes[hidden]{display:none!important}
+.card-link[hidden]{display:none!important}
