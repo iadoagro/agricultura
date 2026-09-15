@@ -1907,6 +1907,174 @@
     tabelaResumo('tMun', D, function (r) { return r.mun; }, 'Município');
   }
 
+  /* ============================================================ ABA: MAPA
+     Não há coordenada por vistoria (ver nota() mais abaixo, "sem coordenada
+     geográfica utilizável"), então o mapa é por MUNICÍPIO: cada polígono
+     mostra se houve mecanização, açudagem ou os dois, dentro do filtro
+     ativo. O desenho (window.MapaMunicipios, que usa window.MAPA_ACRE) roda
+     uma vez só; toda chamada seguinte apenas repinta as cores e refaz as
+     listas do painel lateral — refazer os 22 caminhos a cada filtro seria
+     desperdício. O painel lateral não tem estado próprio: ele pilota
+     F.pc/F.reg/F.mun através de MULTI.fPonto/fReg/fMun.aoMudar(), os mesmos
+     filtros da lateral esquerda, para o mapa nunca discordar do resto do
+     painel. */
+  var MAPA_MEC = null;
+  var MAPA_MEC_ID_POR_NOME = null;   // chaveBusca(nome IBGE) -> id (string)
+
+  function mapaMecIdPorNome(nome) {
+    if (!MAPA_MEC_ID_POR_NOME) {
+      MAPA_MEC_ID_POR_NOME = {};
+      if (window.MAPA_ACRE) {
+        window.MAPA_ACRE.localidades.forEach(function (m) {
+          MAPA_MEC_ID_POR_NOME[chaveBusca(m.nome)] = String(m.id);
+        });
+      }
+    }
+    return MAPA_MEC_ID_POR_NOME[chaveBusca(nome || '')] || '';
+  }
+
+  function mapaMecNomePorId(id) {
+    if (!window.MAPA_ACRE) return '';
+    var achado = window.MAPA_ACRE.localidades.filter(function (l) { return String(l.id) === id; })[0];
+    return achado ? achado.nome : '';
+  }
+
+  /* A base grava o mesmo município com grafias diferentes (ver REG_DE_MUN
+     acima) — um clique no mapa precisa marcar TODAS as variantes daquele
+     município no filtro, senão o painel zeraria em silêncio. */
+  function mapaMecVariantes(nomeCanonico) {
+    var chave = chaveBusca(nomeCanonico);
+    var vistas = {}, lista = [];
+    TODOS.forEach(function (r) {
+      if (chaveBusca(r.mun) === chave && !vistas[r.mun]) { vistas[r.mun] = true; lista.push(r.mun); }
+    });
+    return lista;
+  }
+
+  function mapaMecCorCategoria(cat) {
+    if (cat === 'mec') return 'var(--mec)';
+    if (cat === 'acu') return 'var(--acu)';
+    if (cat === 'both') return 'color-mix(in srgb, var(--mec) 50%, var(--acu) 50%)';
+    return 'var(--grade)';
+  }
+
+  function mapaMecCliqueMapa(id) {
+    var nome = mapaMecNomePorId(id);
+    if (!nome) return;
+    var variantes = mapaMecVariantes(nome);
+    if (!variantes.length) return;
+    var jaAtivo = F.mun.length === variantes.length &&
+      variantes.every(function (v) { return F.mun.indexOf(v) >= 0; });
+    if (MULTI.fMun) MULTI.fMun.aoMudar(jaAtivo ? [] : variantes);
+  }
+
+  function mapaMecCliqueMunicipio(mun) {
+    var jaAtivo = F.mun.length === 1 && F.mun[0] === mun;
+    if (MULTI.fMun) MULTI.fMun.aoMudar(jaAtivo ? [] : [mun]);
+  }
+
+  function mapaMecDestacado() {
+    if (!F.mun.length) return '';
+    var ids = unicos(F.mun.map(mapaMecIdPorNome).filter(Boolean));
+    return ids.length === 1 ? ids[0] : '';
+  }
+
+  function mapaMecDesenharTipo() {
+    var host = el('mapaMecTipo');
+    if (!host) return;
+    var opcoes = [
+      { v: MEC, rot: 'Mecanização', cls: 'mec' },
+      { v: ACU, rot: 'Açudagem', cls: 'acu' },
+      { v: '', rot: 'Os dois', cls: 'ambos' }
+    ];
+    host.innerHTML = opcoes.map(function (o) {
+      var ativo = o.v ? (F.pc.length === 1 && F.pc[0] === o.v) : !F.pc.length;
+      return '<button type="button" class="mapa-mec-tipo-btn' + (ativo ? ' ativo' : '') +
+        '" data-v="' + G.esc(o.v) + '"><span class="ponto ' + o.cls + '"></span>' + G.esc(o.rot) + '</button>';
+    }).join('');
+    if (host.getAttribute('data-ligado') !== '1') {
+      host.setAttribute('data-ligado', '1');
+      host.addEventListener('click', function (e) {
+        var btn = e.target.closest('.mapa-mec-tipo-btn');
+        if (!btn || !MULTI.fPonto) return;
+        var v = btn.getAttribute('data-v');
+        MULTI.fPonto.aoMudar(v ? [v] : []);
+      });
+    }
+  }
+
+  function mapaMecDesenharRegionais(C) {
+    var host = el('mapaMecRegionais');
+    if (!host) return;
+    var contPorReg = {};
+    C.D.forEach(function (r) {
+      var g = regionalDe(r.mun);
+      if (g) contPorReg[g] = (contPorReg[g] || 0) + 1;
+    });
+    host.innerHTML = REGIONAIS.map(function (r) {
+      var ativo = F.reg.length === 1 && F.reg[0] === r.nome;
+      return '<li><button type="button" class="' + (ativo ? 'ativo' : '') + '" data-v="' + G.esc(r.nome) + '">' +
+        '<span>' + G.esc(r.nome) + '</span><span class="qtd">' + G.num(contPorReg[r.nome] || 0) + '</span></button></li>';
+    }).join('');
+    if (host.getAttribute('data-ligado') !== '1') {
+      host.setAttribute('data-ligado', '1');
+      host.addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-v]');
+        if (!btn || !MULTI.fReg) return;
+        var v = btn.getAttribute('data-v');
+        var jaAtivo = F.reg.length === 1 && F.reg[0] === v;
+        MULTI.fReg.aoMudar(jaAtivo ? [] : [v]);
+      });
+    }
+  }
+
+  function mapaMecDesenharMunicipios(C) {
+    var host = el('mapaMecMunicipios');
+    if (!host) return;
+    var lista = ranking(C.atendPorMun, 999);
+    host.innerHTML = lista.map(function (item) {
+      var ativo = F.mun.length === 1 && F.mun[0] === item.rot;
+      return '<li><button type="button" class="' + (ativo ? 'ativo' : '') + '" data-v="' + G.esc(item.rot) + '">' +
+        '<span>' + G.esc(item.rot) + '</span><span class="qtd">' + G.num(item.val) + '</span></button></li>';
+    }).join('');
+    if (host.getAttribute('data-ligado') !== '1') {
+      host.setAttribute('data-ligado', '1');
+      host.addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-v]');
+        if (btn) mapaMecCliqueMunicipio(btn.getAttribute('data-v'));
+      });
+    }
+  }
+
+  function abaMapa(C) {
+    var svg = el('mapaMec'), status = el('mapaMecStatus');
+    if (!svg) return;
+    if (!MAPA_MEC) {
+      if (!window.MapaMunicipios || !window.MAPA_ACRE) {
+        if (status) status.textContent = 'Não foi possível carregar o mapa.';
+        return;
+      }
+      MAPA_MEC = window.MapaMunicipios.desenhar(svg, { aoClicar: mapaMecCliqueMapa });
+      if (status) status.hidden = true;
+    }
+    if (!MAPA_MEC) return;
+
+    var catPorId = {};
+    C.D.forEach(function (r) {
+      var id = mapaMecIdPorNome(r.mun);
+      if (!id) return;
+      var atual = catPorId[id] || 'none';
+      var este = r.pc === MEC ? 'mec' : r.pc === ACU ? 'acu' : 'none';
+      catPorId[id] = atual === 'none' ? este : atual === este ? atual : 'both';
+    });
+    MAPA_MEC.pintar(function (id) { return mapaMecCorCategoria(catPorId[id] || 'none'); });
+    MAPA_MEC.destacar(mapaMecDestacado());
+
+    mapaMecDesenharTipo();
+    mapaMecDesenharRegionais(C);
+    mapaMecDesenharMunicipios(C);
+  }
+
   /* ================================================= ABA: ESCRITÓRIO LOCAL */
   function abaEscritorio(C) {
     var D = C.D;
@@ -2494,7 +2662,7 @@
   /* --------------------------------------------------- despachante das abas */
   var ABAS = {
     geral: abaGeral, mecanizacao: abaMecanizacao, acudagem: abaAcudagem,
-    cultura: abaCultura, municipio: abaMunicipio, escritorio: abaEscritorio,
+    cultura: abaCultura, municipio: abaMunicipio, mapa: abaMapa, escritorio: abaEscritorio,
     beneficiario: abaBeneficiario, registros: abaRegistros,
     relatorio: abaRelatorio, admin: abaAdmin,
     // só aparecem com a senha (ver aplicarAdmin)

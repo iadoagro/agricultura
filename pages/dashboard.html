@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="../assets/brasao.png">
 <link rel="stylesheet" href="../css/base.css?v=2026081307">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026081307">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026091401">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026091404"></script>
 <script src="../js/admin-gate.js?v=2026091402"></script>
@@ -60,6 +60,10 @@
     <button class="aba" data-aba="municipio" type="button" role="tab" id="aba-municipio" aria-controls="painel-municipio" aria-selected="false" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
       Munic&iacute;pio
+    </button>
+    <button class="aba" data-aba="mapa" type="button" role="tab" id="aba-mapa" aria-controls="painel-mapa" aria-selected="false" tabindex="-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 7v13M15 4v13"/></svg>
+      Mapa
     </button>
     <button class="aba" data-aba="escritorio" type="button" role="tab" id="aba-escritorio" aria-controls="painel-escritorio" aria-selected="false" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
@@ -411,6 +415,40 @@
         </div></div>
         <div id="tMun"></div>
       </section>
+    </div>
+  </div>
+
+  <!-- ========================================================= ABA: MAPA -->
+  <div class="aba-conteudo" data-aba="mapa" role="tabpanel" id="painel-mapa" aria-labelledby="aba-mapa" tabindex="0">
+    <div class="mapa-mec-wrap">
+      <section class="mapa-mec-card">
+        <div class="mapa-mec-topo">
+          <h2>Munic&iacute;pios atendidos</h2>
+          <p class="sub">Cada munic&iacute;pio mostra se teve mecaniza&ccedil;&atilde;o, a&ccedil;udagem ou os dois, dentro do filtro atual. Sem coordenada exata por vistoria, o recorte &eacute; por munic&iacute;pio.</p>
+        </div>
+        <p id="mapaMecStatus" role="status">Carregando mapa&hellip;</p>
+        <svg id="mapaMec" viewBox="0 0 1000 600" aria-label="Mapa de munic&iacute;pios atendidos pela mecaniza&ccedil;&atilde;o e a&ccedil;udagem"></svg>
+        <ul class="mapa-mec-legenda" aria-hidden="true">
+          <li><span class="ponto mec"></span> Mecaniza&ccedil;&atilde;o</li>
+          <li><span class="ponto acu"></span> A&ccedil;udagem</li>
+          <li><span class="ponto ambos"></span> Os dois</li>
+          <li><span class="ponto nenhum"></span> Sem registro no filtro</li>
+        </ul>
+      </section>
+      <aside class="mapa-mec-lateral" aria-label="Filtro do mapa">
+        <div class="mapa-mec-bloco">
+          <h3>Tipo</h3>
+          <div class="mapa-mec-tipos" id="mapaMecTipo"></div>
+        </div>
+        <div class="mapa-mec-bloco">
+          <h3>Regional</h3>
+          <ul class="mapa-mec-lista" id="mapaMecRegionais"></ul>
+        </div>
+        <div class="mapa-mec-bloco mapa-mec-bloco-flex">
+          <h3>Munic&iacute;pio</h3>
+          <ul class="mapa-mec-lista" id="mapaMecMunicipios"></ul>
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -786,6 +824,8 @@
 <script src="../js/dados-mecanizacao.js?v=2026091101"></script>
 <script src="../js/graficos.js?v=2026081307"></script>
 <script src="../js/importar.js?v=2026081307"></script>
-<script src="../js/dashboard.js?v=2026081307"></script>
+<script src="../js/mapa-acre.js?v=2026091402"></script>
+<script src="../js/mapa-municipios.js?v=2026091402"></script>
+<script src="../js/dashboard.js?v=2026091401"></script>
 </body>
 </html>

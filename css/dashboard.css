@@ -733,3 +733,51 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
   table.dados{page-break-inside:auto}
   tr{page-break-inside:avoid}
 }
+
+/* ============================================================ ABA: MAPA */
+.mapa-mec-wrap{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}
+.mapa-mec-card{background:var(--superficie);border:1px solid var(--anel);border-radius:14px;
+  padding:18px}
+.mapa-mec-topo h2{margin:0 0 6px;font-size:19px}
+.mapa-mec-topo .sub{margin:0 0 10px;font-size:13px;color:var(--tinta3)}
+#mapaMec{display:block;width:100%;max-height:64vh;margin:6px auto}
+#mapaMec path{fill:var(--grade);stroke:var(--superficie);stroke-width:1.5;
+  vector-effect:non-scaling-stroke;cursor:pointer;transition:fill .15s,opacity .15s}
+#mapaMec path:hover,#mapaMec path:focus{opacity:.82;outline:none;stroke:var(--acento);stroke-width:2}
+#mapaMec path.selecionado{stroke:var(--acento);stroke-width:2.4}
+#mapaMec text{font:11px 'Segoe UI',Arial,sans-serif;fill:var(--tinta);pointer-events:none;
+  text-anchor:middle;paint-order:stroke;stroke:var(--superficie);stroke-width:2px;stroke-linejoin:round}
+.mapa-mec-legenda{list-style:none;display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 0;
+  padding-top:10px;border-top:1px solid var(--linha-t);font-size:12.5px;color:var(--tinta2)}
+.mapa-mec-legenda li{display:flex;align-items:center;gap:6px}
+.mapa-mec-legenda .ponto{width:12px;height:12px;border-radius:3px;display:inline-block}
+.mapa-mec-legenda .ponto.mec{background:var(--mec)}
+.mapa-mec-legenda .ponto.acu{background:var(--acu)}
+.mapa-mec-legenda .ponto.ambos{background:linear-gradient(135deg,var(--mec) 50%,var(--acu) 50%)}
+.mapa-mec-legenda .ponto.nenhum{background:var(--grade)}
+.mapa-mec-lateral{background:var(--superficie);border:1px solid var(--anel);border-radius:14px;
+  padding:16px;position:sticky;top:72px;display:flex;flex-direction:column;gap:16px;
+  max-height:calc(100vh - 90px);overflow:auto}
+.mapa-mec-bloco h3{margin:0 0 8px;font-size:13px;color:var(--tinta3);text-transform:uppercase;
+  letter-spacing:.4px}
+.mapa-mec-tipos{display:flex;flex-direction:column;gap:6px}
+.mapa-mec-tipo-btn{display:flex;align-items:center;gap:8px;border:1px solid var(--anel);
+  border-radius:8px;padding:8px 10px;background:transparent;color:var(--tinta);
+  font-size:13px;text-align:left;cursor:pointer}
+.mapa-mec-tipo-btn .ponto{width:10px;height:10px;border-radius:3px;flex:none}
+.mapa-mec-tipo-btn.ativo{background:var(--acento-suave);border-color:var(--acento);color:var(--acento)}
+.mapa-mec-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  overflow:auto}
+.mapa-mec-bloco-flex{flex:1;min-height:0;display:flex;flex-direction:column}
+.mapa-mec-bloco-flex .mapa-mec-lista{flex:1;min-height:0}
+.mapa-mec-lista button{display:flex;justify-content:space-between;gap:8px;width:100%;
+  border:0;background:transparent;text-align:left;padding:7px 8px;border-radius:6px;
+  font-size:13px;color:var(--tinta)}
+.mapa-mec-lista button:hover{background:var(--grade)}
+.mapa-mec-lista button.ativo{background:var(--acento-fundo);color:#fff}
+.mapa-mec-lista .qtd{color:var(--tinta3);font-variant-numeric:tabular-nums}
+.mapa-mec-lista button.ativo .qtd{color:#fff}
+@media(max-width:900px){
+  .mapa-mec-wrap{grid-template-columns:minmax(0,1fr)}
+  .mapa-mec-lateral{position:static;max-height:none}
+}

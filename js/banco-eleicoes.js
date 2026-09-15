@@ -7,6 +7,7 @@
   const cfg = window.BANCO_CONFIG || {};
   const online = Boolean(cfg.url || cfg.chavePublica);
   const localKey = 'seagri_eleicoes_v1';
+  const localSnapKey = 'seagri_eleicoes_instantaneo_v1';
   let sessao = null, cache = [], carregado = false;
   const pendentes = new Map();
   const avisar = () => window.dispatchEvent(new Event('banco-atualizado'));
@@ -42,14 +43,14 @@
     if (!sessao) throw new Error('Sua sessão expirou. Volte à página inicial e entre de novo.');
     const registros = [];
     for (let offset = 0; ; offset += 500) {
-      const lote = await requisicao('/rest/v1/eleicoes_cadastros?select=id,dados&order=criado_em.asc,id.asc&limit=500&offset=' + offset);
-      registros.push(...lote.map(r => ({ ...r.dados, _id: r.id })));
+      const lote = await requisicao('/rest/v1/eleicoes_cadastros?select=id,dados,criado_em&order=criado_em.asc,id.asc&limit=500&offset=' + offset);
+      registros.push(...lote.map(r => ({ ...r.dados, _id: r.id, _criadoEm: r.criado_em })));
       if (lote.length < 500) break;
     }
     cache = registros; carregado = true; avisar();
   }
   async function salvar(registro) {
-    if (!online) { const dados = local(); registro._id = crypto.randomUUID(); dados.push(registro); localStorage.setItem(localKey, JSON.stringify(dados)); return; }
+    if (!online) { const dados = local(); registro._id = crypto.randomUUID(); registro._criadoEm = new Date().toISOString(); dados.push(registro); localStorage.setItem(localKey, JSON.stringify(dados)); return; }
     const assinatura = JSON.stringify(registro);
     const id = pendentes.get(assinatura) || crypto.randomUUID();
     pendentes.set(assinatura, id);
@@ -63,13 +64,14 @@
       const idx = dados.findIndex(r => r._id === id);
       if (idx === -1) throw new Error('Não foi possível encontrar esse cadastro para editar.');
       registro._id = id;
+      registro._criadoEm = dados[idx]._criadoEm;
       dados[idx] = registro;
       localStorage.setItem(localKey, JSON.stringify(dados));
       return;
     }
     await requisicao('/rest/v1/eleicoes_cadastros?id=eq.' + encodeURIComponent(id), { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ dados: registro }) });
     const idx = cache.findIndex(r => r._id === id);
-    if (idx !== -1) cache[idx] = { ...registro, _id: id };
+    if (idx !== -1) cache[idx] = { ...registro, _id: id, _criadoEm: cache[idx]._criadoEm };
     avisar();
   }
   async function excluir(id) {
@@ -98,8 +100,47 @@
     });
     await atualizar(); return registros.length;
   }
+  /* Instantâneo: a lista de (município, zona, seção) que têm ao menos um
+     fiscal agora, guardada como referência para comparar depois quem
+     ganhou ou perdeu — ver database/eleicoes-instantaneos.sql. */
+  function secoesComFiscal() {
+    const vistas = new Map();
+    for (const r of banco.ler()) {
+      if (!r.municipio || !r.zona || !r.secao) continue;
+      vistas.set(r.municipio + '|' + r.zona + '|' + r.secao, { municipio: r.municipio, zona: r.zona, secao: r.secao });
+    }
+    return [...vistas.values()];
+  }
+  async function snapshotCriar() {
+    const secoes = secoesComFiscal();
+    if (!online) {
+      localStorage.setItem(localSnapKey, JSON.stringify({ criado_em: new Date().toISOString(), secoes }));
+      return secoes.length;
+    }
+    await requisicao('/rest/v1/eleicoes_instantaneos', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ secoes }) });
+    return secoes.length;
+  }
+  async function snapshotUltimo() {
+    if (!online) {
+      const bruto = localStorage.getItem(localSnapKey);
+      return bruto ? JSON.parse(bruto) : null;
+    }
+    const lista = await requisicao('/rest/v1/eleicoes_instantaneos?select=criado_em,secoes&order=criado_em.desc&limit=1');
+    return lista[0] || null;
+  }
+  /* Todos os instantâneos marcados (mais recente primeiro), para comparar
+     dois quaisquer ou ver a evolução da cobertura no tempo — não só "agora
+     vs. último". No modo local só existe um de cada vez (chave única no
+     localStorage), então a lista tem no máximo 1 item ali. */
+  async function snapshotListar(limite) {
+    if (!online) {
+      const bruto = localStorage.getItem(localSnapKey);
+      return bruto ? [JSON.parse(bruto)] : [];
+    }
+    return await requisicao('/rest/v1/eleicoes_instantaneos?select=criado_em,secoes&order=criado_em.desc&limit=' + (limite || 20));
+  }
   const banco = window.BANCO_ELEICOES = {
-    online, atualizar, importar, salvar, editar, excluir,
+    online, atualizar, importar, salvar, editar, excluir, snapshotCriar, snapshotUltimo, snapshotListar,
     ler() { if (!online) return local(); if (!carregado) throw new Error('Carregando os cadastros do banco online…'); return cache; },
     conectado: () => Boolean(sessao && carregado)
   };

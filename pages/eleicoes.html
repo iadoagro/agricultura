@@ -9,12 +9,105 @@
   <script src="../js/admin-auth.js?v=2026091404"></script>
   <script src="../js/admin-gate.js?v=2026091402"></script>
   <link rel="stylesheet" href="../css/base.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091408">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091414">
 </head>
 <body>
   <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
   <main class="eleicoes">
     <div class="barra-acesso"><a class="voltar" href="index.html">← Página inicial</a><button id="banco-abrir" type="button" hidden>Banco online</button></div>
+    <nav class="abas-eleicoes" role="tablist" aria-label="Seções de Eleições">
+      <button class="aba-el" data-aba="resultados" type="button" role="tab" id="aba-resultados" aria-controls="painel-resultados" aria-selected="false" tabindex="-1">Resultados</button>
+      <button class="aba-el" data-aba="fiscais" type="button" role="tab" id="aba-fiscais" aria-controls="painel-fiscais" aria-selected="false" tabindex="-1">Fiscais</button>
+    </nav>
+
+    <div class="aba-conteudo" data-aba="resultados" role="tabpanel" id="painel-resultados" aria-labelledby="aba-resultados" tabindex="0">
+      <section class="resultados-card indicadores-card" aria-labelledby="indicadores-titulo">
+        <div class="resultados-topo">
+          <h2 id="indicadores-titulo">Painel de indicadores — Fiscais</h2>
+          <p>Cobertura dos cadastros de Fiscais frente às seções oficiais de votação, geral e por regional — para decidir onde recrutar primeiro.</p>
+        </div>
+        <p id="indicadoresStatus" role="status" class="resultados-dica" hidden>Carregando indicadores…</p>
+        <div class="indicadores-grade">
+          <div class="indicador"><span class="indicador-rot">Fiscais cadastrados</span><span class="indicador-val" id="indTotalFiscais">—</span></div>
+          <div class="indicador"><span class="indicador-rot">Cobertura de seções</span><span class="indicador-val" id="indCoberturaGeral">—</span></div>
+          <div class="indicador"><span class="indicador-rot">Municípios sem fiscal</span><span class="indicador-val" id="indMunSemFiscal">—</span></div>
+        </div>
+        <div class="indicadores-corpo">
+          <div>
+            <h4>Cobertura por regional</h4>
+            <div id="indicadoresRegional"></div>
+          </div>
+          <div>
+            <h4>Municípios sem nenhum fiscal</h4>
+            <ul class="indicadores-lista-zero" id="indicadoresMunicipiosZero"></ul>
+          </div>
+        </div>
+      </section>
+      <div class="resultados-wrap">
+        <section class="resultados-card" aria-labelledby="resultados-titulo">
+          <div class="resultados-topo">
+            <h2 id="resultados-titulo">Votação por seção — José Luís Schafer (2022)</h2>
+            <p>Mapa por município, conforme os votos do candidato. Clique num município para ver o detalhe por zona e seção, incluindo as seções sem voto para ele.</p>
+          </div>
+          <p id="resultadosStatus" role="status">Carregando mapa…</p>
+          <svg id="mapaResultados" viewBox="0 0 1000 600" aria-label="Mapa de votos por município para José Luís Schafer"></svg>
+          <div id="mapaResultadosDica" class="mapa-dica" role="status" hidden></div>
+        </section>
+        <aside class="resultados-lateral" aria-label="Detalhe por município" id="resultadosDetalhe">
+          <p class="resultados-dica">Clique num município no mapa para ver o detalhe por zona e seção.</p>
+        </aside>
+      </div>
+      <section class="resultados-card prioridades-card" aria-labelledby="prioridades-titulo">
+        <div class="resultados-topo">
+          <h2 id="prioridades-titulo">Prioridades — seções com voto e sem fiscal</h2>
+          <p>Seções que tiveram voto para o candidato em 2022 e hoje não têm nenhum fiscal cadastrado — por aqui costuma valer mais a pena recrutar primeiro.</p>
+        </div>
+        <div class="filtros-eleitorais prioridades-filtros">
+          <label>Regional<select id="prioridadesRegional"><option value="">Todas as regionais</option></select></label>
+          <label>Município<select id="prioridadesMunicipio"><option value="">Todos os municípios</option></select></label>
+          <label>Zona<select id="prioridadesZona"><option value="">Todas as zonas</option></select></label>
+          <label>Ordenar por<select id="prioridadesOrdenar">
+            <option value="municipio-votos">Município (A-Z) e votos</option>
+            <option value="votos-desc">Votos (maior para o menor)</option>
+            <option value="votos-asc">Votos (menor para o maior)</option>
+          </select></label>
+        </div>
+        <p id="prioridadesStatus" role="status" class="resultados-dica"></p>
+        <div id="prioridadesTabela"></div>
+      </section>
+      <section class="instantaneo-card" aria-labelledby="instantaneo-titulo">
+        <div class="instantaneo-topo">
+          <div>
+            <h2 id="instantaneo-titulo">Comparar fiscais com um instantâneo</h2>
+            <p>Marque a situação atual dos cadastros como referência; depois, cada seção que ganhar ou perder fiscal aparece aqui.</p>
+          </div>
+          <button id="instantaneo-marcar" type="button" hidden>Marcar situação atual</button>
+        </div>
+        <label id="instantaneo-escolher-rotulo" for="instantaneo-escolher" hidden>Comparar situação atual com
+          <select id="instantaneo-escolher"></select>
+        </label>
+        <p id="instantaneo-status" role="status"></p>
+        <div id="instantaneo-resultado"></div>
+        <div id="instantaneo-tendencia-bloco" hidden>
+          <h4>Cobertura geral ao longo dos instantâneos</h4>
+          <div id="instantaneo-tendencia"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="aba-conteudo" data-aba="fiscais" role="tabpanel" id="painel-fiscais" aria-labelledby="aba-fiscais" tabindex="0">
+    <section class="mapa-card busca-global-card" aria-labelledby="busca-global-titulo">
+      <div class="mapa-topo"><div><h2 id="busca-global-titulo">Buscar fiscais em todos os municípios</h2><p>Procure por nome ou telefone antes de cadastrar de novo, ou exporte a lista filtrada para uso em campo.</p></div></div>
+      <div class="busca-global-filtros">
+        <label>Nome ou telefone<input id="buscaGlobalTexto" type="search" placeholder="Buscar…"></label>
+        <label>Regional<select id="buscaGlobalRegional"><option value="">Todas</option></select></label>
+        <label>Município<select id="buscaGlobalMunicipio"><option value="">Todos</option></select></label>
+        <label>Zona<select id="buscaGlobalZona"><option value="">Todas</option></select></label>
+        <button id="buscaGlobalExportar" type="button">Exportar CSV</button>
+      </div>
+      <p id="buscaGlobalStatus" role="status"></p>
+      <ul id="buscaGlobalLista" class="busca-global-lista"></ul>
+    </section>
     <div class="area-municipios">
     <nav class="municipios-lateral" aria-label="Municípios do Acre"><h2>Municípios</h2><div id="municipios-lista"></div></nav>
     <section class="mapa-card" aria-labelledby="mapa-titulo">
@@ -22,7 +115,9 @@
         <label>Selecionar município<select id="municipio"><option value="">Escolha um município</option></select></label>
       </div>
       <p id="mapa-status" role="status">Carregando mapa…</p>
-      <svg id="mapa" viewBox="0 0 1000 600" aria-label="Mapa interativo dos municípios do Acre"></svg>
+      <svg id="mapa" viewBox="0 0 1000 600" aria-label="Mapa interativo dos municípios do Acre, colorido pela cobertura de fiscais"></svg>
+      <div class="cobertura-legenda" aria-hidden="true"><span>Sem fiscal</span><span class="cobertura-gradiente"></span><span>Cobertura completa</span></div>
+      <div id="mapaFiscaisDica" class="mapa-dica" role="status" hidden></div>
       <section id="consulta-eleitoral" hidden aria-label="Zonas e seções do município">
         <h3>Zonas e locais de votação</h3>
         <div class="filtros-eleitorais">
@@ -57,6 +152,7 @@
   </aside>
     </div>
     <p class="aviso" id="aviso-dados">Os cadastros são salvos somente neste navegador.</p>
+    </div>
   </main>
   <dialog id="banco-dialogo" aria-labelledby="banco-titulo">
     <button id="banco-fechar" type="button" aria-label="Fechar acesso ao banco">×</button>
@@ -69,9 +165,20 @@
     <p id="banco-mensagem" role="status"></p>
   </dialog>
   <script src="../js/mapa-acre.js?v=2026091402"></script>
+  <script src="../js/mapa-municipios.js?v=2026091402"></script>
   <script src="../js/locais-votacao.js?v=2026091405"></script>
+  <script src="../js/dados-votacao-schafer.js?v=2026091401"></script>
+  <script src="../js/regionais-municipios.js?v=2026091411"></script>
+  <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026091408"></script>
-  <script src="../js/eleicoes.js?v=2026091408"></script>
+  <script src="../js/banco-eleicoes.js?v=2026091412"></script>
+  <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
+  <script src="../js/eleicoes.js?v=2026091412"></script>
+  <script src="../js/eleicoes-resultados.js?v=2026091414"></script>
+  <script src="../js/eleicoes-painel.js?v=2026091411"></script>
+  <script src="../js/eleicoes-fiscais-mapa.js?v=2026091412"></script>
+  <script src="../js/eleicoes-prioridades.js?v=2026091415"></script>
+  <script src="../js/eleicoes-busca-exportar.js?v=2026091412"></script>
+  <script src="../js/eleicoes-abas.js?v=2026091401"></script>
 </body>
 </html>

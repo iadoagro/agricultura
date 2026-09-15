@@ -91,6 +91,12 @@
           }
           li.append(item);
         });
+        if (r._criadoEm) {
+          const auditoria = document.createElement('span');
+          auditoria.className = 'cadastro-auditoria';
+          auditoria.textContent = 'Cadastrado em ' + new Date(r._criadoEm).toLocaleDateString('pt-BR');
+          li.append(auditoria);
+        }
         const acoes = document.createElement('div');
         acoes.className = 'acoes-cadastro';
         const btnEditar = document.createElement('button');
