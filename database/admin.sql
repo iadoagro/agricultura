@@ -4,7 +4,7 @@
 -- incompleta ou de aplicar uma atualização deste arquivo.
 --
 -- Cria o cadastro de administradores com aprovação: qualquer pessoa pode se
--- cadastrar, mas só tem acesso depois que luansobraldourado5@gmail.com
+-- cadastrar, mas só tem acesso depois que root@root.com
 -- aprova, e só enxerga as páginas liberadas para ela em "paginas".
 begin;
 
@@ -30,12 +30,12 @@ create policy "Usuario le a propria solicitacao" on public.admin_solicitacoes
 
 drop policy if exists "Responsavel le todas as solicitacoes" on public.admin_solicitacoes;
 create policy "Responsavel le todas as solicitacoes" on public.admin_solicitacoes
-  for select to authenticated using ((select auth.jwt() ->> 'email') = 'luansobraldourado5@gmail.com');
+  for select to authenticated using ((select auth.jwt() ->> 'email') = 'root@root.com');
 
 drop policy if exists "Responsavel aprova ou recusa" on public.admin_solicitacoes;
 create policy "Responsavel aprova ou recusa" on public.admin_solicitacoes
-  for update to authenticated using ((select auth.jwt() ->> 'email') = 'luansobraldourado5@gmail.com')
-  with check ((select auth.jwt() ->> 'email') = 'luansobraldourado5@gmail.com');
+  for update to authenticated using ((select auth.jwt() ->> 'email') = 'root@root.com')
+  with check ((select auth.jwt() ->> 'email') = 'root@root.com');
 
 -- Cria a solicitação (status pendente, paginas padrão) automaticamente a
 -- cada cadastro novo, então o app nunca precisa gravar nessa tabela direto.

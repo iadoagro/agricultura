@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SISTEMA</title>
+<title>Entrar | Sistema</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="stylesheet" href="../css/base.css">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026091405">
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091503">
 </head>
-<body>
-<header><h1>SISTEMA</h1><p>Acesso administrativo</p></header>
-<main class="admin-auth">
+<body class="login-page">
+<main class="admin-auth login-layout">
   <div class="admin-card">
     <div id="painelStatus" hidden>
       <p class="admin-desc" id="statusTexto"></p>
@@ -18,20 +17,22 @@
     </div>
     <div id="painelFormularios">
       <form id="formEntrar">
-        <p class="admin-desc">Entre com sua conta.</p>
+        <span class="login-eyebrow">ACESSO AO SISTEMA</span>
+        <h2 class="login-title">Boas-vindas</h2>
+        <p class="admin-desc">Informe seus dados para entrar na sua conta.</p>
         <label for="entEmail">E-mail ou usuário</label>
-        <input id="entEmail" type="text" autocomplete="username" required>
+        <input id="entEmail" placeholder="Seu e-mail ou usuário" autocapitalize="none" spellcheck="false" type="text" autocomplete="username" required>
         <label for="entSenha">Senha</label>
-        <input id="entSenha" type="password" autocomplete="current-password" required>
+        <div class="login-password"><input id="entSenha" placeholder="Digite sua senha" type="password" autocomplete="current-password" required><button type="button" id="mostrarSenha" aria-controls="entSenha" aria-pressed="false">Mostrar</button></div>
         <button class="admin-submit" type="submit">Entrar</button>
         <p class="admin-troca">Ainda não tem conta? <a href="#" id="linkParaCadastro">Cadastre-se</a></p>
       </form>
       <form id="formCadastrar" hidden>
-        <p class="admin-desc">Crie sua conta. O acesso fica pendente até o responsável aprovar o cadastro.</p>
+        <h2 class="login-title">Crie sua conta</h2><p class="admin-desc">Preencha seus dados. O acesso fica pendente até o responsável aprovar o cadastro.</p>
         <label for="cadNome">Nome</label>
-        <input id="cadNome" type="text" autocomplete="off" required>
+        <input id="cadNome" type="text" autocomplete="given-name" required>
         <label for="cadSobrenome">Sobrenome</label>
-        <input id="cadSobrenome" type="text" autocomplete="off" required>
+        <input id="cadSobrenome" type="text" autocomplete="family-name" required>
         <label for="cadLogin">Login (gerado automaticamente)</label>
         <input id="cadLogin" type="text" disabled>
         <label for="cadSenha">Senha</label>
@@ -45,6 +46,6 @@
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026091404"></script>
-<script src="../js/admin-login.js?v=2026091404"></script>
+<script src="../js/admin-login.js?v=2026091501"></script>
 </body>
 </html>
