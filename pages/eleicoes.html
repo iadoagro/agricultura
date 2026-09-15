@@ -9,7 +9,8 @@
   <script src="../js/admin-auth.js?v=2026091404"></script>
   <script src="../js/admin-gate.js?v=2026091402"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091522">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091523">
 </head>
 <body>
   <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
@@ -116,20 +117,19 @@
         <div class="mapa-bairros-topo">
           <div>
             <h4 id="mapaBairrosTitulo">Cobertura por bairro</h4>
-            <p class="mapa-esquematico-dica">Bairros oficiais da Prefeitura de Rio Branco (SEFIN). Passe o mouse para ver a cobertura de cada um.</p>
+            <p class="mapa-esquematico-dica">Passe o mouse para ver a cobertura de cada bairro.</p>
           </div>
           <div class="mapa-bairros-acoes">
             <button id="mapaBairrosZoomMenos" type="button" aria-label="Diminuir zoom">−</button>
-            <span id="mapaBairrosZoomValor" aria-hidden="true">100%</span>
+            <span id="mapaBairrosZoomValor" aria-hidden="true"></span>
             <button id="mapaBairrosZoomMais" type="button" aria-label="Aumentar zoom">+</button>
             <button id="mapaBairrosZoomReset" type="button">Redefinir zoom</button>
             <button id="mapaBairrosTelaCheia" type="button" aria-pressed="false">Tela cheia</button>
           </div>
         </div>
         <div id="mapaBairrosViewport" class="mapa-bairros-viewport">
-          <svg id="mapaBairros" viewBox="0 0 390 480" aria-label="Mapa dos bairros de Rio Branco, colorido pela cobertura de fiscais"></svg>
+          <div id="mapaBairros" role="img" aria-label="Mapa de satélite dos bairros de Rio Branco, colorido pela cobertura de fiscais"></div>
         </div>
-        <div id="mapaBairrosDica" class="mapa-dica" role="status" hidden></div>
       </section>
       <div class="mapa-rodape"><span id="municipio-hover">22 municípios · Acre</span><a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" target="_blank" rel="noopener">Malha municipal: IBGE</a></div>
     </section>
@@ -203,13 +203,15 @@
   <script src="../js/locais-votacao.js?v=2026091405"></script>
   <script src="../js/locais-votacao-coordenadas.js?v=2026091509"></script>
   <script src="../js/mapa-rio-branco-bairros.js?v=2026091509"></script>
+  <script src="../js/mapa-bairros-municipios.js?v=2026091501"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/dados-votacao-schafer.js?v=2026091401"></script>
   <script src="../js/regionais-municipios.js?v=2026091411"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
   <script src="../js/banco-eleicoes.js?v=2026091502"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
-  <script src="../js/eleicoes.js?v=2026091517"></script>
+  <script src="../js/eleicoes.js?v=2026091523"></script>
   <script src="../js/eleicoes-resultados.js?v=2026091504"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026091501"></script>
