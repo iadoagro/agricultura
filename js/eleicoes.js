@@ -3,6 +3,7 @@
   'use strict';
   const chave = 'seagri_eleicoes_v1';
   const mapa = document.getElementById('mapa');
+  const mapaEstadoArea = document.getElementById('mapaEstadoArea');
   const seletor = document.getElementById('municipio');
   const formMunicipio = document.getElementById('formMunicipio');
   const painel = document.getElementById('painel');
@@ -14,6 +15,7 @@
   let editandoId = null;
   let bairroSvgDesenhado = null;
   let porBairroAtual = new Map();
+  let centroidesBairro = new Map();
   const locais = window.LOCAIS_VOTACAO.locais;
   const cz = document.getElementById('consulta-zona'), cl = document.getElementById('consulta-local'), cs = document.getElementById('consulta-secao');
   const zona = form.elements.zona, secao = form.elements.secao;
@@ -47,53 +49,6 @@
   cz.onchange = () => atualizarConsulta('zona');
   cl.onchange = () => atualizarConsulta('local');
   cs.onchange = () => atualizarConsulta('secao');
-  // Não existe polígono oficial de seção eleitoral (o TSE não publica — só
-  // município tem malha, via window.MAPA_ACRE). Em vez de um mapa
-  // geográfico, isto é uma grade esquemática por zona: um bloco por seção,
-  // colorido por ter ou não fiscal, clicável pra ir direto pro cadastro.
-  function renderizarMapaEsquematico() {
-    const el = document.getElementById('mapaEsquematico');
-    if (!el) return;
-    el.replaceChildren();
-    if (!selecionado) return;
-    let comFiscal;
-    try {
-      comFiscal = new Set(ler().filter(r => r.municipio === selecionado && r.zona && r.secao)
-        .map(r => canonico(r.zona) + '|' + canonico(r.secao)));
-    } catch (e) {
-      const p = document.createElement('p'); p.className = 'resultados-vazio'; p.textContent = e.message;
-      el.append(p); return;
-    }
-    const porZona = new Map();
-    doMunicipio().forEach(l => {
-      secoesDe([l]).forEach(s => {
-        if (!porZona.has(l.zona)) porZona.set(l.zona, []);
-        porZona.get(l.zona).push({ numero: s.numero, local: l });
-      });
-    });
-    [...porZona.keys()].sort((a, b) => Number(a) - Number(b)).forEach(z => {
-      const bloco = document.createElement('div'); bloco.className = 'esquema-zona';
-      const titulo = document.createElement('h5'); titulo.textContent = 'Zona ' + z; bloco.append(titulo);
-      const grade = document.createElement('div'); grade.className = 'esquema-grade';
-      porZona.get(z).sort((a, b) => Number(a.numero) - Number(b.numero)).forEach(s => {
-        const tem = comFiscal.has(canonico(z) + '|' + canonico(s.numero));
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'esquema-secao ' + (tem ? 'tem-fiscal' : 'sem-fiscal');
-        btn.textContent = s.numero;
-        btn.title = 'Seção ' + s.numero + ' — ' + (tem ? 'tem fiscal' : 'sem fiscal') + ' — ' + s.local.nome;
-        btn.onclick = () => {
-          cs.value = s.local.id + ':' + s.numero;
-          atualizarConsulta('secao');
-          if (window.innerWidth < 1000) form.scrollIntoView({behavior:'smooth', block:'start'});
-          form.elements.nome.focus();
-        };
-        grade.append(btn);
-      });
-      bloco.append(grade);
-      el.append(bloco);
-    });
-  }
   // Mapa de ruas de verdade, só pra município com bairro conhecido (por ora
   // só Rio Branco — ver tools/geocodificar_locais_votacao.py e
   // tools/gerar_bairros_rio_branco.py). Polígono oficial de bairro
@@ -102,11 +57,11 @@
   function escBairro(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
-  function corBairro(nome) {
-    const acc = porBairroAtual.get(nome);
-    if (!acc || !acc.oficiais) return '#e2e6ec';
-    const luz = 92 - (acc.comFiscal / acc.oficiais) * 50;
-    return 'hsl(215 55% ' + luz.toFixed(0) + '%)';
+  // Preenchimento sempre apagado (não colore mais por cobertura) — quem tem
+  // fiscal aparece com um pin verde (ver atualizarPinsBairros), o polígono
+  // em si só delimita o bairro.
+  function corBairro() {
+    return '#e4e7ec';
   }
   function mostrarDicaBairro(nome) {
     const dica = document.getElementById('mapaBairrosDica');
@@ -127,13 +82,30 @@
     svg.replaceChildren();
     const ns = 'http://www.w3.org/2000/svg';
     const features = window.MAPA_BAIRROS_RIO_BRANCO.features;
+    // Orientação geográfica padrão (norte pra cima, leste à direita) — igual
+    // ao mapa do estado (js/mapa-municipios.js). Rio Branco é naturalmente
+    // mais alto que largo; o quadro (viewBox) segue essa proporção real em
+    // vez de forçar uma rotação, pra não inverter a posição dos bairros.
     const projetar = p => [p[0] * Math.cos(9.97 * Math.PI / 180), -p[1]];
     const polysDe = f => f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
     const pontos = features.flatMap(f => polysDe(f).flat(2)).map(projetar);
     const xs = pontos.map(p => p[0]), ys = pontos.map(p => p[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-    const escala = Math.min(560 / (maxX - minX), 460 / (maxY - minY));
-    const transformar = p => { const q = projetar(p); return [(q[0] - minX) * escala + (600 - (maxX - minX) * escala) / 2, (q[1] - minY) * escala + (500 - (maxY - minY) * escala) / 2]; };
+    const escala = Math.min(350 / (maxX - minX), 440 / (maxY - minY));
+    const transformar = p => { const q = projetar(p); return [(q[0] - minX) * escala + (390 - (maxX - minX) * escala) / 2, (q[1] - minY) * escala + (480 - (maxY - minY) * escala) / 2]; };
+    // Centro de área do maior anel do bairro (fórmula do shoelace, mesma
+    // usada em js/mapa-municipios.js), em coordenadas já transformadas —
+    // é onde o pin verde de "tem fiscal" é desenhado.
+    function centroDoAnel(anel) {
+      const pontos = anel.map(transformar);
+      let area = 0, cx = 0, cy = 0;
+      pontos.forEach((p, i) => {
+        const q = pontos[(i + 1) % pontos.length], a = p[0] * q[1] - q[0] * p[1];
+        area += a; cx += (p[0] + q[0]) * a; cy += (p[1] + q[1]) * a;
+      });
+      return area ? [cx / (3 * area), cy / (3 * area)] : pontos[0];
+    }
+    centroidesBairro = new Map();
     features.forEach(f => {
       const nome = f.properties.bairro;
       const d = polysDe(f).map(poly => poly.map(anel => anel.map((p, i) => (i ? 'L' : 'M') + transformar(p).map(n => n.toFixed(2)).join(',')).join('') + 'Z').join('')).join('');
@@ -149,7 +121,12 @@
       path.addEventListener('mouseleave', esconderDicaBairro);
       path.addEventListener('blur', esconderDicaBairro);
       svg.append(path);
+      const maiorAnel = polysDe(f).map(poly => poly[0]).sort((a, b) => b.length - a.length)[0];
+      centroidesBairro.set(nome, centroDoAnel(maiorAnel));
     });
+    const gPins = document.createElementNS(ns, 'g');
+    gPins.setAttribute('id', 'mapaBairrosPins');
+    svg.append(gPins);
     svg.addEventListener('mousemove', e => {
       const dica = document.getElementById('mapaBairrosDica');
       if (!dica || dica.hidden) return;
@@ -160,13 +137,85 @@
       dica.style.left = x + 'px'; dica.style.top = y + 'px';
     });
   }
+  // Zoom e tela cheia do mapa de bairros: reaproveita a mesma svg#mapaBairros
+  // desenhada por desenharSvgBairros; zoom é só transform CSS (não redesenha
+  // path nenhum), com o viewport (#mapaBairrosViewport) provendo a rolagem
+  // quando o mapa fica maior que a área visível.
+  const mapaBairrosViewport = document.getElementById('mapaBairrosViewport');
+  const btnBairrosZoomMais = document.getElementById('mapaBairrosZoomMais');
+  const btnBairrosZoomMenos = document.getElementById('mapaBairrosZoomMenos');
+  const btnBairrosZoomReset = document.getElementById('mapaBairrosZoomReset');
+  const btnBairrosTelaCheia = document.getElementById('mapaBairrosTelaCheia');
+  const elBairrosZoomValor = document.getElementById('mapaBairrosZoomValor');
+  const secaoBairrosEl = document.getElementById('mapaBairrosSecao');
+  const ZOOM_BAIRROS_MIN = 1, ZOOM_BAIRROS_MAX = 4, ZOOM_BAIRROS_PASSO = 0.25;
+  let zoomBairros = 1;
+  function aplicarZoomBairros() {
+    const svg = document.getElementById('mapaBairros');
+    if (!svg) return;
+    svg.style.transform = 'scale(' + zoomBairros + ')';
+    if (elBairrosZoomValor) elBairrosZoomValor.textContent = Math.round(zoomBairros * 100) + '%';
+    if (btnBairrosZoomMenos) btnBairrosZoomMenos.disabled = zoomBairros <= ZOOM_BAIRROS_MIN;
+    if (btnBairrosZoomMais) btnBairrosZoomMais.disabled = zoomBairros >= ZOOM_BAIRROS_MAX;
+  }
+  function ajustarZoomBairros(delta) {
+    zoomBairros = Math.min(ZOOM_BAIRROS_MAX, Math.max(ZOOM_BAIRROS_MIN, +(zoomBairros + delta).toFixed(2)));
+    aplicarZoomBairros();
+  }
+  function resetZoomBairros() {
+    zoomBairros = 1;
+    aplicarZoomBairros();
+    if (mapaBairrosViewport) { mapaBairrosViewport.scrollLeft = 0; mapaBairrosViewport.scrollTop = 0; }
+  }
+  if (btnBairrosZoomMais) btnBairrosZoomMais.onclick = () => ajustarZoomBairros(ZOOM_BAIRROS_PASSO);
+  if (btnBairrosZoomMenos) btnBairrosZoomMenos.onclick = () => ajustarZoomBairros(-ZOOM_BAIRROS_PASSO);
+  if (btnBairrosZoomReset) btnBairrosZoomReset.onclick = resetZoomBairros;
+  if (mapaBairrosViewport) {
+    mapaBairrosViewport.addEventListener('wheel', e => {
+      e.preventDefault();
+      ajustarZoomBairros(e.deltaY < 0 ? ZOOM_BAIRROS_PASSO : -ZOOM_BAIRROS_PASSO);
+    }, { passive: false });
+  }
+  function emTelaCheiaBairros() {
+    return document.fullscreenElement === secaoBairrosEl || document.webkitFullscreenElement === secaoBairrosEl;
+  }
+  function atualizarBotaoTelaCheia() {
+    if (!btnBairrosTelaCheia || !secaoBairrosEl) return;
+    const cheio = emTelaCheiaBairros();
+    btnBairrosTelaCheia.textContent = cheio ? 'Sair da tela cheia' : 'Tela cheia';
+    btnBairrosTelaCheia.setAttribute('aria-pressed', String(cheio));
+  }
+  if (btnBairrosTelaCheia && secaoBairrosEl) {
+    btnBairrosTelaCheia.onclick = () => {
+      if (emTelaCheiaBairros()) {
+        (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+      } else {
+        const pedir = secaoBairrosEl.requestFullscreen || secaoBairrosEl.webkitRequestFullscreen;
+        if (pedir) pedir.call(secaoBairrosEl);
+      }
+    };
+    document.addEventListener('fullscreenchange', atualizarBotaoTelaCheia);
+    document.addEventListener('webkitfullscreenchange', atualizarBotaoTelaCheia);
+  }
   function renderizarMapaBairros() {
     const secaoEl = document.getElementById('mapaBairrosSecao');
     const svg = document.getElementById('mapaBairros');
     if (!secaoEl || !svg) return;
     const disponivel = selecionado === '1200401' && window.MAPA_BAIRROS_RIO_BRANCO && window.LOCAIS_COORDENADAS;
     secaoEl.hidden = !disponivel;
-    if (!disponivel) return;
+    if (mapaEstadoArea) mapaEstadoArea.hidden = disponivel;
+    // Com o mapa de bairros em foco, some com o resto do card (rodapé) e com
+    // as duas seções abaixo (zonas/locais e cadastros/busca global) — só o
+    // mapa aparece. Quando não é o caso, cada uma continua sob controle do
+    // código que já cuida delas (abrir(), listarAbaixoDoMapa()).
+    const rodapeEl = document.querySelector('.mapa-rodape');
+    if (rodapeEl) rodapeEl.hidden = disponivel;
+    const secoesAbaixoEl = document.querySelector('.secoes-abaixo-mapa');
+    if (secoesAbaixoEl && disponivel) secoesAbaixoEl.hidden = true;
+    if (!disponivel) {
+      if (secoesAbaixoEl) secoesAbaixoEl.hidden = false;
+      return;
+    }
 
     let comFiscal = new Set();
     try {
@@ -192,6 +241,38 @@
     }
     svg.querySelectorAll('path[data-bairro]').forEach(path => {
       path.style.fill = corBairro(path.dataset.bairro);
+    });
+    atualizarPinsBairros(svg);
+  }
+  // Um pin verde por bairro que tenha ao menos um fiscal cadastrado — em vez
+  // de colorir o polígono por intensidade de cobertura. Reaproveita o mesmo
+  // <g> a cada atualização (só troca quais bairros têm pin), sem redesenhar
+  // os polígonos.
+  function criarPinVerde(nome, x, y) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('class', 'bairro-pin');
+    g.dataset.bairroPin = nome;
+    const r = 7;
+    const tail = document.createElementNS(ns, 'path');
+    tail.setAttribute('d', 'M' + (x - r * 0.55).toFixed(1) + ',' + (y - r * 0.6).toFixed(1) +
+      'L' + (x + r * 0.55).toFixed(1) + ',' + (y - r * 0.6).toFixed(1) + 'L' + x.toFixed(1) + ',' + y.toFixed(1) + 'Z');
+    const cabeca = document.createElementNS(ns, 'circle');
+    cabeca.setAttribute('cx', x); cabeca.setAttribute('cy', y - r * 1.4); cabeca.setAttribute('r', r);
+    const furo = document.createElementNS(ns, 'circle');
+    furo.setAttribute('class', 'bairro-pin-furo');
+    furo.setAttribute('cx', x); furo.setAttribute('cy', y - r * 1.4); furo.setAttribute('r', r * 0.4);
+    const title = document.createElementNS(ns, 'title'); title.textContent = nome + ' — tem fiscal cadastrado';
+    g.append(tail, cabeca, furo, title);
+    return g;
+  }
+  function atualizarPinsBairros(svg) {
+    const grupo = svg.querySelector('#mapaBairrosPins');
+    if (!grupo) return;
+    grupo.replaceChildren();
+    centroidesBairro.forEach((centro, nome) => {
+      const acc = porBairroAtual.get(nome);
+      if (acc && acc.comFiscal > 0) grupo.append(criarPinVerde(nome, centro[0], centro[1]));
     });
   }
   document.getElementById('anterior').onclick = () => { pagina--; listar(); };
@@ -265,7 +346,6 @@
       registros.slice(pagina,pagina+1).forEach(r => lista.append(construirCartaoCadastro(r)));
     } catch (e) { lista.textContent = e.message; document.getElementById('paginacao').hidden = true; }
     listarAbaixoDoMapa();
-    renderizarMapaEsquematico();
     renderizarMapaBairros();
   }
   // Lista completa (sem paginar) dos cadastros do município selecionado,
@@ -274,9 +354,18 @@
   function listarAbaixoDoMapa() {
     const secaoEl = document.getElementById('cadastrosMapaSecao');
     const listaEl = document.getElementById('cadastrosMapaLista');
+    const buscaGlobalConteudo = document.getElementById('buscaGlobalConteudo');
     if (!secaoEl || !listaEl) return;
-    if (!selecionado) { secaoEl.hidden = true; return; }
+    // Mesmo espaço da busca global: com um município selecionado, mostra os
+    // cadastros dele ali (em vez da caixa vazia que ficava embaixo do mapa);
+    // sem município, volta a mostrar a busca em todos os municípios.
+    if (!selecionado) {
+      secaoEl.hidden = true;
+      if (buscaGlobalConteudo) buscaGlobalConteudo.hidden = false;
+      return;
+    }
     secaoEl.hidden = false;
+    if (buscaGlobalConteudo) buscaGlobalConteudo.hidden = true;
     listaEl.replaceChildren();
     try {
       const registros = registrosFiltrados();
@@ -299,7 +388,8 @@
     editandoId = r._id;
     form.elements.nome.value = r.nome || '';
     form.elements.telefone.value = r.telefone || '';
-    form.elements.regional.value = r.regional || '';
+    // Regional não é mais digitada/escolhida à parte — abrir() já a define
+    // (e trava) a partir do município, então nem entra aqui.
     form.elements.bairro.value = r.bairro || '';
     form.elements.zona.value = r.zona || '';
     prepararSecoes();
@@ -333,11 +423,50 @@
     mensagem.textContent = ''; mensagem.className = '';
   }
   document.getElementById('cancelarEdicao').onclick = encerrarEdicao;
+  // Bairros válidos do município selecionado: cruza quem tem seção de
+  // votação (window.LOCAIS_COORDENADAS, por local de votação) com os
+  // bairros oficiais do mapa (window.MAPA_BAIRROS_RIO_BRANCO) — só existe
+  // pra Rio Branco, único município com essa geometria. Devolve null nos
+  // demais, pra manter "Bairro" como texto livre.
+  function bairrosDoMunicipio() {
+    if (selecionado !== '1200401' || !window.MAPA_BAIRROS_RIO_BRANCO || !window.LOCAIS_COORDENADAS) return null;
+    const oficiais = new Set(window.MAPA_BAIRROS_RIO_BRANCO.features.map(f => f.properties.bairro));
+    const dasSecoes = new Set();
+    doMunicipio().forEach(l => {
+      const coord = window.LOCAIS_COORDENADAS[l.id];
+      if (coord && coord.bairro && oficiais.has(coord.bairro)) dasSecoes.add(coord.bairro);
+    });
+    return [...dasSecoes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }
+  // Troca o campo "Bairro" do formulário entre texto livre (padrão) e uma
+  // lista fechada (Rio Branco), conforme bairrosDoMunicipio(). Mantém o
+  // mesmo id/name pra form.elements.bairro continuar funcionando igual.
+  function atualizarCampoBairro() {
+    const atual = document.getElementById('bairro');
+    const bairros = bairrosDoMunicipio();
+    const valorAtual = atual.value;
+    if (bairros && bairros.length) {
+      let campo = atual;
+      if (atual.tagName !== 'SELECT') {
+        campo = document.createElement('select');
+        campo.id = 'bairro'; campo.name = 'bairro';
+        atual.replaceWith(campo);
+      }
+      opcoes(campo, bairros.map(b => [b, b]), 'Selecione o bairro');
+      if (bairros.includes(valorAtual)) campo.value = valorAtual;
+    } else if (atual.tagName !== 'INPUT') {
+      const input = document.createElement('input');
+      input.id = 'bairro'; input.name = 'bairro'; input.maxLength = 120;
+      atual.replaceWith(input);
+    }
+  }
   function abrir(id) {
     if (!nomes.has(id)) return;
     encerrarEdicao();
     selecionado = id;
     pagina = 0;
+    resetZoomBairros();
+    atualizarCampoBairro();
     seletor.value = id;
     document.getElementById('painel-titulo').textContent = nomes.get(id);
     mapa.querySelectorAll('path').forEach(p => p.classList.toggle('selecionado', p.dataset.id === id));
@@ -346,6 +475,15 @@
       b.setAttribute('aria-pressed', String(b.dataset.id === id));
     });
     formMunicipio.value = id;
+    // Regional é fixa por município (window.REGIONAIS_MUNICIPIOS) — não faz
+    // sentido deixar escolher outra, então preenche e trava o campo.
+    const regionalDoMunicipio = window.REGIONAIS_MUNICIPIOS && window.REGIONAIS_MUNICIPIOS[id];
+    if (regionalDoMunicipio) {
+      form.elements.regional.value = regionalDoMunicipio;
+      form.elements.regional.disabled = true;
+    } else {
+      form.elements.regional.disabled = false;
+    }
     const zonas = [...new Set(doMunicipio().map(l=>l.zona))].sort((a,b)=>Number(a)-Number(b)).map(z=>[z,'Zona '+z]);
     opcoes(cz, zonas, 'Todas as zonas'); opcoes(zona, zonas, 'Selecione a zona');
     document.getElementById('consulta-eleitoral').hidden = false;

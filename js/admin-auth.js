@@ -188,9 +188,13 @@
     const email = login + '@' + DOMINIO_USUARIO;
     const r = await chamarAdminPHP('criar_usuario', { email, senha: senha || SENHA_PADRAO });
     if (!r.id) throw new Error('O servidor não retornou o cadastro criado. Tente novamente.');
+    // Se o servidor avisou que não conseguiu gravar em admin_solicitacoes, a
+    // conta existe no Supabase mas ainda não tem o que aprovar aqui — não
+    // adianta tentar aprovar/marcar senha de uma linha que não existe.
+    if (r.aviso) return { login, aviso: r.aviso };
     await decidir(r.id, true);
     try { await definirDeveTrocarSenha(r.id, true); } catch (e) {}
-    return login;
+    return { login };
   }
 
   async function redefinirSenha(email) {

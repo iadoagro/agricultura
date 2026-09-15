@@ -23,6 +23,12 @@ alter table public.admin_solicitacoes add column if not exists paginas text[] no
 alter table public.admin_solicitacoes enable row level security;
 revoke all on public.admin_solicitacoes from anon, authenticated;
 grant select, update on public.admin_solicitacoes to authenticated;
+-- service_role contorna as políticas de RLS abaixo, mas ainda precisa desse
+-- grant básico do Postgres pra poder ler/gravar a tabela — sem isso,
+-- admin_usuarios.php (que usa service_role) recebe "permission denied" ao
+-- tentar ligar um cadastro novo à sua linha em admin_solicitacoes, e ele
+-- nunca aparece em Usuários mesmo tendo sido criado com sucesso no Auth.
+grant select, insert, update, delete on public.admin_solicitacoes to service_role;
 
 drop policy if exists "Usuario le a propria solicitacao" on public.admin_solicitacoes;
 create policy "Usuario le a propria solicitacao" on public.admin_solicitacoes
