@@ -4,6 +4,7 @@
   const chave = 'seagri_eleicoes_v1';
   const mapa = document.getElementById('mapa');
   const seletor = document.getElementById('municipio');
+  const formMunicipio = document.getElementById('formMunicipio');
   const painel = document.getElementById('painel');
   const form = document.getElementById('cadastro');
   const mensagem = document.getElementById('mensagem');
@@ -11,6 +12,8 @@
   let selecionado = '';
   let pagina = 0;
   let editandoId = null;
+  let bairroSvgDesenhado = null;
+  let porBairroAtual = new Map();
   const locais = window.LOCAIS_VOTACAO.locais;
   const cz = document.getElementById('consulta-zona'), cl = document.getElementById('consulta-local'), cs = document.getElementById('consulta-secao');
   const zona = form.elements.zona, secao = form.elements.secao;
@@ -44,25 +47,214 @@
   cz.onchange = () => atualizarConsulta('zona');
   cl.onchange = () => atualizarConsulta('local');
   cs.onchange = () => atualizarConsulta('secao');
+  // Não existe polígono oficial de seção eleitoral (o TSE não publica — só
+  // município tem malha, via window.MAPA_ACRE). Em vez de um mapa
+  // geográfico, isto é uma grade esquemática por zona: um bloco por seção,
+  // colorido por ter ou não fiscal, clicável pra ir direto pro cadastro.
+  function renderizarMapaEsquematico() {
+    const el = document.getElementById('mapaEsquematico');
+    if (!el) return;
+    el.replaceChildren();
+    if (!selecionado) return;
+    let comFiscal;
+    try {
+      comFiscal = new Set(ler().filter(r => r.municipio === selecionado && r.zona && r.secao)
+        .map(r => canonico(r.zona) + '|' + canonico(r.secao)));
+    } catch (e) {
+      const p = document.createElement('p'); p.className = 'resultados-vazio'; p.textContent = e.message;
+      el.append(p); return;
+    }
+    const porZona = new Map();
+    doMunicipio().forEach(l => {
+      secoesDe([l]).forEach(s => {
+        if (!porZona.has(l.zona)) porZona.set(l.zona, []);
+        porZona.get(l.zona).push({ numero: s.numero, local: l });
+      });
+    });
+    [...porZona.keys()].sort((a, b) => Number(a) - Number(b)).forEach(z => {
+      const bloco = document.createElement('div'); bloco.className = 'esquema-zona';
+      const titulo = document.createElement('h5'); titulo.textContent = 'Zona ' + z; bloco.append(titulo);
+      const grade = document.createElement('div'); grade.className = 'esquema-grade';
+      porZona.get(z).sort((a, b) => Number(a.numero) - Number(b.numero)).forEach(s => {
+        const tem = comFiscal.has(canonico(z) + '|' + canonico(s.numero));
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'esquema-secao ' + (tem ? 'tem-fiscal' : 'sem-fiscal');
+        btn.textContent = s.numero;
+        btn.title = 'Seção ' + s.numero + ' — ' + (tem ? 'tem fiscal' : 'sem fiscal') + ' — ' + s.local.nome;
+        btn.onclick = () => {
+          cs.value = s.local.id + ':' + s.numero;
+          atualizarConsulta('secao');
+          if (window.innerWidth < 1000) form.scrollIntoView({behavior:'smooth', block:'start'});
+          form.elements.nome.focus();
+        };
+        grade.append(btn);
+      });
+      bloco.append(grade);
+      el.append(bloco);
+    });
+  }
+  // Mapa de ruas de verdade, só pra município com bairro conhecido (por ora
+  // só Rio Branco — ver tools/geocodificar_locais_votacao.py e
+  // tools/gerar_bairros_rio_branco.py). Polígono oficial de bairro
+  // (SEFIN/rbgeo.riobranco.ac.gov.br), cor pela cobertura de fiscal dos
+  // locais de votação que caem em cada bairro.
+  function escBairro(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function corBairro(nome) {
+    const acc = porBairroAtual.get(nome);
+    if (!acc || !acc.oficiais) return '#e2e6ec';
+    const luz = 92 - (acc.comFiscal / acc.oficiais) * 50;
+    return 'hsl(215 55% ' + luz.toFixed(0) + '%)';
+  }
+  function mostrarDicaBairro(nome) {
+    const dica = document.getElementById('mapaBairrosDica');
+    if (!dica) return;
+    const acc = porBairroAtual.get(nome) || { oficiais: 0, comFiscal: 0 };
+    const pct = acc.oficiais ? (acc.comFiscal / acc.oficiais * 100) : 0;
+    dica.innerHTML = '<strong>' + escBairro(nome) + '</strong>' +
+      '<div class="linha"><span>Cobertura</span><span>' + pct.toFixed(1).replace('.', ',') + '%</span></div>' +
+      '<div class="linha com"><span>Seções com fiscal</span><span>' + acc.comFiscal + '</span></div>' +
+      '<div class="linha sem"><span>Seções sem fiscal</span><span>' + Math.max(0, acc.oficiais - acc.comFiscal) + '</span></div>';
+    dica.hidden = false;
+  }
+  function esconderDicaBairro() {
+    const dica = document.getElementById('mapaBairrosDica');
+    if (dica) dica.hidden = true;
+  }
+  function desenharSvgBairros(svg) {
+    svg.replaceChildren();
+    const ns = 'http://www.w3.org/2000/svg';
+    const features = window.MAPA_BAIRROS_RIO_BRANCO.features;
+    const projetar = p => [p[0] * Math.cos(9.97 * Math.PI / 180), -p[1]];
+    const polysDe = f => f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+    const pontos = features.flatMap(f => polysDe(f).flat(2)).map(projetar);
+    const xs = pontos.map(p => p[0]), ys = pontos.map(p => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const escala = Math.min(560 / (maxX - minX), 460 / (maxY - minY));
+    const transformar = p => { const q = projetar(p); return [(q[0] - minX) * escala + (600 - (maxX - minX) * escala) / 2, (q[1] - minY) * escala + (500 - (maxY - minY) * escala) / 2]; };
+    features.forEach(f => {
+      const nome = f.properties.bairro;
+      const d = polysDe(f).map(poly => poly.map(anel => anel.map((p, i) => (i ? 'L' : 'M') + transformar(p).map(n => n.toFixed(2)).join(',')).join('') + 'Z').join('')).join('');
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', d);
+      path.dataset.bairro = nome;
+      path.setAttribute('tabindex', '0');
+      path.setAttribute('role', 'img');
+      path.setAttribute('aria-label', nome);
+      const title = document.createElementNS(ns, 'title'); title.textContent = nome; path.append(title);
+      path.addEventListener('mouseenter', () => mostrarDicaBairro(nome));
+      path.addEventListener('focus', () => mostrarDicaBairro(nome));
+      path.addEventListener('mouseleave', esconderDicaBairro);
+      path.addEventListener('blur', esconderDicaBairro);
+      svg.append(path);
+    });
+    svg.addEventListener('mousemove', e => {
+      const dica = document.getElementById('mapaBairrosDica');
+      if (!dica || dica.hidden) return;
+      const margem = 16;
+      let x = e.clientX + margem, y = e.clientY + margem;
+      if (x + 250 > window.innerWidth) x = e.clientX - 250 - margem;
+      if (y + 110 > window.innerHeight) y = e.clientY - 110 - margem;
+      dica.style.left = x + 'px'; dica.style.top = y + 'px';
+    });
+  }
+  function renderizarMapaBairros() {
+    const secaoEl = document.getElementById('mapaBairrosSecao');
+    const svg = document.getElementById('mapaBairros');
+    if (!secaoEl || !svg) return;
+    const disponivel = selecionado === '1200401' && window.MAPA_BAIRROS_RIO_BRANCO && window.LOCAIS_COORDENADAS;
+    secaoEl.hidden = !disponivel;
+    if (!disponivel) return;
+
+    let comFiscal = new Set();
+    try {
+      ler().filter(r => r.municipio === selecionado && r.zona && r.secao)
+        .forEach(r => comFiscal.add(canonico(r.zona) + '|' + canonico(r.secao)));
+    } catch (e) { /* banco online ainda carregando; recalcula no próximo banco-atualizado */ }
+
+    porBairroAtual = new Map();
+    doMunicipio().forEach(l => {
+      const coord = window.LOCAIS_COORDENADAS[l.id];
+      if (!coord || !coord.bairro) return;
+      const acc = porBairroAtual.get(coord.bairro) || { oficiais: 0, comFiscal: 0 };
+      secoesDe([l]).forEach(s => {
+        acc.oficiais++;
+        if (comFiscal.has(canonico(l.zona) + '|' + canonico(s.numero))) acc.comFiscal++;
+      });
+      porBairroAtual.set(coord.bairro, acc);
+    });
+
+    if (bairroSvgDesenhado !== selecionado) {
+      desenharSvgBairros(svg);
+      bairroSvgDesenhado = selecionado;
+    }
+    svg.querySelectorAll('path[data-bairro]').forEach(path => {
+      path.style.fill = corBairro(path.dataset.bairro);
+    });
+  }
   document.getElementById('anterior').onclick = () => { pagina--; listar(); };
   document.getElementById('proximo').onclick = () => { pagina++; listar(); };
   function ler() {
     return window.BANCO_ELEICOES.ler();
   }
+  function registrosFiltrados() {
+    return ler().filter(r => {
+      if (r.municipio !== selecionado) return false;
+      if (cz.value && canonico(r.zona)!==canonico(cz.value)) return false;
+      const idLocal = cs.value ? cs.value.split(':')[0] : cl.value;
+      if (idLocal) {
+        const l = locais.find(l=>l.id===idLocal);
+        if (canonico(r.zona)!==canonico(l.zona) || !secoesDe([l]).some(s=>canonico(s.numero)===canonico(r.secao))) return false;
+      }
+      return !cs.value || canonico(r.secao)===canonico(cs.value.split(':')[1]);
+    });
+  }
+  function construirCartaoCadastro(r) {
+    const li = document.createElement('li');
+    const titulos = {regional:'Regional', bairro:'Bairro', secao:'Seção eleitoral', zona:'Zona eleitoral'};
+    ['nome', 'regional', 'bairro', 'secao', 'zona', 'telefone'].forEach(k => {
+      const item = document.createElement(k === 'nome' ? 'strong' : 'span');
+      item.textContent = (titulos[k] ? titulos[k] + ': ' : '') + (r[k] || 'Não informado');
+      if (k === 'telefone') {
+        item.className = 'cadastro-telefone';
+        const digitos = r.telefone.replace(/\D/g, '');
+        const internacional = digitos.length === 10 || digitos.length === 11 ? '55' + digitos : digitos;
+        if (/^\d{10,15}$/.test(internacional)) {
+          const link = document.createElement('a');
+          link.href = 'https://wa.me/' + internacional;
+          link.target = '_blank'; link.rel = 'noopener noreferrer';
+          link.textContent = r.telefone + ' — WhatsApp';
+          link.setAttribute('aria-label', 'Conversar com ' + r.nome + ' no WhatsApp');
+          item.replaceChildren(link);
+        }
+      }
+      li.append(item);
+    });
+    if (r._criadoEm) {
+      const auditoria = document.createElement('span');
+      auditoria.className = 'cadastro-auditoria';
+      auditoria.textContent = 'Cadastrado em ' + new Date(r._criadoEm).toLocaleDateString('pt-BR');
+      li.append(auditoria);
+    }
+    const acoes = document.createElement('div');
+    acoes.className = 'acoes-cadastro';
+    const btnEditar = document.createElement('button');
+    btnEditar.type = 'button'; btnEditar.className = 'editar-cadastro'; btnEditar.textContent = 'Editar cadastro';
+    btnEditar.onclick = () => iniciarEdicao(r);
+    const btnExcluir = document.createElement('button');
+    btnExcluir.type = 'button'; btnExcluir.className = 'excluir-cadastro'; btnExcluir.textContent = 'Excluir cadastro';
+    btnExcluir.onclick = () => excluirRegistro(r);
+    acoes.append(btnEditar, btnExcluir);
+    li.append(acoes);
+    return li;
+  }
   function listar() {
     const lista = document.getElementById('cadastros');
     lista.replaceChildren();
     try {
-      const registros = ler().filter(r => {
-        if (r.municipio !== selecionado) return false;
-        if (cz.value && canonico(r.zona)!==canonico(cz.value)) return false;
-        const idLocal = cs.value ? cs.value.split(':')[0] : cl.value;
-        if (idLocal) {
-          const l = locais.find(l=>l.id===idLocal);
-          if (canonico(r.zona)!==canonico(l.zona) || !secoesDe([l]).some(s=>canonico(s.numero)===canonico(r.secao))) return false;
-        }
-        return !cs.value || canonico(r.secao)===canonico(cs.value.split(':')[1]);
-      });
+      const registros = registrosFiltrados();
       pagina = Math.max(0, Math.min(pagina, registros.length-1));
       document.getElementById('paginacao').hidden = registros.length < 2;
       document.getElementById('pagina-atual').textContent = (pagina+1) + ' de ' + registros.length;
@@ -70,46 +262,34 @@
       document.getElementById('proximo').disabled = pagina >= registros.length-1;
       document.getElementById('lista-titulo').textContent = 'Cadastros do município (' + registros.length + ')';
       if (!registros.length) lista.textContent = 'Nenhum cadastro neste município.';
-      registros.slice(pagina,pagina+1).forEach(r => {
-        const li = document.createElement('li');
-        const titulos = {regional:'Regional', bairro:'Bairro', secao:'Seção eleitoral', zona:'Zona eleitoral'};
-        ['nome', 'regional', 'bairro', 'secao', 'zona', 'telefone'].forEach(k => {
-          const item = document.createElement(k === 'nome' ? 'strong' : 'span');
-          item.textContent = (titulos[k] ? titulos[k] + ': ' : '') + (r[k] || 'Não informado');
-          if (k === 'telefone') {
-            item.className = 'cadastro-telefone';
-            const digitos = r.telefone.replace(/\D/g, '');
-            const internacional = digitos.length === 10 || digitos.length === 11 ? '55' + digitos : digitos;
-            if (/^\d{10,15}$/.test(internacional)) {
-              const link = document.createElement('a');
-              link.href = 'https://wa.me/' + internacional;
-              link.target = '_blank'; link.rel = 'noopener noreferrer';
-              link.textContent = r.telefone + ' — WhatsApp';
-              link.setAttribute('aria-label', 'Conversar com ' + r.nome + ' no WhatsApp');
-              item.replaceChildren(link);
-            }
-          }
-          li.append(item);
-        });
-        if (r._criadoEm) {
-          const auditoria = document.createElement('span');
-          auditoria.className = 'cadastro-auditoria';
-          auditoria.textContent = 'Cadastrado em ' + new Date(r._criadoEm).toLocaleDateString('pt-BR');
-          li.append(auditoria);
-        }
-        const acoes = document.createElement('div');
-        acoes.className = 'acoes-cadastro';
-        const btnEditar = document.createElement('button');
-        btnEditar.type = 'button'; btnEditar.className = 'editar-cadastro'; btnEditar.textContent = 'Editar cadastro';
-        btnEditar.onclick = () => iniciarEdicao(r);
-        const btnExcluir = document.createElement('button');
-        btnExcluir.type = 'button'; btnExcluir.className = 'excluir-cadastro'; btnExcluir.textContent = 'Excluir cadastro';
-        btnExcluir.onclick = () => excluirRegistro(r);
-        acoes.append(btnEditar, btnExcluir);
-        li.append(acoes);
-        lista.append(li);
-      });
+      registros.slice(pagina,pagina+1).forEach(r => lista.append(construirCartaoCadastro(r)));
     } catch (e) { lista.textContent = e.message; document.getElementById('paginacao').hidden = true; }
+    listarAbaixoDoMapa();
+    renderizarMapaEsquematico();
+    renderizarMapaBairros();
+  }
+  // Lista completa (sem paginar) dos cadastros do município selecionado,
+  // abaixo do mapa — complementa o único registro por vez da barra lateral,
+  // pra ver todo mundo de uma vez sem clicar em "próximo" várias vezes.
+  function listarAbaixoDoMapa() {
+    const secaoEl = document.getElementById('cadastrosMapaSecao');
+    const listaEl = document.getElementById('cadastrosMapaLista');
+    if (!secaoEl || !listaEl) return;
+    if (!selecionado) { secaoEl.hidden = true; return; }
+    secaoEl.hidden = false;
+    listaEl.replaceChildren();
+    try {
+      const registros = registrosFiltrados();
+      document.getElementById('cadastrosMapaTitulo').textContent = 'Cadastros do município (' + registros.length + ')';
+      if (!registros.length) {
+        const li = document.createElement('li');
+        li.className = 'vazio-linha';
+        li.textContent = 'Nenhum cadastro neste município.';
+        listaEl.append(li);
+        return;
+      }
+      registros.forEach(r => listaEl.append(construirCartaoCadastro(r)));
+    } catch (e) { listaEl.textContent = e.message; }
   }
   function iniciarEdicao(r) {
     if (!window.BANCO_ELEICOES.online && !r._id) {
@@ -146,6 +326,7 @@
   function encerrarEdicao() {
     editandoId = null;
     form.reset();
+    formMunicipio.value = selecionado;
     document.getElementById('cadastro-titulo').textContent = 'Adicionar cadastro';
     form.querySelector('.salvar').textContent = 'Salvar cadastro';
     document.getElementById('cancelarEdicao').hidden = true;
@@ -164,6 +345,7 @@
       b.classList.toggle('selecionado', b.dataset.id === id);
       b.setAttribute('aria-pressed', String(b.dataset.id === id));
     });
+    formMunicipio.value = id;
     const zonas = [...new Set(doMunicipio().map(l=>l.zona))].sort((a,b)=>Number(a)-Number(b)).map(z=>[z,'Zona '+z]);
     opcoes(cz, zonas, 'Todas as zonas'); opcoes(zona, zonas, 'Selecione a zona');
     document.getElementById('consulta-eleitoral').hidden = false;
@@ -172,8 +354,10 @@
     if (window.innerWidth < 1000) painel.scrollIntoView({behavior:'smooth', block:'start'});
   }
   seletor.onchange = () => abrir(seletor.value);
+  formMunicipio.onchange = () => abrir(formMunicipio.value);
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    if (!selecionado) { formMunicipio.focus(); mensagem.textContent = 'Selecione um município.'; mensagem.className = 'erro'; return; }
     const registro = {municipio: selecionado};
     for (const k of ['nome','telefone','regional']) {
       registro[k] = form.elements[k].value.trim();
@@ -197,7 +381,7 @@
         mensagem.className = ''; mensagem.textContent = 'Cadastro atualizado.';
       } else {
         await window.BANCO_ELEICOES.salvar(registro);
-        form.reset(); atualizarConsulta('secao'); mensagem.className = ''; mensagem.textContent = window.BANCO_ELEICOES.online ? 'Cadastro salvo no banco online.' : 'Cadastro salvo neste navegador.';
+        form.reset(); formMunicipio.value = selecionado; atualizarConsulta('secao'); mensagem.className = ''; mensagem.textContent = window.BANCO_ELEICOES.online ? 'Cadastro salvo no banco online.' : 'Cadastro salvo neste navegador.';
         document.getElementById('nome').focus();
       }
     } catch (e) { mensagem.className = 'erro'; mensagem.textContent = e.message; }
@@ -213,6 +397,7 @@
     localidades.sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR')).forEach(m => {
       nomes.set(String(m.id), m.nome);
       const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.nome; seletor.append(opt);
+      const optForm = document.createElement('option'); optForm.value = m.id; optForm.textContent = m.nome; formMunicipio.append(optForm);
       const botao = document.createElement('button');
       botao.type = 'button'; botao.dataset.id = String(m.id); botao.textContent = m.nome;
       botao.setAttribute('aria-pressed', 'false'); botao.onclick = () => abrir(String(m.id));

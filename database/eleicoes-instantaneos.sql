@@ -24,29 +24,12 @@ grant select, insert on public.eleicoes_instantaneos to authenticated;
 
 drop policy if exists "Aprovados leem instantaneos" on public.eleicoes_instantaneos;
 create policy "Aprovados leem instantaneos" on public.eleicoes_instantaneos
-  for select to authenticated using (
-    (select auth.jwt() ->> 'email') = 'root@root.com'
-    or exists (
-      select 1 from public.admin_solicitacoes s
-      where s.id = (select auth.uid())
-        and s.status = 'aprovado'
-        and coalesce(s.ativo, true) = true
-    )
-  );
+  for select to authenticated using (public.eh_root_ou_aprovado());
 
 drop policy if exists "Aprovados criam instantaneos" on public.eleicoes_instantaneos;
 create policy "Aprovados criam instantaneos" on public.eleicoes_instantaneos
   for insert to authenticated with check (
-    criado_por = (select auth.uid())
-    and (
-      (select auth.jwt() ->> 'email') = 'root@root.com'
-      or exists (
-        select 1 from public.admin_solicitacoes s
-        where s.id = (select auth.uid())
-          and s.status = 'aprovado'
-          and coalesce(s.ativo, true) = true
-      )
-    )
+    criado_por = (select auth.uid()) and public.eh_root_ou_aprovado()
   );
 
 commit;

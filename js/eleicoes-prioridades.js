@@ -22,6 +22,25 @@
     'votos-asc': function (a, b) { return a.votos - b.votos; }
   };
 
+  // Várias seções costumam ficar no mesmo local (prédio) de votação — quem
+  // vai a campo prioriza o local, não a seção isolada. Junta as linhas com
+  // o mesmo local (dentro do mesmo município/zona) somando os votos.
+  function agruparPorLocal(linhasPorSecao) {
+    var porLocal = new Map();
+    linhasPorSecao.forEach(function (r) {
+      var nomeLocal = localPorSecao.get(r.municipio + '|' + r.zona + '|' + r.secao) || '—';
+      var chaveLocal = r.municipio + '|' + r.zona + '|' + nomeLocal;
+      var grupo = porLocal.get(chaveLocal);
+      if (!grupo) {
+        grupo = { municipio: r.municipio, zona: r.zona, local: nomeLocal, secoes: [], votos: 0 };
+        porLocal.set(chaveLocal, grupo);
+      }
+      grupo.secoes.push(r.secao);
+      grupo.votos += r.votos;
+    });
+    return [...porLocal.values()];
+  }
+
   if (!window.CoberturaFiscais || !window.DADOS_VOTACAO_SCHAFER || !window.REGIONAIS_MUNICIPIOS || !window.BANCO_ELEICOES) {
     if (status) status.textContent = 'Não foi possível carregar as prioridades.';
     return;
@@ -60,27 +79,28 @@
     try { dados = window.CoberturaFiscais.calcular(); }
     catch (e) { status.textContent = e.message; tabelaEl.innerHTML = ''; return; }
 
-    var linhas = window.DADOS_VOTACAO_SCHAFER.porSecao
+    var linhasPorSecao = window.DADOS_VOTACAO_SCHAFER.porSecao
       .filter(function (r) { return !dados.comFiscal.has(r.municipio + '|' + r.zona + '|' + r.secao); })
       .filter(function (r) { return !selRegional.value || window.REGIONAIS_MUNICIPIOS[r.municipio] === selRegional.value; })
       .filter(function (r) { return !selMunicipio.value || r.municipio === selMunicipio.value; })
-      .filter(function (r) { return !selZona.value || r.zona === selZona.value; })
-      .slice()
+      .filter(function (r) { return !selZona.value || r.zona === selZona.value; });
+
+    var linhas = agruparPorLocal(linhasPorSecao)
       .sort(ORDENACOES[selOrdenar.value] || ORDENACOES['municipio-votos']);
 
-    status.textContent = linhas.length
-      ? linhas.length + ' de ' + window.DADOS_VOTACAO_SCHAFER.porSecao.length + ' seções com voto ainda não têm fiscal.'
+    status.textContent = linhasPorSecao.length
+      ? linhasPorSecao.length + ' de ' + window.DADOS_VOTACAO_SCHAFER.porSecao.length + ' seções com voto ainda não têm fiscal, em ' + linhas.length + ' locais de votação.'
       : 'Todas as seções com voto (com esses filtros) já têm fiscal.';
 
     tabelaEl.innerHTML = !linhas.length ? '' : '<div class="tabela-scroll prioridades-scroll"><table class="dados prioridades-tabela"><thead><tr>' +
-      '<th>Município</th><th>Regional</th><th>Zona</th><th>Seção</th><th>Local de votação</th><th>Votos (2022)</th>' +
+      '<th>Município</th><th>Regional</th><th>Zona</th><th>Seções</th><th>Local de votação</th><th>Votos (2022)</th>' +
       '</tr></thead><tbody>' +
       linhas.map(function (r) {
-        var chave = r.municipio + '|' + r.zona + '|' + r.secao;
+        var secoes = r.secoes.slice().sort(function (a, b) { return Number(a) - Number(b); });
         return '<tr><td class="forte">' + esc(nomesMun.get(r.municipio) || r.municipio) + '</td>' +
           '<td>' + esc(window.REGIONAIS_MUNICIPIOS[r.municipio] || '—') + '</td>' +
-          '<td>' + esc(r.zona) + '</td><td>' + esc(r.secao) + '</td>' +
-          '<td>' + esc(localPorSecao.get(chave) || '—') + '</td>' +
+          '<td>' + esc(r.zona) + '</td><td>' + esc(secoes.join(', ')) + (secoes.length > 1 ? ' <span class="prioridades-qtd">(' + secoes.length + ')</span>' : '') + '</td>' +
+          '<td>' + esc(r.local) + '</td>' +
           '<td class="num forte">' + r.votos + '</td></tr>';
       }).join('') + '</tbody></table></div>';
   }

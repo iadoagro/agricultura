@@ -17,6 +17,22 @@ body{height:100dvh;display:flex;flex-direction:column}header{padding:10px 16px;f
 .cadastro-auditoria{display:block;font-size:11.5px;color:#999;margin-top:4px}
 
 #consulta-eleitoral{flex:none;border-top:1px solid #e0e0e0;padding:10px 0;margin-bottom:8px}#consulta-eleitoral h3{font-size:14px;margin-bottom:6px}.filtros-eleitorais{display:grid;grid-template-columns:95px minmax(0,1fr) 140px;gap:8px}.filtros-eleitorais label{font-size:12px;min-width:0}.filtros-eleitorais select{display:block;width:100%;min-width:0;padding:6px;font-size:12px;margin-top:4px}#local-detalhes{font-size:12px;line-height:1.4;margin-top:8px;overflow-wrap:anywhere}.fonte-eleitoral{font-size:10px;color:#666;margin-top:5px}#cadastro select option{white-space:normal}@media(max-width:700px){.filtros-eleitorais{grid-template-columns:minmax(0,1fr)}.filtros-eleitorais select{min-height:44px}}
+#mapaEsquematicoTitulo{font-size:14px;margin:14px 0 4px;color:#153e75}
+.mapa-esquematico-dica{font-size:11.5px;color:#666;line-height:1.5;margin:0 0 8px}
+.mapa-esquematico-dica .esquema-secao{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin:0 2px}
+.mapa-esquematico{max-height:340px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:10px}
+.esquema-zona{margin-bottom:10px}
+.esquema-zona:last-child{margin-bottom:0}
+.esquema-zona h5{margin:0 0 5px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#666}
+.esquema-grade{display:flex;flex-wrap:wrap;gap:4px}
+.esquema-secao{width:34px;height:26px;border:0;border-radius:5px;font-size:10.5px;font-weight:600;cursor:pointer;padding:0}
+.esquema-secao.tem-fiscal{background:hsl(215 55% 42%);color:#fff}
+.esquema-secao.sem-fiscal{background:hsl(215 30% 90%);color:#333}
+.esquema-secao:hover{outline:2px solid #153e75;outline-offset:1px}
+#mapaBairrosTitulo{font-size:14px;margin:14px 0 4px;color:#153e75}
+#mapaBairros{display:block;width:100%;max-height:420px;margin:8px auto;border:1px solid #eee;border-radius:8px}
+#mapaBairros path{stroke:#fff;stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer;transition:opacity .15s}
+#mapaBairros path:hover,#mapaBairros path:focus{opacity:.8;outline:none;stroke:#153e75;stroke-width:1.5}
 
 
 .barra-acesso{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none}.barra-acesso button{font-size:12px;padding:4px 10px;border:1px solid #a9b2bf;border-radius:6px;background:#fff;color:#153e75;margin-bottom:6px}#banco-dialogo{margin:auto;width:440px;height:auto;max-height:90dvh;border:1px solid #ddd;border-radius:12px;padding:24px;overflow:auto}#banco-dialogo h2{font-size:20px;color:#153e75;margin-bottom:14px}#banco-dialogo p{font-size:13px;line-height:1.5;margin:12px 0}#banco-dialogo label{display:block;font-size:13px;margin:12px 0 6px}#banco-dialogo input{width:100%;min-width:0}#banco-dialogo button{padding:8px 12px;border:1px solid #b7c0cd;border-radius:6px;background:#ecf0f5;color:#172d4c}#banco-dialogo form button,#banco-acoes button{display:block;width:100%;margin-top:12px}#banco-fechar{float:right}button:disabled{cursor:wait;opacity:.6}
@@ -69,7 +85,21 @@ body{height:100dvh;display:flex;flex-direction:column}header{padding:10px 16px;f
 @media(min-width:900px){
   .resultados-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
   .resultados-lateral{margin-top:0;position:sticky;top:16px}
+  .resultados-ranking{grid-column:1/-1;order:-1;max-height:280px;overflow:auto}
 }
+@media(min-width:1300px){
+  .resultados-wrap{grid-template-columns:210px minmax(0,1fr) 320px}
+  .resultados-ranking{grid-column:auto;order:0;max-height:none;overflow:visible;position:sticky;top:16px}
+}
+.resultados-ranking h2{font-size:16px}
+#resultadosRanking{display:grid;gap:3px}
+#resultadosRanking button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  border:0;background:transparent;text-align:left;padding:8px 10px;border-radius:6px;color:#333;font-size:13px}
+#resultadosRanking button:hover{background:#eff6ff}
+#resultadosRanking button.selecionado{background:#153e75;color:#fff}
+#resultadosRanking .ranking-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+#resultadosRanking .ranking-votos{font-weight:600;color:#153e75;flex:none}
+#resultadosRanking button.selecionado .ranking-votos{color:#fff}
 
 .instantaneo-card{background:#fff;border:1px solid #e0e0e0;border-radius:16px;padding:22px;margin-top:16px}
 .instantaneo-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
@@ -98,6 +128,7 @@ body{height:100dvh;display:flex;flex-direction:column}header{padding:10px 16px;f
 .indicador{background:#f4f6f9;border:1px solid #e0e0e0;border-radius:10px;padding:14px 16px}
 .indicador-rot{display:block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#666}
 .indicador-val{display:block;font-size:25px;font-weight:600;color:#153e75;margin-top:4px;line-height:1.15}
+.indicador-val small{font-size:13px;font-weight:500;color:#666}
 .indicadores-corpo{display:grid;grid-template-columns:1.3fr 1fr;gap:24px;margin-top:8px}
 .indicadores-corpo h4{margin:0 0 8px;font-size:13px;color:#666;text-transform:uppercase;letter-spacing:.4px}
 .indicadores-lista-zero{list-style:none;margin:0;padding:0;max-height:220px;overflow:auto;border:1px solid #eee;border-radius:8px}
@@ -134,11 +165,13 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .prioridades-card{margin-bottom:16px}
 .prioridades-filtros{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin:14px 0}
 .prioridades-tabela th:nth-child(2),.prioridades-tabela td:nth-child(2),
+.prioridades-tabela th:nth-child(4),.prioridades-tabela td:nth-child(4),
 .prioridades-tabela th:nth-child(5),.prioridades-tabela td:nth-child(5){text-align:left;white-space:normal}
+.prioridades-qtd{color:#666;font-weight:400}
 .prioridades-scroll{max-height:420px;overflow-y:auto}
 
 /* ==================================================== BUSCA GLOBAL / EXPORTAÇÃO */
-.busca-global-card{margin-bottom:16px}
+.busca-global-card{margin-top:16px}
 .busca-global-filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:14px;align-items:end}
 .busca-global-filtros label{font-size:12px;color:#666}
 .busca-global-filtros input,.busca-global-filtros select{display:block;width:100%;margin-top:4px;box-sizing:border-box}
@@ -153,4 +186,11 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .busca-global-abrir{justify-self:start;margin-top:4px;background:#eef2fb;color:#2f4f9e;border:1px solid #4472c4;border-radius:6px;padding:5px 12px;font-size:12.5px}
 .busca-global-abrir:hover{background:#dce4f6}
 @media(max-width:650px){.busca-global-filtros{grid-template-columns:1fr}}
+
+/* ===================================== CADASTROS DO MUNICÍPIO (ABAIXO DO MAPA) */
+.cadastros-mapa{margin-top:16px;border-top:1px solid #e0e0e0;padding-top:16px}
+.cadastros-mapa h3{margin:0 0 10px;font-size:15px;color:#153e75}
+.cadastros-mapa .busca-global-lista{max-height:none}
+.cadastros-mapa .vazio-linha{padding:12px 14px;font-size:13px;color:#666}
+
 

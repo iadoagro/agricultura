@@ -32,8 +32,8 @@
     if (!resposta.ok) {
       throw new Error(
         resposta.status === 401 ? 'Sua sessão expirou. Volte à página inicial e entre de novo.' :
-        resposta.status === 403 ? 'Esta conta não tem autorização para os cadastros de Fiscais.' :
-        'O banco não concluiu a operação. Tente novamente.'
+        resposta.status === 403 ? 'Esta conta não tem autorização para os cadastros de Fiscais. Se sua conta foi aprovada recentemente, volte à página inicial e entre de novo para atualizar a sessão; senão, peça ao responsável para aprovar/ativar sua conta em Usuários.' :
+        'O banco não concluiu a operação (' + resposta.status + '). Tente novamente.'
       );
     }
     const texto = await resposta.text(); return texto ? JSON.parse(texto) : null;
