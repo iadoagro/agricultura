@@ -1,16 +1,16 @@
 /* Estilos da página inicial — SEAGRI */
 body{min-height:100vh;display:flex;flex-direction:column}
-header{position:relative;background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:20px 32px;text-align:center;box-shadow:0 4px 12px rgba(27,94,32,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center}
+header{position:relative;background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:20px 32px;text-align:center;box-shadow:0 4px 12px rgba(27,55,94,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center}
 header h1{font-size:22px;font-weight:500;margin:0 0 4px}
 header p{font-size:12px;opacity:.9;margin:0}
 .admin-login-btn{position:absolute;top:12px;right:16px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s;max-width:calc(100% - 100px)}
 .admin-login-btn:hover{background:rgba(255,255,255,.28)}
-.admin-login-btn.logado{background:#25d366;border-color:#1aab52}
+.admin-login-btn.logado{background:#256dd3;border-color:#1a56ab}
 .container{flex:1;display:flex;justify-content:center;align-items:center;padding:40px clamp(24px,5vw,72px)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;width:100%}
 .card-link{text-decoration:none;color:inherit;display:block}
 .card{background:#fff;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:2px solid transparent;transition:all .3s ease;height:100%}
-.card:hover{transform:translateY(-6px);box-shadow:0 8px 32px rgba(27,94,32,0.15);border-color:var(--verde2)}
+.card:hover{transform:translateY(-6px);box-shadow:0 8px 32px rgba(27,55,94,0.15);border-color:var(--verde2)}
 .card-icon{font-size:48px;margin-bottom:16px;display:block}
 .card h2{font-size:22px;font-weight:600;color:var(--verde);margin:0 0 12px}
 .card p{font-size:14px;color:#666;line-height:1.6;margin:0}

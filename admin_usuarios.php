@@ -4,7 +4,7 @@ declare(strict_types=1);
 /* Ações administrativas que exigem a chave service_role do Supabase (criar,
    editar e-mail, excluir contas de verdade em Authentication > Users) —
    por isso rodam aqui no servidor, nunca no navegador. Só aceita pedidos de
-   quem está autenticado no Supabase como luansobraldourado5@gmail.com; a
+   quem está autenticado no Supabase como root@root.com; a
    sessão é a mesma do login do site (admin-auth.js), enviada no cabeçalho
    Authorization. Configuração real em admin_config.php (fora do git — veja
    admin_config.example.php e database/CONFIGURAR-ADMIN.md). */
@@ -18,7 +18,7 @@ function responder(int $status, array $corpo): void
     exit;
 }
 
-const RESPONSAVEL_EMAIL = 'luansobraldourado5@gmail.com';
+const RESPONSAVEL_EMAIL = 'root@root.com';
 
 $configPath = __DIR__ . '/admin_config.php';
 if (!file_exists($configPath)) {

@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   const cfg = window.BANCO_CONFIG || {};
-  const RESPONSAVEL_EMAIL = 'luansobraldourado5@gmail.com';
+  const RESPONSAVEL_EMAIL = 'root@root.com';
   const PAGINAS_PADRAO = ['eleicoes', 'dashboards'];
   const SENHA_PADRAO = '123456';
   const DOMINIO_USUARIO = 'sistema.local';

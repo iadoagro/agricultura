@@ -8,11 +8,10 @@
 <meta property="og:title" content="Organograma 2026">
 <meta property="og:description" content="Estrutura organizacional — 2026.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="../assets/brasao.png">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026091404"></script>
 <script src="../js/admin-gate.js?v=2026091402"></script>
-<link rel="stylesheet" href="../css/organograma.css?v=2026081307">
+<link rel="stylesheet" href="../css/organograma.css?v=2026091501">
 <script src="../js/dados-seagri.js?v=2026081307"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -58,10 +57,7 @@
 <div class="viewport" id="viewport">
   <div class="canvas" id="canvas">
     <svg class="line-layer" id="lineLayer"></svg>
-    <div class="slide-brand">
-      <img class="slide-brand-mark" src="../assets/brasao.png" alt="Brasão do Governo do Acre">
-    </div>
-    <div class="source-note">Portaria SEAGRI N&ordm; 187/2026</div>
+    <div class="source-note">Portaria N&ordm; 187/2026</div>
     <div class="update-note">&Uacute;ltima atualiza&ccedil;&atilde;o: 23 de junho de 2026</div>
   </div>
 </div>
@@ -412,7 +408,7 @@ function hideTip(){tooltip.classList.remove("show")}
 
 const detailPanel=document.getElementById("detailPanel");
 const KIND_LABEL={secretaria:"Secretaria",diretoria:"Diretoria","secretaria-adjunta":"Secretaria Adjunta",departamento:"Departamento",divisao:"Divisão",nucleo:"Núcleo",escritorio:"Escritório Local",assessoria:"Assessoria",comissao:"Comissão"};
-const KIND_COLOR={secretaria:"#6a1b9a",diretoria:"#c0392b","secretaria-adjunta":"#ffc000",assessoria:"#ffc000",comissao:"#ffc000",departamento:"#4472c4",divisao:"#70ad47",nucleo:"#ed7d31",escritorio:"#888"};
+const KIND_COLOR={secretaria:"#6a1b9a",diretoria:"#c0392b","secretaria-adjunta":"#ffc000",assessoria:"#ffc000",comissao:"#ffc000",departamento:"#4472c4",divisao:"#4771ad",nucleo:"#ed7d31",escritorio:"#888"};
 
 function makeDetailTreeItem(node){
   const wrap=document.createElement("div");wrap.className="detail-tree-item";
@@ -1170,7 +1166,7 @@ document.getElementById("btnPDF").addEventListener("click",()=>{
 function buildFilterPanel(){
   const container=document.getElementById('filterContent');
   container.innerHTML='';
-  const colorMap={purple:'#c0392b',yellow:'#ffc000',blue:'#4472c4',green:'#70ad47',orange:'#ed7d31'};
+  const colorMap={purple:'#c0392b',yellow:'#ffc000',blue:'#4472c4',green:'#4771ad',orange:'#ed7d31'};
 
   // -- Campo de busca --
   const searchWrap=document.createElement('div');

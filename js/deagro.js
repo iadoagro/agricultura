@@ -1526,7 +1526,7 @@
   });
 
   /* ------------------------------------------------------------------- URL */
-  /* Mesmo endereçamento do painel da mecanização: #aba?ano=…&reg=…&mun=…&nome=…
+  /* Mesmo endereçamento do painel da mecanização: #aab1bb?ano=…&reg=…&mun=…&nome=…
      Sem isso o link compartilhado abre a aba certa com os filtros zerados, e
      recarregar a página perde a seleção. */
   var CAMPOS_URL = ['ano', 'reg', 'mun', 'nome'];

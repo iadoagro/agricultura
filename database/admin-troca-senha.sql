@@ -3,7 +3,7 @@
 -- é 123456 e essa coluna marca que a pessoa precisa trocar no primeiro
 -- login. A função abaixo deixa o próprio usuário confirmar a troca (limpar
 -- a marca) sem depender das políticas de update, que hoje só valem pra
--- luansobraldourado5@gmail.com — ela roda com os privilégios de quem criou
+-- root@root.com — ela roda com os privilégios de quem criou
 -- a função, mas só mexe na linha do próprio usuário autenticado.
 alter table public.admin_solicitacoes add column if not exists deve_trocar_senha boolean not null default false;
 
