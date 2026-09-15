@@ -13,7 +13,6 @@
   let selecionado = '';
   let pagina = 0;
   let editandoId = null;
-  let bairroSvgDesenhado = null;
   let porBairroAtual = new Map();
   let centroidesBairro = new Map();
   const locais = window.LOCAIS_VOTACAO.locais;
@@ -49,133 +48,95 @@
   cz.onchange = () => atualizarConsulta('zona');
   cl.onchange = () => atualizarConsulta('local');
   cs.onchange = () => atualizarConsulta('secao');
-  // Mapa de ruas de verdade, só pra município com bairro conhecido (por ora
-  // só Rio Branco — ver tools/geocodificar_locais_votacao.py e
-  // tools/gerar_bairros_rio_branco.py). Polígono oficial de bairro
-  // (SEFIN/rbgeo.riobranco.ac.gov.br), cor pela cobertura de fiscal dos
-  // locais de votação que caem em cada bairro.
+  // Mapa de ruas de verdade, só pra município com bairro conhecido — Rio
+  // Branco (fonte própria, SEFIN, ver tools/gerar_bairros_rio_branco.py) e
+  // mais 8 municípios com bairro oficializado pelo IBGE no Censo 2022 (ver
+  // tools/gerar_bairros_municipios.py); os demais municípios do Acre não
+  // têm bairro oficial digitalizado em lugar nenhum encontrado. Cor pela
+  // cobertura de fiscal dos locais de votação que caem em cada bairro.
+  function dadosBairrosDoMunicipio(id) {
+    if (id === '1200401') return window.MAPA_BAIRROS_RIO_BRANCO || null;
+    return (window.MAPA_BAIRROS_MUNICIPIOS && window.MAPA_BAIRROS_MUNICIPIOS[id]) || null;
+  }
   function escBairro(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
-  // Preenchimento sempre apagado (não colore mais por cobertura) — quem tem
-  // fiscal aparece com um pin verde (ver atualizarPinsBairros), o polígono
-  // em si só delimita o bairro.
-  function corBairro() {
-    return '#e4e7ec';
-  }
-  function mostrarDicaBairro(nome) {
-    const dica = document.getElementById('mapaBairrosDica');
-    if (!dica) return;
+  function htmlDicaBairro(nome) {
     const acc = porBairroAtual.get(nome) || { oficiais: 0, comFiscal: 0 };
     const pct = acc.oficiais ? (acc.comFiscal / acc.oficiais * 100) : 0;
-    dica.innerHTML = '<strong>' + escBairro(nome) + '</strong>' +
+    return '<strong>' + escBairro(nome) + '</strong>' +
       '<div class="linha"><span>Cobertura</span><span>' + pct.toFixed(1).replace('.', ',') + '%</span></div>' +
       '<div class="linha com"><span>Seções com fiscal</span><span>' + acc.comFiscal + '</span></div>' +
       '<div class="linha sem"><span>Seções sem fiscal</span><span>' + Math.max(0, acc.oficiais - acc.comFiscal) + '</span></div>';
-    dica.hidden = false;
   }
-  function esconderDicaBairro() {
-    const dica = document.getElementById('mapaBairrosDica');
-    if (dica) dica.hidden = true;
+  // Mapa de satélite de verdade (Leaflet + imagens públicas do Esri World
+  // Imagery, sem precisar de chave de API) por baixo do contorno dos
+  // bairros — pra dar pra reconhecer ruas/quadras/construções de verdade em
+  // vez de só a forma do polígono. Um Leaflet só, criado na primeira vez que
+  // precisa (evita carregar ladrilho de satélite à toa se o usuário nunca
+  // abre um município com bairro).
+  let mapaBairrosLeaflet = null;
+  let camadaBairrosLeaflet = null;
+  let camadaPinsLeaflet = null;
+  let bairroMapaDesenhado = null;
+  function obterMapaBairrosLeaflet() {
+    if (mapaBairrosLeaflet || !window.L) return mapaBairrosLeaflet;
+    const container = document.getElementById('mapaBairros');
+    if (!container) return null;
+    // zoomAnimation:false — a animação de zoom do Leaflet trava em alguns
+    // navegadores/contextos (fica preso no zoom antigo até setZoom com
+    // animate:false); zoom instantâneo é menos bonito mas sempre funciona.
+    mapaBairrosLeaflet = L.map(container, { zoomControl: false, zoomAnimation: false, minZoom: 11, maxZoom: 19 });
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Imagens: Esri, Maxar, Earthstar Geographics'
+    }).addTo(mapaBairrosLeaflet);
+    camadaPinsLeaflet = L.layerGroup().addTo(mapaBairrosLeaflet);
+    mapaBairrosLeaflet.on('zoomend', atualizarBotoesZoomBairros);
+    return mapaBairrosLeaflet;
   }
-  function desenharSvgBairros(svg) {
-    svg.replaceChildren();
-    const ns = 'http://www.w3.org/2000/svg';
-    const features = window.MAPA_BAIRROS_RIO_BRANCO.features;
-    // Orientação geográfica padrão (norte pra cima, leste à direita) — igual
-    // ao mapa do estado (js/mapa-municipios.js). Rio Branco é naturalmente
-    // mais alto que largo; o quadro (viewBox) segue essa proporção real em
-    // vez de forçar uma rotação, pra não inverter a posição dos bairros.
-    const projetar = p => [p[0] * Math.cos(9.97 * Math.PI / 180), -p[1]];
-    const polysDe = f => f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
-    const pontos = features.flatMap(f => polysDe(f).flat(2)).map(projetar);
-    const xs = pontos.map(p => p[0]), ys = pontos.map(p => p[1]);
-    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-    const escala = Math.min(350 / (maxX - minX), 440 / (maxY - minY));
-    const transformar = p => { const q = projetar(p); return [(q[0] - minX) * escala + (390 - (maxX - minX) * escala) / 2, (q[1] - minY) * escala + (480 - (maxY - minY) * escala) / 2]; };
-    // Centro de área do maior anel do bairro (fórmula do shoelace, mesma
-    // usada em js/mapa-municipios.js), em coordenadas já transformadas —
-    // é onde o pin verde de "tem fiscal" é desenhado.
-    function centroDoAnel(anel) {
-      const pontos = anel.map(transformar);
-      let area = 0, cx = 0, cy = 0;
-      pontos.forEach((p, i) => {
-        const q = pontos[(i + 1) % pontos.length], a = p[0] * q[1] - q[0] * p[1];
-        area += a; cx += (p[0] + q[0]) * a; cy += (p[1] + q[1]) * a;
-      });
-      return area ? [cx / (3 * area), cy / (3 * area)] : pontos[0];
-    }
+  function desenharMapaBairros(features) {
+    const mapaL = obterMapaBairrosLeaflet();
+    if (!mapaL) return;
+    if (camadaBairrosLeaflet) { mapaL.removeLayer(camadaBairrosLeaflet); }
     centroidesBairro = new Map();
-    features.forEach(f => {
-      const nome = f.properties.bairro;
-      const d = polysDe(f).map(poly => poly.map(anel => anel.map((p, i) => (i ? 'L' : 'M') + transformar(p).map(n => n.toFixed(2)).join(',')).join('') + 'Z').join('')).join('');
-      const path = document.createElementNS(ns, 'path');
-      path.setAttribute('d', d);
-      path.dataset.bairro = nome;
-      path.setAttribute('tabindex', '0');
-      path.setAttribute('role', 'img');
-      path.setAttribute('aria-label', nome);
-      const title = document.createElementNS(ns, 'title'); title.textContent = nome; path.append(title);
-      path.addEventListener('mouseenter', () => mostrarDicaBairro(nome));
-      path.addEventListener('focus', () => mostrarDicaBairro(nome));
-      path.addEventListener('mouseleave', esconderDicaBairro);
-      path.addEventListener('blur', esconderDicaBairro);
-      svg.append(path);
-      const maiorAnel = polysDe(f).map(poly => poly[0]).sort((a, b) => b.length - a.length)[0];
-      centroidesBairro.set(nome, centroDoAnel(maiorAnel));
-    });
-    const gPins = document.createElementNS(ns, 'g');
-    gPins.setAttribute('id', 'mapaBairrosPins');
-    svg.append(gPins);
-    svg.addEventListener('mousemove', e => {
-      const dica = document.getElementById('mapaBairrosDica');
-      if (!dica || dica.hidden) return;
-      const margem = 16;
-      let x = e.clientX + margem, y = e.clientY + margem;
-      if (x + 250 > window.innerWidth) x = e.clientX - 250 - margem;
-      if (y + 110 > window.innerHeight) y = e.clientY - 110 - margem;
-      dica.style.left = x + 'px'; dica.style.top = y + 'px';
-    });
+    camadaBairrosLeaflet = L.geoJSON({ type: 'FeatureCollection', features: features }, {
+      // Preenchimento quase transparente — o ponto é deixar a imagem de
+      // satélite aparecer por baixo; só o contorno delimita o bairro. Quem
+      // tem fiscal aparece com um pin verde (ver atualizarPinsBairros), não
+      // por intensidade de cor do polígono.
+      style: { color: '#ffe066', weight: 2, fillColor: '#ffe066', fillOpacity: 0.06 },
+      onEachFeature: (feature, layer) => {
+        const nomeBairro = feature.properties.bairro;
+        layer.bindTooltip(() => htmlDicaBairro(nomeBairro), { sticky: true, direction: 'top', className: 'mapa-bairros-dica-cobertura' });
+        layer.on('mouseover', () => layer.setStyle({ weight: 3, fillOpacity: 0.22 }));
+        layer.on('mouseout', () => layer.setStyle({ weight: 2, fillOpacity: 0.06 }));
+        centroidesBairro.set(nomeBairro, layer.getBounds().getCenter());
+      }
+    }).addTo(mapaL);
+    mapaL.fitBounds(camadaBairrosLeaflet.getBounds(), { padding: [12, 12] });
   }
-  // Zoom e tela cheia do mapa de bairros: reaproveita a mesma svg#mapaBairros
-  // desenhada por desenharSvgBairros; zoom é só transform CSS (não redesenha
-  // path nenhum), com o viewport (#mapaBairrosViewport) provendo a rolagem
-  // quando o mapa fica maior que a área visível.
-  const mapaBairrosViewport = document.getElementById('mapaBairrosViewport');
+  // Zoom e tela cheia do mapa de bairros — zoom de verdade do Leaflet agora
+  // (mais nítido que o zoom por CSS de antes), tela cheia continua sendo a
+  // API nativa do navegador na seção inteira.
   const btnBairrosZoomMais = document.getElementById('mapaBairrosZoomMais');
   const btnBairrosZoomMenos = document.getElementById('mapaBairrosZoomMenos');
   const btnBairrosZoomReset = document.getElementById('mapaBairrosZoomReset');
   const btnBairrosTelaCheia = document.getElementById('mapaBairrosTelaCheia');
   const elBairrosZoomValor = document.getElementById('mapaBairrosZoomValor');
   const secaoBairrosEl = document.getElementById('mapaBairrosSecao');
-  const ZOOM_BAIRROS_MIN = 1, ZOOM_BAIRROS_MAX = 4, ZOOM_BAIRROS_PASSO = 0.25;
-  let zoomBairros = 1;
-  function aplicarZoomBairros() {
-    const svg = document.getElementById('mapaBairros');
-    if (!svg) return;
-    svg.style.transform = 'scale(' + zoomBairros + ')';
-    if (elBairrosZoomValor) elBairrosZoomValor.textContent = Math.round(zoomBairros * 100) + '%';
-    if (btnBairrosZoomMenos) btnBairrosZoomMenos.disabled = zoomBairros <= ZOOM_BAIRROS_MIN;
-    if (btnBairrosZoomMais) btnBairrosZoomMais.disabled = zoomBairros >= ZOOM_BAIRROS_MAX;
+  function atualizarBotoesZoomBairros() {
+    if (!mapaBairrosLeaflet) return;
+    const z = mapaBairrosLeaflet.getZoom();
+    if (elBairrosZoomValor) elBairrosZoomValor.textContent = 'Zoom ' + z;
+    if (btnBairrosZoomMenos) btnBairrosZoomMenos.disabled = z <= mapaBairrosLeaflet.getMinZoom();
+    if (btnBairrosZoomMais) btnBairrosZoomMais.disabled = z >= mapaBairrosLeaflet.getMaxZoom();
   }
-  function ajustarZoomBairros(delta) {
-    zoomBairros = Math.min(ZOOM_BAIRROS_MAX, Math.max(ZOOM_BAIRROS_MIN, +(zoomBairros + delta).toFixed(2)));
-    aplicarZoomBairros();
-  }
-  function resetZoomBairros() {
-    zoomBairros = 1;
-    aplicarZoomBairros();
-    if (mapaBairrosViewport) { mapaBairrosViewport.scrollLeft = 0; mapaBairrosViewport.scrollTop = 0; }
-  }
-  if (btnBairrosZoomMais) btnBairrosZoomMais.onclick = () => ajustarZoomBairros(ZOOM_BAIRROS_PASSO);
-  if (btnBairrosZoomMenos) btnBairrosZoomMenos.onclick = () => ajustarZoomBairros(-ZOOM_BAIRROS_PASSO);
-  if (btnBairrosZoomReset) btnBairrosZoomReset.onclick = resetZoomBairros;
-  if (mapaBairrosViewport) {
-    mapaBairrosViewport.addEventListener('wheel', e => {
-      e.preventDefault();
-      ajustarZoomBairros(e.deltaY < 0 ? ZOOM_BAIRROS_PASSO : -ZOOM_BAIRROS_PASSO);
-    }, { passive: false });
-  }
+  if (btnBairrosZoomMais) btnBairrosZoomMais.onclick = () => { if (mapaBairrosLeaflet) mapaBairrosLeaflet.zoomIn(); };
+  if (btnBairrosZoomMenos) btnBairrosZoomMenos.onclick = () => { if (mapaBairrosLeaflet) mapaBairrosLeaflet.zoomOut(); };
+  if (btnBairrosZoomReset) btnBairrosZoomReset.onclick = () => {
+    if (mapaBairrosLeaflet && camadaBairrosLeaflet) mapaBairrosLeaflet.fitBounds(camadaBairrosLeaflet.getBounds(), { padding: [12, 12] });
+  };
   function emTelaCheiaBairros() {
     return document.fullscreenElement === secaoBairrosEl || document.webkitFullscreenElement === secaoBairrosEl;
   }
@@ -184,6 +145,9 @@
     const cheio = emTelaCheiaBairros();
     btnBairrosTelaCheia.textContent = cheio ? 'Sair da tela cheia' : 'Tela cheia';
     btnBairrosTelaCheia.setAttribute('aria-pressed', String(cheio));
+    // O contêiner muda de tamanho ao entrar/sair da tela cheia — sem isso o
+    // Leaflet fica com ladrilhos faltando nas bordas até a próxima interação.
+    if (mapaBairrosLeaflet) setTimeout(() => mapaBairrosLeaflet.invalidateSize(), 60);
   }
   if (btnBairrosTelaCheia && secaoBairrosEl) {
     btnBairrosTelaCheia.onclick = () => {
@@ -199,9 +163,9 @@
   }
   function renderizarMapaBairros() {
     const secaoEl = document.getElementById('mapaBairrosSecao');
-    const svg = document.getElementById('mapaBairros');
-    if (!secaoEl || !svg) return;
-    const disponivel = selecionado === '1200401' && window.MAPA_BAIRROS_RIO_BRANCO && window.LOCAIS_COORDENADAS;
+    if (!secaoEl) return;
+    const dadosBairros = dadosBairrosDoMunicipio(selecionado);
+    const disponivel = Boolean(dadosBairros) && window.LOCAIS_COORDENADAS;
     secaoEl.hidden = !disponivel;
     if (mapaEstadoArea) mapaEstadoArea.hidden = disponivel;
     // Com o mapa de bairros em foco, some com o resto do card (rodapé) e com
@@ -235,44 +199,40 @@
       porBairroAtual.set(coord.bairro, acc);
     });
 
-    if (bairroSvgDesenhado !== selecionado) {
-      desenharSvgBairros(svg);
-      bairroSvgDesenhado = selecionado;
+    if (bairroMapaDesenhado !== selecionado) {
+      desenharMapaBairros(dadosBairros.features);
+      bairroMapaDesenhado = selecionado;
     }
-    svg.querySelectorAll('path[data-bairro]').forEach(path => {
-      path.style.fill = corBairro(path.dataset.bairro);
-    });
-    atualizarPinsBairros(svg);
+    if (mapaBairrosLeaflet) setTimeout(() => mapaBairrosLeaflet.invalidateSize(), 0);
+    atualizarPinsBairros();
+    atualizarTextoMapaBairros();
   }
-  // Um pin verde por bairro que tenha ao menos um fiscal cadastrado — em vez
-  // de colorir o polígono por intensidade de cobertura. Reaproveita o mesmo
-  // <g> a cada atualização (só troca quais bairros têm pin), sem redesenhar
-  // os polígonos.
-  function criarPinVerde(nome, x, y) {
-    const ns = 'http://www.w3.org/2000/svg';
-    const g = document.createElementNS(ns, 'g');
-    g.setAttribute('class', 'bairro-pin');
-    g.dataset.bairroPin = nome;
-    const r = 7;
-    const tail = document.createElementNS(ns, 'path');
-    tail.setAttribute('d', 'M' + (x - r * 0.55).toFixed(1) + ',' + (y - r * 0.6).toFixed(1) +
-      'L' + (x + r * 0.55).toFixed(1) + ',' + (y - r * 0.6).toFixed(1) + 'L' + x.toFixed(1) + ',' + y.toFixed(1) + 'Z');
-    const cabeca = document.createElementNS(ns, 'circle');
-    cabeca.setAttribute('cx', x); cabeca.setAttribute('cy', y - r * 1.4); cabeca.setAttribute('r', r);
-    const furo = document.createElementNS(ns, 'circle');
-    furo.setAttribute('class', 'bairro-pin-furo');
-    furo.setAttribute('cx', x); furo.setAttribute('cy', y - r * 1.4); furo.setAttribute('r', r * 0.4);
-    const title = document.createElementNS(ns, 'title'); title.textContent = nome + ' — tem fiscal cadastrado';
-    g.append(tail, cabeca, furo, title);
-    return g;
+  // Título e créditos da fonte mudam conforme o município (Rio Branco tem
+  // fonte própria, mais detalhada; os demais vêm do IBGE).
+  function atualizarTextoMapaBairros() {
+    const titulo = document.getElementById('mapaBairrosTitulo');
+    const dica = document.querySelector('#mapaBairrosSecao .mapa-esquematico-dica');
+    const nomeMun = nomes.get(selecionado) || '';
+    if (titulo) titulo.textContent = 'Cobertura por bairro — ' + nomeMun;
+    const containerEl = document.getElementById('mapaBairros');
+    if (containerEl) containerEl.setAttribute('aria-label', 'Mapa de satélite dos bairros de ' + nomeMun + ', com pin verde nos bairros com fiscal cadastrado');
+    if (dica) {
+      dica.textContent = selecionado === '1200401'
+        ? 'Bairros oficiais da Prefeitura de Rio Branco (SEFIN). Passe o mouse para ver a cobertura de cada um.'
+        : 'Bairros oficializados pelo IBGE (Censo Demográfico 2022). Passe o mouse para ver a cobertura de cada um.';
+    }
   }
-  function atualizarPinsBairros(svg) {
-    const grupo = svg.querySelector('#mapaBairrosPins');
-    if (!grupo) return;
-    grupo.replaceChildren();
+  // Um pin verde por bairro que tenha ao menos um fiscal cadastrado.
+  function atualizarPinsBairros() {
+    if (!camadaPinsLeaflet) return;
+    camadaPinsLeaflet.clearLayers();
     centroidesBairro.forEach((centro, nome) => {
       const acc = porBairroAtual.get(nome);
-      if (acc && acc.comFiscal > 0) grupo.append(criarPinVerde(nome, centro[0], centro[1]));
+      if (acc && acc.comFiscal > 0) {
+        L.circleMarker(centro, { radius: 8, color: '#fff', weight: 2, fillColor: '#1f9d55', fillOpacity: 1 })
+          .bindTooltip(nome + ' — tem fiscal cadastrado', { direction: 'top' })
+          .addTo(camadaPinsLeaflet);
+      }
     });
   }
   document.getElementById('anterior').onclick = () => { pagina--; listar(); };
@@ -425,12 +385,13 @@
   document.getElementById('cancelarEdicao').onclick = encerrarEdicao;
   // Bairros válidos do município selecionado: cruza quem tem seção de
   // votação (window.LOCAIS_COORDENADAS, por local de votação) com os
-  // bairros oficiais do mapa (window.MAPA_BAIRROS_RIO_BRANCO) — só existe
-  // pra Rio Branco, único município com essa geometria. Devolve null nos
-  // demais, pra manter "Bairro" como texto livre.
+  // bairros oficiais do mapa desse município (dadosBairrosDoMunicipio) —
+  // só existe pra quem tem bairro oficializado (Rio Branco + os 8 do IBGE).
+  // Devolve null nos demais, pra manter "Bairro" como texto livre.
   function bairrosDoMunicipio() {
-    if (selecionado !== '1200401' || !window.MAPA_BAIRROS_RIO_BRANCO || !window.LOCAIS_COORDENADAS) return null;
-    const oficiais = new Set(window.MAPA_BAIRROS_RIO_BRANCO.features.map(f => f.properties.bairro));
+    const dados = dadosBairrosDoMunicipio(selecionado);
+    if (!dados || !window.LOCAIS_COORDENADAS) return null;
+    const oficiais = new Set(dados.features.map(f => f.properties.bairro));
     const dasSecoes = new Set();
     doMunicipio().forEach(l => {
       const coord = window.LOCAIS_COORDENADAS[l.id];
@@ -439,8 +400,8 @@
     return [...dasSecoes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
   // Troca o campo "Bairro" do formulário entre texto livre (padrão) e uma
-  // lista fechada (Rio Branco), conforme bairrosDoMunicipio(). Mantém o
-  // mesmo id/name pra form.elements.bairro continuar funcionando igual.
+  // lista fechada, conforme bairrosDoMunicipio(). Mantém o mesmo id/name
+  // pra form.elements.bairro continuar funcionando igual.
   function atualizarCampoBairro() {
     const atual = document.getElementById('bairro');
     const bairros = bairrosDoMunicipio();
@@ -465,7 +426,11 @@
     encerrarEdicao();
     selecionado = id;
     pagina = 0;
-    resetZoomBairros();
+    // Força reenquadrar o mapa de bairros (mesmo se for o mesmo município de
+    // antes) — equivalente a "resetar zoom" de quando era um SVG com
+    // transform; agora é o fitBounds do Leaflet, refeito em
+    // renderizarMapaBairros() sempre que este id difere do último desenhado.
+    bairroMapaDesenhado = null;
     atualizarCampoBairro();
     seletor.value = id;
     document.getElementById('painel-titulo').textContent = nomes.get(id);
