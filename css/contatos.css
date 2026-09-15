@@ -1,7 +1,7 @@
 /* Estilos da página Contatos — SEAGRI */
 :root{--roxo:#c0392b;--borda:#e0e0e0;}
 body{background:#f5f5f5;min-height:100vh;display:flex;flex-direction:column}
-header{background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:10px 24px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 8px rgba(27,94,32,.25)}
+header{background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:10px 24px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 8px rgba(27,55,94,.25)}
 .voltar{color:#fff;text-decoration:none;font-size:14px;opacity:.85;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .voltar:hover{opacity:1}
 header h1{font-size:20px;font-weight:500;flex:1}
@@ -15,7 +15,7 @@ header h1{font-size:20px;font-weight:500;flex:1}
 .filtro-btn.ativo{background:var(--verde);color:#fff;border-color:var(--verde)}
 .filtro-btn[data-grupo="Secretaria"].ativo{background:var(--roxo);border-color:var(--roxo)}
 .filtro-btn[data-grupo="DAF"].ativo{background:var(--azul);border-color:var(--azul)}
-.filtro-btn[data-grupo="DPA"].ativo{background:#388e3c;border-color:#388e3c}
+.filtro-btn[data-grupo="DPA"].ativo{background:#385c8e;border-color:#385c8e}
 .filtro-btn[data-grupo="DPTEC"].ativo{background:var(--laranja);border-color:var(--laranja)}
 .filtro-btn[data-grupo="Escritórios Locais"].ativo{background:var(--cinza);border-color:var(--cinza)}
 main{flex:1;padding:24px;max-width:none;margin:0 auto;width:100%}
@@ -23,7 +23,7 @@ main{flex:1;padding:24px;max-width:none;margin:0 auto;width:100%}
 .grupo-titulo{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;padding:6px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:8px;margin-bottom:12px}
 .grupo-titulo.Secretaria{background:var(--roxo)}
 .grupo-titulo.DAF{background:var(--azul)}
-.grupo-titulo.DPA{background:#388e3c}
+.grupo-titulo.DPA{background:#385c8e}
 .grupo-titulo.DPTEC{background:var(--laranja)}
 .grupo-titulo.Escritórios{background:var(--cinza)}
 .subgrupo-titulo{font-size:12px;font-weight:600;color:#555;margin:16px 0 8px;padding-left:4px;border-left:3px solid #cfcfcf;padding:2px 0 2px 10px;text-transform:uppercase;letter-spacing:.04em}
@@ -42,18 +42,18 @@ main{flex:1;padding:24px;max-width:none;margin:0 auto;width:100%}
 .campo-tel .input-tel{min-width:120px}
 .input-tel{flex:1;padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;color:var(--texto);background:#fff}
 .input-tel:focus{border-color:var(--verde2)}
-.input-tel.salvo{border-color:#66bb6a}
+.input-tel.salvo{border-color:#6689bb}
 .input-tel:disabled,.input-tel.locked{background:#f5f5f5;color:#333;border-color:#e0e0e0;cursor:default}
 .btn-salvar{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:var(--verde2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
 .btn-salvar:hover{background:var(--verde)}
-.btn-salvar:disabled{background:#a5c7a7;cursor:default}
+.btn-salvar:disabled{background:#a5b3c7;cursor:default}
 .btn-salvar.oculto{display:none}
 .btn-editar{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0;background:#fff;color:#666;border:1.5px solid var(--borda);border-radius:8px;cursor:pointer;transition:all .2s;padding:0}
 .btn-editar:hover{border-color:var(--verde2);color:var(--verde2);background:var(--verde-claro)}
 .btn-editar.oculto{display:none}
 .btn-editar svg{width:16px;height:16px;pointer-events:none}
-.btn-wa{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:#25d366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .2s}
-.btn-wa:hover{background:#1ebe5c}
+.btn-wa{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:#256dd3;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .2s}
+.btn-wa:hover{background:#1e61be}
 .btn-wa.oculto{display:none}
 .sem-resultado{text-align:center;color:#999;padding:48px 16px;font-size:15px}
 .toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999}

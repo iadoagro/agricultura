@@ -11,8 +11,8 @@
 <meta property="og:title" content="Chamados">
 <meta property="og:description" content="Sistema de chamados de lotação e habilitação de assinatura.">
 <meta property="og:type" content="website">
-<link rel="stylesheet" href="../css/base.css?v=2026081307">
-<link rel="stylesheet" href="../css/chamados.css?v=2026081307">
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/chamados.css?v=2026091501">
 </head>
 <body>
 <header>
@@ -54,7 +54,7 @@
   </table>
 
   <h2 class="secao-titulo">Acesso a Setores Subordinados &ndash; Chefes de Departamento/Divis&atilde;o</h2>
-  <p class="secao-desc">Solicita&ccedil;&otilde;es adicionais para que chefes de Departamento e/ou Divis&atilde;o tenham acesso aos setores (Divis&otilde;es e/ou N&uacute;cleos) subordinados a eles, conforme o encadeamento da Portaria SEAGRI n&ordm; 187/2026. Apenas chefias com setores subordinados constam nesta se&ccedil;&atilde;o.</p>
+  <p class="secao-desc">Solicita&ccedil;&otilde;es adicionais para que chefes de Departamento e/ou Divis&atilde;o tenham acesso aos setores (Divis&otilde;es e/ou N&uacute;cleos) subordinados a eles, conforme o encadeamento da Portaria n&ordm; 187/2026. Apenas chefias com setores subordinados constam nesta se&ccedil;&atilde;o.</p>
 
   <div class="tools">
     <div class="progresso-container">
@@ -149,11 +149,11 @@ function gerarTituloPlano(d){
 }
 function gerarTextoMaior(d){
   let setor = d.chefia.replace(/^Chefe\s+/i, "");
-  return "Solicito que o seguinte servidor <span class='u'>"+d.nome+"</span> seja lotado na seguinte unidade <span class='u'>"+setor+"</span> e que tenha permissão para assinar como <span class='u'>"+d.chefia+"</span>, de acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026  Conforme portaria em anexo Portaria "+d.n+" - "+d.nome;
+  return "Solicito que o seguinte servidor <span class='u'>"+d.nome+"</span> seja lotado na seguinte unidade <span class='u'>"+setor+"</span> e que tenha permissão para assinar como <span class='u'>"+d.chefia+"</span>, de acordo com a Portaria nº "+d.n+", de 19 de junho de 2026  Conforme portaria em anexo Portaria "+d.n+" - "+d.nome;
 }
 function gerarTextoMaiorPlano(d){
   let setor = d.chefia.replace(/^Chefe\s+/i, "");
-  return "Solicito que o seguinte servidor "+d.nome+" seja lotado na seguinte unidade "+setor+" e que tenha permissão para assinar como "+d.chefia+", de acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026  Conforme portaria em anexo Portaria "+d.n+" - "+d.nome;}
+  return "Solicito que o seguinte servidor "+d.nome+" seja lotado na seguinte unidade "+setor+" e que tenha permissão para assinar como "+d.chefia+", de acordo com a Portaria nº "+d.n+", de 19 de junho de 2026  Conforme portaria em anexo Portaria "+d.n+" - "+d.nome;}
 const tbody = document.querySelector("#tabela tbody");
 
 const estadoSalvo = JSON.parse(localStorage.getItem("portariasCompletas") || "{}");
@@ -390,11 +390,11 @@ function gerarTituloDeptPlano(d){
 }
 function gerarTextoDept(d){
   const lista = d.setores.map(s=>"<span class='u'>"+s+"</span>").join("<br>");
-  return "Solicito que "+d.nome+" seja adicionado(a) aos seguintes setores de lotação:<br>"+lista+"<br>de acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026.";
+  return "Solicito que "+d.nome+" seja adicionado(a) aos seguintes setores de lotação:<br>"+lista+"<br>de acordo com a Portaria nº "+d.n+", de 19 de junho de 2026.";
 }
 function gerarTextoDeptPlano(d){
   const lista = d.setores.join("\n");
-  return "Solicito que "+d.nome+" seja adicionado(a) aos seguintes setores de lotação:\n"+lista+"\nde acordo com a Portaria SEAGRI nº "+d.n+", de 19 de junho de 2026.";
+  return "Solicito que "+d.nome+" seja adicionado(a) aos seguintes setores de lotação:\n"+lista+"\nde acordo com a Portaria nº "+d.n+", de 19 de junho de 2026.";
 }
 
 const tbody2 = document.querySelector("#tabela2 tbody");

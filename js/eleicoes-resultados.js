@@ -43,9 +43,9 @@
 
   function corMunicipio(id) {
     var v = votosPorMun.get(id);
-    if (!v) return '#e4ece2';
-    var l = Math.round(85 - (v / maxVotos) * 58);   // mais votos, verde mais escuro
-    return 'hsl(122 42% ' + l + '%)';
+    if (!v) return '#e2e6ec';
+    var l = Math.round(85 - (v / maxVotos) * 58);   // mais votos, azul mais escuro
+    return 'hsl(215 42% ' + l + '%)';
   }
 
   // Dica ao passar o mouse (ou focar pelo teclado): resumo rápido do
@@ -172,7 +172,7 @@
       var agora = window.BANCO_ELEICOES.ler().filter(function (r) { return r.municipio && r.zona && r.secao; });
       pontos.push({ rot: 'Agora', val: Math.round((pctCobertura(agora) || 0) * 10) / 10 });
       blocoTendencia.hidden = false;
-      window.G.colunas(elTendencia, pontos, { unidade: '%', dec: 1, cor: '#1b5e20' });
+      window.G.colunas(elTendencia, pontos, { unidade: '%', dec: 1, cor: '#153e75' });
     }
 
     async function carregarSnapshots() {
