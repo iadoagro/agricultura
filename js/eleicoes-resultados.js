@@ -57,11 +57,14 @@
     var votos = votosPorMun.get(id) || 0;
     var comVoto = (porSecaoPorMun.get(id) || []).length;
     var semVoto = (semVotosPorMun.get(id) || []).length;
+    var totalSecoesMun = comVoto + semVoto;
     var pct = totalVotosEstado ? (votos / totalVotosEstado * 100) : 0;
+    var pctCom = totalSecoesMun ? (comVoto / totalSecoesMun * 100) : 0;
+    var pctSem = totalSecoesMun ? (semVoto / totalSecoesMun * 100) : 0;
     dica.innerHTML = '<strong>' + esc(nome) + '</strong>' +
       '<div class="linha"><span>Votos</span><span>' + votos + ' (' + pct.toFixed(1).replace('.', ',') + '% do total)</span></div>' +
-      '<div class="linha com"><span>Urnas com voto</span><span>' + comVoto + '</span></div>' +
-      '<div class="linha sem"><span>Seções sem voto</span><span>' + semVoto + '</span></div>';
+      '<div class="linha com"><span>Urnas com voto</span><span>' + comVoto + ' (' + pctCom.toFixed(1).replace('.', ',') + '%)</span></div>' +
+      '<div class="linha sem"><span>Seções sem voto</span><span>' + semVoto + ' (' + pctSem.toFixed(1).replace('.', ',') + '%)</span></div>';
     dica.hidden = false;
   }
   function esconderDica() { if (dica) dica.hidden = true; }
@@ -90,20 +93,69 @@
   status.hidden = true;
   mapa.pintar(corMunicipio);
 
+  // Lista à esquerda com todos os municípios, do maior para o menor número
+  // de votos — mesma ação de clicar no mapa, só que em ordem de prioridade
+  // em vez de posição geográfica.
+  var elRanking = document.getElementById('resultadosRanking');
+  if (elRanking) {
+    var itensRanking = Array.from(mapa.nomes.entries()).map(function (par) {
+      return { id: par[0], nome: par[1], votos: votosPorMun.get(par[0]) || 0 };
+    }).sort(function (a, b) { return b.votos - a.votos || a.nome.localeCompare(b.nome, 'pt-BR'); });
+    elRanking.innerHTML = itensRanking.map(function (it) {
+      return '<button type="button" data-id="' + esc(it.id) + '">' +
+        '<span class="ranking-nome">' + esc(it.nome) + '</span><span class="ranking-votos">' + it.votos + '</span></button>';
+    }).join('');
+    elRanking.querySelectorAll('button').forEach(function (btn) {
+      btn.addEventListener('click', function () { mostrarDetalhe(btn.dataset.id); });
+    });
+  }
+
+  // Antes de clicar em qualquer município, o painel à direita mostra o
+  // resumo geral do estado em vez de só um convite pra clicar — mesmas
+  // métricas do detalhe por município (js/eleicoes-resultados.js), só que
+  // somadas pra todo o Acre.
+  function mostrarResumoGeral() {
+    if (!detalhe) return;
+    var totalSecoesEstado = DADOS.porSecao.length + DADOS.semVotos.length;
+    var comVotoEstado = DADOS.porSecao.length;
+    var semVotoEstado = DADOS.semVotos.length;
+    var pctCom = totalSecoesEstado ? (comVotoEstado / totalSecoesEstado * 100) : 0;
+    var pctSem = totalSecoesEstado ? (semVotoEstado / totalSecoesEstado * 100) : 0;
+    var municipiosComVoto = DADOS.porMunicipio.length;
+    var totalMunicipios = mapa.nomes.size;
+
+    detalhe.innerHTML = '<h3>Acre — todos os municípios</h3>' +
+      '<p class="resultados-total">' + totalVotosEstado + ' votos para ' + esc(DADOS.candidato) + '</p>' +
+      '<div class="indicadores-grade resultados-detalhe-stats">' +
+        '<div class="indicador"><span class="indicador-rot">Seções no estado</span><span class="indicador-val">' + totalSecoesEstado + '</span></div>' +
+        '<div class="indicador"><span class="indicador-rot">Urnas com voto</span><span class="indicador-val">' + comVotoEstado + '<small> (' + pctCom.toFixed(1).replace('.', ',') + '%)</small></span></div>' +
+        '<div class="indicador"><span class="indicador-rot">Seções sem voto</span><span class="indicador-val">' + semVotoEstado + '<small> (' + pctSem.toFixed(1).replace('.', ',') + '%)</small></span></div>' +
+        '<div class="indicador"><span class="indicador-rot">Municípios com voto</span><span class="indicador-val">' + municipiosComVoto + '<small> de ' + totalMunicipios + '</small></span></div>' +
+      '</div>' +
+      '<p class="resultados-dica">Clique num município no mapa (ou na lista à esquerda) para ver o detalhe por zona e seção.</p>';
+  }
+  mostrarResumoGeral();
+
   function mostrarDetalhe(id) {
     mapa.destacar(id);
+    if (elRanking) elRanking.querySelectorAll('button').forEach(function (b) {
+      b.classList.toggle('selecionado', b.dataset.id === id);
+    });
     var nome = mapa.nomes.get(id) || id;
     var comVoto = (porSecaoPorMun.get(id) || []).slice().sort(ordemZonaSecao);
     var semVoto = (semVotosPorMun.get(id) || []).slice().sort(ordemZonaSecao);
     var total = votosPorMun.get(id) || 0;
     var totalSecoes = comVoto.length + semVoto.length;
     var pctTotal = totalVotosEstado ? (total / totalVotosEstado * 100) : 0;
+    var pctCom = totalSecoes ? (comVoto.length / totalSecoes * 100) : 0;
+    var pctSem = totalSecoes ? (semVoto.length / totalSecoes * 100) : 0;
 
     var html = '<h3>' + esc(nome) + '</h3>' +
       '<p class="resultados-total">' + total + ' votos para ' + esc(DADOS.candidato) + '</p>' +
       '<div class="indicadores-grade resultados-detalhe-stats">' +
         '<div class="indicador"><span class="indicador-rot">Seções no município</span><span class="indicador-val">' + totalSecoes + '</span></div>' +
-        '<div class="indicador"><span class="indicador-rot">Urnas com voto</span><span class="indicador-val">' + comVoto.length + '</span></div>' +
+        '<div class="indicador"><span class="indicador-rot">Urnas com voto</span><span class="indicador-val">' + comVoto.length + '<small> (' + pctCom.toFixed(1).replace('.', ',') + '%)</small></span></div>' +
+        '<div class="indicador"><span class="indicador-rot">Seções sem voto</span><span class="indicador-val">' + semVoto.length + '<small> (' + pctSem.toFixed(1).replace('.', ',') + '%)</small></span></div>' +
         '<div class="indicador"><span class="indicador-rot">% do total de votos</span><span class="indicador-val">' + pctTotal.toFixed(1).replace('.', ',') + '%</span></div>' +
       '</div>' +
       '<h4>Seções com voto (' + comVoto.length + ')</h4>' +
@@ -166,10 +218,13 @@
 
     function renderizarTendencia() {
       if (!blocoTendencia || !elTendencia || !window.G || !snapshots.length) { if (blocoTendencia) blocoTendencia.hidden = true; return; }
+      var registrosAtuais;
+      try { registrosAtuais = window.BANCO_ELEICOES.ler(); }
+      catch (e) { blocoTendencia.hidden = true; return; } // banco online ainda carregando; tenta de novo no próximo banco-atualizado
       var pontos = snapshots.slice().reverse().map(function (s) {
         return { rot: new Date(s.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), val: Math.round((pctCobertura(s.secoes) || 0) * 10) / 10 };
       });
-      var agora = window.BANCO_ELEICOES.ler().filter(function (r) { return r.municipio && r.zona && r.secao; });
+      var agora = registrosAtuais.filter(function (r) { return r.municipio && r.zona && r.secao; });
       pontos.push({ rot: 'Agora', val: Math.round((pctCobertura(agora) || 0) * 10) / 10 });
       blocoTendencia.hidden = false;
       window.G.colunas(elTendencia, pontos, { unidade: '%', dec: 1, cor: '#153e75' });
