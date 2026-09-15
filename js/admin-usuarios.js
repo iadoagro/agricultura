@@ -89,7 +89,11 @@
     var nome = novoNome.value.trim();
     var sobrenome = novoSobrenome.value.trim();
     auth.cadastrarUsuario(nome, sobrenome)
-      .then(function (login) { msg.textContent = 'Usuário cadastrado e aprovado. Login: ' + login + ' — senha: ' + auth.SENHA_PADRAO + '. Informe pra pessoa; ela vai ser obrigada a trocar no primeiro acesso.'; formNovo.reset(); novoLogin.value = ''; carregar(); })
+      .then(function (r) {
+        if (r.aviso) { msg.textContent = r.aviso; msg.className = 'admin-msg erro'; }
+        else { msg.textContent = 'Usuário cadastrado e aprovado. Login: ' + r.login + ' — senha: ' + auth.SENHA_PADRAO + '. Informe pra pessoa; ela vai ser obrigada a trocar no primeiro acesso.'; msg.className = 'admin-msg'; }
+        formNovo.reset(); novoLogin.value = ''; carregar();
+      })
       .catch(function (err) { msg.textContent = err.message; msg.className = 'admin-msg erro'; })
       .finally(function () { botao.disabled = false; });
   });
