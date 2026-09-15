@@ -2976,7 +2976,7 @@
 
     var html = '<div class="relatorio-doc">' +
       '<div class="relatorio-header">' +
-      '<div class="relatorio-header-org">Secretaria de Estado de Agricultura &ndash; SEAGRI/AC</div>' +
+      '<div class="relatorio-header-org">Sistema de gestão</div>' +
       '<div class="relatorio-header-sub">Relat&oacute;rio de Mecaniza&ccedil;&atilde;o e A&ccedil;udagem &middot; ' + G.esc(rotuloAno()) + '</div>' +
       '</div>' +
       '<h1 class="relatorio-mun-titulo">' + G.esc(mun) + '</h1>' +
@@ -3017,7 +3017,7 @@
           '</tr>';
       }).join('') +
       '</tbody></table></div>' +
-      '<div class="relatorio-footer">Gerado em ' + hoje + ' &middot; SEAGRI &ndash; Secretaria de Estado de Agricultura do Acre</div>' +
+      '<div class="relatorio-footer">Gerado em ' + hoje + ' &middot; Sistema de gestão</div>' +
       '</div>';
 
     el('relatorioConteudo').innerHTML = html;
@@ -3033,8 +3033,8 @@
     '*{box-sizing:border-box}' +
     'body{margin:0;font:12px/1.45 "Segoe UI",system-ui,Arial,sans-serif;color:#1b2430;background:#fff}' +
     '.relatorio-doc{max-width:100%}' +
-    '.relatorio-header{border-bottom:2px solid #2e7d4f;padding-bottom:8px;margin-bottom:14px}' +
-    '.relatorio-header-org{font-size:14px;font-weight:700;color:#2e7d4f;letter-spacing:.3px}' +
+    '.relatorio-header{border-bottom:2px solid #2e4f7d;padding-bottom:8px;margin-bottom:14px}' +
+    '.relatorio-header-org{font-size:14px;font-weight:700;color:#2e4f7d;letter-spacing:.3px}' +
     '.relatorio-header-sub{font-size:11px;color:#5a6672;margin-top:2px}' +
     '.relatorio-mun-titulo{font-size:24px;margin:0 0 14px;color:#1b2430}' +
     '.relatorio-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}' +
@@ -3046,7 +3046,7 @@
     '.relatorio-sec{margin-bottom:16px}' +
     '.relatorio-sec-tit{font-size:15px;margin:18px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #d8dee5;' +
       'break-after:avoid;page-break-after:avoid}' +
-    '.relatorio-sec-tit.mec{color:#2e7d4f;border-color:#2e7d4f}' +
+    '.relatorio-sec-tit.mec{color:#2e4f7d;border-color:#2e4f7d}' +
     '.relatorio-sec-tit.acu{color:#1f6f9c;border-color:#1f6f9c}' +
     'h3{font-size:12px;margin:12px 0 5px;color:#3a4652;break-after:avoid;page-break-after:avoid}' +
     '.ficha{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}' +
@@ -3065,7 +3065,7 @@
     '.fraco,small.fraco{color:#7b8792;font-size:9px}' +
     '.tag{display:inline-block;padding:1px 6px;border-radius:20px;font-size:8.5px;font-weight:700;' +
       'border:1px solid #c9d2da;white-space:nowrap}' +
-    '.tag-mec{color:#2e7d4f;border-color:#2e7d4f;background:#eaf5ee}' +
+    '.tag-mec{color:#2e4f7d;border-color:#2e4f7d;background:#eaeff5}' +
     '.tag-acu{color:#1f6f9c;border-color:#1f6f9c;background:#e9f2f8}' +
     '.tag-ni{color:#6b7885;border-color:#c9d2da;background:#f1f4f6}' +
     'a{color:inherit;text-decoration:none}' +

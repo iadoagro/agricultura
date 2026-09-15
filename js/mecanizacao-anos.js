@@ -79,7 +79,7 @@
         '&#128197;', a, num(conta[a]) + (conta[a] === 1 ? ' vistoria' : ' vistorias'));
     });
     // "todos" é o consolidado que o painel já entende na URL
-    html.push(quadrado('mecanizacao-secoes.html?ano=todos', '&#128202;', 'Todos os anos',
+    html.push(quadrado('mecanizacao-secoes.html?ano=todos', '&#023782;', 'Todos os anos',
       num(registros.length) + ' vistorias', true));
 
     grade.innerHTML = html.join('');

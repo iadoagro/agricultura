@@ -69,7 +69,7 @@
     porRegional.forEach(function (acc, reg) {
       dadosRegional.push({ rot: reg, val: acc.oficiais ? Math.round(acc.comFiscal / acc.oficiais * 1000) / 10 : 0 });
     });
-    window.G.colunas(elRegional, dadosRegional, { unidade: '%', dec: 1, cor: '#1b5e20' });
+    window.G.colunas(elRegional, dadosRegional, { unidade: '%', dec: 1, cor: '#153e75' });
   }
 
   window.addEventListener('banco-atualizado', renderizar);

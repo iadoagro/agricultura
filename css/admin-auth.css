@@ -24,19 +24,19 @@ header p{font-size:13px;opacity:.9}
 .sol-info span{font-size:12px;color:#666}
 .sol-status{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
 .sol-status.pendente{background:#fff3cd;color:#8a6100}
-.sol-status.aprovado{background:#d4edda;color:var(--verde)}
+.sol-status.aprovado{background:#d4deed;color:var(--verde)}
 .sol-status.recusado{background:#f8d7da;color:#842029}
-.sol-status.ativo{background:#d4edda;color:var(--verde)}
+.sol-status.ativo{background:#d4deed;color:var(--verde)}
 .sol-status.inativo{background:#eee;color:#666}
 .sol-acoes{display:flex;flex-wrap:wrap;gap:6px;flex:none}
 .sol-acoes button{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
 .sol-acoes button:disabled{opacity:.6;cursor:wait}
-.sol-acoes .aprovar{background:#e8f5e9;border:1px solid var(--verde);color:var(--verde)}
-.sol-acoes .aprovar:hover{background:#d4edda}
+.sol-acoes .aprovar{background:#eff6ff;border:1px solid var(--verde);color:var(--verde)}
+.sol-acoes .aprovar:hover{background:#d4deed}
 .sol-acoes .recusar,.sol-acoes .desativar{background:#fdecea;border:1px solid #c0392b;color:#c0392b}
 .sol-acoes .recusar:hover,.sol-acoes .desativar:hover{background:#f8d7da}
-.sol-acoes .ativar{background:#e8f5e9;border:1px solid var(--verde);color:var(--verde)}
-.sol-acoes .ativar:hover{background:#d4edda}
+.sol-acoes .ativar{background:#eff6ff;border:1px solid var(--verde);color:var(--verde)}
+.sol-acoes .ativar:hover{background:#d4deed}
 .sol-acoes .redefinir,.sol-acoes .editar{background:#eef2fb;border:1px solid #4472c4;color:#2f4f9e}
 .sol-acoes .redefinir:hover,.sol-acoes .editar:hover{background:#dce4f6}
 .sol-acoes .excluir{background:#c0392b;border:1px solid #a52a20;color:#fff}
@@ -48,3 +48,27 @@ header p{font-size:13px;opacity:.9}
   .admin-auth{margin:20px auto}
   .admin-card{padding:20px}
 }
+/* Tela de acesso */
+.login-page{min-height:100vh;background:radial-gradient(ellipse at 12% 40%,#dbeafe 0,transparent 48%),#f5f8fd;display:flex;flex-direction:column;color:#172b4d}
+.login-page [hidden]{display:none!important}
+.login-layout{width:100%;max-width:420px;margin:auto;padding:32px 24px}
+.login-eyebrow{display:block;font-size:11px;font-weight:750;letter-spacing:.16em;color:#2563eb;margin-bottom:18px}
+.login-page .admin-card{padding:38px;border:1px solid #dce6f3;border-radius:22px;box-shadow:0 20px 60px #153e7510}
+.login-title{font-size:28px;letter-spacing:-.025em;margin-bottom:10px;color:#172b4d}
+.login-page .admin-desc{color:#62728a;line-height:1.7;margin-bottom:24px}
+.login-page .admin-card form label{color:#334766;margin-top:19px}
+.login-page .admin-card form input{min-height:48px;background:#fafcff;border-color:#d7e1ee;font-size:14px;color:#172b4d;transition:border-color .2s,box-shadow .2s}
+.login-page .admin-card form input:focus{border-color:#2563eb;box-shadow:0 0 0 3px #2563eb20}
+.login-page .admin-card form input:disabled{background:#edf2f8;color:#62728a}
+.login-page input::placeholder{color:#78879b}
+.login-password{position:relative}
+.login-page .login-password input{padding-right:82px}
+.login-password button{position:absolute;right:8px;top:6px;height:36px;padding:0 10px;background:transparent;border:0;border-radius:6px;color:#2563eb;font-weight:600;cursor:pointer}
+.login-page .admin-submit{min-height:48px;margin-top:26px;background:#2563eb;box-shadow:0 4px 12px #2563eb20}
+.login-page .admin-submit:hover{background:#1d4ed8}
+.login-page .admin-troca{font-size:12px;margin-top:22px;line-height:1.7}
+.login-page :is(button,a):focus-visible{outline:3px solid #93c5fd;outline-offset:3px}
+.login-page .admin-msg:empty{display:none}
+.login-page .admin-msg:not(:empty){padding:12px;border-radius:8px;background:#eff6ff}
+.login-page .admin-msg.erro{background:#fff1f2;color:#b42318}
+@media(max-width:380px){.login-layout{padding:24px 16px}.login-page .admin-card{padding:28px 22px}}

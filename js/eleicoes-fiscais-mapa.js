@@ -22,9 +22,9 @@
   var oficiaisPorMun = window.CoberturaFiscais.oficiaisPorMun();
   var comFiscalPorMun = new Map();
 
-  // 0% = vermelho, 100% = verde, mesma família de cor do resto da página.
+  // 0% = azul claro, 100% = azul escuro, mesma família de cor do resto da página.
   function corCobertura(pct) {
-    var matiz = (pct / 100) * 122, luz = 78 - (pct / 100) * 36;
+    var matiz = 215, luz = 92 - (pct / 100) * 50;
     return 'hsl(' + matiz.toFixed(0) + ' 55% ' + luz.toFixed(0) + '%)';
   }
 

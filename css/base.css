@@ -1,15 +1,15 @@
 /* Estilos compartilhados — SEAGRI */
 :root{
-  --verde:#1b5e20;
-  --verde2:#2e7d32;
-  --verde-claro:#e8f5e9;
+  --verde:#153e75;
+  --verde2:#2563eb;
+  --verde-claro:#eff6ff;
   --azul:#4472c4;
   --laranja:#ed7d31;
   --amarelo:#ffc000;
   --cinza:#888;
   --linha:#e0e0e0;
   --texto:#212121;
-  --sombra:0 2px 8px rgba(27,94,32,0.1);
+  --sombra:0 2px 8px rgba(27,55,94,0.1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Roboto","Segoe UI",Arial,sans-serif;background:#fafafa;color:var(--texto)}

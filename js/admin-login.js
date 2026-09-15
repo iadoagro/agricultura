@@ -13,6 +13,14 @@
   var cadSobrenome = document.getElementById('cadSobrenome');
   var cadLogin = document.getElementById('cadLogin');
 
+  document.getElementById('mostrarSenha').addEventListener('click', function () {
+    var senha = document.getElementById('entSenha');
+    var visivel = senha.type === 'password';
+    senha.type = visivel ? 'text' : 'password';
+    this.textContent = visivel ? 'Ocultar' : 'Mostrar';
+    this.setAttribute('aria-pressed', String(visivel));
+  });
+
   function limparMsg() { msg.textContent = ''; msg.className = 'admin-msg'; }
   function mostrarErro(texto) { msg.textContent = texto; msg.className = 'admin-msg erro'; }
 
@@ -43,6 +51,7 @@
     var cad = aba === 'cadastrar';
     formCadastrar.hidden = !cad; formEntrar.hidden = cad;
     limparMsg();
+    (cad ? cadNome : document.getElementById('entEmail')).focus();
   }
   linkParaCadastro.addEventListener('click', function (e) { e.preventDefault(); mostrar('cadastrar'); });
   linkParaEntrar.addEventListener('click', function (e) { e.preventDefault(); mostrar('entrar'); });
@@ -66,7 +75,7 @@
 
   formEntrar.addEventListener('submit', function (e) {
     e.preventDefault();
-    var botao = formEntrar.querySelector('button'); botao.disabled = true;
+    var botao = formEntrar.querySelector('button[type="submit"]'); botao.disabled = true;
     limparMsg();
     auth.entrar(document.getElementById('entEmail').value.trim(), document.getElementById('entSenha').value)
       .then(avaliarSessao)

@@ -5,7 +5,7 @@ header {
   color: #fff;
   padding: 20px 32px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);
+  box-shadow: 0 4px 12px rgba(27,55,94, 0.2);
 }
 header h1 {
   font-size: 22px;
@@ -86,7 +86,7 @@ header p {
   border-radius: 0;
 }
 .portaria-card.list-view:nth-child(even) {
-  background: #f4f6f4;
+  background: #f4f5f6;
 }
 .portaria-card.list-view:last-child {
   border-bottom: none;
@@ -167,7 +167,7 @@ header p {
   transition: box-shadow 0.2s;
 }
 .portaria-card:hover {
-  box-shadow: 0 4px 16px rgba(27, 94, 32, 0.15);
+  box-shadow: 0 4px 16px rgba(27,55,94, 0.15);
 }
 .card-setor {
   background: linear-gradient(135deg, var(--verde), var(--verde2));
