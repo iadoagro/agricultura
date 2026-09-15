@@ -14,7 +14,8 @@
   let pagina = 0;
   let editandoId = null;
   let porBairroAtual = new Map();
-  let centroidesBairro = new Map();
+  let locaisMapaAtual = [];
+  let coberturaMapaCarregada = false;
   const locais = window.LOCAIS_VOTACAO.locais;
   const cz = document.getElementById('consulta-zona'), cl = document.getElementById('consulta-local'), cs = document.getElementById('consulta-secao');
   const zona = form.elements.zona, secao = form.elements.secao;
@@ -62,6 +63,7 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
   function htmlDicaBairro(nome) {
+    if (!coberturaMapaCarregada) return '<strong>' + escBairro(nome) + '</strong><br>Cobertura de fiscais ainda não disponível.';
     const acc = porBairroAtual.get(nome) || { oficiais: 0, comFiscal: 0 };
     const pct = acc.oficiais ? (acc.comFiscal / acc.oficiais * 100) : 0;
     return '<strong>' + escBairro(nome) + '</strong>' +
@@ -72,95 +74,20 @@
   // Mapa de satélite de verdade (Leaflet + imagens públicas do Esri World
   // Imagery, sem precisar de chave de API) por baixo do contorno dos
   // bairros — pra dar pra reconhecer ruas/quadras/construções de verdade em
-  // vez de só a forma do polígono. Um Leaflet só, criado na primeira vez que
-  // precisa (evita carregar ladrilho de satélite à toa se o usuário nunca
-  // abre um município com bairro).
-  let mapaBairrosLeaflet = null;
-  let camadaBairrosLeaflet = null;
-  let camadaPinsLeaflet = null;
+  // vez de só a forma do polígono. Fábrica compartilhada com a aba
+  // Resultados — ver js/mapa-bairros-leaflet.js.
   let bairroMapaDesenhado = null;
-  function obterMapaBairrosLeaflet() {
-    if (mapaBairrosLeaflet || !window.L) return mapaBairrosLeaflet;
-    const container = document.getElementById('mapaBairros');
-    if (!container) return null;
-    // zoomAnimation:false — a animação de zoom do Leaflet trava em alguns
-    // navegadores/contextos (fica preso no zoom antigo até setZoom com
-    // animate:false); zoom instantâneo é menos bonito mas sempre funciona.
-    mapaBairrosLeaflet = L.map(container, { zoomControl: false, zoomAnimation: false, minZoom: 11, maxZoom: 19 });
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
-      attribution: 'Imagens: Esri, Maxar, Earthstar Geographics'
-    }).addTo(mapaBairrosLeaflet);
-    camadaPinsLeaflet = L.layerGroup().addTo(mapaBairrosLeaflet);
-    mapaBairrosLeaflet.on('zoomend', atualizarBotoesZoomBairros);
-    return mapaBairrosLeaflet;
-  }
-  function desenharMapaBairros(features) {
-    const mapaL = obterMapaBairrosLeaflet();
-    if (!mapaL) return;
-    if (camadaBairrosLeaflet) { mapaL.removeLayer(camadaBairrosLeaflet); }
-    centroidesBairro = new Map();
-    camadaBairrosLeaflet = L.geoJSON({ type: 'FeatureCollection', features: features }, {
-      // Preenchimento quase transparente — o ponto é deixar a imagem de
-      // satélite aparecer por baixo; só o contorno delimita o bairro. Quem
-      // tem fiscal aparece com um pin verde (ver atualizarPinsBairros), não
-      // por intensidade de cor do polígono.
-      style: { color: '#ffe066', weight: 2, fillColor: '#ffe066', fillOpacity: 0.06 },
-      onEachFeature: (feature, layer) => {
-        const nomeBairro = feature.properties.bairro;
-        layer.bindTooltip(() => htmlDicaBairro(nomeBairro), { sticky: true, direction: 'top', className: 'mapa-bairros-dica-cobertura' });
-        layer.on('mouseover', () => layer.setStyle({ weight: 3, fillOpacity: 0.22 }));
-        layer.on('mouseout', () => layer.setStyle({ weight: 2, fillOpacity: 0.06 }));
-        centroidesBairro.set(nomeBairro, layer.getBounds().getCenter());
-      }
-    }).addTo(mapaL);
-    mapaL.fitBounds(camadaBairrosLeaflet.getBounds(), { padding: [12, 12] });
-  }
-  // Zoom e tela cheia do mapa de bairros — zoom de verdade do Leaflet agora
-  // (mais nítido que o zoom por CSS de antes), tela cheia continua sendo a
-  // API nativa do navegador na seção inteira.
-  const btnBairrosZoomMais = document.getElementById('mapaBairrosZoomMais');
-  const btnBairrosZoomMenos = document.getElementById('mapaBairrosZoomMenos');
-  const btnBairrosZoomReset = document.getElementById('mapaBairrosZoomReset');
-  const btnBairrosTelaCheia = document.getElementById('mapaBairrosTelaCheia');
-  const elBairrosZoomValor = document.getElementById('mapaBairrosZoomValor');
-  const secaoBairrosEl = document.getElementById('mapaBairrosSecao');
-  function atualizarBotoesZoomBairros() {
-    if (!mapaBairrosLeaflet) return;
-    const z = mapaBairrosLeaflet.getZoom();
-    if (elBairrosZoomValor) elBairrosZoomValor.textContent = 'Zoom ' + z;
-    if (btnBairrosZoomMenos) btnBairrosZoomMenos.disabled = z <= mapaBairrosLeaflet.getMinZoom();
-    if (btnBairrosZoomMais) btnBairrosZoomMais.disabled = z >= mapaBairrosLeaflet.getMaxZoom();
-  }
-  if (btnBairrosZoomMais) btnBairrosZoomMais.onclick = () => { if (mapaBairrosLeaflet) mapaBairrosLeaflet.zoomIn(); };
-  if (btnBairrosZoomMenos) btnBairrosZoomMenos.onclick = () => { if (mapaBairrosLeaflet) mapaBairrosLeaflet.zoomOut(); };
-  if (btnBairrosZoomReset) btnBairrosZoomReset.onclick = () => {
-    if (mapaBairrosLeaflet && camadaBairrosLeaflet) mapaBairrosLeaflet.fitBounds(camadaBairrosLeaflet.getBounds(), { padding: [12, 12] });
-  };
-  function emTelaCheiaBairros() {
-    return document.fullscreenElement === secaoBairrosEl || document.webkitFullscreenElement === secaoBairrosEl;
-  }
-  function atualizarBotaoTelaCheia() {
-    if (!btnBairrosTelaCheia || !secaoBairrosEl) return;
-    const cheio = emTelaCheiaBairros();
-    btnBairrosTelaCheia.textContent = cheio ? 'Sair da tela cheia' : 'Tela cheia';
-    btnBairrosTelaCheia.setAttribute('aria-pressed', String(cheio));
-    // O contêiner muda de tamanho ao entrar/sair da tela cheia — sem isso o
-    // Leaflet fica com ladrilhos faltando nas bordas até a próxima interação.
-    if (mapaBairrosLeaflet) setTimeout(() => mapaBairrosLeaflet.invalidateSize(), 60);
-  }
-  if (btnBairrosTelaCheia && secaoBairrosEl) {
-    btnBairrosTelaCheia.onclick = () => {
-      if (emTelaCheiaBairros()) {
-        (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
-      } else {
-        const pedir = secaoBairrosEl.requestFullscreen || secaoBairrosEl.webkitRequestFullscreen;
-        if (pedir) pedir.call(secaoBairrosEl);
-      }
-    };
-    document.addEventListener('fullscreenchange', atualizarBotaoTelaCheia);
-    document.addEventListener('webkitfullscreenchange', atualizarBotaoTelaCheia);
-  }
+  const mapaBairros = window.criarMapaBairrosLeaflet ? window.criarMapaBairrosLeaflet({
+    containerId: 'mapaBairros',
+    btnZoomMaisId: 'mapaBairrosZoomMais',
+    btnZoomMenosId: 'mapaBairrosZoomMenos',
+    btnZoomResetId: 'mapaBairrosZoomReset',
+    zoomValorId: 'mapaBairrosZoomValor',
+    btnTelaCheiaId: 'mapaBairrosTelaCheia',
+    secaoId: 'mapaBairrosSecao',
+    corContorno: '#ffe066',
+    obterDica: htmlDicaBairro
+  }) : null;
   function renderizarMapaBairros() {
     const secaoEl = document.getElementById('mapaBairrosSecao');
     if (!secaoEl) return;
@@ -181,29 +108,36 @@
       return;
     }
 
-    let comFiscal = new Set();
-    try {
-      ler().filter(r => r.municipio === selecionado && r.zona && r.secao)
-        .forEach(r => comFiscal.add(canonico(r.zona) + '|' + canonico(r.secao)));
-    } catch (e) { /* banco online ainda carregando; recalcula no próximo banco-atualizado */ }
-
+    // O mapa e os bairros são dados públicos locais; não dependem do banco de fiscais.
+    if (mapaBairros && bairroMapaDesenhado !== selecionado) {
+      mapaBairros.desenhar(dadosBairros.features);
+      bairroMapaDesenhado = selecionado;
+    }
+    if (mapaBairros) mapaBairros.invalidar();
+    atualizarTextoMapaBairros();
+    let registros;
+    try { registros = ler(); }
+    catch (e) {
+      coberturaMapaCarregada = false;
+      locaisMapaAtual = [];
+      porBairroAtual = new Map();
+      if (mapaBairros) mapaBairros.atualizarPontos([]);
+      document.getElementById('mapaFiscaisResumo').textContent = 'Mapa carregado. A cobertura será exibida quando os cadastros estiverem disponíveis. ' + (document.getElementById('banco-mensagem').textContent || e.message);
+      return;
+    }
+    coberturaMapaCarregada = true;
+    locaisMapaAtual = window.CoberturaLocaisMapa(selecionado, registros, locais, window.DADOS_VOTACAO_SCHAFER || {});
     porBairroAtual = new Map();
-    doMunicipio().forEach(l => {
-      const coord = window.LOCAIS_COORDENADAS[l.id];
+    locaisMapaAtual.forEach(item => {
+      const coord = window.LOCAIS_COORDENADAS[item.local.id];
       if (!coord || !coord.bairro) return;
-      const acc = porBairroAtual.get(coord.bairro) || { oficiais: 0, comFiscal: 0 };
-      secoesDe([l]).forEach(s => {
-        acc.oficiais++;
-        if (comFiscal.has(canonico(l.zona) + '|' + canonico(s.numero))) acc.comFiscal++;
-      });
+      const acc = porBairroAtual.get(coord.bairro) || {oficiais: 0, comFiscal: 0};
+      acc.oficiais += item.secoes.length;
+      acc.comFiscal += item.secoes.filter(s => s.comFiscal).length;
       porBairroAtual.set(coord.bairro, acc);
     });
 
-    if (bairroMapaDesenhado !== selecionado) {
-      desenharMapaBairros(dadosBairros.features);
-      bairroMapaDesenhado = selecionado;
-    }
-    if (mapaBairrosLeaflet) setTimeout(() => mapaBairrosLeaflet.invalidateSize(), 0);
+
     atualizarPinsBairros();
     atualizarTextoMapaBairros();
   }
@@ -215,26 +149,42 @@
     const nomeMun = nomes.get(selecionado) || '';
     if (titulo) titulo.textContent = 'Cobertura por bairro — ' + nomeMun;
     const containerEl = document.getElementById('mapaBairros');
-    if (containerEl) containerEl.setAttribute('aria-label', 'Mapa de satélite dos bairros de ' + nomeMun + ', com pin verde nos bairros com fiscal cadastrado');
-    if (dica) {
-      dica.textContent = selecionado === '1200401'
-        ? 'Bairros oficiais da Prefeitura de Rio Branco (SEFIN). Passe o mouse para ver a cobertura de cada um.'
-        : 'Bairros oficializados pelo IBGE (Censo Demográfico 2022). Passe o mouse para ver a cobertura de cada um.';
-    }
+    if (containerEl) containerEl.setAttribute('aria-label', 'Mapa dos locais de votação de ' + nomeMun + ': vermelho com seções sem fiscal, verde com cobertura completa');
+    if (dica) dica.textContent = 'Clique em um local para consultar as seções, os votos de 2022 e a cobertura de fiscais.';
   }
-  // Um pin verde por bairro que tenha ao menos um fiscal cadastrado.
   function atualizarPinsBairros() {
-    if (!camadaPinsLeaflet) return;
-    camadaPinsLeaflet.clearLayers();
-    centroidesBairro.forEach((centro, nome) => {
-      const acc = porBairroAtual.get(nome);
-      if (acc && acc.comFiscal > 0) {
-        L.circleMarker(centro, { radius: 8, color: '#fff', weight: 2, fillColor: '#1f9d55', fillOpacity: 1 })
-          .bindTooltip(nome + ' — tem fiscal cadastrado', { direction: 'top' })
-          .addTo(camadaPinsLeaflet);
+    if (!mapaBairros || !coberturaMapaCarregada) return;
+    const filtro = document.getElementById('mapaFiscaisHistorico').value;
+    const soPendentes = document.getElementById('mapaFiscaisPendentes').checked;
+    const dados = dadosBairrosDoMunicipio(selecionado);
+    const bairros = new Set((dados ? dados.features : []).map(f => f.properties.bairro));
+    const pontos = [];
+    let semMapa = 0, pendentes = 0, identificadas = 0;
+    locaisMapaAtual.forEach(item => {
+      const secoes = item.secoes.filter(s => (!soPendentes || !s.comFiscal) &&
+        (!filtro || (filtro === 'com' && s.votos > 0) || (filtro === 'sem' && s.votos === 0)));
+      if (!secoes.length) return;
+      const coord = window.LOCAIS_COORDENADAS[item.local.id];
+      if (!coord || !bairros.has(coord.bairro) || !Number.isFinite(coord.lat) || !Number.isFinite(coord.lon)) {
+        semMapa += secoes.length; return;
       }
+      const faltam = item.secoes.filter(s => !s.comFiscal).length;
+      pendentes += secoes.filter(s => !s.comFiscal).length;
+      identificadas += secoes.length;
+      pontos.push({lat: coord.lat, lon: coord.lon, cor: faltam ? '#dc3545' : '#1f9d55', html:
+        '<strong>' + escBairro(item.local.nome) + '</strong><br>' + escBairro(coord.bairro) +
+        '<br>Zona ' + escBairro(item.local.zona) + ' · ' + faltam + ' de ' + item.secoes.length + ' seções sem fiscal' +
+        '<table class="fiscais-mapa-secoes"><thead><tr><th>Seção</th><th>Votos 2022</th><th>Fiscal</th></tr></thead><tbody>' +
+        secoes.map(s => '<tr><td>' + escBairro(s.numero) + '</td><td>' + (s.votos === null ? 'Sem dado' : s.votos) +
+          '</td><td class="' + (s.comFiscal ? 'fiscal-presente' : 'fiscal-ausente') + '">' +
+          (s.comFiscal ? 'Cadastrado' : 'Pendente') + '</td></tr>').join('') + '</tbody></table>'});
     });
+    mapaBairros.atualizarPontos(pontos);
+    document.getElementById('mapaFiscaisResumo').textContent = pontos.length + ' locais no mapa · ' + identificadas +
+      ' seções no filtro · ' + pendentes + ' sem fiscal. ' + semMapa + ' seções do filtro sem bairro/coordenada no mapa.';
   }
+  document.getElementById('mapaFiscaisHistorico').addEventListener('change', atualizarPinsBairros);
+  document.getElementById('mapaFiscaisPendentes').addEventListener('change', atualizarPinsBairros);
   document.getElementById('anterior').onclick = () => { pagina--; listar(); };
   document.getElementById('proximo').onclick = () => { pagina++; listar(); };
   function ler() {

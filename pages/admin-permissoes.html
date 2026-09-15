@@ -6,19 +6,25 @@
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026091502">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091503">
 </head>
 <body>
 <header><h1>SISTEMA</h1><p>Controle de acessos por usuário</p></header>
-<main class="admin-auth admin-auth-larga">
-  <div class="admin-card">
-    <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável pelas aprovações.</p>
-    <ul class="lista-solicitacoes" id="listaPermissoes"></ul>
-    <p class="admin-msg" id="adminMsg" role="status"></p>
+<main class="permissoes-layout">
+  <section class="permissoes-cabecalho">
+    <div><span class="permissoes-sobretitulo">ADMINISTRAÇÃO</span><h2>Permissões por usuário</h2><p>Escolha as páginas que cada pessoa pode acessar. Salve cada linha depois de alterar os acessos.</p></div>
+    <span id="permissoesContagem" class="permissoes-contagem"></span>
+  </section>
+  <div class="permissoes-filtros">
+    <label>Buscar usuário<input id="permissoesBusca" type="search" placeholder="Nome ou e-mail"></label>
+    <label>Situação<select id="permissoesSituacao"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="aprovado">Aprovados</option><option value="recusado">Recusados</option></select></label>
   </div>
+  <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável pelas aprovações.</p>
+  <p class="admin-msg" id="adminMsg" role="status"></p>
+  <div class="permissoes-tabela"><div class="permissoes-colunas"><span>USUÁRIO</span><span>ACESSO ÀS PÁGINAS</span><span>AÇÃO</span></div><ul class="lista-solicitacoes" id="listaPermissoes"></ul></div>
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026091404"></script>
-<script src="../js/admin-permissoes.js?v=2026091402"></script>
+<script src="../js/admin-permissoes.js?v=2026091501"></script>
 </body>
 </html>

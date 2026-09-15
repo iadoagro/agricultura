@@ -10,7 +10,7 @@
   <script src="../js/admin-gate.js?v=2026091402"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091523">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091526">
 </head>
 <body>
   <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
@@ -34,6 +34,12 @@
           </div>
           <p id="resultadosStatus" role="status">Carregando mapa…</p>
           <svg id="mapaResultados" viewBox="0 0 1000 600" aria-label="Mapa de votos por município para José Luís Schafer"></svg>
+          <section id="resultadosBairrosSecao" class="resultados-bairros" hidden aria-label="Mapa dos bairros e locais de votação">
+            <div class="resultados-bairros-topo"><div><h3 id="resultadosBairrosTitulo">Bairros</h3><p id="resultadosBairrosResumo"></p></div><button id="resultadosBairrosVoltar" type="button">← Voltar ao Acre</button></div>
+            <div class="mapa-bairros-acoes resultados-mapa-acoes"><button id="resultadosZoomMenos" type="button" aria-label="Diminuir zoom">−</button><span id="resultadosZoomValor"></span><button id="resultadosZoomMais" type="button" aria-label="Aumentar zoom">+</button><button id="resultadosZoomReset" type="button">Enquadrar bairros</button><button id="resultadosTelaCheia" type="button" aria-pressed="false">Tela cheia</button></div>
+            <div id="resultadosBairrosMapa" class="resultados-bairros-mapa mapa-bairros-satelite" role="img" aria-label="Bairros com votos em verde e sem votos em vermelho"></div>
+            <p class="resultados-bairros-legenda"><span class="resultados-pin-amostra com-votos"></span> Com votos <span class="resultados-pin-amostra sem-votos"></span> Sem votos para o candidato. Bairros sem seção identificada ficam sem pin. Clique para ver zonas, seções e votos.</p>
+          </section>
           <div id="mapaResultadosDica" class="mapa-dica" role="status" hidden></div>
         </section>
         <aside class="resultados-lateral" aria-label="Detalhe por município" id="resultadosDetalhe">
@@ -127,8 +133,11 @@
             <button id="mapaBairrosTelaCheia" type="button" aria-pressed="false">Tela cheia</button>
           </div>
         </div>
+        <div class="fiscais-mapa-filtros"><label>Histórico das seções<select id="mapaFiscaisHistorico"><option value="">Todas as seções</option><option value="com">Com votos em 2022</option><option value="sem">Sem votos registrados em 2022</option></select></label><label><input type="checkbox" id="mapaFiscaisPendentes"> Apenas seções sem fiscal</label></div>
+        <p id="mapaFiscaisResumo" role="status"></p>
+        <p class="resultados-bairros-legenda"><span class="resultados-pin-amostra sem-votos"></span> Ainda há seção sem fiscal <span class="resultados-pin-amostra com-votos"></span> Todas as seções com fiscal</p>
         <div id="mapaBairrosViewport" class="mapa-bairros-viewport">
-          <div id="mapaBairros" role="img" aria-label="Mapa de satélite dos bairros de Rio Branco, colorido pela cobertura de fiscais"></div>
+          <div id="mapaBairros" class="mapa-bairros-satelite" role="img" aria-label="Mapa de satélite dos bairros de Rio Branco, colorido pela cobertura de fiscais"></div>
         </div>
       </section>
       <div class="mapa-rodape"><span id="municipio-hover">22 municípios · Acre</span><a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" target="_blank" rel="noopener">Malha municipal: IBGE</a></div>
@@ -211,8 +220,10 @@
   <script src="../js/banco-config.js?v=2026091406"></script>
   <script src="../js/banco-eleicoes.js?v=2026091502"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
-  <script src="../js/eleicoes.js?v=2026091523"></script>
-  <script src="../js/eleicoes-resultados.js?v=2026091504"></script>
+  <script src="../js/mapa-bairros-leaflet.js?v=2026091504"></script>
+  <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
+  <script src="../js/eleicoes.js?v=2026091526"></script>
+  <script src="../js/eleicoes-resultados.js?v=2026091507"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026091501"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026091508"></script>
