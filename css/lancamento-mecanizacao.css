@@ -1,0 +1,93 @@
+/* Aba "Lançamento" do painel de mecanização — digitação de uma vistoria por
+   vez, a partir da ficha em papel. Usa os tokens de tema de css/dashboard.css
+   (--superficie, --tinta etc.), só isolado num arquivo próprio porque é a
+   única aba com formulário de verdade (o resto é só gráfico/tabela). */
+
+.lanc-grid{display:flex;flex-direction:column;gap:16px}
+
+.lanc-painel-pdf .upload{margin-top:4px}
+
+.lanc-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.lanc-form .painel{grid-column:span 2}
+
+.lanc-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 16px}
+.lanc-campos label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--tinta2)}
+.lanc-campos label.lanc-larga{grid-column:1 / -1}
+.lanc-campos label.lanc-check{flex-direction:row;align-items:center;gap:8px;font-weight:500}
+.lanc-campos label.lanc-check input{width:auto}
+
+.lanc-obrig{color:var(--tag-acu-tx);margin-left:2px}
+.lanc-erro{color:var(--tag-acu-tx);font-size:12.5px;font-weight:600;margin:8px 0 0}
+.lanc-dica{font-weight:400;color:var(--tinta3);font-size:11px}
+
+.lanc-campos input,.lanc-campos select,.lanc-campos textarea{
+  width:100%;padding:9px 10px;border:1.5px solid var(--linha-t);border-radius:8px;
+  font:inherit;font-size:13.5px;color:var(--tinta);background:var(--superficie);box-sizing:border-box
+}
+.lanc-campos input:focus,.lanc-campos select:focus,.lanc-campos textarea:focus{
+  outline:none;border-color:var(--acento-fundo);box-shadow:0 0 0 3px var(--acento-suave)
+}
+.lanc-campos textarea{resize:vertical;min-height:64px}
+
+.lanc-fieldset{border:1px solid var(--anel);border-radius:10px;padding:12px 14px;margin-top:14px}
+.lanc-fieldset legend{padding:0 6px;font-size:12px;font-weight:700;color:var(--tinta2)}
+.lanc-caixas{display:flex;flex-wrap:wrap;gap:8px 18px}
+.lanc-caixas label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tinta);cursor:pointer}
+.lanc-caixas input{width:auto}
+
+.lanc-tipo-servico{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.lanc-radio-grande{
+  position:relative;display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:24px 16px;border:2px solid var(--linha-t);border-radius:12px;
+  font-size:16px;font-weight:700;color:var(--tinta2);cursor:pointer;text-align:center;
+  background:var(--superficie);transition:border-color .15s,background .15s,color .15s
+}
+.lanc-radio-grande input{position:absolute;opacity:0;width:0;height:0}
+.lanc-radio-grande:hover{border-color:var(--acento-fundo)}
+/* .lanc-marcado é alternada por JS (alternarSecoesServico em
+   lancamento-mecanizacao.js) em vez de :has(input:checked) — :has() não
+   reagia de forma confiável em todo navegador testado. */
+.lanc-radio-grande.lanc-marcado{border-color:var(--acento-fundo);background:var(--acento-suave);color:var(--acento-fundo)}
+.lanc-radio-grande:focus-within{outline:2px solid var(--acento-fundo);outline-offset:2px}
+
+.lanc-culturas{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.lanc-cultura-linha{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:center}
+.lanc-cultura-linha select,.lanc-cultura-linha input{
+  padding:8px 9px;border:1.5px solid var(--linha-t);border-radius:8px;font:inherit;font-size:13px;
+  color:var(--tinta);background:var(--superficie)
+}
+.lanc-cultura-remover{
+  border:1px solid var(--linha-t);background:var(--superficie2);color:var(--tinta2);
+  border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:15px;line-height:1
+}
+.lanc-cultura-remover:hover{background:var(--tag-acu-bg);color:var(--tag-acu-tx);border-color:transparent}
+
+.lanc-daes{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.lanc-dae-linha{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:center}
+.lanc-dae-linha input{
+  padding:8px 9px;border:1.5px solid var(--linha-t);border-radius:8px;font:inherit;font-size:13px;
+  color:var(--tinta);background:var(--superficie)
+}
+
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.lanc-sugerido{background:var(--acento-suave)!important;border-color:var(--acento-fundo)!important}
+.lanc-badge-sugestao{
+  display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700;
+  background:var(--tag-mec-bg);color:var(--tag-mec-tx);vertical-align:middle
+}
+
+.lanc-tabela{width:100%;border-collapse:collapse;font-size:12.5px}
+.lanc-tabela th,.lanc-tabela td{padding:8px 10px;border-bottom:1px solid var(--anel);text-align:left}
+.lanc-tabela th{color:var(--tinta3);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+.lanc-tabela td.num{text-align:right;font-variant-numeric:tabular-nums}
+.lanc-tabela a{color:var(--acento-fundo);text-decoration:none}
+.lanc-tabela a:hover{text-decoration:underline}
+
+@media(max-width:760px){
+  .lanc-form{grid-template-columns:1fr}
+  .lanc-form .painel{grid-column:1}
+  .lanc-tipo-servico{grid-template-columns:1fr}
+  .lanc-cultura-linha{grid-template-columns:1fr 1fr;grid-template-areas:"cult cult" "area sist" "rem rem"}
+  .lanc-dae-linha{grid-template-columns:1fr}
+}

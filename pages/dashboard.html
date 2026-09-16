@@ -11,6 +11,7 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/dashboard.css?v=2026091501">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026091512">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026091404"></script>
 <script src="../js/admin-gate.js?v=2026091402"></script>
@@ -104,13 +105,22 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 8-7 9-4-1-7-4.5-7-9V7z"/><path d="M12 11v4M12 8.5v.5"/></svg>
       Atualizar dados
     </button>
+    <!-- Digita&ccedil;&atilde;o de uma vistoria por vez, a partir da ficha em papel — grava
+         direto no Supabase (ver lancar_mecanizacao.php e
+         database/mecanizacao-lancamentos.sql). Sem senha para ABRIR a aba
+         (fica por &uacute;ltimo, longe das demais); salvar/ler PDF continua
+         pedindo a senha de administrador (ver js/lancamento-mecanizacao.js). -->
+    <button class="aba" data-aba="lancamento" type="button" role="tab" id="aba-lancamento" aria-controls="painel-lancamento" aria-selected="false" tabindex="-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Lan&ccedil;amento
+    </button>
   </div>
 </nav>
 
 <div class="wrap">
 
   <!-- ------------------------------------------------------------- filtros -->
-  <section class="filtros" aria-label="Filtros">
+  <section class="filtros" id="filtros" aria-label="Filtros">
     <!-- per&iacute;odo: recorte mais amplo do painel, por isso encabe&ccedil;a os filtros.
          As op&ccedil;&otilde;es s&atilde;o montadas por js/dashboard.js a partir dos anos da base. -->
     <!-- TODO filtro aceita mais de um valor: s&atilde;o montados por js/dashboard.js
@@ -785,6 +795,195 @@
     </div>
   </div>
 
+  <!-- ========================================================= ABA: LANÇAMENTO -->
+  <!-- Digitação de UMA vistoria a partir da ficha em papel; grava direto no
+       Supabase (mecanizacao_lancamentos), separado do pacote agregado que
+       vira data/mecanizacao.json. Ver lancar_mecanizacao.js/.css/.php. Abrir
+       a aba não pede senha; salvar/ler PDF continua pedindo. -->
+  <div class="aba-conteudo" data-aba="lancamento" role="tabpanel" id="painel-lancamento" aria-labelledby="aba-lancamento" tabindex="0">
+    <div class="lanc-grid">
+
+      <!-- Tela inicial da aba: a lista de lançamentos já feitos. O formulário
+           só aparece por cima ao clicar em "Novo lançamento" — sem navegar
+           para outra página/aba. -->
+      <div id="lancListaView">
+        <section class="painel largo">
+          <div class="painel-cab">
+            <div class="painel-cab-tit">
+              <h2>Lançamentos</h2>
+              <p class="sub">Vistorias já digitadas nesta sessão de administração.</p>
+            </div>
+            <div class="painel-acoes">
+              <button class="btn btn-verde" id="lancNovoBtn" type="button">+ Novo lançamento</button>
+            </div>
+          </div>
+          <div id="lancListaAviso"></div>
+          <div id="lancRecentes"></div>
+        </section>
+      </div>
+
+      <div id="lancFormView" hidden>
+
+      <section class="painel duplo lanc-painel-pdf">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>1. Ficha em PDF (opcional)</h2>
+          <p class="sub">Envie a foto/scan da ficha assinada em PDF: o sistema tenta preencher os campos que
+             conseguir identificar no texto. Confira tudo antes de salvar &mdash; letra de m&atilde;o e caixas
+             marcadas com X n&atilde;o d&aacute; para ler sozinho.</p>
+        </div></div>
+        <div class="upload" id="lancUpZona">
+          <input type="file" id="lancArquivo" accept="application/pdf" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p class="upload-tit">Arraste o PDF aqui ou clique para escolher</p>
+          <p class="upload-sub">Um PDF por vistoria. No m&aacute;ximo 20&nbsp;MB.</p>
+        </div>
+        <div id="lancUpStatus"></div>
+      </section>
+
+      <form id="lancForm" class="painel-grid lanc-form">
+
+        <section class="painel duplo">
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>2. Serviço e vistoria</h2></div></div>
+          <div class="lanc-campos">
+            <label>Data da vistoria<span class="lanc-obrig">*</span><input type="date" name="data_vistoria" required></label>
+            <label>Escritório local
+              <select name="escritorio_local"><option value="">Selecione&hellip;</option></select>
+            </label>
+            <label>Responsável técnico<input type="text" name="responsavel_tecnico" autocomplete="off"></label>
+            <label>Município<span class="lanc-obrig">*</span>
+              <select name="municipio" required><option value="">Selecione&hellip;</option></select>
+            </label>
+          </div>
+        </section>
+
+        <section class="painel duplo">
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>3. Beneficiário (1.0 Informações Gerais)</h2></div></div>
+          <div class="lanc-campos">
+            <label class="lanc-larga">Nome do beneficiário<span class="lanc-obrig">*</span><input type="text" name="nome_beneficiario" required autocomplete="off"></label>
+            <label>CPF<span class="lanc-obrig">*</span><input type="text" name="cpf" inputmode="numeric" placeholder="000.000.000-00" required autocomplete="off"></label>
+            <label>Data de nascimento<span class="lanc-obrig">*</span><input type="date" name="data_nascimento" required></label>
+            <label>Telefone<input type="text" name="telefone" placeholder="(68) 90000-0000" autocomplete="off"></label>
+            <label>Estado civil
+              <select name="estado_civil">
+                <option value="">Não informado</option>
+                <option>Solteiro(a)</option><option>Casado(a)</option><option>Separado(a)</option>
+                <option>Divorciado(a)</option><option>Amasiado(a)</option><option>Viúvo(a)</option>
+              </select>
+            </label>
+            <label>Sexo<span class="lanc-obrig">*</span>
+              <select name="sexo" required><option value="">Selecione&hellip;</option><option value="F">Feminino</option><option value="M">Masculino</option></select>
+            </label>
+            <label class="lanc-check"><input type="checkbox" name="indigena" id="lancIndigena"> Indígena</label>
+            <label id="lancCampoEtnia" hidden>Etnia<input type="text" name="etnia" autocomplete="off"></label>
+            <label>Possui DAP<span class="lanc-obrig">*</span>
+              <select name="possui_dap" required><option value="">Selecione&hellip;</option><option>Sim</option><option>Não</option><option>Vencida</option></select>
+            </label>
+            <label class="lanc-larga">Associação/Cooperativa<input type="text" name="associacao_cooperativa" autocomplete="off"></label>
+          </div>
+        </section>
+
+        <section class="painel duplo">
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>4. Unidade produtiva (2.0)</h2></div></div>
+          <div class="lanc-campos">
+            <label class="lanc-larga">Endereço (assentamento/comunidade, BR/ramal, km, nº do lote)<span class="lanc-obrig">*</span><input type="text" name="endereco" required autocomplete="off"></label>
+            <label>Nome da propriedade<span class="lanc-obrig">*</span><input type="text" name="nome_propriedade" required autocomplete="off"></label>
+          </div>
+        </section>
+
+        <section class="painel duplo">
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>5. Tipo de serviço</h2></div></div>
+          <div class="lanc-tipo-servico">
+            <label class="lanc-radio-grande"><input type="radio" name="tipo_servico" value="Mecanização" required><span>Mecanização</span></label>
+            <label class="lanc-radio-grande"><input type="radio" name="tipo_servico" value="Açudagem" required><span>Açudagem</span></label>
+          </div>
+          <p id="lancServicoErro" class="lanc-erro" hidden></p>
+        </section>
+
+        <section class="painel duplo" id="lancSecMecanizacao" hidden>
+          <div class="painel-cab"><div class="painel-cab-tit">
+            <h2>6. Área mecanizada / cultivo (3.0)</h2>
+            <p class="sub">Adicione uma cultura, preencha a área e o sistema de cultivo, e só depois disso vai
+               liberar para adicionar a próxima (até 4, como na ficha).</p>
+          </div></div>
+          <div id="lancCulturas" class="lanc-culturas"></div>
+          <button type="button" class="btn" id="lancAddCultura" disabled>+ Adicionar cultura</button>
+          <p id="lancCulturaErro" class="lanc-erro" hidden>Adicione pelo menos uma cultura.</p>
+          <div class="lanc-campos" style="margin-top:14px">
+            <label>Área total (ha)<input type="number" step="0.01" min="0" name="area_total_ha" id="lancAreaTotal">
+              <small class="lanc-dica">Soma automática das áreas acima — pode alterar se precisar.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="painel duplo" id="lancSecAcudagem" hidden>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>6. Açudagem</h2></div></div>
+          <div class="lanc-campos">
+            <label>Horas de máquina<input type="number" step="0.01" min="0" name="horas_maquina"></label>
+            <label>Quantidade de tanques/açudes<span class="lanc-obrig">*</span><input type="number" step="1" min="0" name="quantidade_acudes"></label>
+          </div>
+          <p id="lancAcudeErro" class="lanc-erro" hidden>Informe pelo menos 1 tanque/açude.</p>
+        </section>
+
+        <section class="painel duplo">
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>7. Georreferenciamento (3.1 — UTM WGS84)</h2></div></div>
+          <div class="lanc-campos">
+            <label>X<input type="text" name="geo_x" inputmode="numeric" autocomplete="off"></label>
+            <label>Y<input type="text" name="geo_y" inputmode="numeric" autocomplete="off"></label>
+            <label>Zona<select name="geo_zona"><option value="">—</option><option value="18">18</option><option value="19">19</option></select></label>
+          </div>
+        </section>
+
+        <section class="painel duplo">
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>8. Maquinário (3.2)</h2></div></div>
+          <div class="lanc-campos">
+            <label>Tipo de trator<input type="text" name="tipo_trator" autocomplete="off"></label>
+            <label>Nº de identificação/patrimônio<input type="text" name="num_identificacao_patrimonio" autocomplete="off"></label>
+            <label>Uso
+              <select name="tipo_uso"><option value="">Não informado</option><option>Agrícola</option><option>Não agrícola</option></select>
+            </label>
+          </div>
+          <fieldset class="lanc-fieldset">
+            <legend>Máquinas utilizadas</legend>
+            <div class="lanc-caixas" id="lancMaquinas"></div>
+          </fieldset>
+          <fieldset class="lanc-fieldset">
+            <legend>Tipo de implemento</legend>
+            <div class="lanc-caixas" id="lancImplementos"></div>
+          </fieldset>
+        </section>
+
+        <section class="painel duplo">
+          <div class="painel-cab"><div class="painel-cab-tit">
+            <h2>9. Documento de Arrecadação Estadual — DAE (3.3)</h2>
+            <p class="sub">Adicione um número e valor por DAE emitida, e só depois vai liberar para adicionar
+               a próxima (até 10).</p>
+          </div></div>
+          <div id="lancDaes" class="lanc-daes"></div>
+          <button type="button" class="btn" id="lancAddDae" disabled>+ Adicionar DAE</button>
+        </section>
+
+        <section class="painel duplo">
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>10. Assinaturas e observações</h2></div></div>
+          <div class="lanc-campos">
+            <label class="lanc-check"><input type="checkbox" name="beneficiario_assinou"> Beneficiário assinou a ficha</label>
+            <label class="lanc-check"><input type="checkbox" name="responsavel_assinou"> Responsável técnico assinou a ficha</label>
+            <label class="lanc-larga">Observação<textarea name="observacao" rows="3"></textarea></label>
+          </div>
+        </section>
+
+        <div id="lancSalvarStatus"></div>
+        <div class="upload-acoes">
+          <button class="btn btn-verde" id="lancSalvar" type="submit">Salvar lançamento</button>
+          <button class="btn" id="lancLimpar" type="button">Limpar formulário</button>
+          <button class="btn" id="lancVoltarLista" type="button">&larr; Voltar para a lista</button>
+        </div>
+      </form>
+
+      </div><!-- /lancFormView -->
+
+    </div>
+  </div>
+
   </div><!-- /conteudo-abas -->
 
 </div>
@@ -825,6 +1024,8 @@
 <script src="../js/importar.js?v=2026081307"></script>
 <script src="../js/mapa-acre.js?v=2026091402"></script>
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
-<script src="../js/dashboard.js?v=2026091502"></script>
+<script src="../js/lancamento-extrair-pdf.js?v=2026091510"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026091512"></script>
+<script src="../js/dashboard.js?v=2026091510"></script>
 </body>
 </html>
