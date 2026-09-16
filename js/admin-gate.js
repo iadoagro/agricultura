@@ -15,10 +15,9 @@
     'contatos.html': 'contatos',
     'dashboards.html': 'dashboards',
     'dashboard.html': 'dashboards',
+    'lancamento-editar.html': 'dashboards',
     'deagro.html': 'dashboards',
-    'deagro-secoes.html': 'dashboards',
-    'mecanizacao.html': 'dashboards',
-    'mecanizacao-secoes.html': 'dashboards'
+    'deagro-secoes.html': 'dashboards'
   };
   var arquivo = location.pathname.split('/').pop();
   var chave = CHAVES_POR_ARQUIVO[arquivo] || null;

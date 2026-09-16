@@ -99,6 +99,12 @@ revoke all on public.mecanizacao_lancamentos from anon, authenticated;
 -- Nenhuma policy: só a service_role (usada por lancar_mecanizacao.php) acessa.
 -- Se um dia o painel passar a ler estes dados direto do navegador, crie aqui
 -- uma policy "for select to authenticated" como em eleicoes.sql.
+--
+-- service_role contorna as políticas de RLS acima, mas ainda precisa desse
+-- grant básico do Postgres pra poder ler/gravar a tabela — sem isso, tanto
+-- salvar quanto listar em lancar_mecanizacao.php recebem "permission denied
+-- for table mecanizacao_lancamentos" (mesmo bug já visto em admin.sql).
+grant select, insert, update, delete on public.mecanizacao_lancamentos to service_role;
 
 -- Bucket de Storage para guardar o PDF da ficha original enviada (opcional:
 -- se a linha não tiver pdf_arquivo, o lançamento foi digitado sem anexo).

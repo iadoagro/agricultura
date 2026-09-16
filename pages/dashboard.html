@@ -32,7 +32,7 @@
   <h1 id="tituloPainel">SISTEMA</h1>
   <p>Mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem</p>
   <div class="header-acoes">
-    <a class="tema-btn" id="voltarSecoes" href="mecanizacao.html">&#8592;<span>Se&ccedil;&otilde;es</span></a>
+    <a class="tema-btn" id="voltarSecoes" href="dashboards.html">&#8592;<span>Pain&eacute;is</span></a>
     <button class="tema-btn" id="temaBtn" type="button" aria-label="Alternar tema"></button>
     <button class="tema-btn" id="adminBtn" type="button">&#128274;<span>Admin</span></button>
   </div>
@@ -824,40 +824,25 @@
 
       <div id="lancFormView" hidden>
 
-      <section class="painel duplo lanc-painel-pdf">
-        <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>1. Ficha em PDF (opcional)</h2>
-          <p class="sub">Envie a foto/scan da ficha assinada em PDF: o sistema tenta preencher os campos que
-             conseguir identificar no texto. Confira tudo antes de salvar &mdash; letra de m&atilde;o e caixas
-             marcadas com X n&atilde;o d&aacute; para ler sozinho.</p>
-        </div></div>
-        <div class="upload" id="lancUpZona">
-          <input type="file" id="lancArquivo" accept="application/pdf" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <p class="upload-tit">Arraste o PDF aqui ou clique para escolher</p>
-          <p class="upload-sub">Um PDF por vistoria. No m&aacute;ximo 20&nbsp;MB.</p>
-        </div>
-        <div id="lancUpStatus"></div>
-      </section>
-
       <form id="lancForm" class="painel-grid lanc-form">
 
         <section class="painel duplo">
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>2. Serviço e vistoria</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>1. Serviço e vistoria</h2></div></div>
           <div class="lanc-campos">
+            <label>Hor&aacute;rio da inser&ccedil;&atilde;o<input type="text" id="lancHorarioInsercao" disabled></label>
             <label>Data da vistoria<span class="lanc-obrig">*</span><input type="date" name="data_vistoria" required></label>
-            <label>Escritório local
-              <select name="escritorio_local"><option value="">Selecione&hellip;</option></select>
-            </label>
-            <label>Responsável técnico<input type="text" name="responsavel_tecnico" autocomplete="off"></label>
-            <label>Município<span class="lanc-obrig">*</span>
+            <label>Munic&iacute;pio<span class="lanc-obrig">*</span>
               <select name="municipio" required><option value="">Selecione&hellip;</option></select>
             </label>
+            <label>Escrit&oacute;rio local<span class="lanc-obrig">*</span>
+              <select name="escritorio_local" required disabled><option value="">Selecione&hellip;</option></select>
+            </label>
+            <label>Respons&aacute;vel t&eacute;cnico<span class="lanc-obrig">*</span><input type="text" name="responsavel_tecnico" required autocomplete="off"></label>
           </div>
         </section>
 
         <section class="painel duplo">
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>3. Beneficiário (1.0 Informações Gerais)</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>2. Beneficiário (1.0 Informações Gerais)</h2></div></div>
           <div class="lanc-campos">
             <label class="lanc-larga">Nome do beneficiário<span class="lanc-obrig">*</span><input type="text" name="nome_beneficiario" required autocomplete="off"></label>
             <label>CPF<span class="lanc-obrig">*</span><input type="text" name="cpf" inputmode="numeric" placeholder="000.000.000-00" required autocomplete="off"></label>
@@ -873,25 +858,30 @@
             <label>Sexo<span class="lanc-obrig">*</span>
               <select name="sexo" required><option value="">Selecione&hellip;</option><option value="F">Feminino</option><option value="M">Masculino</option></select>
             </label>
-            <label class="lanc-check"><input type="checkbox" name="indigena" id="lancIndigena"> Indígena</label>
-            <label id="lancCampoEtnia" hidden>Etnia<input type="text" name="etnia" autocomplete="off"></label>
             <label>Possui DAP<span class="lanc-obrig">*</span>
               <select name="possui_dap" required><option value="">Selecione&hellip;</option><option>Sim</option><option>Não</option><option>Vencida</option></select>
             </label>
-            <label class="lanc-larga">Associação/Cooperativa<input type="text" name="associacao_cooperativa" autocomplete="off"></label>
+            <label>Indígena
+              <select name="indigena" id="lancIndigena"><option value="">Não informado</option><option>Sim</option><option>Não</option></select>
+            </label>
+            <label id="lancCampoEtnia" hidden>Etnia<input type="text" name="etnia" autocomplete="off"></label>
+            <label>Possui associa&ccedil;&atilde;o/cooperativa?
+              <select id="lancPossuiAssociacao"><option value="">Selecione&hellip;</option><option>Sim</option><option>Não</option></select>
+            </label>
+            <label class="lanc-larga" id="lancCampoAssociacao" hidden>Associação/Cooperativa<input type="text" name="associacao_cooperativa" autocomplete="off"></label>
           </div>
         </section>
 
         <section class="painel duplo">
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>4. Unidade produtiva (2.0)</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>3. Unidade produtiva (2.0)</h2></div></div>
           <div class="lanc-campos">
-            <label class="lanc-larga">Endereço (assentamento/comunidade, BR/ramal, km, nº do lote)<span class="lanc-obrig">*</span><input type="text" name="endereco" required autocomplete="off"></label>
+            <label>Endereço (assentamento/comunidade, BR/ramal, km, nº do lote)<span class="lanc-obrig">*</span><input type="text" name="endereco" required autocomplete="off"></label>
             <label>Nome da propriedade<span class="lanc-obrig">*</span><input type="text" name="nome_propriedade" required autocomplete="off"></label>
           </div>
         </section>
 
         <section class="painel duplo">
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>5. Tipo de serviço</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>4. Tipo de serviço</h2></div></div>
           <div class="lanc-tipo-servico">
             <label class="lanc-radio-grande"><input type="radio" name="tipo_servico" value="Mecanização" required><span>Mecanização</span></label>
             <label class="lanc-radio-grande"><input type="radio" name="tipo_servico" value="Açudagem" required><span>Açudagem</span></label>
@@ -901,7 +891,7 @@
 
         <section class="painel duplo" id="lancSecMecanizacao" hidden>
           <div class="painel-cab"><div class="painel-cab-tit">
-            <h2>6. Área mecanizada / cultivo (3.0)</h2>
+            <h2>5. Área mecanizada / cultivo (3.0)</h2>
             <p class="sub">Adicione uma cultura, preencha a área e o sistema de cultivo, e só depois disso vai
                liberar para adicionar a próxima (até 4, como na ficha).</p>
           </div></div>
@@ -916,7 +906,7 @@
         </section>
 
         <section class="painel duplo" id="lancSecAcudagem" hidden>
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>6. Açudagem</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>5. Açudagem</h2></div></div>
           <div class="lanc-campos">
             <label>Horas de máquina<input type="number" step="0.01" min="0" name="horas_maquina"></label>
             <label>Quantidade de tanques/açudes<span class="lanc-obrig">*</span><input type="number" step="1" min="0" name="quantidade_acudes"></label>
@@ -925,7 +915,7 @@
         </section>
 
         <section class="painel duplo">
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>7. Georreferenciamento (3.1 — UTM WGS84)</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>6. Georreferenciamento (3.1 — UTM WGS84)</h2></div></div>
           <div class="lanc-campos">
             <label>X<input type="text" name="geo_x" inputmode="numeric" autocomplete="off"></label>
             <label>Y<input type="text" name="geo_y" inputmode="numeric" autocomplete="off"></label>
@@ -934,7 +924,7 @@
         </section>
 
         <section class="painel duplo">
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>8. Maquinário (3.2)</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>7. Maquinário (3.2)</h2></div></div>
           <div class="lanc-campos">
             <label>Tipo de trator<input type="text" name="tipo_trator" autocomplete="off"></label>
             <label>Nº de identificação/patrimônio<input type="text" name="num_identificacao_patrimonio" autocomplete="off"></label>
@@ -954,7 +944,7 @@
 
         <section class="painel duplo">
           <div class="painel-cab"><div class="painel-cab-tit">
-            <h2>9. Documento de Arrecadação Estadual — DAE (3.3)</h2>
+            <h2>8. Documento de Arrecadação Estadual — DAE (3.3)</h2>
             <p class="sub">Adicione um número e valor por DAE emitida, e só depois vai liberar para adicionar
                a próxima (até 10).</p>
           </div></div>
@@ -963,10 +953,8 @@
         </section>
 
         <section class="painel duplo">
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>10. Assinaturas e observações</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>9. Observações</h2></div></div>
           <div class="lanc-campos">
-            <label class="lanc-check"><input type="checkbox" name="beneficiario_assinou"> Beneficiário assinou a ficha</label>
-            <label class="lanc-check"><input type="checkbox" name="responsavel_assinou"> Responsável técnico assinou a ficha</label>
             <label class="lanc-larga">Observação<textarea name="observacao" rows="3"></textarea></label>
           </div>
         </section>
@@ -1024,8 +1012,8 @@
 <script src="../js/importar.js?v=2026081307"></script>
 <script src="../js/mapa-acre.js?v=2026091402"></script>
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
-<script src="../js/lancamento-extrair-pdf.js?v=2026091510"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026091512"></script>
+<script src="../js/lancamento-campos.js?v=2026091601"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026091601"></script>
 <script src="../js/dashboard.js?v=2026091510"></script>
 </body>
 </html>

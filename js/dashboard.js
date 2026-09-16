@@ -3168,19 +3168,13 @@
     } catch (e) { location.hash = h; }   // file:// em navegador antigo
   }
 
-  /** O "voltar" leva às seções DO EXERCÍCIO ABERTO, não a uma lista solta:
-      quem trocou de ano dentro do painel espera voltar para o ano que está
-      vendo. Vários anos marcados não cabem numa página só de seções, então aí
-      o caminho é a escolha de exercício. */
+  /** O painel abre direto a partir de dashboards.html (sem as páginas
+      intermediárias de ano/seção, removidas), então o "voltar" leva sempre
+      para lá. */
   function atualizarVoltar() {
     var a = el('voltarSecoes');
     if (!a) return;
-    if (F.ano.length > 1) {
-      a.href = 'mecanizacao.html';
-      return;
-    }
-    a.href = 'mecanizacao-secoes.html?ano=' +
-      encodeURIComponent(F.ano.length ? F.ano[0] : CONSOLIDADO);
+    a.href = 'dashboards.html';
   }
 
   function lerHash() {
