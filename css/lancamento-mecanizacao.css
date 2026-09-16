@@ -5,35 +5,68 @@
 
 .lanc-grid{display:flex;flex-direction:column;gap:16px}
 
-.lanc-painel-pdf .upload{margin-top:4px}
-
 .lanc-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 .lanc-form .painel{grid-column:span 2}
 
-.lanc-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 16px}
-.lanc-campos label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--tinta2)}
-.lanc-campos label.lanc-larga{grid-column:1 / -1}
-.lanc-campos label.lanc-check{flex-direction:row;align-items:center;gap:8px;font-weight:500}
-.lanc-campos label.lanc-check input{width:auto}
+/* Padrão de tamanho do formulário inteiro: 14px, o mesmo dado às
+   máquinas/implementos abaixo (fieldset "Maquinário") — rótulo, campo e
+   opção de marcar todos do mesmo tamanho, para nada disputar destaque à toa. */
+/* flex, não grid: numa linha com menos rótulos que o normal (a última de
+   cada seção, quase sempre), grid deixa as colunas que sobraram em branco —
+   cada linha do flex reparte só entre quem está NELA, sem vão morto, e a
+   seção sempre fica preenchida de ponta a ponta. */
+.lanc-campos{display:flex;flex-wrap:wrap;gap:14px 16px}
+/* Cada rótulo tem largura mínima de 170px e cresce igual aos vizinhos pra
+   preencher o resto da linha (flex-grow:1 nos três). .lanc-larga força a
+   linha inteira pra quem realmente precisa disso (nome, endereço, textarea). */
+.lanc-campos label{flex:1 1 170px;display:block;font-size:14px;font-weight:600;color:var(--tinta2)}
+.lanc-campos label.lanc-larga{flex:1 1 100%}
+/* display:block no rótulo (não flex) de propósito: um <span class="lanc-obrig">
+   logo depois do texto, dentro de um flex container, viraria um item de flex
+   À PARTE do texto — cada um cairia na própria linha (o "*" descia sozinho,
+   desalinhando essa coluna das colunas sem asterisco). Em fluxo normal,
+   texto + <span> inline ficam na mesma linha, e o campo (bloco) sempre quebra
+   pra linha de baixo sozinho — sem precisar tocar no HTML. */
+.lanc-campos label.lanc-check{flex:1 1 170px;display:flex;align-items:center;gap:8px;font-weight:500}
+.lanc-campos label.lanc-check input{width:auto;margin-top:0}
 
 .lanc-obrig{color:var(--tag-acu-tx);margin-left:2px}
 .lanc-erro{color:var(--tag-acu-tx);font-size:12.5px;font-weight:600;margin:8px 0 0}
-.lanc-dica{font-weight:400;color:var(--tinta3);font-size:11px}
+.lanc-dica{display:block;margin-top:4px;font-weight:400;color:var(--tinta3);font-size:11px}
 
 .lanc-campos input,.lanc-campos select,.lanc-campos textarea{
-  width:100%;padding:9px 10px;border:1.5px solid var(--linha-t);border-radius:8px;
-  font:inherit;font-size:13.5px;color:var(--tinta);background:var(--superficie);box-sizing:border-box
+  display:block;width:100%;margin-top:6px;padding:9px 10px;border:1.5px solid var(--linha-t);border-radius:8px;
+  font:inherit;font-size:14px;color:var(--tinta);background:var(--superficie);box-sizing:border-box
 }
 .lanc-campos input:focus,.lanc-campos select:focus,.lanc-campos textarea:focus{
   outline:none;border-color:var(--acento-fundo);box-shadow:0 0 0 3px var(--acento-suave)
 }
+.lanc-campos input:disabled,.lanc-campos select:disabled{background:var(--superficie2);color:var(--tinta3);cursor:not-allowed}
 .lanc-campos textarea{resize:vertical;min-height:64px}
 
 .lanc-fieldset{border:1px solid var(--anel);border-radius:10px;padding:12px 14px;margin-top:14px}
-.lanc-fieldset legend{padding:0 6px;font-size:12px;font-weight:700;color:var(--tinta2)}
-.lanc-caixas{display:flex;flex-wrap:wrap;gap:8px 18px}
-.lanc-caixas label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tinta);cursor:pointer}
-.lanc-caixas input{width:auto}
+.lanc-fieldset legend{padding:0 6px;font-size:14px;font-weight:700;color:var(--tinta2)}
+/* flex, não grid: cada opção cresce igual às vizinhas NA MESMA LINHA e
+   preenche a largura toda — com grid, uma última linha com menos opções
+   (o caso comum) deixava colunas em branco em vez de redistribuir o espaço. */
+.lanc-caixas{display:flex;flex-wrap:wrap;gap:9px 12px}
+.lanc-caixas label{
+  flex:1 1 150px;
+  display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--tinta);cursor:pointer;
+  padding:7px 12px;border:1.5px solid var(--linha-t);border-radius:8px;background:var(--superficie);
+  transition:border-color .15s,background .15s
+}
+.lanc-caixas label:hover{border-color:var(--acento-fundo)}
+.lanc-caixas input{width:16px;height:16px;flex:none;accent-color:var(--acento-fundo)}
+/* "Outra" toma a linha inteira: é a única com um campo de texto dentro,
+   então precisa do espaço todo pra caber lado a lado com o rótulo. */
+.lanc-caixas label.lanc-caixa-outra{flex:1 1 100%}
+.lanc-caixas label.lanc-caixa-outra span{flex:none}
+.lanc-caixas .lc-outra-texto{
+  flex:1;min-width:0;width:auto;margin:0;padding:6px 9px;border:1.5px solid var(--linha-t);border-radius:6px;
+  font:inherit;font-size:14px;color:var(--tinta);background:var(--superficie)
+}
+.lanc-caixas .lc-outra-texto:disabled{background:var(--superficie2);color:var(--tinta3);cursor:not-allowed}
 
 .lanc-tipo-servico{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .lanc-radio-grande{
@@ -70,12 +103,9 @@
 }
 
 .btn:disabled{opacity:.5;cursor:not-allowed}
-
-.lanc-sugerido{background:var(--acento-suave)!important;border-color:var(--acento-fundo)!important}
-.lanc-badge-sugestao{
-  display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700;
-  background:var(--tag-mec-bg);color:var(--tag-mec-tx);vertical-align:middle
-}
+.lanc-tabela-acoes{display:flex;gap:6px;white-space:nowrap}
+.btn-excluir{background:transparent;border-color:var(--tag-acu-bg);color:var(--tag-acu-tx)}
+.btn-excluir:hover:not(:disabled){background:var(--tag-acu-bg)}
 
 .lanc-tabela{width:100%;border-collapse:collapse;font-size:12.5px}
 .lanc-tabela th,.lanc-tabela td{padding:8px 10px;border-bottom:1px solid var(--anel);text-align:left}

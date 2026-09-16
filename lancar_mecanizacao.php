@@ -2,35 +2,37 @@
 declare(strict_types=1);
 
 /* Aba "Lançamento" do painel de mecanização: digitação de uma vistoria por
- * vez (a partir da ficha em papel, com ou sem PDF anexado) direto no banco
- * Supabase — mecanizacao_lancamentos (ver database/mecanizacao-lancamentos.sql).
+ * vez, a partir da ficha em papel, direto no banco Supabase —
+ * mecanizacao_lancamentos (ver database/mecanizacao-lancamentos.sql).
  *
- * Usa a MESMA senha de administrador de salvar_mecanizacao.php (ver
- * admin_senha.php) e a MESMA chave service_role de admin_usuarios.php (ver
- * admin_config.php) — nunca a chave publicável do navegador. O navegador
- * nunca recebe a service_role: toda gravação passa por aqui.
+ * Usa a MESMA chave service_role de admin_usuarios.php (ver admin_config.php)
+ * — nunca a chave publicável do navegador. O navegador nunca recebe a
+ * service_role: toda gravação passa por aqui.
  *
  * Ações (multipart/form-data, campo "acao"):
- *   salvar   — grava um lançamento (e o PDF, se enviado, no Storage).
+ *   salvar   — grava um lançamento novo.
  *   listar   — devolve os últimos lançamentos, para conferência na tela; só os
  *              da própria pessoa (por e-mail), exceto root@root.com, que vê
  *              todo mundo.
+ *   carregar — devolve UM lançamento completo, para abrir na edição.
+ *   editar   — grava as alterações de um lançamento já existente.
+ *   excluir  — apaga um lançamento. Só root@root.com pode.
  *
- * A leitura/pré-preenchimento do PDF NÃO passa por aqui: acontece inteira no
- * navegador (ver js/lancamento-extrair-pdf.js), então funciona mesmo se este
- * servidor não tiver Python.
+ * Nenhuma dessas ações pede senha de administrador: quem chega até aqui já
+ * passou pelo login do site (admin-gate.js), e é esse login — não uma senha
+ * extra — que autoriza ler e gravar. "quem lançou" nunca vem só do que o
+ * navegador afirma: todas recebem o campo "token" (a sessão do login do
+ * site, admin-auth.js) e confirmam o e-mail de verdade direto no Supabase
+ * (ver emailAutenticado()) — o mesmo cuidado de admin_usuarios.php.
  *
- * "quem lançou" nunca vem só do que o navegador afirma: tanto salvar quanto
- * listar recebem o campo "token" (a sessão do login do site, admin-auth.js) e
- * confirmam o e-mail de verdade direto no Supabase — o mesmo cuidado de
- * admin_usuarios.php.
+ * "carregar" e "editar" ainda conferem que quem está pedindo é o dono do
+ * lançamento (criado_por_email) ou root@root.com — sem isso, bastaria
+ * adivinhar/ver o id de um lançamento de outra pessoa pra editá-lo.
  */
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 date_default_timezone_set('America/Rio_Branco');
-
-require __DIR__ . '/admin_senha.php';
 
 const RESPONSAVEL_EMAIL = 'root@root.com';
 
@@ -46,10 +48,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 $acao = (string) ($_POST['acao'] ?? '');
-$senha = (string) ($_POST['senha'] ?? '');
-if (!senha_confere($senha)) {
-    responder(403, ['ok' => false, 'erro' => 'Senha de administrador incorreta.']);
-}
 
 $configPath = __DIR__ . '/admin_config.php';
 if (!file_exists($configPath)) {
@@ -121,36 +119,12 @@ function emailAutenticado(string $supabaseUrl, string $serviceRole): ?string
     return strtolower((string) $usuario['email']);
 }
 
-/** Confere se o upload é mesmo um PDF (extensão + assinatura %PDF), não só
- *  o Content-Type que o navegador mandou (fácil de forjar). */
-function arquivoPdfValido(array $arquivo): ?string
+/** Lê e valida os campos do formulário (POST), iguais em "salvar" e
+ *  "editar" — só muda o método/URL da chamada ao Supabase depois. Chama
+ *  responder() direto (e portanto encerra a requisição) quando algo
+ *  obrigatório falta ou é inconsistente. */
+function lerRegistroDoPost(string $emailConfirmado): array
 {
-    if (($arquivo['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-        return null;
-    }
-    if ($arquivo['error'] !== UPLOAD_ERR_OK) {
-        responder(400, ['ok' => false, 'erro' => 'Falha no envio do arquivo (código ' . $arquivo['error'] . ').']);
-    }
-    if ($arquivo['size'] > 20 * 1024 * 1024) {
-        responder(413, ['ok' => false, 'erro' => 'O PDF enviado passa de 20 MB.']);
-    }
-    $assinatura = @file_get_contents($arquivo['tmp_name'], false, null, 0, 5);
-    if ($assinatura === false || strncmp($assinatura, '%PDF-', 5) !== 0) {
-        responder(400, ['ok' => false, 'erro' => 'O arquivo enviado não parece ser um PDF.']);
-    }
-    return $arquivo['tmp_name'];
-}
-
-/* A leitura do PDF (antiga ação "extrair") agora acontece inteira no
- * navegador — ver js/lancamento-extrair-pdf.js — sem chamar este arquivo:
- * não depende mais de Python/pypdf estar instalado no servidor. O script
- * tools/extrair_relatorio_mecanizacao.py continua no repositório como
- * referência (a mesma lógica de reconhecimento, só que em Python), mas não é
- * mais chamado por nada daqui.
- */
-
-/* =============================================================== salvar === */
-if ($acao === 'salvar') {
     $txt = function (string $chave) { $v = trim((string) ($_POST[$chave] ?? '')); return $v === '' ? null : $v; };
     $num = function (string $chave) {
         $v = trim((string) ($_POST[$chave] ?? ''));
@@ -162,7 +136,6 @@ if ($acao === 'salvar') {
         $v = trim((string) ($_POST[$chave] ?? ''));
         return $v === '' || !is_numeric($v) ? null : (int) $v;
     };
-    $bool = function (string $chave) { return in_array($_POST[$chave] ?? '', ['1', 'true', 'on'], true); };
     $data = function (string $chave) {
         $v = trim((string) ($_POST[$chave] ?? ''));
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) ? $v : null;
@@ -185,13 +158,8 @@ if ($acao === 'salvar') {
         responder(400, ['ok' => false, 'erro' => 'Informe o nome do beneficiário.']);
     }
 
-    // O e-mail confirmado no Supabase manda; o campo criado_por_email do
-    // formulário só serve de fallback se por algum motivo a sessão do site
-    // não vier junto (não devia acontecer, já que a página exige login).
-    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
-
     $registro = [
-        'criado_por_email' => $emailConfirmado ?? $txt('criado_por_email'),
+        'criado_por_email' => $emailConfirmado,
         'tipo_servico' => $txt('tipo_servico'),
         'data_vistoria' => $data('data_vistoria'),
         'escritorio_local' => $txt('escritorio_local'),
@@ -202,7 +170,7 @@ if ($acao === 'salvar') {
         'data_nascimento' => $data('data_nascimento'),
         'estado_civil' => $txt('estado_civil'),
         'sexo' => $txt('sexo'),
-        'indigena' => $bool('indigena'),
+        'indigena' => $txt('indigena') === 'Sim',
         'etnia' => $txt('etnia'),
         'possui_dap' => $txt('possui_dap'),
         'associacao_cooperativa' => $txt('associacao_cooperativa'),
@@ -224,10 +192,7 @@ if ($acao === 'salvar') {
             $v = $json('daes', []);
             return array_slice(is_array($v) ? $v : [], 0, 10);
         })(),
-        'beneficiario_assinou' => $bool('beneficiario_assinou'),
-        'responsavel_assinou' => $bool('responsavel_assinou'),
         'observacao' => $txt('observacao'),
-        'pdf_extraido_automatico' => $bool('pdf_extraido_automatico'),
     ];
 
     // Mesma regra do formulário no navegador, conferida de novo aqui: quem
@@ -239,22 +204,41 @@ if ($acao === 'salvar') {
         responder(400, ['ok' => false, 'erro' => 'Informe pelo menos 1 tanque/açude para um lançamento de Açudagem.']);
     }
 
-    $tmp = arquivoPdfValido($_FILES['arquivo'] ?? ['error' => UPLOAD_ERR_NO_FILE]);
-    if ($tmp !== null) {
-        $ano = $registro['data_vistoria'] ? substr($registro['data_vistoria'], 0, 4) : date('Y');
-        $nomeArquivo = $ano . '/' . bin2hex(random_bytes(8)) . '.pdf';
-        $bytes = file_get_contents($tmp);
-        [$statusUp] = chamarSupabase(
-            $supabaseUrl, $serviceRole, 'POST',
-            '/storage/v1/object/mecanizacao-formularios/' . $nomeArquivo,
-            $bytes, ['Content-Type: application/pdf']
-        );
-        if ($statusUp >= 200 && $statusUp < 300) {
-            $registro['pdf_arquivo'] = $nomeArquivo;
-        }
-        // Falha no upload do PDF não impede salvar o lançamento — só fica
-        // sem o anexo original; a pessoa pode reenviar depois se precisar.
+    return $registro;
+}
+
+/** Confere se quem está confirmado (por emailAutenticado) pode ler/editar o
+ *  lançamento de dono "$criadoPorEmail": ou é a própria pessoa, ou é
+ *  root@root.com. */
+function podeAcessarLancamento(string $emailConfirmado, ?string $criadoPorEmail): bool
+{
+    return $emailConfirmado === RESPONSAVEL_EMAIL || strtolower((string) $criadoPorEmail) === $emailConfirmado;
+}
+
+/** Busca um lançamento pelo id; encerra com 404 se não existir. */
+function buscarLancamento(string $supabaseUrl, string $serviceRole, string $id, string $select = '*'): array
+{
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'GET',
+        '/rest/v1/mecanizacao_lancamentos?id=eq.' . urlencode($id) . '&select=' . $select
+    );
+    if ($status < 200 || $status >= 300 || !is_array($corpo) || !count($corpo)) {
+        responder(404, ['ok' => false, 'erro' => 'Lançamento não encontrado.']);
     }
+    return $corpo[0];
+}
+
+/* =============================================================== salvar === */
+if ($acao === 'salvar') {
+    // Sem senha de administrador para gravar, o login do site é a única
+    // barreira que resta — por isso aqui ele é obrigatório (diferente do
+    // e-mail confirmado ser só "o que manda quando existe" como antes).
+    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
+    if ($emailConfirmado === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+
+    $registro = lerRegistroDoPost($emailConfirmado);
 
     [$status, $corpo] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'POST', '/rest/v1/mecanizacao_lancamentos',
@@ -278,13 +262,84 @@ if ($acao === 'listar') {
     [$status, $corpo] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'GET',
         '/rest/v1/mecanizacao_lancamentos?select=id,criado_em,criado_por_email,tipo_servico,nome_beneficiario,' .
-        'municipio,escritorio_local,data_vistoria,area_total_ha,horas_maquina,quantidade_acudes,pdf_arquivo' .
+        'municipio,escritorio_local,data_vistoria,area_total_ha,horas_maquina,quantidade_acudes' .
         $filtro . '&order=criado_em.desc&limit=' . $limite
     );
     if ($status >= 200 && $status < 300) {
         responder(200, ['ok' => true, 'lancamentos' => $corpo, 'vendo_de_todos' => $emailConfirmado === RESPONSAVEL_EMAIL]);
     }
     responder(502, ['ok' => false, 'erro' => 'Não foi possível carregar os lançamentos recentes.']);
+}
+
+/* ============================================================= carregar === */
+if ($acao === 'carregar') {
+    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
+    if ($emailConfirmado === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    $id = (string) ($_POST['id'] ?? '');
+    if ($id === '') {
+        responder(400, ['ok' => false, 'erro' => 'Informe o lançamento a abrir.']);
+    }
+    $linha = buscarLancamento($supabaseUrl, $serviceRole, $id);
+    if (!podeAcessarLancamento($emailConfirmado, $linha['criado_por_email'] ?? null)) {
+        responder(403, ['ok' => false, 'erro' => 'Você só pode abrir os lançamentos que você mesmo fez.']);
+    }
+    responder(200, ['ok' => true, 'lancamento' => $linha]);
+}
+
+/* =============================================================== editar === */
+if ($acao === 'editar') {
+    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
+    if ($emailConfirmado === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    $id = (string) ($_POST['id'] ?? '');
+    if ($id === '') {
+        responder(400, ['ok' => false, 'erro' => 'Informe o lançamento a editar.']);
+    }
+    $atual = buscarLancamento($supabaseUrl, $serviceRole, $id, 'criado_por_email');
+    if (!podeAcessarLancamento($emailConfirmado, $atual['criado_por_email'] ?? null)) {
+        responder(403, ['ok' => false, 'erro' => 'Você só pode editar os lançamentos que você mesmo fez.']);
+    }
+
+    // Edição não troca quem lançou originalmente — o e-mail confirmado aqui
+    // só serve pra validar o acesso acima, lerRegistroDoPost recebe o dono
+    // de antes.
+    $registro = lerRegistroDoPost((string) $atual['criado_por_email']);
+
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'PATCH', '/rest/v1/mecanizacao_lancamentos?id=eq.' . urlencode($id),
+        $registro, ['Prefer: return=representation']
+    );
+    if ($status >= 200 && $status < 300) {
+        responder(200, ['ok' => true, 'registro' => $corpo[0] ?? $registro]);
+    }
+    responder(502, ['ok' => false, 'erro' => (string) ($corpo['message'] ?? $corpo['msg'] ?? 'O banco não aceitou a edição.')]);
+}
+
+/* ============================================================== excluir === */
+if ($acao === 'excluir') {
+    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
+    if ($emailConfirmado === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    // Só a conta responsável exclui — os demais usuários só editam (ver
+    // podeAcessarLancamento, usada em carregar/editar).
+    if ($emailConfirmado !== RESPONSAVEL_EMAIL) {
+        responder(403, ['ok' => false, 'erro' => 'Só a conta responsável pode excluir lançamentos.']);
+    }
+    $id = (string) ($_POST['id'] ?? '');
+    if ($id === '') {
+        responder(400, ['ok' => false, 'erro' => 'Informe o lançamento a excluir.']);
+    }
+    [$status] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'DELETE', '/rest/v1/mecanizacao_lancamentos?id=eq.' . urlencode($id)
+    );
+    if ($status >= 200 && $status < 300) {
+        responder(200, ['ok' => true]);
+    }
+    responder(502, ['ok' => false, 'erro' => 'Não foi possível excluir.']);
 }
 
 responder(400, ['ok' => false, 'erro' => 'Ação desconhecida.']);
