@@ -9,8 +9,8 @@
 // e rapido, e uma senha curta cai em minutos numa GPU. bcrypt e lento e salgado
 // de proposito, entao mesmo que este arquivo vaze a quebra fica cara.
 //
-// Para trocar a senha, gere um hash novo e substitua a constante abaixo:
-//   php -r 'echo password_hash("NOVA-SENHA", PASSWORD_DEFAULT), PHP_EOL;'
+// O hash e a funcao senha_confere() ficam em admin_senha.php, compartilhado
+// com lancar_mecanizacao.php — uma senha so para os dois endpoints.
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
@@ -18,15 +18,7 @@ header('Cache-Control: no-store');
 // "Publicada em" algumas horas a frente do relogio de quem acabou de publicar.
 date_default_timezone_set('America/Rio_Branco');
 
-const HASH_ADMIN = '$2y$10$023QXmJJwoDtbR4ZvyA3juTySoICQQB3sUBjGFJyLW9EUW3gQGBxi';
-
-/** Confere a senha. O atraso freia a tentativa em massa: sem ele da para
-    testar milhares de senhas por minuto contra este endpoint. */
-function senha_confere($senha){
-  $ok = is_string($senha) && password_verify($senha, HASH_ADMIN);
-  if(!$ok) usleep(700000);   // 0,7 s por tentativa errada
-  return $ok;
-}
+require __DIR__ . '/admin_senha.php';
 
 $destino = __DIR__ . '/data/mecanizacao.json';
 $backup  = __DIR__ . '/data/mecanizacao-anterior.json';

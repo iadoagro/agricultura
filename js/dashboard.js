@@ -2659,13 +2659,27 @@
     fonteDados();
   }
 
+  /* ================================================== ABA: LANÇAMENTO (admin) */
+  /* Vive inteira em js/lancamento-mecanizacao.js — não depende de D/TODOS,
+     só precisa da lista de municípios (para o <select>) e ser avisada de
+     quando a aba abre, pra montar os selects uma vez só. */
+  function abaLancamento() {
+    if (!window.LANCAMENTO_MECANIZACAO) return;
+    var municipios = [];
+    REGIONAIS.forEach(function (r) { municipios = municipios.concat(r.muns); });
+    municipios.sort();
+    window.LANCAMENTO_MECANIZACAO.abrir(municipios);
+  }
+
   /* --------------------------------------------------- despachante das abas */
   var ABAS = {
     geral: abaGeral, mecanizacao: abaMecanizacao, acudagem: abaAcudagem,
     cultura: abaCultura, municipio: abaMunicipio, mapa: abaMapa, escritorio: abaEscritorio,
     beneficiario: abaBeneficiario, registros: abaRegistros,
     relatorio: abaRelatorio, admin: abaAdmin,
-    // só aparecem com a senha (ver aplicarAdmin)
+    // lançamento abre sem senha (só salvar/ler PDF pede); as quatro abaixo e
+    // "admin" só aparecem com a senha (ver aplicarAdmin)
+    lancamento: abaLancamento,
     'ins-pessoa': abaInsPessoa, 'ins-dia': abaInsDia, 'ins-mes': abaInsMes,
     'ins-cultura': abaInsCultura
   };
@@ -3245,6 +3259,11 @@
     document.querySelectorAll('.aba-conteudo').forEach(function (c) {
       c.classList.toggle('ativa', c.getAttribute('data-aba') === nome);
     });
+    // "Lançamento" é um formulário de cadastro, não um relatório: os filtros
+    // da lateral (que recortam os gráficos) não fazem sentido nela e só
+    // tomavam espaço da tela.
+    var filtros = el('filtros');
+    if (filtros) filtros.hidden = nome === 'lancamento';
     if (!opc.semUrl) gravarUrl(true);
     // desenha só se esta aba está desatualizada; voltar a uma já pronta é grátis
     if (TODOS.length && SUJAS[nome] !== false) render();
