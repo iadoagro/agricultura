@@ -36,12 +36,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 /** Chama a API do Supabase com a service_role (acesso total — nunca expor). */
-function chamarSupabase(string $url, string $serviceRole, string $metodo, string $caminho, ?array $corpo = null): array
+function chamarSupabase(string $url, string $serviceRole, string $metodo, string $caminho, ?array $corpo = null, array $cabecalhosExtras = []): array
 {
     $ch = curl_init($url . $caminho);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => ['apikey: ' . $serviceRole, 'Authorization: Bearer ' . $serviceRole, 'Content-Type: application/json'],
+        CURLOPT_HTTPHEADER => array_merge(['apikey: ' . $serviceRole, 'Authorization: Bearer ' . $serviceRole, 'Content-Type: application/json'], $cabecalhosExtras),
         CURLOPT_CUSTOMREQUEST => $metodo,
         CURLOPT_TIMEOUT => 15,
         CURLOPT_POSTFIELDS => $corpo !== null ? json_encode($corpo) : null,
@@ -55,6 +55,31 @@ function chamarSupabase(string $url, string $serviceRole, string $metodo, string
     }
     $json = json_decode((string) $resposta, true);
     return [$status, is_array($json) ? $json : []];
+}
+
+/* Acha o id de um usuário do Supabase Auth pelo e-mail, varrendo a listagem
+   administrativa (não existe filtro por e-mail garantido em toda versão da
+   API, mas a listagem paginada sempre existe). Usado só quando criar uma
+   conta falha por "já existe" — pra reaproveitar em vez de travar. */
+function buscarIdPorEmailNoSupabase(string $url, string $serviceRole, string $email): ?string
+{
+    $alvo = strtolower($email);
+    for ($pagina = 1; $pagina <= 20; $pagina++) {
+        [$status, $corpo] = chamarSupabase($url, $serviceRole, 'GET', '/auth/v1/admin/users?page=' . $pagina . '&per_page=200');
+        $usuarios = $corpo['users'] ?? null;
+        if ($status !== 200 || !is_array($usuarios)) {
+            return null;
+        }
+        foreach ($usuarios as $u) {
+            if (strtolower((string) ($u['email'] ?? '')) === $alvo) {
+                return (string) ($u['id'] ?? '') ?: null;
+            }
+        }
+        if (count($usuarios) < 200) {
+            return null;
+        }
+    }
+    return null;
 }
 
 $entrada = json_decode((string) file_get_contents('php://input'), true);
@@ -121,9 +146,42 @@ if ($acao === 'criar_usuario') {
     }
     [$status, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'POST', '/auth/v1/admin/users', ['email' => $email, 'password' => $senha, 'email_confirm' => true]);
     if ($status >= 200 && $status < 300) {
-        responder(200, ['ok' => true, 'id' => $corpo['id'] ?? null]);
+        $idCriado = $corpo['id'] ?? null;
+        // Normalmente o gatilho ao_criar_usuario_admin (database/admin.sql)
+        // já cria essa linha sozinho quando a conta nasce em auth.users —
+        // mas não depende só dele: se por algum motivo não rodou (ex.:
+        // admin.sql não foi executado nesse projeto Supabase), o cadastro
+        // ficaria "invisível" em Usuários sem isso aqui, mesmo tendo dado
+        // certo no Supabase Auth. Idempotente (on_conflict + ignore).
+        $avisoLinha = null;
+        if ($idCriado !== null) {
+            [$statusLinha, $corpoLinha] = chamarSupabase($supabaseUrl, $serviceRole, 'POST', '/rest/v1/admin_solicitacoes?on_conflict=id', ['id' => $idCriado, 'email' => $email], ['Prefer: resolution=ignore-duplicates,return=minimal']);
+            if ($statusLinha < 200 || $statusLinha >= 300) {
+                // Não deixa esse erro passar em silêncio: a conta existe no
+                // Supabase Auth, mas sem essa linha ela nunca vai aparecer em
+                // Usuários. Mostra o motivo de verdade em vez de "sucesso".
+                $motivo = is_string($corpoLinha['message'] ?? null) ? $corpoLinha['message'] : ('HTTP ' . $statusLinha);
+                $avisoLinha = 'A conta foi criada no Supabase, mas não foi possível gravar em admin_solicitacoes (' . $motivo . '). Rode database/admin.sql no SQL Editor do Supabase e tente cadastrar de novo — ou rode database/admin-corrigir-orfaos.sql pra recuperar esta conta sem recriá-la.';
+            }
+        }
+        responder(200, ['ok' => true, 'id' => $idCriado, 'aviso' => $avisoLinha]);
     }
-    responder(502, ['ok' => false, 'erro' => (is_string($corpo['msg'] ?? null) && stripos($corpo['msg'], 'already')  !== false) ? 'Já existe uma conta com esse login.' : ($corpo['msg'] ?? 'O Supabase não concluiu o cadastro.')]);
+    $jaExiste = is_string($corpo['msg'] ?? null) && stripos($corpo['msg'], 'already') !== false;
+    if ($jaExiste) {
+        // A conta já existe em Authentication > Users (criada direto no
+        // painel do Supabase, ou antes do gatilho de admin_solicitacoes
+        // existir) mas não tem linha em admin_solicitacoes — por isso não
+        // aparecia em Usuários e cadastrar de novo sempre travava aqui.
+        // Reaproveita: acha o id, garante a senha informada e a linha da
+        // tabela, e responde como se tivesse acabado de criar.
+        $idExistente = buscarIdPorEmailNoSupabase($supabaseUrl, $serviceRole, $email);
+        if ($idExistente !== null) {
+            chamarSupabase($supabaseUrl, $serviceRole, 'PUT', '/auth/v1/admin/users/' . $idExistente, ['password' => $senha, 'email_confirm' => true]);
+            chamarSupabase($supabaseUrl, $serviceRole, 'POST', '/rest/v1/admin_solicitacoes?on_conflict=id', ['id' => $idExistente, 'email' => $email], ['Prefer: resolution=ignore-duplicates,return=minimal']);
+            responder(200, ['ok' => true, 'id' => $idExistente]);
+        }
+    }
+    responder(502, ['ok' => false, 'erro' => $jaExiste ? 'Já existe uma conta com esse login.' : ($corpo['msg'] ?? 'O Supabase não concluiu o cadastro.')]);
 }
 
 $id = (string) ($entrada['id'] ?? '');

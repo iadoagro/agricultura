@@ -2,6 +2,10 @@ __pycache__/
 *.pyc
 ~$*.xlsx
 
+# Cache de download de tools/gerar_bairros_municipios.py (shapefile do
+# IBGE) — recriado sozinho na próxima vez que o script rodar.
+/tools/.cache/
+
 # Clone antigo usado para publicar no GitHub (repo git aninhado)
 /.publish-agricultura/
 

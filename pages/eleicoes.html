@@ -8,8 +8,9 @@
   <script src="../js/banco-config.js?v=2026091406"></script>
   <script src="../js/admin-auth.js?v=2026091404"></script>
   <script src="../js/admin-gate.js?v=2026091402"></script>
-  <link rel="stylesheet" href="../css/base.css?v=2026091501">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091509">
+  <link rel="stylesheet" href="../css/base.css?v=2026091502">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026091526">
 </head>
 <body>
   <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
@@ -33,6 +34,12 @@
           </div>
           <p id="resultadosStatus" role="status">Carregando mapa…</p>
           <svg id="mapaResultados" viewBox="0 0 1000 600" aria-label="Mapa de votos por município para José Luís Schafer"></svg>
+          <section id="resultadosBairrosSecao" class="resultados-bairros" hidden aria-label="Mapa dos bairros e locais de votação">
+            <div class="resultados-bairros-topo"><div><h3 id="resultadosBairrosTitulo">Bairros</h3><p id="resultadosBairrosResumo"></p></div><button id="resultadosBairrosVoltar" type="button">← Voltar ao Acre</button></div>
+            <div class="mapa-bairros-acoes resultados-mapa-acoes"><button id="resultadosZoomMenos" type="button" aria-label="Diminuir zoom">−</button><span id="resultadosZoomValor"></span><button id="resultadosZoomMais" type="button" aria-label="Aumentar zoom">+</button><button id="resultadosZoomReset" type="button">Enquadrar bairros</button><button id="resultadosTelaCheia" type="button" aria-pressed="false">Tela cheia</button></div>
+            <div id="resultadosBairrosMapa" class="resultados-bairros-mapa mapa-bairros-satelite" role="img" aria-label="Bairros com votos em verde e sem votos em vermelho"></div>
+            <p class="resultados-bairros-legenda"><span class="resultados-pin-amostra com-votos"></span> Com votos <span class="resultados-pin-amostra sem-votos"></span> Sem votos para o candidato. Bairros sem seção identificada ficam sem pin. Clique para ver zonas, seções e votos.</p>
+          </section>
           <div id="mapaResultadosDica" class="mapa-dica" role="status" hidden></div>
         </section>
         <aside class="resultados-lateral" aria-label="Detalhe por município" id="resultadosDetalhe">
@@ -107,33 +114,33 @@
         <label>Selecionar município<select id="municipio"><option value="">Escolha um município</option></select></label>
       </div>
       <p id="mapa-status" role="status">Carregando mapa…</p>
-      <svg id="mapa" viewBox="0 0 1000 600" aria-label="Mapa interativo dos municípios do Acre, colorido pela cobertura de fiscais"></svg>
-      <div class="cobertura-legenda" aria-hidden="true"><span>Sem fiscal</span><span class="cobertura-gradiente"></span><span>Cobertura completa</span></div>
+      <div id="mapaEstadoArea">
+        <svg id="mapa" viewBox="0 0 1000 600" aria-label="Mapa interativo dos municípios do Acre, colorido pela cobertura de fiscais"></svg>
+        <div class="cobertura-legenda" aria-hidden="true"><span>Sem fiscal</span><span class="cobertura-gradiente"></span><span>Cobertura completa</span></div>
+      </div>
       <div id="mapaFiscaisDica" class="mapa-dica" role="status" hidden></div>
-      <section id="consulta-eleitoral" hidden aria-label="Zonas e seções do município">
-        <h3>Zonas e locais de votação</h3>
-        <div class="filtros-eleitorais">
-          <label>Zona<select id="consulta-zona"><option value="">Todas as zonas</option></select></label>
-          <label>Local de votação<select id="consulta-local"><option value="">Todos os locais</option></select></label>
-          <label>Seção<select id="consulta-secao"><option value="">Todas as seções</option></select></label>
+      <section id="mapaBairrosSecao" hidden aria-labelledby="mapaBairrosTitulo">
+        <div class="mapa-bairros-topo">
+          <div>
+            <h4 id="mapaBairrosTitulo">Cobertura por bairro</h4>
+            <p class="mapa-esquematico-dica">Passe o mouse para ver a cobertura de cada bairro.</p>
+          </div>
+          <div class="mapa-bairros-acoes">
+            <button id="mapaBairrosZoomMenos" type="button" aria-label="Diminuir zoom">−</button>
+            <span id="mapaBairrosZoomValor" aria-hidden="true"></span>
+            <button id="mapaBairrosZoomMais" type="button" aria-label="Aumentar zoom">+</button>
+            <button id="mapaBairrosZoomReset" type="button">Redefinir zoom</button>
+            <button id="mapaBairrosTelaCheia" type="button" aria-pressed="false">Tela cheia</button>
+          </div>
         </div>
-        <p id="local-detalhes" aria-live="polite"></p>
-        <section id="mapaBairrosSecao" hidden aria-labelledby="mapaBairrosTitulo">
-          <h4 id="mapaBairrosTitulo">Cobertura por bairro</h4>
-          <p class="mapa-esquematico-dica">Bairros oficiais da Prefeitura de Rio Branco (SEFIN). Passe o mouse para ver a cobertura de cada um.</p>
-          <svg id="mapaBairros" viewBox="0 0 600 500" aria-label="Mapa dos bairros de Rio Branco, colorido pela cobertura de fiscais"></svg>
-          <div id="mapaBairrosDica" class="mapa-dica" role="status" hidden></div>
-        </section>
-        <h4 id="mapaEsquematicoTitulo">Cobertura por zona e seção</h4>
-        <p class="mapa-esquematico-dica">Não é um mapa geográfico — o TSE não publica limites de seção eleitoral. Cada bloco é uma seção; clique numa para preencher o cadastro. <span class="esquema-secao tem-fiscal" aria-hidden="true"></span> tem fiscal · <span class="esquema-secao sem-fiscal" aria-hidden="true"></span> sem fiscal.</p>
-        <div id="mapaEsquematico" class="mapa-esquematico" aria-labelledby="mapaEsquematicoTitulo"></div>
-        <p class="fonte-eleitoral">Fonte: anexos de locais de votação · 14/09/2026. As seleções filtram os cadastros à direita e abaixo.</p>
+        <div class="fiscais-mapa-filtros"><label>Histórico das seções<select id="mapaFiscaisHistorico"><option value="">Todas as seções</option><option value="com">Com votos em 2022</option><option value="sem">Sem votos registrados em 2022</option></select></label><label><input type="checkbox" id="mapaFiscaisPendentes"> Apenas seções sem fiscal</label></div>
+        <p id="mapaFiscaisResumo" role="status"></p>
+        <p class="resultados-bairros-legenda"><span class="resultados-pin-amostra sem-votos"></span> Ainda há seção sem fiscal <span class="resultados-pin-amostra com-votos"></span> Todas as seções com fiscal</p>
+        <div id="mapaBairrosViewport" class="mapa-bairros-viewport">
+          <div id="mapaBairros" class="mapa-bairros-satelite" role="img" aria-label="Mapa de satélite dos bairros de Rio Branco, colorido pela cobertura de fiscais"></div>
+        </div>
       </section>
       <div class="mapa-rodape"><span id="municipio-hover">22 municípios · Acre</span><a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" target="_blank" rel="noopener">Malha municipal: IBGE</a></div>
-      <section id="cadastrosMapaSecao" class="cadastros-mapa" aria-labelledby="cadastrosMapaTitulo" hidden>
-        <h3 id="cadastrosMapaTitulo">Cadastros do município</h3>
-        <ul id="cadastrosMapaLista" class="busca-global-lista"></ul>
-      </section>
     </section>
   <aside id="painel" aria-labelledby="painel-titulo">
     <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
@@ -157,18 +164,36 @@
     <section aria-labelledby="lista-titulo"><h3 id="lista-titulo">Cadastros do município</h3><ul id="cadastros"></ul><div id="paginacao" hidden><button id="anterior" type="button" aria-label="Cadastro anterior">←</button><span id="pagina-atual" aria-live="polite"></span><button id="proximo" type="button" aria-label="Próximo cadastro">→</button></div></section>
   </aside>
     </div>
-    <section class="mapa-card busca-global-card" aria-labelledby="busca-global-titulo">
-      <div class="mapa-topo"><div><h2 id="busca-global-titulo">Buscar fiscais em todos os municípios</h2><p>Procure por nome ou telefone antes de cadastrar de novo, ou exporte a lista filtrada para uso em campo.</p></div></div>
-      <div class="busca-global-filtros">
-        <label>Nome ou telefone<input id="buscaGlobalTexto" type="search" placeholder="Buscar…"></label>
-        <label>Regional<select id="buscaGlobalRegional"><option value="">Todas</option></select></label>
-        <label>Município<select id="buscaGlobalMunicipio"><option value="">Todos</option></select></label>
-        <label>Zona<select id="buscaGlobalZona"><option value="">Todas</option></select></label>
-        <button id="buscaGlobalExportar" type="button">Exportar CSV</button>
-      </div>
-      <p id="buscaGlobalStatus" role="status"></p>
-      <ul id="buscaGlobalLista" class="busca-global-lista"></ul>
-    </section>
+    <div class="secoes-abaixo-mapa">
+      <section id="consulta-eleitoral" class="mapa-card" hidden aria-label="Zonas e seções do município">
+        <h3>Zonas e locais de votação</h3>
+        <div class="filtros-eleitorais">
+          <label>Zona<select id="consulta-zona"><option value="">Todas as zonas</option></select></label>
+          <label>Local de votação<select id="consulta-local"><option value="">Todos os locais</option></select></label>
+          <label>Seção<select id="consulta-secao"><option value="">Todas as seções</option></select></label>
+        </div>
+        <p id="local-detalhes" aria-live="polite"></p>
+        <p class="fonte-eleitoral">Fonte: anexos de locais de votação · 14/09/2026. As seleções filtram os cadastros à direita e abaixo.</p>
+      </section>
+      <section class="mapa-card busca-global-card" aria-labelledby="busca-global-titulo">
+        <section id="cadastrosMapaSecao" class="cadastros-mapa" aria-labelledby="cadastrosMapaTitulo" hidden>
+          <h3 id="cadastrosMapaTitulo">Cadastros do município</h3>
+          <ul id="cadastrosMapaLista" class="busca-global-lista"></ul>
+        </section>
+        <div id="buscaGlobalConteudo">
+          <div class="mapa-topo"><div><h2 id="busca-global-titulo">Buscar fiscais em todos os municípios</h2><p>Procure por nome ou telefone antes de cadastrar de novo, ou exporte a lista filtrada para uso em campo.</p></div></div>
+          <div class="busca-global-filtros">
+            <label>Nome ou telefone<input id="buscaGlobalTexto" type="search" placeholder="Buscar…"></label>
+            <label>Regional<select id="buscaGlobalRegional"><option value="">Todas</option></select></label>
+            <label>Município<select id="buscaGlobalMunicipio"><option value="">Todos</option></select></label>
+            <label>Zona<select id="buscaGlobalZona"><option value="">Todas</option></select></label>
+            <button id="buscaGlobalExportar" type="button">Exportar CSV</button>
+          </div>
+          <p id="buscaGlobalStatus" role="status"></p>
+          <ul id="buscaGlobalLista" class="busca-global-lista"></ul>
+        </div>
+      </section>
+    </div>
     <p class="aviso" id="aviso-dados">Os cadastros são salvos somente neste navegador.</p>
     </div>
   </main>
@@ -187,18 +212,23 @@
   <script src="../js/locais-votacao.js?v=2026091405"></script>
   <script src="../js/locais-votacao-coordenadas.js?v=2026091509"></script>
   <script src="../js/mapa-rio-branco-bairros.js?v=2026091509"></script>
+  <script src="../js/mapa-bairros-municipios.js?v=2026091501"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/dados-votacao-schafer.js?v=2026091401"></script>
   <script src="../js/regionais-municipios.js?v=2026091411"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
   <script src="../js/banco-eleicoes.js?v=2026091502"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
-  <script src="../js/eleicoes.js?v=2026091510"></script>
-  <script src="../js/eleicoes-resultados.js?v=2026091504"></script>
+  <script src="../js/mapa-bairros-leaflet.js?v=2026091504"></script>
+  <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
+  <script src="../js/eleicoes.js?v=2026091526"></script>
+  <script src="../js/eleicoes-resultados.js?v=2026091507"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026091501"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026091508"></script>
   <script src="../js/eleicoes-busca-exportar.js?v=2026091412"></script>
   <script src="../js/eleicoes-abas.js?v=2026091401"></script>
+  <script src="../js/select-busca.js?v=2026091401"></script>
 </body>
 </html>

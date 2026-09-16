@@ -29,3 +29,17 @@ body{font-family:"Roboto","Segoe UI",Arial,sans-serif;background:#fafafa;color:v
      fica como antes, que já não colide; a regra é folga, não conserto. */
   header:has(> .voltar-btn){padding-left:88px;padding-right:88px}
 }
+
+/* Painel de busca de js/select-busca.js — fica solto em document.body
+   (position:fixed), então não herda nada do CSS específico de cada tela;
+   o <select> em si não muda de aparência, só o menu que abre ao clicar. */
+.select-busca-painel{position:fixed;z-index:1000;background:#fff;border:1px solid #bac5bc;
+  border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.18);overflow:hidden}
+.select-busca-campo{display:block;box-sizing:border-box;width:100%;border:0;
+  border-bottom:1px solid var(--linha);padding:10px 12px;font:inherit;color:var(--texto)}
+.select-busca-campo:focus{outline:none;background:var(--verde-claro)}
+.select-busca-lista{list-style:none;margin:0;padding:4px;max-height:240px;overflow:auto}
+.select-busca-opcao{padding:8px 10px;border-radius:6px;cursor:pointer;font-size:14px;line-height:1.3}
+.select-busca-opcao:hover,.select-busca-opcao:focus{background:var(--verde-claro);outline:none}
+.select-busca-opcao.selecionada{background:var(--verde);color:#fff}
+.select-busca-vazio{padding:10px;color:var(--cinza);font-size:13px}
