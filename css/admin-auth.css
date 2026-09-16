@@ -72,3 +72,35 @@ header p{font-size:13px;opacity:.9}
 .login-page .admin-msg:not(:empty){padding:12px;border-radius:8px;background:#eff6ff}
 .login-page .admin-msg.erro{background:#fff1f2;color:#b42318}
 @media(max-width:380px){.login-layout{padding:24px 16px}.login-page .admin-card{padding:28px 22px}}
+
+/* Administração das permissões: grade larga, filtros e salvamento por usuário. */
+.permissoes-layout{width:calc(100% - 48px);max-width:1800px;margin:28px auto 40px;color:#172b4d}
+.permissoes-cabecalho{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:22px}
+.permissoes-sobretitulo{font-size:11px;font-weight:700;letter-spacing:.14em;color:#4265a9}
+.permissoes-cabecalho h2{font-size:26px;margin:6px 0;color:#172b4d}
+.permissoes-cabecalho p{margin:0;color:#62728a;font-size:14px}
+.permissoes-contagem{white-space:nowrap;color:#4265a9;background:#eef3fc;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600}
+.permissoes-filtros{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.permissoes-filtros label{display:grid;gap:6px;color:#42536e;font-size:12px;font-weight:700}
+.permissoes-filtros input,.permissoes-filtros select{min-width:240px;min-height:42px;padding:8px 12px;border:1px solid #cbd8e9;border-radius:9px;background:#fff;font:inherit;font-size:14px;color:#172b4d}
+.permissoes-filtros input:focus,.permissoes-filtros select:focus{outline:2px solid #9ab9ed;outline-offset:1px}
+.permissoes-tabela{border:1px solid #dce5f1;background:#fff;border-radius:14px;overflow:hidden}
+.permissoes-colunas,.permissoes-tabela .lista-solicitacoes li{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(480px,3fr) minmax(110px,.55fr);gap:22px;align-items:center}
+.permissoes-colunas{padding:13px 22px;background:#f2f6fc;color:#62728a;font-size:11px;font-weight:700;letter-spacing:.08em}
+.permissoes-tabela .lista-solicitacoes{margin:0}
+.permissoes-tabela .lista-solicitacoes li{padding:18px 22px;border-bottom:1px solid #e8eef6}
+.permissoes-tabela .lista-solicitacoes li:last-child{border-bottom:0}
+.permissoes-tabela .lista-solicitacoes li.alterada{background:#fffaf0}
+.permissoes-tabela .sol-info{display:flex;align-items:flex-start;flex-direction:column;gap:7px;min-width:0}
+.permissoes-tabela .sol-info strong{font-size:14px;overflow-wrap:anywhere}
+.permissoes-tabela .sol-paginas{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:8px;margin:0}
+.permissoes-tabela .sol-paginas label{min-height:38px;display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #e3eaf4;border-radius:8px;background:#fafcff;font-size:13px}
+.permissoes-tabela .sol-paginas label:has(input:checked){background:#eaf2ff;border-color:#b8cef3;color:#153e75;font-weight:600}
+.permissoes-tabela .sol-paginas input{accent-color:#315ed6;min-width:16px;min-height:16px}
+.permissoes-acao{display:grid;gap:5px;justify-items:start}
+.permissoes-salvar{border:0;border-radius:8px;padding:10px 17px;background:#315ed6;color:#fff;font-weight:700;cursor:pointer}
+.permissoes-salvar:disabled{background:#dde5f2;color:#697994;cursor:default}
+.permissoes-linha-msg{font-size:11px;color:#52627b}
+.permissoes-layout .admin-msg:empty{display:none}
+@media(max-width:900px){.permissoes-colunas{display:none}.permissoes-tabela .lista-solicitacoes li{grid-template-columns:1fr;gap:12px}.permissoes-tabela .sol-paginas{grid-template-columns:repeat(2,minmax(120px,1fr))}}
+@media(max-width:520px){.permissoes-layout{width:calc(100% - 24px)}.permissoes-cabecalho{align-items:flex-start;flex-direction:column}.permissoes-filtros label,.permissoes-filtros input,.permissoes-filtros select{width:100%;min-width:0}.permissoes-tabela .sol-paginas{grid-template-columns:1fr 1fr}.permissoes-tabela .lista-solicitacoes li{padding:16px}}

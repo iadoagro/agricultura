@@ -93,6 +93,78 @@
   status.hidden = true;
   mapa.pintar(corMunicipio);
 
+  var secaoBairros = document.getElementById('resultadosBairrosSecao');
+  var tituloBairros = document.getElementById('resultadosBairrosTitulo');
+  var resumoBairros = document.getElementById('resultadosBairrosResumo');
+  var voltarBairros = document.getElementById('resultadosBairrosVoltar');
+  var votosBairros = new Map();
+  function dicaVotosBairro(nome) {
+    var b = votosBairros.get(nome);
+    return '<strong>' + esc(nome) + '</strong>' + (!b ? '<br>Sem seção identificada nos dados disponíveis.' :
+      '<br>' + b.votos + ' votos para o candidato<br>' + b.secoes.length + ' seções identificadas<br>' +
+      b.secoes.map(function (r) { return 'Zona ' + esc(r.zona) + ' · Seção ' + esc(r.secao) + ': ' + r.votos + ' votos'; }).join('<br>'));
+  }
+  var mapaBairros = window.criarMapaBairrosLeaflet && secaoBairros
+    ? window.criarMapaBairrosLeaflet({containerId: 'resultadosBairrosMapa', corContorno: '#ffe066',
+        secaoId: 'resultadosBairrosSecao', btnZoomMaisId: 'resultadosZoomMais', btnZoomMenosId: 'resultadosZoomMenos',
+        btnZoomResetId: 'resultadosZoomReset', btnTelaCheiaId: 'resultadosTelaCheia', zoomValorId: 'resultadosZoomValor',
+        obterDica: dicaVotosBairro}) : null;
+  function dadosBairros(id) {
+    return id === '1200401' ? window.MAPA_BAIRROS_RIO_BRANCO
+      : window.MAPA_BAIRROS_MUNICIPIOS && window.MAPA_BAIRROS_MUNICIPIOS[id];
+  }
+  function chaveSecaoVoto(zona, secao) {
+    return String(Number(zona)) + '|' + String(Number(secao));
+  }
+  function mostrarMapaBairros(id, nome, comVoto) {
+    var dados = dadosBairros(id);
+    if (!dados || !dados.features || !dados.features.length || !mapaBairros) {
+      secaoBairros.hidden = true;
+      svg.removeAttribute('hidden');
+      return;
+    }
+    var bairros = new Set(dados.features.map(function (f) { return f.properties.bairro; }));
+    var votosSecao = new Map(comVoto.map(function (r) { return [chaveSecaoVoto(r.zona, r.secao), r]; }));
+    var semVoto = new Set((semVotosPorMun.get(id) || []).map(function (r) { return chaveSecaoVoto(r.zona, r.secao); }));
+    var vistas = new Set();
+    votosBairros = new Map();
+    window.LOCAIS_VOTACAO.locais.forEach(function (local) {
+      if (local.municipio !== id) return;
+      var coord = window.LOCAIS_COORDENADAS && window.LOCAIS_COORDENADAS[local.id];
+      if (!coord || !bairros.has(coord.bairro)) return;
+      local.secoes.forEach(function (s) {
+        [s.numero].concat(s.agregadas || []).forEach(function (numero) {
+          var chave = chaveSecaoVoto(local.zona, numero);
+          if (vistas.has(chave) || (!votosSecao.has(chave) && !semVoto.has(chave))) return;
+          vistas.add(chave);
+          var r = votosSecao.get(chave) || {zona: local.zona, secao: numero, votos: 0};
+          var b = votosBairros.get(coord.bairro) || {votos: 0, secoes: []};
+          b.votos += Number(r.votos);
+          b.secoes.push(r);
+          votosBairros.set(coord.bairro, b);
+        });
+      });
+    });
+    svg.setAttribute('hidden', '');
+    secaoBairros.hidden = false;
+    tituloBairros.textContent = 'Votação nos bairros — ' + nome;
+    resumoBairros.textContent = votosBairros.size + ' bairros com seções identificadas. Cores conforme os votos para ' + DADOS.candidato + '.';
+    mapaBairros.desenhar(dados.features);
+    var marcadores = new Map();
+    votosBairros.forEach(function (b, bairro) {
+      marcadores.set(bairro, {cor: b.votos > 0 ? '#1f9d55' : '#dc3545', html: dicaVotosBairro(bairro)});
+    });
+    mapaBairros.atualizarPinsPorBairro(marcadores);
+    mapaBairros.invalidar();
+  }
+  if (voltarBairros) voltarBairros.addEventListener('click', function () {
+    secaoBairros.hidden = true;
+    svg.removeAttribute('hidden');
+    mapa.destacar(null);
+    if (elRanking) elRanking.querySelectorAll('button').forEach(function (b) { b.classList.remove('selecionado'); });
+    mostrarResumoGeral();
+  });
+
   // Lista à esquerda com todos os municípios, do maior para o menor número
   // de votos — mesma ação de clicar no mapa, só que em ordem de prioridade
   // em vez de posição geográfica.
@@ -174,6 +246,7 @@
         : '<p class="resultados-vazio">Todas as seções tiveram ao menos um voto para o candidato.</p>');
 
     detalhe.innerHTML = html;
+    mostrarMapaBairros(id, nome, comVoto);
   }
 
   /* -------------------------------------------- comparação com instantâneo

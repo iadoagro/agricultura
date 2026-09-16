@@ -3,6 +3,7 @@
   'use strict';
   const chave = 'seagri_eleicoes_v1';
   const mapa = document.getElementById('mapa');
+  const mapaEstadoArea = document.getElementById('mapaEstadoArea');
   const seletor = document.getElementById('municipio');
   const formMunicipio = document.getElementById('formMunicipio');
   const painel = document.getElementById('painel');
@@ -12,8 +13,9 @@
   let selecionado = '';
   let pagina = 0;
   let editandoId = null;
-  let bairroSvgDesenhado = null;
   let porBairroAtual = new Map();
+  let locaisMapaAtual = [];
+  let coberturaMapaCarregada = false;
   const locais = window.LOCAIS_VOTACAO.locais;
   const cz = document.getElementById('consulta-zona'), cl = document.getElementById('consulta-local'), cs = document.getElementById('consulta-secao');
   const zona = form.elements.zona, secao = form.elements.secao;
@@ -47,153 +49,142 @@
   cz.onchange = () => atualizarConsulta('zona');
   cl.onchange = () => atualizarConsulta('local');
   cs.onchange = () => atualizarConsulta('secao');
-  // Não existe polígono oficial de seção eleitoral (o TSE não publica — só
-  // município tem malha, via window.MAPA_ACRE). Em vez de um mapa
-  // geográfico, isto é uma grade esquemática por zona: um bloco por seção,
-  // colorido por ter ou não fiscal, clicável pra ir direto pro cadastro.
-  function renderizarMapaEsquematico() {
-    const el = document.getElementById('mapaEsquematico');
-    if (!el) return;
-    el.replaceChildren();
-    if (!selecionado) return;
-    let comFiscal;
-    try {
-      comFiscal = new Set(ler().filter(r => r.municipio === selecionado && r.zona && r.secao)
-        .map(r => canonico(r.zona) + '|' + canonico(r.secao)));
-    } catch (e) {
-      const p = document.createElement('p'); p.className = 'resultados-vazio'; p.textContent = e.message;
-      el.append(p); return;
-    }
-    const porZona = new Map();
-    doMunicipio().forEach(l => {
-      secoesDe([l]).forEach(s => {
-        if (!porZona.has(l.zona)) porZona.set(l.zona, []);
-        porZona.get(l.zona).push({ numero: s.numero, local: l });
-      });
-    });
-    [...porZona.keys()].sort((a, b) => Number(a) - Number(b)).forEach(z => {
-      const bloco = document.createElement('div'); bloco.className = 'esquema-zona';
-      const titulo = document.createElement('h5'); titulo.textContent = 'Zona ' + z; bloco.append(titulo);
-      const grade = document.createElement('div'); grade.className = 'esquema-grade';
-      porZona.get(z).sort((a, b) => Number(a.numero) - Number(b.numero)).forEach(s => {
-        const tem = comFiscal.has(canonico(z) + '|' + canonico(s.numero));
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'esquema-secao ' + (tem ? 'tem-fiscal' : 'sem-fiscal');
-        btn.textContent = s.numero;
-        btn.title = 'Seção ' + s.numero + ' — ' + (tem ? 'tem fiscal' : 'sem fiscal') + ' — ' + s.local.nome;
-        btn.onclick = () => {
-          cs.value = s.local.id + ':' + s.numero;
-          atualizarConsulta('secao');
-          if (window.innerWidth < 1000) form.scrollIntoView({behavior:'smooth', block:'start'});
-          form.elements.nome.focus();
-        };
-        grade.append(btn);
-      });
-      bloco.append(grade);
-      el.append(bloco);
-    });
+  // Mapa de ruas de verdade, só pra município com bairro conhecido — Rio
+  // Branco (fonte própria, SEFIN, ver tools/gerar_bairros_rio_branco.py) e
+  // mais 8 municípios com bairro oficializado pelo IBGE no Censo 2022 (ver
+  // tools/gerar_bairros_municipios.py); os demais municípios do Acre não
+  // têm bairro oficial digitalizado em lugar nenhum encontrado. Cor pela
+  // cobertura de fiscal dos locais de votação que caem em cada bairro.
+  function dadosBairrosDoMunicipio(id) {
+    if (id === '1200401') return window.MAPA_BAIRROS_RIO_BRANCO || null;
+    return (window.MAPA_BAIRROS_MUNICIPIOS && window.MAPA_BAIRROS_MUNICIPIOS[id]) || null;
   }
-  // Mapa de ruas de verdade, só pra município com bairro conhecido (por ora
-  // só Rio Branco — ver tools/geocodificar_locais_votacao.py e
-  // tools/gerar_bairros_rio_branco.py). Polígono oficial de bairro
-  // (SEFIN/rbgeo.riobranco.ac.gov.br), cor pela cobertura de fiscal dos
-  // locais de votação que caem em cada bairro.
   function escBairro(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
-  function corBairro(nome) {
-    const acc = porBairroAtual.get(nome);
-    if (!acc || !acc.oficiais) return '#e2e6ec';
-    const luz = 92 - (acc.comFiscal / acc.oficiais) * 50;
-    return 'hsl(215 55% ' + luz.toFixed(0) + '%)';
-  }
-  function mostrarDicaBairro(nome) {
-    const dica = document.getElementById('mapaBairrosDica');
-    if (!dica) return;
+  function htmlDicaBairro(nome) {
+    if (!coberturaMapaCarregada) return '<strong>' + escBairro(nome) + '</strong><br>Cobertura de fiscais ainda não disponível.';
     const acc = porBairroAtual.get(nome) || { oficiais: 0, comFiscal: 0 };
     const pct = acc.oficiais ? (acc.comFiscal / acc.oficiais * 100) : 0;
-    dica.innerHTML = '<strong>' + escBairro(nome) + '</strong>' +
+    return '<strong>' + escBairro(nome) + '</strong>' +
       '<div class="linha"><span>Cobertura</span><span>' + pct.toFixed(1).replace('.', ',') + '%</span></div>' +
       '<div class="linha com"><span>Seções com fiscal</span><span>' + acc.comFiscal + '</span></div>' +
       '<div class="linha sem"><span>Seções sem fiscal</span><span>' + Math.max(0, acc.oficiais - acc.comFiscal) + '</span></div>';
-    dica.hidden = false;
   }
-  function esconderDicaBairro() {
-    const dica = document.getElementById('mapaBairrosDica');
-    if (dica) dica.hidden = true;
-  }
-  function desenharSvgBairros(svg) {
-    svg.replaceChildren();
-    const ns = 'http://www.w3.org/2000/svg';
-    const features = window.MAPA_BAIRROS_RIO_BRANCO.features;
-    const projetar = p => [p[0] * Math.cos(9.97 * Math.PI / 180), -p[1]];
-    const polysDe = f => f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
-    const pontos = features.flatMap(f => polysDe(f).flat(2)).map(projetar);
-    const xs = pontos.map(p => p[0]), ys = pontos.map(p => p[1]);
-    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-    const escala = Math.min(560 / (maxX - minX), 460 / (maxY - minY));
-    const transformar = p => { const q = projetar(p); return [(q[0] - minX) * escala + (600 - (maxX - minX) * escala) / 2, (q[1] - minY) * escala + (500 - (maxY - minY) * escala) / 2]; };
-    features.forEach(f => {
-      const nome = f.properties.bairro;
-      const d = polysDe(f).map(poly => poly.map(anel => anel.map((p, i) => (i ? 'L' : 'M') + transformar(p).map(n => n.toFixed(2)).join(',')).join('') + 'Z').join('')).join('');
-      const path = document.createElementNS(ns, 'path');
-      path.setAttribute('d', d);
-      path.dataset.bairro = nome;
-      path.setAttribute('tabindex', '0');
-      path.setAttribute('role', 'img');
-      path.setAttribute('aria-label', nome);
-      const title = document.createElementNS(ns, 'title'); title.textContent = nome; path.append(title);
-      path.addEventListener('mouseenter', () => mostrarDicaBairro(nome));
-      path.addEventListener('focus', () => mostrarDicaBairro(nome));
-      path.addEventListener('mouseleave', esconderDicaBairro);
-      path.addEventListener('blur', esconderDicaBairro);
-      svg.append(path);
-    });
-    svg.addEventListener('mousemove', e => {
-      const dica = document.getElementById('mapaBairrosDica');
-      if (!dica || dica.hidden) return;
-      const margem = 16;
-      let x = e.clientX + margem, y = e.clientY + margem;
-      if (x + 250 > window.innerWidth) x = e.clientX - 250 - margem;
-      if (y + 110 > window.innerHeight) y = e.clientY - 110 - margem;
-      dica.style.left = x + 'px'; dica.style.top = y + 'px';
-    });
-  }
+  // Mapa de satélite de verdade (Leaflet + imagens públicas do Esri World
+  // Imagery, sem precisar de chave de API) por baixo do contorno dos
+  // bairros — pra dar pra reconhecer ruas/quadras/construções de verdade em
+  // vez de só a forma do polígono. Fábrica compartilhada com a aba
+  // Resultados — ver js/mapa-bairros-leaflet.js.
+  let bairroMapaDesenhado = null;
+  const mapaBairros = window.criarMapaBairrosLeaflet ? window.criarMapaBairrosLeaflet({
+    containerId: 'mapaBairros',
+    btnZoomMaisId: 'mapaBairrosZoomMais',
+    btnZoomMenosId: 'mapaBairrosZoomMenos',
+    btnZoomResetId: 'mapaBairrosZoomReset',
+    zoomValorId: 'mapaBairrosZoomValor',
+    btnTelaCheiaId: 'mapaBairrosTelaCheia',
+    secaoId: 'mapaBairrosSecao',
+    corContorno: '#ffe066',
+    obterDica: htmlDicaBairro
+  }) : null;
   function renderizarMapaBairros() {
     const secaoEl = document.getElementById('mapaBairrosSecao');
-    const svg = document.getElementById('mapaBairros');
-    if (!secaoEl || !svg) return;
-    const disponivel = selecionado === '1200401' && window.MAPA_BAIRROS_RIO_BRANCO && window.LOCAIS_COORDENADAS;
+    if (!secaoEl) return;
+    const dadosBairros = dadosBairrosDoMunicipio(selecionado);
+    const disponivel = Boolean(dadosBairros) && window.LOCAIS_COORDENADAS;
     secaoEl.hidden = !disponivel;
-    if (!disponivel) return;
+    if (mapaEstadoArea) mapaEstadoArea.hidden = disponivel;
+    // Com o mapa de bairros em foco, some com o resto do card (rodapé) e com
+    // as duas seções abaixo (zonas/locais e cadastros/busca global) — só o
+    // mapa aparece. Quando não é o caso, cada uma continua sob controle do
+    // código que já cuida delas (abrir(), listarAbaixoDoMapa()).
+    const rodapeEl = document.querySelector('.mapa-rodape');
+    if (rodapeEl) rodapeEl.hidden = disponivel;
+    const secoesAbaixoEl = document.querySelector('.secoes-abaixo-mapa');
+    if (secoesAbaixoEl && disponivel) secoesAbaixoEl.hidden = true;
+    if (!disponivel) {
+      if (secoesAbaixoEl) secoesAbaixoEl.hidden = false;
+      return;
+    }
 
-    let comFiscal = new Set();
-    try {
-      ler().filter(r => r.municipio === selecionado && r.zona && r.secao)
-        .forEach(r => comFiscal.add(canonico(r.zona) + '|' + canonico(r.secao)));
-    } catch (e) { /* banco online ainda carregando; recalcula no próximo banco-atualizado */ }
-
+    // O mapa e os bairros são dados públicos locais; não dependem do banco de fiscais.
+    if (mapaBairros && bairroMapaDesenhado !== selecionado) {
+      mapaBairros.desenhar(dadosBairros.features);
+      bairroMapaDesenhado = selecionado;
+    }
+    if (mapaBairros) mapaBairros.invalidar();
+    atualizarTextoMapaBairros();
+    let registros;
+    try { registros = ler(); }
+    catch (e) {
+      coberturaMapaCarregada = false;
+      locaisMapaAtual = [];
+      porBairroAtual = new Map();
+      if (mapaBairros) mapaBairros.atualizarPontos([]);
+      document.getElementById('mapaFiscaisResumo').textContent = 'Mapa carregado. A cobertura será exibida quando os cadastros estiverem disponíveis. ' + (document.getElementById('banco-mensagem').textContent || e.message);
+      return;
+    }
+    coberturaMapaCarregada = true;
+    locaisMapaAtual = window.CoberturaLocaisMapa(selecionado, registros, locais, window.DADOS_VOTACAO_SCHAFER || {});
     porBairroAtual = new Map();
-    doMunicipio().forEach(l => {
-      const coord = window.LOCAIS_COORDENADAS[l.id];
+    locaisMapaAtual.forEach(item => {
+      const coord = window.LOCAIS_COORDENADAS[item.local.id];
       if (!coord || !coord.bairro) return;
-      const acc = porBairroAtual.get(coord.bairro) || { oficiais: 0, comFiscal: 0 };
-      secoesDe([l]).forEach(s => {
-        acc.oficiais++;
-        if (comFiscal.has(canonico(l.zona) + '|' + canonico(s.numero))) acc.comFiscal++;
-      });
+      const acc = porBairroAtual.get(coord.bairro) || {oficiais: 0, comFiscal: 0};
+      acc.oficiais += item.secoes.length;
+      acc.comFiscal += item.secoes.filter(s => s.comFiscal).length;
       porBairroAtual.set(coord.bairro, acc);
     });
 
-    if (bairroSvgDesenhado !== selecionado) {
-      desenharSvgBairros(svg);
-      bairroSvgDesenhado = selecionado;
-    }
-    svg.querySelectorAll('path[data-bairro]').forEach(path => {
-      path.style.fill = corBairro(path.dataset.bairro);
-    });
+
+    atualizarPinsBairros();
+    atualizarTextoMapaBairros();
   }
+  // Título e créditos da fonte mudam conforme o município (Rio Branco tem
+  // fonte própria, mais detalhada; os demais vêm do IBGE).
+  function atualizarTextoMapaBairros() {
+    const titulo = document.getElementById('mapaBairrosTitulo');
+    const dica = document.querySelector('#mapaBairrosSecao .mapa-esquematico-dica');
+    const nomeMun = nomes.get(selecionado) || '';
+    if (titulo) titulo.textContent = 'Cobertura por bairro — ' + nomeMun;
+    const containerEl = document.getElementById('mapaBairros');
+    if (containerEl) containerEl.setAttribute('aria-label', 'Mapa dos locais de votação de ' + nomeMun + ': vermelho com seções sem fiscal, verde com cobertura completa');
+    if (dica) dica.textContent = 'Clique em um local para consultar as seções, os votos de 2022 e a cobertura de fiscais.';
+  }
+  function atualizarPinsBairros() {
+    if (!mapaBairros || !coberturaMapaCarregada) return;
+    const filtro = document.getElementById('mapaFiscaisHistorico').value;
+    const soPendentes = document.getElementById('mapaFiscaisPendentes').checked;
+    const dados = dadosBairrosDoMunicipio(selecionado);
+    const bairros = new Set((dados ? dados.features : []).map(f => f.properties.bairro));
+    const pontos = [];
+    let semMapa = 0, pendentes = 0, identificadas = 0;
+    locaisMapaAtual.forEach(item => {
+      const secoes = item.secoes.filter(s => (!soPendentes || !s.comFiscal) &&
+        (!filtro || (filtro === 'com' && s.votos > 0) || (filtro === 'sem' && s.votos === 0)));
+      if (!secoes.length) return;
+      const coord = window.LOCAIS_COORDENADAS[item.local.id];
+      if (!coord || !bairros.has(coord.bairro) || !Number.isFinite(coord.lat) || !Number.isFinite(coord.lon)) {
+        semMapa += secoes.length; return;
+      }
+      const faltam = item.secoes.filter(s => !s.comFiscal).length;
+      pendentes += secoes.filter(s => !s.comFiscal).length;
+      identificadas += secoes.length;
+      pontos.push({lat: coord.lat, lon: coord.lon, cor: faltam ? '#dc3545' : '#1f9d55', html:
+        '<strong>' + escBairro(item.local.nome) + '</strong><br>' + escBairro(coord.bairro) +
+        '<br>Zona ' + escBairro(item.local.zona) + ' · ' + faltam + ' de ' + item.secoes.length + ' seções sem fiscal' +
+        '<table class="fiscais-mapa-secoes"><thead><tr><th>Seção</th><th>Votos 2022</th><th>Fiscal</th></tr></thead><tbody>' +
+        secoes.map(s => '<tr><td>' + escBairro(s.numero) + '</td><td>' + (s.votos === null ? 'Sem dado' : s.votos) +
+          '</td><td class="' + (s.comFiscal ? 'fiscal-presente' : 'fiscal-ausente') + '">' +
+          (s.comFiscal ? 'Cadastrado' : 'Pendente') + '</td></tr>').join('') + '</tbody></table>'});
+    });
+    mapaBairros.atualizarPontos(pontos);
+    document.getElementById('mapaFiscaisResumo').textContent = pontos.length + ' locais no mapa · ' + identificadas +
+      ' seções no filtro · ' + pendentes + ' sem fiscal. ' + semMapa + ' seções do filtro sem bairro/coordenada no mapa.';
+  }
+  document.getElementById('mapaFiscaisHistorico').addEventListener('change', atualizarPinsBairros);
+  document.getElementById('mapaFiscaisPendentes').addEventListener('change', atualizarPinsBairros);
   document.getElementById('anterior').onclick = () => { pagina--; listar(); };
   document.getElementById('proximo').onclick = () => { pagina++; listar(); };
   function ler() {
@@ -265,7 +256,6 @@
       registros.slice(pagina,pagina+1).forEach(r => lista.append(construirCartaoCadastro(r)));
     } catch (e) { lista.textContent = e.message; document.getElementById('paginacao').hidden = true; }
     listarAbaixoDoMapa();
-    renderizarMapaEsquematico();
     renderizarMapaBairros();
   }
   // Lista completa (sem paginar) dos cadastros do município selecionado,
@@ -274,9 +264,18 @@
   function listarAbaixoDoMapa() {
     const secaoEl = document.getElementById('cadastrosMapaSecao');
     const listaEl = document.getElementById('cadastrosMapaLista');
+    const buscaGlobalConteudo = document.getElementById('buscaGlobalConteudo');
     if (!secaoEl || !listaEl) return;
-    if (!selecionado) { secaoEl.hidden = true; return; }
+    // Mesmo espaço da busca global: com um município selecionado, mostra os
+    // cadastros dele ali (em vez da caixa vazia que ficava embaixo do mapa);
+    // sem município, volta a mostrar a busca em todos os municípios.
+    if (!selecionado) {
+      secaoEl.hidden = true;
+      if (buscaGlobalConteudo) buscaGlobalConteudo.hidden = false;
+      return;
+    }
     secaoEl.hidden = false;
+    if (buscaGlobalConteudo) buscaGlobalConteudo.hidden = true;
     listaEl.replaceChildren();
     try {
       const registros = registrosFiltrados();
@@ -299,7 +298,8 @@
     editandoId = r._id;
     form.elements.nome.value = r.nome || '';
     form.elements.telefone.value = r.telefone || '';
-    form.elements.regional.value = r.regional || '';
+    // Regional não é mais digitada/escolhida à parte — abrir() já a define
+    // (e trava) a partir do município, então nem entra aqui.
     form.elements.bairro.value = r.bairro || '';
     form.elements.zona.value = r.zona || '';
     prepararSecoes();
@@ -333,11 +333,55 @@
     mensagem.textContent = ''; mensagem.className = '';
   }
   document.getElementById('cancelarEdicao').onclick = encerrarEdicao;
+  // Bairros válidos do município selecionado: cruza quem tem seção de
+  // votação (window.LOCAIS_COORDENADAS, por local de votação) com os
+  // bairros oficiais do mapa desse município (dadosBairrosDoMunicipio) —
+  // só existe pra quem tem bairro oficializado (Rio Branco + os 8 do IBGE).
+  // Devolve null nos demais, pra manter "Bairro" como texto livre.
+  function bairrosDoMunicipio() {
+    const dados = dadosBairrosDoMunicipio(selecionado);
+    if (!dados || !window.LOCAIS_COORDENADAS) return null;
+    const oficiais = new Set(dados.features.map(f => f.properties.bairro));
+    const dasSecoes = new Set();
+    doMunicipio().forEach(l => {
+      const coord = window.LOCAIS_COORDENADAS[l.id];
+      if (coord && coord.bairro && oficiais.has(coord.bairro)) dasSecoes.add(coord.bairro);
+    });
+    return [...dasSecoes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }
+  // Troca o campo "Bairro" do formulário entre texto livre (padrão) e uma
+  // lista fechada, conforme bairrosDoMunicipio(). Mantém o mesmo id/name
+  // pra form.elements.bairro continuar funcionando igual.
+  function atualizarCampoBairro() {
+    const atual = document.getElementById('bairro');
+    const bairros = bairrosDoMunicipio();
+    const valorAtual = atual.value;
+    if (bairros && bairros.length) {
+      let campo = atual;
+      if (atual.tagName !== 'SELECT') {
+        campo = document.createElement('select');
+        campo.id = 'bairro'; campo.name = 'bairro';
+        atual.replaceWith(campo);
+      }
+      opcoes(campo, bairros.map(b => [b, b]), 'Selecione o bairro');
+      if (bairros.includes(valorAtual)) campo.value = valorAtual;
+    } else if (atual.tagName !== 'INPUT') {
+      const input = document.createElement('input');
+      input.id = 'bairro'; input.name = 'bairro'; input.maxLength = 120;
+      atual.replaceWith(input);
+    }
+  }
   function abrir(id) {
     if (!nomes.has(id)) return;
     encerrarEdicao();
     selecionado = id;
     pagina = 0;
+    // Força reenquadrar o mapa de bairros (mesmo se for o mesmo município de
+    // antes) — equivalente a "resetar zoom" de quando era um SVG com
+    // transform; agora é o fitBounds do Leaflet, refeito em
+    // renderizarMapaBairros() sempre que este id difere do último desenhado.
+    bairroMapaDesenhado = null;
+    atualizarCampoBairro();
     seletor.value = id;
     document.getElementById('painel-titulo').textContent = nomes.get(id);
     mapa.querySelectorAll('path').forEach(p => p.classList.toggle('selecionado', p.dataset.id === id));
@@ -346,6 +390,15 @@
       b.setAttribute('aria-pressed', String(b.dataset.id === id));
     });
     formMunicipio.value = id;
+    // Regional é fixa por município (window.REGIONAIS_MUNICIPIOS) — não faz
+    // sentido deixar escolher outra, então preenche e trava o campo.
+    const regionalDoMunicipio = window.REGIONAIS_MUNICIPIOS && window.REGIONAIS_MUNICIPIOS[id];
+    if (regionalDoMunicipio) {
+      form.elements.regional.value = regionalDoMunicipio;
+      form.elements.regional.disabled = true;
+    } else {
+      form.elements.regional.disabled = false;
+    }
     const zonas = [...new Set(doMunicipio().map(l=>l.zona))].sort((a,b)=>Number(a)-Number(b)).map(z=>[z,'Zona '+z]);
     opcoes(cz, zonas, 'Todas as zonas'); opcoes(zona, zonas, 'Selecione a zona');
     document.getElementById('consulta-eleitoral').hidden = false;
