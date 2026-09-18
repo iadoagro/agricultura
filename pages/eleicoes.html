@@ -115,8 +115,8 @@
       </div>
       <p id="mapa-status" role="status">Carregando mapa…</p>
       <div id="mapaEstadoArea">
-        <svg id="mapa" viewBox="0 0 1000 600" aria-label="Mapa interativo dos municípios do Acre, colorido pela cobertura de fiscais"></svg>
-        <div class="cobertura-legenda" aria-hidden="true"><span>Sem fiscal</span><span class="cobertura-gradiente"></span><span>Cobertura completa</span></div>
+        <svg id="mapa" viewBox="0 0 1000 600" aria-label="Mapa interativo dos municípios do Acre, colorido pela quantidade de fiscais cadastrados"></svg>
+        <div class="cobertura-legenda" aria-hidden="true"><span>Sem fiscal cadastrado</span><span class="cobertura-gradiente"></span><span>Mais fiscais cadastrados</span></div>
       </div>
       <div id="mapaFiscaisDica" class="mapa-dica" role="status" hidden></div>
       <section id="mapaBairrosSecao" hidden aria-labelledby="mapaBairrosTitulo">
@@ -197,6 +197,11 @@
     <p class="aviso" id="aviso-dados">Os cadastros são salvos somente neste navegador.</p>
     </div>
   </main>
+  <dialog id="cadastro-acoes-dialogo" class="cadastro-acoes-dialogo" aria-labelledby="cadastro-acoes-titulo">
+    <h3 id="cadastro-acoes-titulo"></h3>
+    <div id="cadastro-acoes-botoes"></div>
+    <button type="button" id="cadastro-acoes-cancelar">Cancelar</button>
+  </dialog>
   <dialog id="banco-dialogo" aria-labelledby="banco-titulo">
     <button id="banco-fechar" type="button" aria-label="Fechar acesso ao banco">×</button>
     <h2 id="banco-titulo">Banco online</h2>
@@ -225,9 +230,9 @@
   <script src="../js/eleicoes.js?v=2026091526"></script>
   <script src="../js/eleicoes-resultados.js?v=2026091507"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
-  <script src="../js/eleicoes-fiscais-mapa.js?v=2026091501"></script>
+  <script src="../js/eleicoes-fiscais-mapa.js?v=2026091802"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026091508"></script>
-  <script src="../js/eleicoes-busca-exportar.js?v=2026091412"></script>
+  <script src="../js/eleicoes-busca-exportar.js?v=2026091801"></script>
   <script src="../js/eleicoes-abas.js?v=2026091401"></script>
   <script src="../js/select-busca.js?v=2026091401"></script>
 </body>

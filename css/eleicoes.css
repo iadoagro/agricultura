@@ -13,8 +13,21 @@ body{height:100dvh;display:flex;flex-direction:column}header{padding:10px 16px;f
 @media(max-width:999px),(max-height:599px){.area-municipios{grid-template-columns:minmax(0,1fr)}.municipios-lateral,#painel,.mapa-card{position:static;grid-column:auto}.municipios-lateral{max-height:none;overflow:visible}#municipios-lista{grid-template-columns:repeat(2,minmax(0,1fr))}.mapa-card{overflow:visible}#mapa{min-width:0;min-height:0;height:auto;width:100%;aspect-ratio:5/3}.mapa-topo label{display:block;min-width:0}.mapa-topo select{max-width:100%}.mapa-topo{display:block}.mapa-rodape{flex-wrap:wrap}.eleicoes{width:100%;padding:0 12px}.area-municipios>*{min-width:0}#cadastro input,#cadastro select{min-width:0}#municipios-lista button{min-height:44px}}
 
 @media(min-width:1000px) and (min-height:600px) and (max-height:700px){header{padding:6px 12px}header h1{font-size:18px}.eleicoes{padding-top:5px}.municipios-lateral,.mapa-card,#painel{padding:8px}#cadastro:not([hidden]){gap:3px 6px;padding:5px 0}#cadastro input,#cadastro select{height:27px;padding:3px 6px}#cadastro .salvar{padding:5px}#cadastros li{gap:2px 6px}#cadastros span,#cadastros strong{font-size:11px}.painel-topo h2{font-size:17px}.aviso{font-size:10px}}
-.cadastro-telefone{grid-column:1/-1}.cadastro-telefone a{color:#153e75;text-decoration:underline;text-underline-offset:2px}
+#cadastros .cadastro-telefone,.cadastros-mapa .cadastro-telefone{grid-column:1/-1}.cadastro-telefone a{color:#153e75;text-decoration:underline;text-underline-offset:2px}
 .cadastro-auditoria{display:block;font-size:11.5px;color:#999;margin-top:4px}
+#cadastros li.cadastro-compacto{padding:10px 0}
+.cadastro-cabecalho{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;border-radius:6px;margin:-4px;padding:4px}
+.cadastro-cabecalho:hover,.cadastro-cabecalho:focus-visible{background:#f3f6fb}
+.cadastro-cabecalho strong{margin:0;overflow-wrap:anywhere}
+.cadastro-whatsapp-compacto{display:inline-flex;align-items:center;gap:4px;flex:none;font-size:12.5px;color:#1f9d55;text-decoration:none;white-space:nowrap;padding:3px 8px;border:1px solid #bfe6cf;border-radius:12px;background:#f1faf4}
+a.cadastro-whatsapp-compacto:hover{background:#e2f5e9}
+.cadastro-whatsapp-compacto.sem-telefone{color:#999;background:#f3f3f3;border-color:#e0e0e0}
+.cadastro-info-compacta{margin:4px 0 0;font-size:13px;color:#666}
+dialog.cadastro-acoes-dialogo{margin:auto;width:260px;height:auto;max-height:none;border:0;border-radius:12px;padding:22px;box-shadow:0 12px 40px #0003}
+#cadastro-acoes-titulo{margin:0 0 16px;font-size:16px;color:#153e75}
+#cadastro-acoes-botoes{display:flex;flex-direction:column;gap:8px}
+#cadastro-acoes-botoes button{width:100%;text-align:center}
+#cadastro-acoes-cancelar{width:100%;margin-top:10px;background:#f0f2f4;border:1px solid #cbd0d8;border-radius:6px;padding:8px}
 
 #mapaEstadoArea[hidden],#mapaBairrosSecao[hidden],#consulta-eleitoral[hidden],.secoes-abaixo-mapa[hidden],.mapa-rodape[hidden]{display:none}
 #consulta-eleitoral{flex:none}#consulta-eleitoral h3{margin:0 0 12px;font-size:15px;color:#153e75}.filtros-eleitorais{display:grid;grid-template-columns:95px minmax(0,1fr) 140px;gap:8px}.filtros-eleitorais label{font-size:12px;min-width:0}.filtros-eleitorais select{display:block;width:100%;min-width:0;padding:6px;font-size:12px;margin-top:4px}#local-detalhes{font-size:12px;line-height:1.4;margin-top:8px;overflow-wrap:anywhere}.fonte-eleitoral{font-size:10px;color:#666;margin-top:5px}#cadastro select option{white-space:normal}@media(max-width:700px){.filtros-eleitorais{grid-template-columns:minmax(0,1fr)}.filtros-eleitorais select{min-height:44px}}
@@ -86,7 +99,7 @@ body{height:100dvh;display:flex;flex-direction:column}header{padding:10px 16px;f
 .mapa-dica .linha+.linha{margin-top:2px}
 .mapa-dica .linha span:last-child{font-weight:600}
 .mapa-dica .linha.sem span:last-child{color:#ffb3a0}
-.mapa-dica .linha.com span:last-child{color:#a1bee6}
+.mapa-dica .linha.com span:last-child{color:#8fe0b0}
 @media(min-width:900px){
   .resultados-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
   .resultados-lateral{margin-top:0;position:sticky;top:16px}
@@ -164,7 +177,7 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 /* ============================================ MAPA DE COBERTURA (FISCAIS) */
 .cobertura-legenda{display:flex;align-items:center;gap:8px;font-size:11px;color:#666;margin:6px 0 0}
 .cobertura-gradiente{flex:1;max-width:220px;height:8px;border-radius:4px;
-  background:linear-gradient(90deg,hsl(215 55% 92%),hsl(215 55% 67%),hsl(215 55% 42%))}
+  background:linear-gradient(90deg,hsl(140 45% 83%),hsl(140 45% 64%),hsl(140 45% 40%))}
 
 /* =============================================== PRIORIDADES (VOTO×COBERTURA) */
 .prioridades-card{margin-bottom:16px}
@@ -179,6 +192,7 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .secoes-abaixo-mapa{display:grid;gap:16px;margin-top:16px}
 @media(min-width:900px){.secoes-abaixo-mapa{grid-template-columns:1fr 1fr;align-items:start}}
 .secoes-abaixo-mapa>.mapa-card{margin:0}
+.busca-global-card{grid-column:1/-1}
 .busca-global-filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:14px;align-items:end}
 .busca-global-filtros label{font-size:12px;color:#666}
 .busca-global-filtros input,.busca-global-filtros select{display:block;width:100%;margin-top:4px;box-sizing:border-box}
@@ -193,6 +207,13 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .busca-global-abrir{justify-self:start;margin-top:4px;background:#eef2fb;color:#2f4f9e;border:1px solid #4472c4;border-radius:6px;padding:5px 12px;font-size:12.5px}
 .busca-global-abrir:hover{background:#dce4f6}
 @media(max-width:650px){.busca-global-filtros{grid-template-columns:1fr}}
+/* Lista da busca global: uma coluna por informação, em linha, ocupando toda
+   a largura da seção (que agora ocupa a página inteira). */
+#buscaGlobalLista li{grid-template-columns:minmax(140px,1.3fr) minmax(160px,1fr) minmax(160px,1fr) minmax(140px,1fr) auto;gap:14px;align-items:center}
+#buscaGlobalLista strong,#buscaGlobalLista span{margin:0}
+#buscaGlobalLista .busca-global-abrir{margin-top:0;justify-self:end}
+@media(max-width:900px){#buscaGlobalLista li{grid-template-columns:1fr 1fr}#buscaGlobalLista .busca-global-abrir{grid-column:1/-1;justify-self:start}}
+@media(max-width:520px){#buscaGlobalLista li{grid-template-columns:1fr}}
 
 /* ===================================== CADASTROS DO MUNICÍPIO (ABAIXO DO MAPA) */
 .cadastros-mapa h3{margin:0 0 10px;font-size:15px;color:#153e75}

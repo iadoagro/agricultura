@@ -187,6 +187,12 @@
   document.getElementById('mapaFiscaisPendentes').addEventListener('change', atualizarPinsBairros);
   document.getElementById('anterior').onclick = () => { pagina--; listar(); };
   document.getElementById('proximo').onclick = () => { pagina++; listar(); };
+  let redimensionandoListaTimer = null;
+  window.addEventListener('resize', () => {
+    if (!selecionado) return;
+    clearTimeout(redimensionandoListaTimer);
+    redimensionandoListaTimer = setTimeout(listar, 150);
+  });
   function ler() {
     return window.BANCO_ELEICOES.ler();
   }
@@ -202,33 +208,7 @@
       return !cs.value || canonico(r.secao)===canonico(cs.value.split(':')[1]);
     });
   }
-  function construirCartaoCadastro(r) {
-    const li = document.createElement('li');
-    const titulos = {regional:'Regional', bairro:'Bairro', secao:'Seção eleitoral', zona:'Zona eleitoral'};
-    ['nome', 'regional', 'bairro', 'secao', 'zona', 'telefone'].forEach(k => {
-      const item = document.createElement(k === 'nome' ? 'strong' : 'span');
-      item.textContent = (titulos[k] ? titulos[k] + ': ' : '') + (r[k] || 'Não informado');
-      if (k === 'telefone') {
-        item.className = 'cadastro-telefone';
-        const digitos = r.telefone.replace(/\D/g, '');
-        const internacional = digitos.length === 10 || digitos.length === 11 ? '55' + digitos : digitos;
-        if (/^\d{10,15}$/.test(internacional)) {
-          const link = document.createElement('a');
-          link.href = 'https://wa.me/' + internacional;
-          link.target = '_blank'; link.rel = 'noopener noreferrer';
-          link.textContent = r.telefone + ' — WhatsApp';
-          link.setAttribute('aria-label', 'Conversar com ' + r.nome + ' no WhatsApp');
-          item.replaceChildren(link);
-        }
-      }
-      li.append(item);
-    });
-    if (r._criadoEm) {
-      const auditoria = document.createElement('span');
-      auditoria.className = 'cadastro-auditoria';
-      auditoria.textContent = 'Cadastrado em ' + new Date(r._criadoEm).toLocaleDateString('pt-BR');
-      li.append(auditoria);
-    }
+  function criarBotoesAcao(r) {
     const acoes = document.createElement('div');
     acoes.className = 'acoes-cadastro';
     const btnEditar = document.createElement('button');
@@ -238,7 +218,97 @@
     btnExcluir.type = 'button'; btnExcluir.className = 'excluir-cadastro'; btnExcluir.textContent = 'Excluir cadastro';
     btnExcluir.onclick = () => excluirRegistro(r);
     acoes.append(btnEditar, btnExcluir);
-    li.append(acoes);
+    return acoes;
+  }
+  const dialogoAcoes = document.getElementById('cadastro-acoes-dialogo');
+  const tituloAcoes = document.getElementById('cadastro-acoes-titulo');
+  const botoesAcoes = document.getElementById('cadastro-acoes-botoes');
+  document.getElementById('cadastro-acoes-cancelar').onclick = () => dialogoAcoes.close();
+  function abrirPopupAcoes(r) {
+    tituloAcoes.textContent = r.nome || 'Cadastro';
+    botoesAcoes.replaceChildren();
+    const btnEditar = document.createElement('button');
+    btnEditar.type = 'button'; btnEditar.className = 'editar-cadastro'; btnEditar.textContent = 'Editar cadastro';
+    btnEditar.onclick = () => { dialogoAcoes.close(); iniciarEdicao(r); };
+    const btnExcluir = document.createElement('button');
+    btnExcluir.type = 'button'; btnExcluir.className = 'excluir-cadastro'; btnExcluir.textContent = 'Excluir cadastro';
+    btnExcluir.onclick = () => { dialogoAcoes.close(); excluirRegistro(r); };
+    botoesAcoes.append(btnEditar, btnExcluir);
+    dialogoAcoes.showModal();
+  }
+  function criarTelefoneWhatsApp(r) {
+    const item = document.createElement('span');
+    item.className = 'cadastro-telefone';
+    item.textContent = r.telefone || 'Não informado';
+    const digitos = (r.telefone || '').replace(/\D/g, '');
+    const internacional = digitos.length === 10 || digitos.length === 11 ? '55' + digitos : digitos;
+    if (/^\d{10,15}$/.test(internacional)) {
+      const link = document.createElement('a');
+      link.href = 'https://wa.me/' + internacional;
+      link.target = '_blank'; link.rel = 'noopener noreferrer';
+      link.textContent = r.telefone + ' — WhatsApp';
+      link.setAttribute('aria-label', 'Conversar com ' + r.nome + ' no WhatsApp');
+      item.replaceChildren(link);
+    }
+    return item;
+  }
+  // Versão compacta do link de WhatsApp: só o ícone e a palavra "WhatsApp",
+  // sem mostrar o número — usada ao lado do nome na barra lateral.
+  function criarWhatsAppCompacto(r) {
+    const digitos = (r.telefone || '').replace(/\D/g, '');
+    const internacional = digitos.length === 10 || digitos.length === 11 ? '55' + digitos : digitos;
+    if (!/^\d{10,15}$/.test(internacional)) {
+      const semTelefone = document.createElement('span');
+      semTelefone.className = 'cadastro-whatsapp-compacto sem-telefone';
+      semTelefone.textContent = 'Sem telefone';
+      return semTelefone;
+    }
+    const link = document.createElement('a');
+    link.className = 'cadastro-whatsapp-compacto';
+    link.href = 'https://wa.me/' + internacional;
+    link.target = '_blank'; link.rel = 'noopener noreferrer';
+    link.innerHTML = '<span aria-hidden="true">💬</span> WhatsApp';
+    link.setAttribute('aria-label', 'Conversar com ' + r.nome + ' no WhatsApp');
+    link.onclick = e => e.stopPropagation();
+    return link;
+  }
+  // compacto: usado na barra lateral (vários cadastros empilhados) — só nome,
+  // WhatsApp (sem o número) e zona/seção, sem os demais campos nem a data de
+  // cadastro; clicar no nome abre um popup com editar/excluir.
+  function construirCartaoCadastro(r, compacto) {
+    const li = document.createElement('li');
+    if (compacto) {
+      li.className = 'cadastro-compacto';
+      const cabecalho = document.createElement('div');
+      cabecalho.className = 'cadastro-cabecalho';
+      cabecalho.tabIndex = 0;
+      cabecalho.setAttribute('role', 'button');
+      cabecalho.setAttribute('aria-label', 'Ações do cadastro de ' + (r.nome || ''));
+      const nome = document.createElement('strong');
+      nome.textContent = r.nome || 'Não informado';
+      cabecalho.append(nome, criarWhatsAppCompacto(r));
+      cabecalho.onclick = () => abrirPopupAcoes(r);
+      cabecalho.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirPopupAcoes(r); } };
+      const zonaSecao = document.createElement('span');
+      zonaSecao.className = 'cadastro-info-compacta';
+      zonaSecao.textContent = 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—');
+      li.append(cabecalho, zonaSecao);
+      return li;
+    }
+    const titulos = {regional:'Regional', bairro:'Bairro', secao:'Seção eleitoral', zona:'Zona eleitoral'};
+    ['nome', 'regional', 'bairro', 'secao', 'zona'].forEach(k => {
+      const item = document.createElement(k === 'nome' ? 'strong' : 'span');
+      item.textContent = (titulos[k] ? titulos[k] + ': ' : '') + (r[k] || 'Não informado');
+      li.append(item);
+    });
+    li.append(criarTelefoneWhatsApp(r));
+    if (r._criadoEm) {
+      const auditoria = document.createElement('span');
+      auditoria.className = 'cadastro-auditoria';
+      auditoria.textContent = 'Cadastrado em ' + new Date(r._criadoEm).toLocaleDateString('pt-BR');
+      li.append(auditoria);
+    }
+    li.append(criarBotoesAcao(r));
     return li;
   }
   function listar() {
@@ -246,14 +316,30 @@
     lista.replaceChildren();
     try {
       const registros = registrosFiltrados();
-      pagina = Math.max(0, Math.min(pagina, registros.length-1));
-      document.getElementById('paginacao').hidden = registros.length < 2;
-      document.getElementById('pagina-atual').textContent = (pagina+1) + ' de ' + registros.length;
-      document.getElementById('anterior').disabled = pagina === 0;
-      document.getElementById('proximo').disabled = pagina >= registros.length-1;
       document.getElementById('lista-titulo').textContent = 'Cadastros do município (' + registros.length + ')';
-      if (!registros.length) lista.textContent = 'Nenhum cadastro neste município.';
-      registros.slice(pagina,pagina+1).forEach(r => lista.append(construirCartaoCadastro(r)));
+      if (!registros.length) {
+        lista.textContent = 'Nenhum cadastro neste município.';
+        document.getElementById('paginacao').hidden = true;
+        listarAbaixoDoMapa();
+        renderizarMapaBairros();
+        return;
+      }
+      // Em vez de um cadastro por vez, empilha quantos couberem até a borda
+      // visível do painel e só então pagina os demais.
+      const primeiroCard = construirCartaoCadastro(registros[0], true);
+      lista.append(primeiroCard);
+      const alturaCard = primeiroCard.offsetHeight || 1;
+      const espacoDisponivel = window.innerHeight - lista.getBoundingClientRect().top - 70;
+      const porPagina = Math.max(1, Math.floor(espacoDisponivel / alturaCard));
+      const totalPaginas = Math.ceil(registros.length / porPagina);
+      pagina = Math.max(0, Math.min(pagina, totalPaginas - 1));
+      const inicio = pagina * porPagina;
+      lista.replaceChildren();
+      registros.slice(inicio, inicio + porPagina).forEach(r => lista.append(construirCartaoCadastro(r, true)));
+      document.getElementById('paginacao').hidden = totalPaginas < 2;
+      document.getElementById('pagina-atual').textContent = (pagina+1) + ' de ' + totalPaginas;
+      document.getElementById('anterior').disabled = pagina === 0;
+      document.getElementById('proximo').disabled = pagina >= totalPaginas-1;
     } catch (e) { lista.textContent = e.message; document.getElementById('paginacao').hidden = true; }
     listarAbaixoDoMapa();
     renderizarMapaBairros();
@@ -309,7 +395,10 @@
     document.getElementById('cancelarEdicao').hidden = false;
     mensagem.textContent = ''; mensagem.className = '';
     form.hidden = false;
-    if (window.innerWidth < 1000) form.scrollIntoView({behavior:'smooth', block:'start'});
+    // Agora que a lista lateral pode empilhar vários cadastros, o formulário
+    // (no topo do painel) pode ficar fora da área visível quando se clica
+    // num cadastro mais abaixo — rola até ele sempre, não só no mobile.
+    form.scrollIntoView({behavior:'smooth', block:'start'});
   }
   function excluirRegistro(r) {
     if (!window.BANCO_ELEICOES.online && !r._id) {
