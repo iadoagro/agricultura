@@ -58,7 +58,11 @@
   }
 
   function renderizar() {
-    var registros = filtrados();
+    // No modo online, window.BANCO_ELEICOES.ler() lança enquanto o banco
+    // ainda está buscando os cadastros na 1ª carga da página — tenta de novo
+    // quando o evento "banco-atualizado" avisar que terminou.
+    var registros;
+    try { registros = filtrados(); } catch (e) { status.textContent = e.message; lista.innerHTML = ''; return; }
     status.textContent = registros.length + (registros.length === 1 ? ' fiscal encontrado.' : ' fiscais encontrados.') +
       (registros.length > LIMITE_EXIBICAO ? ' Mostrando os primeiros ' + LIMITE_EXIBICAO + '; refine a busca para ver os demais.' : '');
     lista.innerHTML = registros.slice(0, LIMITE_EXIBICAO).map(function (r) {
