@@ -59,7 +59,7 @@ header p {
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: all .38s var(--mo-out,cubic-bezier(.22,1,.36,1));
 }
 .view-btn.active {
   background: var(--verde);
@@ -164,7 +164,7 @@ header p {
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  transition: box-shadow 0.2s;
+  transition: box-shadow .38s var(--mo-out,cubic-bezier(.22,1,.36,1));
 }
 .portaria-card:hover {
   box-shadow: 0 4px 16px rgba(27,55,94, 0.15);
@@ -216,7 +216,7 @@ header p {
   text-align: center;
   white-space: nowrap;
   min-width: 120px;
-  transition: all 0.2s;
+  transition: all .38s var(--mo-out,cubic-bezier(.22,1,.36,1));
 }
 .portaria-link.has-pdf {
   background: var(--verde);

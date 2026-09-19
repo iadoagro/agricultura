@@ -2046,6 +2046,45 @@
     }
   }
 
+  /* Tooltip do mapa: nome + hectares (mecanização) + horas (açudagem) do
+     município dentro do filtro atual. MAPA_TIP é refeito a cada abaMapa(). */
+  var MAPA_TIP = {};
+
+  function mapaMecTooltipHtml(id) {
+    var t = MAPA_TIP[id] || { ha: 0, hrs: 0, n: 0 };
+    var nome = mapaMecNomePorId(id) || id;
+    if (!t.n) {
+      return '<div class="mo-tip-tit">' + G.esc(nome) + '</div><div class="mo-tip-sub" style="border:0;margin:0;padding:0">Sem registro no filtro</div>';
+    }
+    return '<div class="mo-tip-tit">' + G.esc(nome) + '</div>' +
+      '<div class="mo-tip-l"><span class="ponto mec"></span>Hectares <b>' + (t.ha ? G.num(t.ha, 1) + ' ha' : '—') + '</b></div>' +
+      '<div class="mo-tip-l"><span class="ponto acu"></span>Horas de máquina <b>' + (t.hrs ? G.num(t.hrs, 1) + ' h' : '—') + '</b></div>' +
+      '<div class="mo-tip-sub">' + G.num(t.n) + (t.n === 1 ? ' atendimento' : ' atendimentos') + '</div>';
+  }
+
+  function mapaMecLigarTooltip(svg) {
+    // o <title> nativo mostraria só o nome, por cima do nosso balão
+    Array.prototype.forEach.call(svg.querySelectorAll('title'), function (t) { t.remove(); });
+    function idDe(alvo) {
+      var p = alvo && alvo.closest ? alvo.closest('path[data-id]') : null;
+      return p ? p.getAttribute('data-id') : '';
+    }
+    svg.addEventListener('mousemove', function (e) {
+      if (!window.MoTooltip) return;
+      var id = idDe(e.target);
+      if (id) window.MoTooltip.mostrar(mapaMecTooltipHtml(id), e.clientX, e.clientY, true);
+      else window.MoTooltip.esconder();
+    });
+    svg.addEventListener('mouseleave', function () { if (window.MoTooltip) window.MoTooltip.esconder(); });
+    svg.addEventListener('focusin', function (e) {
+      var id = idDe(e.target);
+      if (!id || !window.MoTooltip) return;
+      var r = e.target.getBoundingClientRect();
+      window.MoTooltip.mostrar(mapaMecTooltipHtml(id), r.left + r.width / 2, r.top + r.height / 2, true);
+    });
+    svg.addEventListener('focusout', function () { if (window.MoTooltip) window.MoTooltip.esconder(); });
+  }
+
   function abaMapa(C) {
     var svg = el('mapaMec'), status = el('mapaMecStatus');
     if (!svg) return;
@@ -2055,14 +2094,20 @@
         return;
       }
       MAPA_MEC = window.MapaMunicipios.desenhar(svg, { aoClicar: mapaMecCliqueMapa });
+      if (MAPA_MEC) mapaMecLigarTooltip(svg);
       if (status) status.hidden = true;
     }
     if (!MAPA_MEC) return;
 
     var catPorId = {};
+    MAPA_TIP = {};
     C.D.forEach(function (r) {
       var id = mapaMecIdPorNome(r.mun);
       if (!id) return;
+      var tp = MAPA_TIP[id] || (MAPA_TIP[id] = { ha: 0, hrs: 0, n: 0 });
+      tp.n++;
+      if (r.pc === MEC) tp.ha += r.ha || 0;
+      else if (r.pc === ACU) tp.hrs += r.hrs || 0;
       var atual = catPorId[id] || 'none';
       var este = r.pc === MEC ? 'mec' : r.pc === ACU ? 'acu' : 'none';
       catPorId[id] = atual === 'none' ? este : atual === este ? atual : 'both';

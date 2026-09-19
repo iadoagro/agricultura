@@ -69,7 +69,7 @@ header p{font-size:12px;opacity:.9;margin:0}
 .tema-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;
   background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);
   border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;
-  transition:background .2s}
+  transition:background .38s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .tema-btn:hover{background:rgba(255,255,255,.3)}
 .tema-btn svg{width:15px;height:15px}
 
@@ -92,7 +92,7 @@ body.deagro-sem-abas .abas{display:none}
 .aba{display:inline-flex;flex-direction:column;align-items:center;gap:4px;
   padding:9px 18px 7px;background:none;border:none;border-bottom:3px solid transparent;
   font-family:inherit;font-size:12.5px;font-weight:600;color:var(--tinta3);
-  cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s,background .15s}
+  cursor:pointer;white-space:nowrap;transition:color .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),border-color .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),background .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .aba svg{width:18px;height:18px;opacity:.85}
 .aba:hover{color:var(--acento);background:var(--superficie2)}
 .aba.ativa{color:var(--acento);border-bottom-color:var(--acento)}
@@ -130,7 +130,7 @@ body.deagro-sem-abas .abas{display:none}
 .filtros-acoes .btn{flex:1}
 .btn{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;
   cursor:pointer;border:1px solid var(--linha-t);background:var(--superficie2);color:var(--tinta2);
-  transition:background .15s,color .15s}
+  transition:background .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),color .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .btn:hover{background:var(--grade);color:var(--tinta)}
 .filtro-resumo{font-size:11.5px;color:var(--tinta2);flex:none;width:100%;margin-top:2px}
 .filtro-resumo strong{color:var(--acento)}
@@ -147,7 +147,7 @@ body.deagro-sem-abas .abas{display:none}
 .multi-btn[aria-expanded="true"]{border-color:var(--verde2)}
 .multi-btn:focus-visible{outline:2px solid var(--verde2);outline-offset:1px}
 .multi-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.multi-btn svg{flex:none;width:14px;height:14px;transition:transform .15s}
+.multi-btn svg{flex:none;width:14px;height:14px;transition:transform .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .multi-btn[aria-expanded="true"] svg{transform:rotate(180deg)}
 .multi-lista{position:absolute;z-index:40;top:calc(100% + 4px);left:0;right:0;
   max-height:264px;overflow-y:auto;padding:6px;background:var(--superficie);
@@ -186,7 +186,7 @@ body.deagro-sem-abas .abas{display:none}
 .kpi{background:var(--superficie);border:1px solid var(--anel);border-radius:12px;padding:18px 15px;
   box-shadow:var(--sombra-p);border-left:4px solid var(--verde);display:block;
   text-decoration:none;color:inherit;text-align:left;font-family:inherit;width:100%;
-  transition:transform .15s,box-shadow .15s}
+  transition:transform .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),box-shadow .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 button.kpi{cursor:pointer;border-top:1px solid var(--anel);border-right:1px solid var(--anel);
   border-bottom:1px solid var(--anel)}
 button.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
@@ -257,7 +257,7 @@ button.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12
   background:var(--superficie2);border:1px solid var(--linha-t);border-radius:8px}
 .tipo-btn{width:27px;height:24px;display:inline-flex;align-items:center;justify-content:center;
   border:none;background:none;border-radius:6px;color:var(--tinta3);cursor:pointer;padding:0;
-  transition:background .15s,color .15s}
+  transition:background .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),color .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .tipo-btn svg{width:15px;height:15px;display:block}
 .tipo-btn:hover{background:var(--superficie);color:var(--tinta)}
 .tipo-btn.ativo{background:var(--acento-fundo);color:#fff}
@@ -307,7 +307,7 @@ table.dados th[data-ord]:focus-visible,
   text-overflow:ellipsis;white-space:nowrap}
 .barra-pista{display:block;min-width:0}
 .barra-fill{display:block;height:14px;border-radius:0 4px 4px 0;background:var(--s1);min-width:2px;
-  transition:width .35s cubic-bezier(.4,0,.2,1)}
+  transition:width .5s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .barra-val{font-size:12px;font-weight:600;color:var(--tinta);font-variant-numeric:tabular-nums;white-space:nowrap}
 .barra-val small{font-weight:400;color:var(--tinta3);margin-left:4px}
 
@@ -319,7 +319,7 @@ table.dados th[data-ord]:focus-visible,
   margin-bottom:4px;white-space:nowrap}
 .col-pista{flex:1;width:100%;display:flex;align-items:flex-end;min-height:0}
 .col-fill{width:100%;border-radius:4px 4px 0 0;min-height:2px;
-  transition:height .35s cubic-bezier(.4,0,.2,1)}
+  transition:height .5s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .col-rot{font-size:10.5px;color:var(--tinta2);margin-top:6px;max-width:100%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -344,7 +344,7 @@ table.dados th[data-ord]:focus-visible,
 .g-ponto{stroke:var(--superficie);stroke-width:2}
 .g-hit{fill:transparent}
 .g-cursor{stroke:var(--eixo);stroke-width:1;stroke-dasharray:3 3;visibility:hidden}
-.tooltip{position:absolute;z-index:20;pointer-events:none;opacity:0;transition:opacity .12s;
+.tooltip{position:absolute;z-index:20;pointer-events:none;opacity:0;transition:opacity .3s var(--mo-out,cubic-bezier(.22,1,.36,1));
   background:var(--superficie);border:1px solid var(--anel);border-radius:8px;padding:8px 10px;
   box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:12px;color:var(--tinta2);white-space:nowrap}
 .tooltip.on{opacity:1}
@@ -443,7 +443,7 @@ table.dados th[data-ord]{cursor:pointer;user-select:none;position:relative;
 table.dados th[data-ord]:hover{color:var(--tinta);background:var(--grade)}
 /* seta neutra só no hover/foco; a coluna que manda mostra a seta sempre */
 table.dados th[data-ord]::after{content:"↑";position:absolute;right:7px;top:50%;
-  transform:translateY(-50%);font-size:10px;opacity:0;transition:opacity .12s}
+  transform:translateY(-50%);font-size:10px;opacity:0;transition:opacity .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 table.dados th[data-ord]:hover::after,
 table.dados th[data-ord]:focus-visible::after{opacity:.45}
 table.dados th[data-ord].ord{color:var(--acento)}
@@ -471,7 +471,7 @@ a{color:var(--acento)}
 
 /* ----------------------------------------------- upload da planilha (admin) */
 .upload{border:2px dashed var(--linha-t);border-radius:12px;padding:26px 20px;text-align:center;
-  color:var(--tinta2);cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:14px}
+  color:var(--tinta2);cursor:pointer;transition:border-color .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),background .3s var(--mo-out,cubic-bezier(.22,1,.36,1));margin-bottom:14px}
 .upload:hover,.upload.sobre{border-color:var(--acento);background:var(--acento-suave)}
 .upload svg{width:34px;height:34px;color:var(--tinta3);margin-bottom:8px}
 .upload-tit{font-size:14px;font-weight:600;color:var(--tinta);margin:0 0 4px}
@@ -621,7 +621,7 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
 .relatorio-vis{display:flex;gap:0;border:1.5px solid var(--linha-t);border-radius:9px;overflow:hidden;flex:none}
 .relatorio-vis button{display:flex;align-items:center;gap:6px;padding:8px 14px;border:0;
   background:var(--superficie);color:var(--tinta2);font-family:inherit;font-size:12.5px;
-  font-weight:600;cursor:pointer;transition:background .15s,color .15s}
+  font-weight:600;cursor:pointer;transition:background .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),color .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .relatorio-vis button + button{border-left:1.5px solid var(--linha-t)}
 .relatorio-vis button svg{width:15px;height:15px}
 .relatorio-vis button:hover{background:var(--grade)}
@@ -639,7 +639,7 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
 
 .mun-card{background:var(--superficie);border:1.5px solid var(--anel);border-radius:14px;
   padding:16px 14px;cursor:pointer;text-align:left;font-family:inherit;
-  transition:transform .15s,box-shadow .15s,border-color .15s;
+  transition:transform .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),box-shadow .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),border-color .3s var(--mo-out,cubic-bezier(.22,1,.36,1));
   display:flex;flex-direction:column;gap:8px;min-height:130px;
   border-top:3px solid var(--acento);color:inherit}
 .mun-card:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(0,0,0,.13);border-color:var(--acento)}
@@ -742,7 +742,7 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
 .mapa-mec-topo .sub{margin:0 0 10px;font-size:13px;color:var(--tinta3)}
 #mapaMec{display:block;width:100%;max-height:64vh;margin:6px auto}
 #mapaMec path{fill:var(--grade);stroke:var(--superficie);stroke-width:1.5;
-  vector-effect:non-scaling-stroke;cursor:pointer;transition:fill .15s,opacity .15s}
+  vector-effect:non-scaling-stroke;cursor:pointer;transition:fill .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),opacity .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 #mapaMec path:hover,#mapaMec path:focus{opacity:.82;outline:none;stroke:var(--acento);stroke-width:2}
 #mapaMec path.selecionado{stroke:var(--acento);stroke-width:2.4}
 #mapaMec text{font:11px 'Segoe UI',Arial,sans-serif;fill:var(--tinta);pointer-events:none;

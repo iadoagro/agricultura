@@ -1,0 +1,159 @@
+/* Kit de movimento — adaptado do beUI (beui.dev/components/motion) para CSS puro.
+   Regras:
+   - usa as propriedades individuais `scale`/`translate`/`rotate`, que compõem com os
+     `transform` que as páginas já definem (nada briga com nada);
+   - o estado final das animações é `translate:none`, para nunca deixar um bloco de
+     contenção preso em elementos que têm filhos position:fixed;
+   - tudo que se move fica dentro de prefers-reduced-motion:no-preference. */
+:root{
+  --mo-spring:cubic-bezier(.2,.9,.3,1.25);
+  --mo-out:cubic-bezier(.22,1,.36,1);
+  --mo-in:cubic-bezier(.4,0,1,1);
+  interpolate-size:allow-keywords;
+}
+
+/* ============ 1. Base: transições padrão de peso zero (as das páginas vencem) ============ */
+:where(a,button,input,select,textarea,summary,label,tr,[role="tab"],[role="button"]){
+  transition:color .3s var(--mo-out),background-color .3s var(--mo-out),border-color .3s var(--mo-out),
+    box-shadow .35s var(--mo-out),opacity .3s var(--mo-out),outline-color .3s var(--mo-out),
+    outline-offset .3s var(--mo-out),scale .4s var(--mo-spring);
+}
+:where(button,a,[role="tab"],[role="button"],input,select,textarea):focus-visible{outline-offset:3px}
+
+@media (prefers-reduced-motion:no-preference){
+  html{scroll-behavior:smooth}
+
+  /* ---------- 2. Button / Checkbox / Radio: clique com mola ---------- */
+  button:not(:disabled),.btn,[role="button"],.aba,.card-link{transition-property:scale,color,background,background-color,border-color,box-shadow,opacity,transform,filter;transition-duration:.35s;transition-timing-function:var(--mo-out)}
+  button:not(:disabled):active,.btn:active,[role="button"]:active,.aba:active{scale:.965;transition-duration:.08s}
+  button:not(:disabled):not(:active),.btn:not(:active),.aba:not(:active){transition-timing-function:var(--mo-spring)}
+  .card-link:active .card{scale:.985}
+  input[type="checkbox"]:active,input[type="radio"]:active{scale:.8}
+
+  /* ---------- 3. Página: entra deslizando, sai deslizando ---------- */
+  body>*:not(script,style,link,template,[hidden],.mo-progress,.mo-tip,.login-shader,[class*="overlay"],[class*="backdrop"],[class*="modal"],[class*="toast"]){
+    animation:mo-page-in .6s var(--mo-out) backwards;
+  }
+  body>*:nth-child(2){animation-delay:.04s}
+  body>*:nth-child(3){animation-delay:.08s}
+  body>*:nth-child(4){animation-delay:.12s}
+  body>*:nth-child(n+5){animation-delay:.16s}
+  html.mo-saindo body>*:not(script,style,link,template,[hidden],.mo-progress,.mo-tip,.login-shader){
+    animation:mo-page-out .24s var(--mo-in) forwards;animation-delay:0s;
+  }
+
+  /* ---------- 4. Text Animation: títulos entram com blur ---------- */
+  header h1,.login-title{animation:mo-blur-in .8s var(--mo-out) .12s backwards}
+  header p,.login-eyebrow,.login-layout .admin-desc{animation:mo-blur-in .8s var(--mo-out) .26s backwards}
+
+  /* ---------- 5. Listas: entrada escalonada ---------- */
+  .cards .card-link{animation:mo-rise .65s var(--mo-out) backwards}
+  .cards .card-link:nth-child(2){animation-delay:.06s}
+  .cards .card-link:nth-child(3){animation-delay:.12s}
+  .cards .card-link:nth-child(4){animation-delay:.18s}
+  .cards .card-link:nth-child(5){animation-delay:.24s}
+  .cards .card-link:nth-child(6){animation-delay:.3s}
+  .cards .card-link:nth-child(n+7){animation-delay:.36s}
+  .kpi{animation:mo-rise .55s var(--mo-out) backwards}
+  .kpi:nth-child(2){animation-delay:.04s}
+  .kpi:nth-child(3){animation-delay:.08s}
+  .kpi:nth-child(4){animation-delay:.12s}
+  .kpi:nth-child(5){animation-delay:.16s}
+  .kpi:nth-child(n+6){animation-delay:.2s}
+  tbody tr:nth-child(-n+14){animation:mo-fade-rise .5s var(--mo-out) backwards}
+  tbody tr:nth-child(2){animation-delay:24ms}
+  tbody tr:nth-child(3){animation-delay:48ms}
+  tbody tr:nth-child(4){animation-delay:72ms}
+  tbody tr:nth-child(5){animation-delay:96ms}
+  tbody tr:nth-child(6){animation-delay:120ms}
+  tbody tr:nth-child(7){animation-delay:144ms}
+  tbody tr:nth-child(8){animation-delay:168ms}
+  tbody tr:nth-child(9){animation-delay:192ms}
+  tbody tr:nth-child(10){animation-delay:216ms}
+  tbody tr:nth-child(11){animation-delay:240ms}
+  tbody tr:nth-child(12){animation-delay:264ms}
+  tbody tr:nth-child(13){animation-delay:288ms}
+  tbody tr:nth-child(14){animation-delay:312ms}
+
+  /* ---------- 6. Tabs: conteúdo entra suave; o traço desliza (ver .mo-glide) ---------- */
+  .aba-conteudo.ativa,.conteudo-abas>.ativa{animation:mo-fade .45s var(--mo-out)}
+
+  /* ---------- 7. Input: tremida quando o formulário recusa ---------- */
+  .mo-shake{animation:mo-shake .42s cubic-bezier(.36,.07,.19,.97)}
+
+  /* ---------- 8. Toast: sobe com mola ---------- */
+  .toast{translate:0 16px;transition:opacity .4s var(--mo-out),translate .55s var(--mo-spring),transform .4s var(--mo-out)}
+  .toast.show{translate:none}
+  .toast-notificacao{animation-duration:.6s;animation-timing-function:var(--mo-spring)}
+
+  /* ---------- 9. Select: o painel desdobra do campo ---------- */
+  .select-busca-painel{animation:mo-drop .3s var(--mo-out) backwards;transform-origin:50% 0}
+}
+
+/* ---------- Scroll Animation: blocos aparecem conforme entram na tela ---------- */
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference){
+    .painel,.resultados-card,.mapa-mec-card,.mapa-mec-bloco{
+      animation:mo-reveal linear both;animation-timeline:view();animation-range:entry 0% entry 42%;
+    }
+  }
+}
+
+@media screen and (prefers-reduced-motion:no-preference){
+  /* Modal: fundo esmaece e o painel "pula" para dentro */
+  .admin-overlay.show,.qr-modal-backdrop.show,.relatorio-overlay.show,.pdf-overlay.open{animation:mo-fade .28s var(--mo-out)}
+  .admin-overlay.show>.admin-box,.qr-modal-backdrop.show>.qr-modal,.relatorio-overlay.show>.relatorio-modal{animation:mo-pop .42s var(--mo-spring)}
+}
+
+/* ---------- Tabs: traço deslizante (JS cria .mo-glide dentro do container) ---------- */
+.mo-glide-host{position:relative}
+.mo-glide-host .aba.ativa,.mo-glide-host .aba-el.ativa{border-bottom-color:transparent!important}
+.mo-glide{position:absolute;left:0;top:0;height:3px;width:0;border-radius:3px 3px 0 0;pointer-events:none;opacity:0;
+  transition:translate .55s var(--mo-spring),width .55s var(--mo-spring),background-color .35s var(--mo-out),opacity .25s}
+
+/* ---------- Scroll Animation: barra de progresso de leitura ---------- */
+.mo-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:3000;pointer-events:none;
+  background:linear-gradient(90deg,var(--verde2,#22c55e),var(--verde3,#4ade80));
+  transform-origin:0 50%;transform:scaleX(0);opacity:0;transition:opacity .25s,transform .14s linear}
+.mo-progress.on{opacity:1}
+
+/* ---------- Tooltip ---------- */
+.mo-tip{position:fixed;z-index:4000;left:0;top:0;max-width:min(320px,calc(100vw - 16px));pointer-events:none;
+  padding:8px 11px;border-radius:9px;background:rgba(15,23,42,.95);color:#f8fafc;
+  font:500 12px/1.45 'Segoe UI',system-ui,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28);
+  opacity:0;filter:blur(6px);scale:.96;transform-origin:0 0;
+  transition:opacity .14s ease,filter .14s ease,scale .18s var(--mo-spring)}
+.mo-tip.on{opacity:1;filter:blur(0);scale:1}
+.mo-tip-tit{font-weight:700;font-size:13px;margin-bottom:4px}
+.mo-tip-l{display:flex;align-items:center;gap:7px;line-height:1.75;white-space:nowrap}
+.mo-tip-l b{margin-left:auto;padding-left:16px;font-variant-numeric:tabular-nums}
+.mo-tip-l .ponto{flex:none;width:9px;height:9px;border-radius:50%;display:inline-block}
+.mo-tip-sub{margin-top:3px;padding-top:4px;border-top:1px solid rgba(255,255,255,.16);opacity:.78;font-size:11px}
+
+/* ---------- Loader (currentColor) ---------- */
+.mo-loader{display:inline-block;width:.95em;height:.95em;margin-right:.55em;vertical-align:-.13em;border-radius:50%;
+  border:2px solid currentColor;border-right-color:transparent;opacity:.75;animation:mo-spin .75s linear infinite}
+
+@keyframes mo-page-in{from{opacity:0;translate:0 22px}to{opacity:1;translate:none}}
+@keyframes mo-page-out{to{opacity:0;translate:-26px 0}}
+@keyframes mo-blur-in{from{opacity:0;filter:blur(10px);translate:0 10px}to{opacity:1;filter:blur(0);translate:none}}
+@keyframes mo-rise{from{opacity:0;translate:0 16px}to{opacity:1;translate:none}}
+@keyframes mo-fade-rise{from{opacity:0;translate:0 8px}to{opacity:1;translate:none}}
+@keyframes mo-fade{from{opacity:0}to{opacity:1}}
+@keyframes mo-pop{from{opacity:0;scale:.94;translate:0 10px}to{opacity:1;scale:none;translate:none}}
+@keyframes mo-drop{from{opacity:0;scale:.97;translate:0 -8px}to{opacity:1;scale:none;translate:none}}
+@keyframes mo-reveal{from{opacity:0;translate:0 28px;scale:.985}to{opacity:1;translate:none;scale:none}}
+@keyframes mo-shake{10%,90%{translate:-2px 0}20%,80%{translate:4px 0}30%,50%,70%{translate:-7px 0}40%,60%{translate:7px 0}}
+@keyframes mo-spin{to{rotate:360deg}}
+@keyframes mo-pulse{50%{opacity:.25}}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important}
+  .mo-tip{filter:none;scale:1}
+  .mo-loader{border-right-color:currentColor;animation:mo-pulse 1.4s ease-in-out infinite}
+}
+@media print{
+  .mo-progress,.mo-tip,.mo-glide{display:none!important}
+  *,*::before,*::after{animation:none!important;transition:none!important;translate:none!important}
+}

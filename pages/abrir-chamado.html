@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abrir chamado | Suporte de TI</title>
+<meta name="description" content="Abra um chamado para a equipe de Tecnologia da Informação e acompanhe o atendimento.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/chamados-comum.css?v=2026091972">
+<link rel="stylesheet" href="../css/chamados-publico.css?v=2026091972">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
+</head>
+<body class="ch-pagina-publica ch-pagina-abrir">
+<header class="ch-topo">
+  <div class="ch-topo-in">
+    <a class="ch-marca" href="abrir-chamado.html">
+      <span class="ch-marca-icone" id="marcaIcone"></span>
+      <span><b>Central de Chamados</b><small>Suporte de Tecnologia da Informação</small></span>
+    </a>
+    <nav aria-label="Navegação">
+      <a href="abrir-chamado.html" class="ativo">Abrir chamado</a>
+      <a href="acompanhar-chamado.html">Acompanhar chamados</a>
+      <a href="admin-login.html" class="sutil">Área da equipe</a>
+    </nav>
+  </div>
+</header>
+
+<main class="ch-publico">
+  <section class="ch-hero">
+    <h1>Como podemos ajudar?</h1>
+    <p>Conte o que está acontecendo. A equipe de TI recebe na hora e você acompanha na lista de chamados.</p>
+  </section>
+
+  <div class="ch-faixa-demo" id="faixaDemo" hidden>
+    <b>Modo demonstração.</b> O banco de dados ainda não está configurado: os chamados ficam salvos só neste navegador.
+  </div>
+
+  <form class="ch-cartao ch-form-tela" id="formChamado" novalidate>
+    <div class="ch-form-grade">
+      <section class="ch-secao ch-quem">
+        <h2 class="ch-secao-tit"><span class="ch-passo">1</span> Quem é você?</h2>
+        <p class="ch-dica-org">Escolha onde você trabalha: um setor, um departamento ou uma diretoria.</p>
+        <div class="ch-grade1">
+          <div class="ch-campo" data-campo="nome">
+            <label for="nome">Nome</label>
+            <input id="nome" name="nome" type="text" maxlength="100" autocomplete="name">
+            <span class="ch-erro-msg" role="alert"></span>
+          </div>
+          <div class="ch-campo" data-campo="setor"><div id="campo-setor"></div><span class="ch-erro-msg" role="alert"></span></div>
+          <div class="ch-campo" data-campo="departamento"><div id="campo-departamento"></div><span class="ch-erro-msg" role="alert"></span></div>
+          <div class="ch-campo" data-campo="diretoria"><div id="campo-diretoria"></div><span class="ch-erro-msg" role="alert"></span></div>
+        </div>
+      </section>
+
+      <div class="ch-problema-col">
+        <section class="ch-secao" data-campo="problema">
+          <h2 class="ch-secao-tit"><span class="ch-passo">2</span> Qual é o problema?</h2>
+          <div id="problemas" role="radiogroup" aria-label="Tipo de problema"></div>
+          <span class="ch-erro-msg" role="alert"></span>
+
+          <div class="ch-impacto-bloco">
+            <span class="ch-rotulo">O quanto isso atrapalha o seu trabalho?</span>
+            <div class="ch-impactos" role="radiogroup" aria-label="Impacto no trabalho">
+              <label class="ch-imp"><input type="radio" name="prioridade" value="alta"><span class="ch-imp-caixa"><b>Estou parado</b><small>Não consigo trabalhar até resolver.</small></span></label>
+              <label class="ch-imp"><input type="radio" name="prioridade" value="media" checked><span class="ch-imp-caixa"><b>Com dificuldade</b><small>Consigo continuar, mas atrapalha.</small></span></label>
+              <label class="ch-imp"><input type="radio" name="prioridade" value="baixa"><span class="ch-imp-caixa"><b>Sem urgência</b><small>Dúvida, pedido ou melhoria.</small></span></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="ch-secao ch-sec-desc" data-campo="descricao">
+          <h2 class="ch-secao-tit"><span class="ch-passo">3</span> Descreva o que aconteceu</h2>
+          <div class="ch-campo">
+            <label class="ch-sr" for="descricao">Descrição do problema</label>
+            <textarea id="descricao" name="descricao" maxlength="4000" placeholder="Quando começou, o que você estava fazendo, mensagem de erro que apareceu, o que já tentou… Não escreva senhas."></textarea>
+            <span class="ch-contador" id="contador">0 / 4000</span>
+            <span class="ch-erro-msg" role="alert"></span>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="ch-armadilha" aria-hidden="true"><label>Não preencha este campo <input type="text" name="site" id="site" tabindex="-1" autocomplete="off"></label></div>
+
+    <div class="ch-acoes">
+      <p>Depois de enviar, você vai para a lista de chamados. Os chamados ficam visíveis para todos os setores.</p>
+      <button class="ch-btn primario" type="submit" id="enviar">Enviar chamado</button>
+    </div>
+  </form>
+</main>
+<footer class="ch-rodape">Suporte de Tecnologia da Informação · Em caso de emergência, procure a equipe de TI pessoalmente.</footer>
+
+<script src="../js/chamados-dados.js?v=2026091972"></script>
+<script src="../js/chamados-ui.js?v=2026091972"></script>
+<script src="../js/abrir-chamado.js?v=2026091972"></script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
+</body>
+</html>

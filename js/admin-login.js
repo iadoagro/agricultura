@@ -1,6 +1,7 @@
 (function () {
   'use strict';
   var auth = window.ADMIN_AUTH;
+  try { sessionStorage.removeItem('seagri_home_direto'); } catch (e) {}   // novo login: a home pode levar direto ao módulo único
   var msg = document.getElementById('adminMsg');
   var linkParaCadastro = document.getElementById('linkParaCadastro');
   var linkParaEntrar = document.getElementById('linkParaEntrar');

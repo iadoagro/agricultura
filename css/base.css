@@ -20,7 +20,7 @@ body{font-family:"Roboto","Segoe UI",Arial,sans-serif;background:#fafafa;color:v
 .voltar-btn{position:absolute;top:12px;left:16px;display:inline-flex;align-items:center;gap:6px;
   padding:7px 12px;background:rgba(255,255,255,.15);color:#fff;text-decoration:none;
   border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:12px;font-weight:600;
-  transition:background .2s}
+  transition:background .38s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .voltar-btn:hover{background:rgba(255,255,255,.28)}
 @media(max-width:768px){
   .voltar-btn{font-size:11px;padding:6px 10px;top:10px;left:12px}

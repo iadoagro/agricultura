@@ -6,31 +6,47 @@
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026091502">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091971">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 </head>
 <body>
-<header><h1>SISTEMA</h1><p>Usuários</p></header>
-<main class="admin-auth admin-auth-larga">
-  <div class="admin-card">
-    <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável.</p>
-    <div id="painelUsuarios">
-      <form id="formNovo">
-        <p class="admin-desc">Cadastrar um novo usuário já aprovado (não passa pela fila de pendentes). A senha padrão é 123456; a pessoa é obrigada a trocá-la no primeiro acesso.</p>
-        <label for="novoNome">Nome</label>
-        <input id="novoNome" type="text" autocomplete="off" required>
-        <label for="novoSobrenome">Sobrenome</label>
-        <input id="novoSobrenome" type="text" autocomplete="off" required>
-        <label for="novoLogin">Login (gerado automaticamente)</label>
-        <input id="novoLogin" type="text" disabled>
-        <button class="admin-submit" type="submit">Cadastrar usuário</button>
-      </form>
+<header><h1>SISTEMA</h1><p>Cadastro e aprovação de usuários</p></header>
+<main class="permissoes-layout">
+  <section class="permissoes-cabecalho">
+    <div><span class="permissoes-sobretitulo">ADMINISTRAÇÃO</span><h2>Usuários</h2><p>Cadastre pessoas, aprove pedidos de acesso e ative, desative ou exclua contas.</p></div>
+    <span id="usuariosContagem" class="permissoes-contagem"></span>
+  </section>
+
+  <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável.</p>
+
+  <div id="painelUsuarios">
+    <form id="formNovo" class="permissoes-novo" autocomplete="off">
+      <div class="permissoes-novo-tit">
+        <strong>Cadastrar novo usuário</strong>
+        <span>Já entra aprovado (não passa pela fila de pendentes). A senha padrão é 123456 e a pessoa é obrigada a trocá-la no primeiro acesso.</span>
+      </div>
+      <label><span>Nome</span><input id="novoNome" type="text" autocomplete="off" required></label>
+      <label><span>Sobrenome</span><input id="novoSobrenome" type="text" autocomplete="off" required></label>
+      <label><span>Login <em>(gerado automaticamente)</em></span><input id="novoLogin" type="text" disabled></label>
+      <button class="permissoes-salvar permissoes-cadastrar" type="submit">Cadastrar usuário</button>
+    </form>
+
+    <div class="permissoes-filtros">
+      <label>Buscar usuário<input id="usuariosBusca" type="search" placeholder="Nome ou login"></label>
+      <label>Situação<select id="usuariosSituacao"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="aprovado">Aprovados</option><option value="recusado">Recusados</option></select></label>
+    </div>
+
+    <p class="admin-msg" id="adminMsg" role="status"></p>
+
+    <div class="permissoes-tabela usuarios-tabela">
+      <div class="permissoes-colunas"><span>USUÁRIO</span><span>SITUAÇÃO</span><span>AÇÕES</span></div>
       <ul class="lista-solicitacoes" id="listaUsuarios"></ul>
     </div>
-    <p class="admin-msg" id="adminMsg" role="status"></p>
   </div>
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026091405"></script>
-<script src="../js/admin-usuarios.js?v=2026091404"></script>
+<script src="../js/admin-usuarios.js?v=2026091970"></script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
 </body>
 </html>

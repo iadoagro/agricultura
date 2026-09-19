@@ -6,9 +6,11 @@
 <title>Entrar | Sistema</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026091503">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026091901">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 </head>
 <body class="login-page">
+<div class="login-shader" id="loginShader" aria-hidden="true"></div>
 <main class="admin-auth login-layout">
   <div class="admin-card">
     <div id="painelStatus" hidden>
@@ -41,11 +43,15 @@
         <p class="admin-troca">Já tem conta? <a href="#" id="linkParaEntrar">Entrar</a></p>
       </form>
     </div>
+    <p class="admin-troca login-suporte">Precisa de suporte de TI? <a href="abrir-chamado.html">Abrir chamado</a> &middot; <a href="acompanhar-chamado.html">Acompanhar</a></p>
     <p class="admin-msg" id="adminMsg" role="status"></p>
   </div>
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026091404"></script>
-<script src="../js/admin-login.js?v=2026091501"></script>
+<script src="../js/shader-login.js?v=2026091901"></script>
+<script>if(typeof montarShaderBackground==="function"){try{montarShaderBackground(document.getElementById("loginShader"),{colors:["#dbeafe","#2563eb","#1e3a8a","#60a5fa"],speed:0.4,distortion:0.8,swirl:0.2});}catch(e){}}</script>
+<script src="../js/admin-login.js?v=2026091950"></script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
 </body>
 </html>
