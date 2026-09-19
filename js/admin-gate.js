@@ -12,6 +12,7 @@
     'portarias.html': 'portarias',
     'organograma.html': 'organograma',
     'chamados.html': 'chamados',
+    'cadastros-chamados.html': 'chamados',
     'contatos.html': 'contatos',
     'dashboards.html': 'dashboards',
     'dashboard.html': 'dashboards',

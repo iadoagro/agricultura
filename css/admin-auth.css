@@ -12,7 +12,7 @@ header p{font-size:13px;opacity:.9}
 .admin-card form label{display:block;margin:14px 0 6px;font-size:13px;font-weight:600;color:#333}
 .admin-card form input{width:100%;padding:10px 12px;border:1.5px solid var(--linha);border-radius:8px;font-size:14px;font:inherit}
 .admin-card form input:focus{outline:none;border-color:var(--verde2)}
-.admin-submit{margin-top:20px;width:100%;padding:11px;background:var(--verde2);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+.admin-submit{margin-top:20px;width:100%;padding:11px;background:var(--verde2);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .38s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .admin-submit:hover{background:var(--verde)}
 .admin-submit:disabled{opacity:.6;cursor:wait}
 .admin-msg{margin-top:14px;font-size:13px;line-height:1.5;min-height:18px;color:var(--verde)}
@@ -51,13 +51,15 @@ header p{font-size:13px;opacity:.9}
 /* Tela de acesso */
 .login-page{min-height:100vh;background:radial-gradient(ellipse at 12% 40%,#dbeafe 0,transparent 48%),#f5f8fd;display:flex;flex-direction:column;color:#172b4d}
 .login-page [hidden]{display:none!important}
-.login-layout{width:100%;max-width:420px;margin:auto;padding:32px 24px}
+.login-shader{position:fixed;inset:0;z-index:0}
+.login-shader canvas{display:block;width:100%;height:100%}
+.login-layout{position:relative;z-index:1;width:100%;max-width:420px;margin:auto;padding:32px 24px}
 .login-eyebrow{display:block;font-size:11px;font-weight:750;letter-spacing:.16em;color:#2563eb;margin-bottom:18px}
 .login-page .admin-card{padding:38px;border:1px solid #dce6f3;border-radius:22px;box-shadow:0 20px 60px #153e7510}
 .login-title{font-size:28px;letter-spacing:-.025em;margin-bottom:10px;color:#172b4d}
 .login-page .admin-desc{color:#62728a;line-height:1.7;margin-bottom:24px}
 .login-page .admin-card form label{color:#334766;margin-top:19px}
-.login-page .admin-card form input{min-height:48px;background:#fafcff;border-color:#d7e1ee;font-size:14px;color:#172b4d;transition:border-color .2s,box-shadow .2s}
+.login-page .admin-card form input{min-height:48px;background:#fafcff;border-color:#d7e1ee;font-size:14px;color:#172b4d;transition:border-color .38s var(--mo-out,cubic-bezier(.22,1,.36,1)),box-shadow .38s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .login-page .admin-card form input:focus{border-color:#2563eb;box-shadow:0 0 0 3px #2563eb20}
 .login-page .admin-card form input:disabled{background:#edf2f8;color:#62728a}
 .login-page input::placeholder{color:#78879b}
@@ -104,3 +106,29 @@ header p{font-size:13px;opacity:.9}
 .permissoes-layout .admin-msg:empty{display:none}
 @media(max-width:900px){.permissoes-colunas{display:none}.permissoes-tabela .lista-solicitacoes li{grid-template-columns:1fr;gap:12px}.permissoes-tabela .sol-paginas{grid-template-columns:repeat(2,minmax(120px,1fr))}}
 @media(max-width:520px){.permissoes-layout{width:calc(100% - 24px)}.permissoes-cabecalho{align-items:flex-start;flex-direction:column}.permissoes-filtros label,.permissoes-filtros input,.permissoes-filtros select{width:100%;min-width:0}.permissoes-tabela .sol-paginas{grid-template-columns:1fr 1fr}.permissoes-tabela .lista-solicitacoes li{padding:16px}}
+
+/* Usuários: mesmo padrão visual de "Permissões por usuário". */
+.permissoes-novo{display:grid;grid-template-columns:minmax(220px,1.4fr) repeat(3,minmax(160px,1fr)) auto;gap:16px;align-items:end;
+  padding:18px 22px;margin-bottom:20px;background:#fff;border:1px solid #dce5f1;border-radius:14px}
+.permissoes-novo-tit{display:grid;gap:4px;align-self:center}
+.permissoes-novo-tit strong{font-size:15px;color:#172b4d}
+.permissoes-novo-tit span{font-size:12.5px;line-height:1.45;color:#62728a}
+.permissoes-novo label{display:grid;gap:6px;color:#42536e;font-size:12px;font-weight:700}
+.permissoes-novo label em{font-style:normal;font-weight:500;color:#7b8ba3}
+.permissoes-novo input{min-height:42px;padding:8px 12px;border:1px solid #cbd8e9;border-radius:9px;background:#fff;font:inherit;font-size:14px;color:#172b4d;width:100%}
+.permissoes-novo input:focus{outline:2px solid #9ab9ed;outline-offset:1px}
+.permissoes-novo input:disabled{background:#f2f6fc;color:#62728a}
+.permissoes-cadastrar{min-height:42px;white-space:nowrap}
+.usuarios-tabela .permissoes-colunas,.usuarios-tabela .lista-solicitacoes li{grid-template-columns:minmax(220px,1.5fr) minmax(180px,1fr) minmax(420px,2.6fr)}
+.usuarios-tabela .sol-info{flex-direction:column;gap:0}
+.usuarios-tabela .sol-info strong{font-size:14px;color:#172b4d}
+.usuarios-tabela .sol-situacao{display:flex;flex-wrap:wrap;gap:6px}
+.usuarios-tabela .sol-acoes{justify-content:flex-end}
+.usuarios-tabela .sol-acoes button{min-height:34px;padding:6px 14px;border-radius:8px}
+.usuarios-tabela .lista-solicitacoes li.vazio{display:block;padding:34px 22px;text-align:center}
+@media(max-width:1180px){.permissoes-novo{grid-template-columns:1fr 1fr}.permissoes-novo-tit{grid-column:1/-1}.permissoes-cadastrar{justify-self:start}}
+@media(max-width:900px){.usuarios-tabela .sol-acoes{justify-content:flex-start}}
+@media(max-width:560px){.permissoes-novo{grid-template-columns:1fr;padding:16px}.permissoes-cadastrar{width:100%}}
+.permissoes-novo label span{white-space:nowrap}
+.usuarios-tabela .permissoes-colunas span:last-child{text-align:right}
+@media(max-width:900px){.usuarios-tabela .permissoes-colunas span:last-child{text-align:left}}

@@ -54,8 +54,7 @@
   flex:1 1 150px;
   display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--tinta);cursor:pointer;
   padding:7px 12px;border:1.5px solid var(--linha-t);border-radius:8px;background:var(--superficie);
-  transition:border-color .15s,background .15s
-}
+  transition:border-color .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),background .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .lanc-caixas label:hover{border-color:var(--acento-fundo)}
 .lanc-caixas input{width:16px;height:16px;flex:none;accent-color:var(--acento-fundo)}
 /* "Outra" toma a linha inteira: é a única com um campo de texto dentro,
@@ -73,8 +72,7 @@
   position:relative;display:flex;align-items:center;justify-content:center;gap:10px;
   padding:24px 16px;border:2px solid var(--linha-t);border-radius:12px;
   font-size:16px;font-weight:700;color:var(--tinta2);cursor:pointer;text-align:center;
-  background:var(--superficie);transition:border-color .15s,background .15s,color .15s
-}
+  background:var(--superficie);transition:border-color .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),background .3s var(--mo-out,cubic-bezier(.22,1,.36,1)),color .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .lanc-radio-grande input{position:absolute;opacity:0;width:0;height:0}
 .lanc-radio-grande:hover{border-color:var(--acento-fundo)}
 /* .lanc-marcado é alternada por JS (alternarSecoesServico em

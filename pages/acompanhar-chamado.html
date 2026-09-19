@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acompanhar chamados | Suporte de TI</title>
+<meta name="description" content="Lista de todos os chamados de suporte de TI, com a situação de cada um.">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/chamados-comum.css?v=2026091940">
+<link rel="stylesheet" href="../css/chamados.css?v=2026091940">
+<link rel="stylesheet" href="../css/chamados-publico.css?v=2026091940">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
+</head>
+<body class="ch-pagina-publica">
+<header class="ch-topo">
+  <div class="ch-topo-in">
+    <a class="ch-marca" href="abrir-chamado.html">
+      <span class="ch-marca-icone" id="marcaIcone"></span>
+      <span><b>Central de Chamados</b><small>Suporte de Tecnologia da Informação</small></span>
+    </a>
+    <nav aria-label="Navegação">
+      <a href="abrir-chamado.html">Abrir chamado</a>
+      <a href="acompanhar-chamado.html" class="ativo">Acompanhar chamados</a>
+      <a href="admin-login.html" class="sutil">Área da equipe</a>
+    </nav>
+  </div>
+</header>
+
+<main class="ch-publico">
+  <section class="ch-hero">
+    <h1>Acompanhe os chamados</h1>
+    <p>Todos os chamados de todos os setores, com a situação de cada um. Toque em um chamado para ver o histórico.</p>
+  </section>
+
+  <div class="ch-faixa-demo" id="faixaDemo" hidden>
+    <b>Modo demonstração.</b> O banco de dados ainda não está configurado: só aparecem chamados criados neste navegador.
+  </div>
+
+  <div class="ch-banner-novo" id="bannerNovo" hidden role="status"></div>
+
+  <section class="ch-kpis" id="kpis" aria-label="Resumo"></section>
+
+  <section class="ch-barra" aria-label="Filtros">
+    <div class="ch-busca-fila">
+      <span id="icoBusca"></span>
+      <input id="busca" type="search" placeholder="Buscar por nome, setor, problema ou número…" autocomplete="off" aria-label="Buscar chamados">
+    </div>
+    <div class="ch-seg" id="segSit" role="group" aria-label="Situação">
+      <button type="button" data-v="todos" class="on">Todos</button>
+      <button type="button" data-v="abertos">Em aberto</button>
+      <button type="button" data-v="resolvidos">Resolvidos</button>
+    </div>
+    <select id="fDiretoria" aria-label="Diretoria"><option value="">Toda diretoria</option></select>
+    <select id="fSetor" aria-label="Setor"><option value="">Todo setor</option></select>
+    <div class="ch-seg" id="segMeus" role="group" aria-label="De quem"><button type="button" data-v="todos" class="on">Todos</button><button type="button" data-v="meus">Meus chamados</button></div>
+    <button class="ch-btn pequeno" type="button" id="btnAtualizar"></button>
+  </section>
+  <p class="ch-status-fila" id="statusFila" role="status"></p>
+
+  <section class="ch-lista-cartao" aria-live="polite">
+    <div class="ch-tabela-rolagem"><table class="ch-pub-tabela" id="tabela"></table></div>
+  </section>
+</main>
+<footer class="ch-rodape">Suporte de Tecnologia da Informação · A lista se atualiza sozinha a cada 30 segundos. Os nomes aparecem abreviados.</footer>
+
+<div class="ch-fundo" id="fundo" hidden></div>
+<aside class="ch-gaveta" id="gaveta" aria-hidden="true" aria-label="Detalhe do chamado" tabindex="-1"></aside>
+
+<script src="../js/chamados-dados.js?v=2026091940"></script>
+<script src="../js/chamados-ui.js?v=2026091940"></script>
+<script src="../js/acompanhar-chamado.js?v=2026091940"></script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
+</body>
+</html>

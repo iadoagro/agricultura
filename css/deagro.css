@@ -23,7 +23,7 @@
 /* ------------------------------------------------------- filtro por nome */
 .campo-busca{width:100%;padding:8px 10px;border:1px solid var(--linha-t);border-radius:8px;
   background:var(--superficie);color:var(--tinta);font-family:inherit;font-size:13px;
-  outline:none;transition:border-color .15s}
+  outline:none;transition:border-color .3s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .campo-busca::placeholder{color:var(--tinta3)}
 .campo-busca:focus{border-color:var(--verde2)}
 .filtro-nota{font-size:10.5px;line-height:1.45;color:var(--tinta3);flex:none;width:100%;

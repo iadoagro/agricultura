@@ -9,21 +9,35 @@
   var novoNome = document.getElementById('novoNome');
   var novoSobrenome = document.getElementById('novoSobrenome');
   var novoLogin = document.getElementById('novoLogin');
+  var busca = document.getElementById('usuariosBusca');
+  var situacao = document.getElementById('usuariosSituacao');
+  var contagem = document.getElementById('usuariosContagem');
   var DOMINIO_USUARIO = '@sistema.local';
+  var linhas = [];
 
   function atualizarPreviaLogin() { novoLogin.value = auth.previewLogin(novoNome.value, novoSobrenome.value); }
   novoNome.addEventListener('input', atualizarPreviaLogin);
   novoSobrenome.addEventListener('input', atualizarPreviaLogin);
 
-  function escapar(s) { return s.replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }); }
+  function escapar(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  }); }
   function rotuloStatus(s) { return s === 'pendente' ? 'Pendente' : s === 'aprovado' ? 'Aprovado' : 'Recusado'; }
   function mostrarLogin(email) { return email.toLowerCase().endsWith(DOMINIO_USUARIO) ? email.slice(0, -DOMINIO_USUARIO.length) : email; }
 
-  function render(linhas) {
-    linhas = linhas.filter(function (l) { return l.email.toLowerCase() !== auth.RESPONSAVEL_EMAIL; });
+  function render() {
+    var termo = busca.value.trim().toLowerCase();
+    var filtro = situacao.value;
+    var visiveis = linhas.filter(function (l) {
+      return (!termo || l.email.toLowerCase().indexOf(termo) >= 0) && (!filtro || l.status === filtro);
+    });
+    contagem.textContent = visiveis.length + ' de ' + linhas.length + (linhas.length === 1 ? ' usuário' : ' usuários');
     lista.innerHTML = '';
-    if (!linhas.length) { lista.innerHTML = '<li class="vazio">Nenhum usuário cadastrado ainda.</li>'; return; }
-    linhas.slice().reverse().forEach(function (l) {
+    if (!visiveis.length) {
+      lista.innerHTML = '<li class="vazio">' + (linhas.length ? 'Nenhum usuário encontrado.' : 'Nenhum usuário cadastrado ainda.') + '</li>';
+      return;
+    }
+    visiveis.slice().reverse().forEach(function (l) {
       var li = document.createElement('li');
       var ativo = l.ativo !== false;
       var botoes = [];
@@ -40,10 +54,10 @@
       botoes.push('<button type="button" class="editar" data-acao="editar">Editar login/e-mail</button>');
       botoes.push('<button type="button" class="excluir" data-acao="excluir">Excluir</button>');
       li.innerHTML =
-        '<div class="sol-info"><strong>' + escapar(mostrarLogin(l.email)) + '</strong>' +
-        '<span><span class="sol-status ' + l.status + '">' + rotuloStatus(l.status) + '</span> ' +
-        '<span class="sol-status ' + (ativo ? 'ativo' : 'inativo') + '">' + (ativo ? 'Ativo' : 'Desativado') + '</span></span></div>' +
-        '<div class="sol-acoes" data-id="' + l.id + '" data-email="' + escapar(l.email) + '">' + botoes.join('') + '</div>';
+        '<div class="sol-info"><strong>' + escapar(mostrarLogin(l.email)) + '</strong></div>' +
+        '<div class="sol-situacao"><span class="sol-status ' + escapar(l.status) + '">' + rotuloStatus(l.status) + '</span>' +
+        '<span class="sol-status ' + (ativo ? 'ativo' : 'inativo') + '">' + (ativo ? 'Ativo' : 'Desativado') + '</span></div>' +
+        '<div class="sol-acoes" data-id="' + escapar(l.id) + '" data-email="' + escapar(l.email) + '">' + botoes.join('') + '</div>';
       lista.appendChild(li);
     });
     lista.querySelectorAll('.sol-acoes').forEach(function (bloco) {
@@ -84,7 +98,7 @@
 
   formNovo.addEventListener('submit', function (e) {
     e.preventDefault();
-    var botao = formNovo.querySelector('button'); botao.disabled = true;
+    var botao = formNovo.querySelector('button[type="submit"]'); botao.disabled = true;
     msg.textContent = 'Aguarde…'; msg.className = 'admin-msg';
     var nome = novoNome.value.trim();
     var sobrenome = novoSobrenome.value.trim();
@@ -99,12 +113,19 @@
   });
 
   function carregar() {
-    auth.listarSolicitacoes().then(render).catch(function (e) { msg.textContent = e.message; msg.className = 'admin-msg erro'; });
+    auth.listarSolicitacoes().then(function (dados) {
+      linhas = dados.filter(function (l) { return l.email.toLowerCase() !== auth.RESPONSAVEL_EMAIL; });
+      render();
+    }).catch(function (e) { msg.textContent = e.message; msg.className = 'admin-msg erro'; });
   }
+
+  busca.addEventListener('input', render);
+  situacao.addEventListener('change', render);
 
   if (!auth || !auth.online || auth.papel() !== 'responsavel') {
     aviso.hidden = false;
     painel.hidden = true;
+    contagem.hidden = true;
   } else {
     carregar();
   }

@@ -3,18 +3,18 @@ body{min-height:100vh;display:flex;flex-direction:column}
 header{position:relative;background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:20px 32px;text-align:center;box-shadow:0 4px 12px rgba(27,55,94,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center}
 header h1{font-size:22px;font-weight:500;margin:0 0 4px}
 header p{font-size:12px;opacity:.9;margin:0}
-.admin-login-btn{position:absolute;top:12px;right:16px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s;max-width:calc(100% - 100px)}
+.admin-login-btn{position:absolute;top:12px;right:16px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background .38s var(--mo-out,cubic-bezier(.22,1,.36,1));max-width:calc(100% - 100px)}
 .admin-login-btn:hover{background:rgba(255,255,255,.28)}
 .admin-login-btn.logado{background:#256dd3;border-color:#1a56ab}
 .container{flex:1;display:flex;justify-content:center;align-items:center;padding:40px clamp(24px,5vw,72px)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;width:100%}
 .card-link{text-decoration:none;color:inherit;display:block}
-.card{background:#fff;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:2px solid transparent;transition:all .3s ease;height:100%}
+.card{background:#fff;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:2px solid transparent;transition:all .5s var(--mo-out,cubic-bezier(.22,1,.36,1));height:100%}
 .card:hover{transform:translateY(-6px);box-shadow:0 8px 32px rgba(27,55,94,0.15);border-color:var(--verde2)}
 .card-icon{font-size:48px;margin-bottom:16px;display:block}
 .card h2{font-size:22px;font-weight:600;color:var(--verde);margin:0 0 12px}
 .card p{font-size:14px;color:#666;line-height:1.6;margin:0}
-.card .badge{display:inline-block;margin-top:16px;padding:8px 20px;background:var(--verde);color:#fff;border-radius:8px;font-size:13px;font-weight:600;transition:background .2s}
+.card .badge{display:inline-block;margin-top:16px;padding:8px 20px;background:var(--verde);color:#fff;border-radius:8px;font-size:13px;font-weight:600;transition:background .38s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .card:hover .badge{background:var(--verde2)}
 footer{padding:20px 32px;font-size:12px;color:#999;text-align:center;border-top:1px solid var(--linha)}
 @media(max-width:768px){
@@ -34,3 +34,16 @@ footer{padding:20px 32px;font-size:12px;color:#999;text-align:center;border-top:
   .container{padding:20px 12px}
 }
 .card-link[hidden]{display:none!important}
+/* Inclinação 3D (js/tilt-card.js): o JS controla o transform, o CSS só suaviza o resto */
+.card.tilt{position:relative;overflow:hidden;transition:box-shadow .5s var(--mo-out,cubic-bezier(.22,1,.36,1)),border-color .5s var(--mo-out,cubic-bezier(.22,1,.36,1));will-change:transform}
+.card.tilt:hover{transform:none}
+/* Ícone dos módulos da home: SVG de traço numa ficha com gradiente e brilho interno */
+.card-icone{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 18px;border-radius:18px;color:#fff;
+  background:linear-gradient(145deg,var(--verde2) 0%,var(--verde) 100%);
+  box-shadow:0 12px 22px -10px rgba(21,62,117,.65),inset 0 1px 0 rgba(255,255,255,.3),inset 0 -10px 16px rgba(0,0,0,.14);
+  transition:scale .5s var(--mo-spring,cubic-bezier(.2,.9,.3,1.25)),rotate .5s var(--mo-spring,cubic-bezier(.2,.9,.3,1.25)),box-shadow .4s var(--mo-out,cubic-bezier(.22,1,.36,1))}
+.card-icone svg{width:30px;height:30px;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.28))}
+.card-icone.admin{background:linear-gradient(145deg,#475569 0%,#1e293b 100%);box-shadow:0 12px 22px -10px rgba(15,23,42,.7),inset 0 1px 0 rgba(255,255,255,.22),inset 0 -10px 16px rgba(0,0,0,.2)}
+.card:hover .card-icone{scale:1.09;rotate:-4deg}
+@media(max-width:768px){.card-icone{width:52px;height:52px;border-radius:15px;margin-bottom:12px}.card-icone svg{width:25px;height:25px}}
+.tilt-glare{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .38s var(--mo-out,cubic-bezier(.22,1,.36,1));mix-blend-mode:soft-light}

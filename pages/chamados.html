@@ -3,664 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SISTEMA</title>
+<title>Chamados | Fila de atendimento</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026091404"></script>
 <script src="../js/admin-gate.js?v=2026091402"></script>
 <meta property="og:title" content="Chamados">
-<meta property="og:description" content="Sistema de chamados de lotação e habilitação de assinatura.">
-<meta property="og:type" content="website">
+<meta property="og:description" content="Fila de atendimento de chamados da equipe de Tecnologia da Informação.">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/chamados.css?v=2026091501">
+<link rel="stylesheet" href="../css/chamados-comum.css?v=2026091930">
+<link rel="stylesheet" href="../css/chamados.css?v=2026091930">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 </head>
-<body>
-<header>
+<body class="ch-fila-pagina">
+<header class="ch-cab">
   <a class="voltar-btn" href="index.html">&#8592; In&iacute;cio</a>
-  <h1>SISTEMA</h1>
+  <h1>Central de Chamados</h1>
+  <p>Fila de atendimento · Tecnologia da Informação</p>
 </header>
 
-<div class="wrap">
-  <div class="meta">
-    <div class="card"><b>Total de portarias:</b> 28 (n&ordm; 192 a 220)</div>
-    <div class="card"><b>Data das portarias:</b> 19 de junho de 2026</div>
-    <div class="card"><b>Publica&ccedil;&atilde;o:</b> 23 de junho de 2026</div>
-    <div class="card"><b>Autoridade:</b> Temyllis Lima da Silva &ndash; Secret&aacute;ria de Estado de Agricultura</div>
+<main class="ch-fila">
+  <div class="ch-faixa-demo" id="faixaDemo" hidden>
+    <b>Modo demonstração.</b> O banco de dados ainda não está configurado: os chamados ficam salvos só neste navegador.
+    <button class="ch-btn pequeno" type="button" id="btnDemo">Criar chamados de exemplo</button>
   </div>
 
-  <div class="tools">
-    <div class="progresso-container">
-      <div class="progresso-titulo">
-        <span>Progresso: <strong id="progresso-texto">0/28</strong></span>
-        <span id="progresso-percentual">0%</span>
-      </div>
-      <div class="progresso-barra">
-        <div class="progresso-fill" id="progresso-fill"></div>
-      </div>
+  <section class="ch-kpis" id="kpis" aria-label="Resumo da fila"></section>
+
+  <section class="ch-barra" aria-label="Filtros">
+    <div class="ch-busca-fila">
+      <span id="icoBusca"></span>
+      <input id="busca" type="search" placeholder="Buscar por assunto, código, nome ou setor…" autocomplete="off" aria-label="Buscar chamados">
     </div>
-    <input id="busca" type="text" placeholder="Filtrar por nome, unidade ou n&uacute;mero da portaria...">
-    <button id="limparProgresso" class="btn-limpar-progresso">Limpar Progresso</button>
-  </div>
-
-  <table id="tabela">
-    <thead>
-      <tr>
-        <th>Arquivo</th>
-        <th>Texto da solicita&ccedil;&atilde;o</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-
-  <h2 class="secao-titulo">Acesso a Setores Subordinados &ndash; Chefes de Departamento/Divis&atilde;o</h2>
-  <p class="secao-desc">Solicita&ccedil;&otilde;es adicionais para que chefes de Departamento e/ou Divis&atilde;o tenham acesso aos setores (Divis&otilde;es e/ou N&uacute;cleos) subordinados a eles, conforme o encadeamento da Portaria n&ordm; 187/2026. Apenas chefias com setores subordinados constam nesta se&ccedil;&atilde;o.</p>
-
-  <div class="tools">
-    <div class="progresso-container">
-      <div class="progresso-titulo">
-        <span>Progresso: <strong id="progresso-texto2">0/7</strong></span>
-        <span id="progresso-percentual2">0%</span>
-      </div>
-      <div class="progresso-barra">
-        <div class="progresso-fill" id="progresso-fill2"></div>
-      </div>
+    <div class="ch-seg" id="segStatus" role="group" aria-label="Situação">
+      <button type="button" data-v="ativos" class="on">Em aberto</button>
+      <button type="button" data-v="resolvidos">Encerrados</button>
+      <button type="button" data-v="todos">Todos</button>
     </div>
-    <input id="busca2" type="text" placeholder="Filtrar por nome, unidade ou n&uacute;mero da portaria...">
-    <button id="limparProgresso2" class="btn-limpar-progresso">Limpar Progresso</button>
-  </div>
-
-  <table id="tabela2">
-    <thead>
-      <tr>
-        <th>Chefia</th>
-        <th>Texto da solicita&ccedil;&atilde;o</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-
-  <h2 class="secao-titulo">Lota&ccedil;&atilde;o de Usu&aacute;rio</h2>
-  <p class="secao-desc">Solicita&ccedil;&otilde;es de adi&ccedil;&atilde;o de setor de lota&ccedil;&atilde;o para servidores, mantendo o setor de lota&ccedil;&atilde;o atual.</p>
-
-  <div class="tools">
-    <div class="progresso-container">
-      <div class="progresso-titulo">
-        <span>Progresso: <strong id="progresso-texto3">0/10</strong></span>
-        <span id="progresso-percentual3">0%</span>
-      </div>
-      <div class="progresso-barra">
-        <div class="progresso-fill" id="progresso-fill3"></div>
-      </div>
+    <select id="fPrioridade" aria-label="Prioridade"><option value="">Toda prioridade</option></select>
+    <select id="fCategoria" aria-label="Categoria"><option value="">Toda categoria</option></select>
+    <select id="fDiretoria" aria-label="Diretoria"><option value="">Toda diretoria</option></select>
+    <select id="fResp" aria-label="Responsável">
+      <option value="">Qualquer responsável</option>
+      <option value="__meus">Atribuídos a mim</option>
+      <option value="__sem">Sem responsável</option>
+    </select>
+    <select id="fOrdem" aria-label="Ordem">
+      <option value="urgencia">Mais urgentes</option>
+      <option value="recentes">Mais recentes</option>
+      <option value="antigos">Mais antigos</option>
+    </select>
+    <div class="ch-seg icones" id="segVisao" role="group" aria-label="Visualização">
+      <button type="button" data-v="lista" class="on" aria-label="Lista" data-tip="Lista"></button>
+      <button type="button" data-v="quadro" aria-label="Quadro" data-tip="Quadro por situação"></button>
     </div>
-    <input id="busca3" type="text" placeholder="Filtrar por nome ou setor...">
-    <button id="limparProgresso3" class="btn-limpar-progresso">Limpar Progresso</button>
-  </div>
-
-  <table id="tabela3">
-    <thead>
-      <tr>
-        <th>Servidor</th>
-        <th>Texto da solicita&ccedil;&atilde;o</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-</div>
-<script>
-const dados = [
- {n:"192", arq:"Portaria 192 - Dionisio Ferreira do Vale Neto.pdf", orig:"[03]-0021487054_Publicacao.pdf", nome:"Dionisio Ferreira do Vale Neto", chefia:"Chefe da Assessoria de Comunicação – ASCOM"},
- {n:"193", arq:"Portaria 193 - Heloneyda Marques de Oliveira.pdf", orig:"[05]-0021487149_Publicacao.pdf", nome:"Heloneyda Marques de Oliveira", chefia:"Chefe do Departamento de Orçamento e Finanças – DEOF"},
- {n:"194", arq:"Portaria 194 - Karin Gomes Barlatti.pdf", orig:"[07]-0021487244_Publicacao.pdf", nome:"Karin Gomes Barlatti", chefia:"Chefe da Divisão de Finanças – DIF"},
- {n:"195", arq:"Portaria 195 - Camila de Melo Pires Arruda Oliveira.pdf", orig:"[09]-0021487390_Publicacao.pdf", nome:"Camila de Melo Pires Arruda Oliveira", chefia:"Chefe da Divisão de Contabilidade – DIC"},
- {n:"196", arq:"Portaria 196 - Igor Honorato Leduino da Silva.pdf", orig:"[11]-0021487550_Publicacao.pdf", nome:"Igor Honorato Leduino da Silva", chefia:"Chefe do Departamento Socioprodutivo e Segurança Alimentar – DESAN"},
- {n:"197", arq:"Portaria 197 - Ariane Gadelha dos Santos.pdf", orig:"[13]-0021487748_Publicacao.pdf", nome:"Ariane Gadelha dos Santos", chefia:"Chefe da Divisão de Inclusão Socioprodutiva – DIIS"},
- {n:"198", arq:"Portaria 198 - Antonio Jose Pereira da Silva.pdf", orig:"[15]-0021487877_Publicacao.pdf", nome:"Antônio José Pereira da Silva", chefia:"Chefe do Núcleo de Apoio Logístico – NAP"},
- {n:"199", arq:"Portaria 199 - Maria da Conceicao Almeida.pdf", orig:"[17]-0021487975_Publicacao.pdf", nome:"Maria da Conceição Almeida", chefia:"Chefe do Núcleo de Cadastro da Agricultura Familiar – NCAF"},
- {n:"200", arq:"Portaria 200 - Carlos Antonio Pinheiro da Silva.pdf", orig:"[19]-0021488051_Publicacao.pdf", nome:"Carlos Antônio Pinheiro da Silva", chefia:"Chefe do Núcleo de Polos Agroflorestais – NPOLO"},
- {n:"201", arq:"Portaria 201 - Marcela Rocha da Silva.pdf", orig:"[21]-0021488125_Publicacao.pdf", nome:"Marcela Rocha da Silva", chefia:"Chefe da Divisão de Segurança Alimentar – DISAN"},
- {n:"202", arq:"Portaria 202 - Claiton Roniere Oliveira.pdf", orig:"[23]-0021488206_Publicacao.pdf", nome:"Claiton Roniere Oliveira", chefia:"Chefe do Núcleo do Programa de Aquisição de Alimentos – NPAA"},
- {n:"204", arq:"Portaria 204 - Jose Paulo dos Santos Silva.pdf", orig:"[25]-0021488298_Publicacao.pdf", nome:"José Paulo dos Santos Silva", chefia:"Chefe do Núcleo do Programa de Aquisição de Alimentos Indígena – NPAAI"},
- {n:"205", arq:"Portaria 205 - Yanna Thaumaturgo Motta.pdf", orig:"[27]-0021488361_Publicacao.pdf", nome:"Yanna Thaumaturgo Motta", chefia:"Chefe do Núcleo do Programa de Aquisição de Alimentos Extrativista – NPAAEX e Chefe da Divisão de Certificação de Produtos – DICP"},
- {n:"206", arq:"Portaria 206 - Michelma Neves de Lima.pdf", orig:"[29]-0021488488_Publicacao.pdf", nome:"Michelma Neves de Lima", chefia:"Chefe do Núcleo do Café – NUCAF"},
- {n:"207", arq:"Portaria 207 - Nilton Cesar de Souza.pdf", orig:"[31]-0021488659_Publicacao.pdf", nome:"Nilton César de Souza", chefia:"Chefe da Divisão de Agricultura – DIA e Chefe do Núcleo de Armazenamento e Silos – NUARS"},
- {n:"208", arq:"Portaria 208 - Wallace Santos Batista.pdf", orig:"[33]-0021488757_Publicacao.pdf", nome:"Wallace Santos Batista", chefia:"Chefe da Divisão de Aquicultura e Pesca – DIAPES e Chefe do Núcleo de Aquicultura e Pesca – NUAPES"},
- {n:"209", arq:"Portaria 209 - Bruna da Silva Diogo.pdf", orig:"[35]-0021489141_Publicacao.pdf", nome:"Bruna da Silva Diogo", chefia:"Chefe do Núcleo de Avicultura – NUAV"},
- {n:"210", arq:"Portaria 210 - Hidelk Dinarte Farias de Albuquerque.pdf", orig:"[37]-0021489250_Publicacao.pdf", nome:"Hidelk Dinarte Farias de Albuquerque", chefia:"Chefe do Núcleo Socioprodutivo Indígena – NUSPI"},
- {n:"211", arq:"Portaria 211 - Marcos Rocha da Silva.pdf", orig:"[39]-0021489376_Publicacao.pdf", nome:"Marcos Rocha da Silva", chefia:"Chefe do Núcleo do Cacau – NUCAC"},
- {n:"212", arq:"Portaria 212 - Rubia Mara Pessoa da Costa Lima.pdf", orig:"[41]-0021489429_Publicacao.pdf", nome:"Rúbia Mara Pessoa da Costa Lima", chefia:"Chefe do Núcleo do Mel – NUMEL"},
- {n:"213", arq:"Portaria 213 - Murilo de Araujo Matos Filho.pdf", orig:"[43]-0021489498_Publicacao.pdf", nome:"Murilo de Araújo Matos Filho", chefia:"Chefe do Núcleo da Mandioca – NUMAN"},
- {n:"214", arq:"Portaria 214 - Adriana da Silva Melo.pdf", orig:"[45]-0021489594_Publicacao.pdf", nome:"Adriana da Silva Melo", chefia:"Chefe do Núcleo da Olericultura – NUOLE"},
- {n:"215", arq:"Portaria 215 - Angelina Frota de Lima.pdf", orig:"[47]-0021489672_Publicacao.pdf", nome:"Angelina Frota de Lima", chefia:"Chefe do Núcleo de Extrativismo – NUEX"},
- {n:"216", arq:"Portaria 216 - Luan Sobral Dourado.pdf", orig:"[49]-0021489739_Publicacao.pdf", nome:"Luan Sobral Dourado", chefia:"Chefe do Departamento de Tecnologia – DET e Chefe da Divisão de Modernização Tecnológica – DIMT"},
- {n:"217", arq:"Portaria 217 - Marcos Vinicius Rodrigues Santana.pdf", orig:"[51]-0021489820_Publicacao.pdf", nome:"Marcos Vinicius Rodrigues Santana", chefia:"Chefe da Divisão de Programas – DIPRO e Chefe da Divisão de Pesquisa Agropecuária – DIPA"},
- {n:"218", arq:"Portaria 218 - Izaura Maria Cardoso Barros de Sa.pdf", orig:"[53]-0021489909_Publicacao.pdf", nome:"Izaura Maria Cardoso Barros de Sá", chefia:"Chefe da Divisão de Geoprocessamento e Telemetria – DIGT"},
- {n:"219", arq:"Portaria 219 - Gabriane Morais Vaz.pdf", orig:"[55]-0021490028_Publicacao.pdf", nome:"Gabriane Morais Vaz", chefia:"Chefe da Divisão de Sistema de Informação – DISOFT"},
- {n:"220", arq:"Portaria 220 - Ediu Carlos da Silva Junior.pdf", orig:"[57]-0021490099_Publicacao.pdf", nome:"Ediu Carlos da Silva Junior", chefia:"Chefe da Divisão de Transferência de Tecnologia – DITT"}
-];
-
-function gerarTitulo(d){
-  return "<b>Alteração de Cadastro de Usuario - Chefia "+d.nome+"</b>";
-}
-function gerarTituloPlano(d){
-  return "Alteração de Cadastro de Usuario - Chefia "+d.nome;
-}
-function gerarTextoMaior(d){
-  let setor = d.chefia.replace(/^Chefe\s+/i, "");
-  return "Solicito que o seguinte servidor <span class='u'>"+d.nome+"</span> seja lotado na seguinte unidade <span class='u'>"+setor+"</span> e que tenha permissão para assinar como <span class='u'>"+d.chefia+"</span>, de acordo com a Portaria nº "+d.n+", de 19 de junho de 2026  Conforme portaria em anexo Portaria "+d.n+" - "+d.nome;
-}
-function gerarTextoMaiorPlano(d){
-  let setor = d.chefia.replace(/^Chefe\s+/i, "");
-  return "Solicito que o seguinte servidor "+d.nome+" seja lotado na seguinte unidade "+setor+" e que tenha permissão para assinar como "+d.chefia+", de acordo com a Portaria nº "+d.n+", de 19 de junho de 2026  Conforme portaria em anexo Portaria "+d.n+" - "+d.nome;}
-const tbody = document.querySelector("#tabela tbody");
-
-const estadoSalvo = JSON.parse(localStorage.getItem("portariasCompletas") || "{}");
-const portarias = [];
-
-dados.forEach(d=>{
-  const tr=document.createElement("tr");
-  const nomeArquivoSemExtensao = d.arq.replace(/\.pdf$/i, "");
-
-  tr.innerHTML =
-    "<td class='arq'><span class='num'>Portaria nº "+d.n+"</span><br>"+
-      "<span class='status-badge pendente'>Pendente</span><br>"+
-      "<a href=\""+encodeURI("../portarias/portarias 2026/"+d.arq)+"\" target=\"_blank\">"+nomeArquivoSemExtensao+"</a></td>"+
-    "<td><div class='texto-container'>"+
-      "<div class='texto-titulo'>"+
-        "<div class='texto-titulo-text'>"+gerarTitulo(d)+"</div>"+
-        "<button class='copy copy-titulo'>Copiar texto</button>"+
-      "</div>"+
-      "<div class='texto-corpo'>"+
-        "<div class='texto-corpo-text'>"+gerarTextoMaior(d)+"</div>"+
-        "<button class='copy copy-corpo'>Copiar texto</button>"+
-      "</div>"+
-    "</div></td>";
-
-  const statusBadge = tr.querySelector(".status-badge");
-  const btnTitulo = tr.querySelector(".copy-titulo");
-  const btnCorpo = tr.querySelector(".copy-corpo");
-  const textoTitulo = tr.querySelector(".texto-titulo-text");
-  const textoCorpo = tr.querySelector(".texto-corpo-text");
-
-  if(estadoSalvo[d.n]){
-    statusBadge.textContent = "Concluído";
-    statusBadge.classList.remove("pendente");
-    statusBadge.classList.add("concluido");
-  }
-
-  const portaria = {
-    numero: d.n,
-    tr: tr,
-    statusBadge: statusBadge,
-    btnTitulo: btnTitulo,
-    btnCorpo: btnCorpo,
-    textoTitulo: textoTitulo,
-    textoCorpo: textoCorpo,
-    clicouTitulo: false,
-    clicouCorpo: false
-  };
-
-  portarias.push(portaria);
-  tbody.appendChild(tr);
-});
-
-function mostrarToast(){
-  const toastAntigo = document.querySelector(".toast-notificacao");
-  if(toastAntigo){
-    toastAntigo.classList.add("toast-saindo");
-    setTimeout(()=>toastAntigo.remove(),300);
-  }
-  const toast = document.createElement("div");
-  toast.className = "toast-notificacao";
-  toast.textContent = "✓ Copiado para a área de transferência!";
-  document.body.appendChild(toast);
-  setTimeout(()=>{
-    toast.classList.add("toast-saindo");
-    setTimeout(()=>toast.remove(),300);
-  },3000);
-}
-
-function abrirModalCopiaManual(texto){
-  let backdrop = document.getElementById("modal-copia-manual");
-  if(!backdrop){
-    backdrop = document.createElement("div");
-    backdrop.id = "modal-copia-manual";
-    backdrop.className = "modal-backdrop";
-    backdrop.innerHTML =
-      "<div class='modal-conteudo'>"+
-        "<button class='modal-fechar' id='modal-copia-fechar'>&times;</button>"+
-        "<div class='modal-titulo'>Copie o texto manualmente</div>"+
-        "<p>Não foi possível copiar automaticamente (restrição do navegador). Toque no campo abaixo — o texto já vem selecionado — e use Ctrl+C (ou Cmd+C no Mac) para copiar.</p>"+
-        "<textarea id='modal-copia-texto' class='modal-copia-area' readonly></textarea>"+
-      "</div>";
-    document.body.appendChild(backdrop);
-    backdrop.addEventListener("click", function(e){
-      if(e.target === backdrop){ backdrop.classList.remove("ativo"); }
-    });
-    document.getElementById("modal-copia-fechar").addEventListener("click", function(){
-      backdrop.classList.remove("ativo");
-    });
-  }
-  const area = document.getElementById("modal-copia-texto");
-  area.value = texto;
-  backdrop.classList.add("ativo");
-  setTimeout(()=>{ area.focus(); area.select(); }, 50);
-}
-
-function copiarTexto(texto){
-  function viaExecCommand(){
-    try{
-      const textArea = document.createElement("textarea");
-      textArea.value = texto;
-      textArea.style.position = "fixed";
-      textArea.style.opacity = "0";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(textArea);
-      return ok;
-    }catch(e){
-      return false;
-    }
-  }
-
-  if(navigator.clipboard && window.isSecureContext){
-    navigator.clipboard.writeText(texto).then(()=>{
-      mostrarToast();
-    }).catch(()=>{
-      if(viaExecCommand()){ mostrarToast(); }
-      else{ abrirModalCopiaManual(texto); }
-    });
-  } else {
-    if(viaExecCommand()){ mostrarToast(); }
-    else{ abrirModalCopiaManual(texto); }
-  }
-}
-
-portarias.forEach((portaria, indice)=>{
-  const d = dados[indice];
-
-  function atualizarBarraProgresso(){
-    const concluidas = Object.keys(estadoSalvo).length;
-    const total = dados.length;
-    const percentual = Math.round((concluidas / total) * 100);
-
-    document.getElementById("progresso-fill").style.width = percentual + "%";
-    document.getElementById("progresso-texto").textContent = concluidas + "/" + total;
-    document.getElementById("progresso-percentual").textContent = percentual + "%";
-  }
-
-  function marcarAnteriorComoConcluida(){
-    if(indice > 0){
-      const portariaAnterior = portarias[indice - 1];
-      portariaAnterior.statusBadge.textContent = "Concluído";
-      portariaAnterior.statusBadge.classList.remove("pendente");
-      portariaAnterior.statusBadge.classList.add("concluido");
-      estadoSalvo[portariaAnterior.numero] = true;
-      localStorage.setItem("portariasCompletas", JSON.stringify(estadoSalvo));
-      atualizarBarraProgresso();
-    }
-  }
-
-  portaria.btnTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloPlano(d));
-    portaria.clicouTitulo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-
-    if(portaria.clicouTitulo && portaria.clicouCorpo){
-      marcarAnteriorComoConcluida();
-    }
-  });
-
-  portaria.btnCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoMaiorPlano(d));
-    portaria.clicouCorpo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-
-    if(portaria.clicouTitulo && portaria.clicouCorpo){
-      marcarAnteriorComoConcluida();
-    }
-  });
-
-  portaria.textoTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloPlano(d));
-    portaria.clicouTitulo = true;
-    portaria.btnTitulo.classList.add("copiado");
-    setTimeout(()=>portaria.btnTitulo.classList.remove("copiado"),1500);
-
-    if(portaria.clicouTitulo && portaria.clicouCorpo){
-      marcarAnteriorComoConcluida();
-    }
-  });
-
-  portaria.textoCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoMaiorPlano(d));
-    portaria.clicouCorpo = true;
-    portaria.btnCorpo.classList.add("copiado");
-    setTimeout(()=>portaria.btnCorpo.classList.remove("copiado"),1500);
-
-    if(portaria.clicouTitulo && portaria.clicouCorpo){
-      marcarAnteriorComoConcluida();
-    }
-  });
-});
-
-const concluidas = Object.keys(estadoSalvo).length;
-const total = dados.length;
-const percentual = Math.round((concluidas / total) * 100);
-document.getElementById("progresso-fill").style.width = percentual + "%";
-document.getElementById("progresso-texto").textContent = concluidas + "/" + total;
-document.getElementById("progresso-percentual").textContent = percentual + "%";
-
-document.getElementById("limparProgresso").addEventListener("click",function(){
-  if(confirm("Tem certeza que deseja limpar todo o progresso?")){
-    localStorage.removeItem("portariasCompletas");
-    location.reload();
-  }
-});
-
-document.getElementById("busca").addEventListener("input",function(){
-  const q=this.value.toLowerCase();
-  document.querySelectorAll("#tabela tbody tr").forEach(tr=>{
-    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
-  });
-});
-
-// ===================== SEÇÃO 2: Acesso a Setores Subordinados =====================
-const dadosDept = [
- {n:"193", nome:"Heloneyda Marques de Oliveira", chefia:"Chefe do Departamento de Orçamento e Finanças – DEOF", setores:["Divisão de Finanças (DIF)","Divisão de Contabilidade (DIC)"]},
- {n:"196", nome:"Igor Honorato Leduino da Silva", chefia:"Chefe do Departamento Socioprodutivo e Segurança Alimentar – DESAN", setores:["Divisão de Inclusão Socioprodutiva (DIIS)","Núcleo de Apoio Logístico (NAP)","Núcleo de Cadastro da Agricultura Familiar (NCAF)","Núcleo de Polos Agroflorestais (NPOLO)","Divisão de Segurança Alimentar (DISAN)","Núcleo do Programa de Aquisição de Alimentos (NPAA)","Núcleo do Programa de Aquisição de Alimentos Indígena (NPAAI)","Núcleo do Programa de Aquisição de Alimentos Extrativista (NPAAEX)"]},
- {n:"197", nome:"Ariane Gadelha dos Santos", chefia:"Chefe da Divisão de Inclusão Socioprodutiva – DIIS", setores:["Núcleo de Apoio Logístico (NAP)","Núcleo de Cadastro da Agricultura Familiar (NCAF)","Núcleo de Polos Agroflorestais (NPOLO)"]},
- {n:"201", nome:"Marcela Rocha da Silva", chefia:"Chefe da Divisão de Segurança Alimentar – DISAN", setores:["Núcleo do Programa de Aquisição de Alimentos (NPAA)","Núcleo do Programa de Aquisição de Alimentos Indígena (NPAAI)","Núcleo do Programa de Aquisição de Alimentos Extrativista (NPAAEX)"]},
- {n:"207", nome:"Nilton César de Souza", chefia:"Chefe da Divisão de Agricultura – DIA", setores:["Núcleo do Café (NUCAF)","Núcleo de Armazenamento e Silos (NUARS)"]},
- {n:"208", nome:"Wallace Santos Batista", chefia:"Chefe da Divisão de Pecuária/Aquicultura e Pesca – DIPEC/DIAPES", setores:["Núcleo de Aquicultura e Pesca (NUAPES)","Núcleo de Avicultura (NUAV)"]},
- {n:"216", nome:"Luan Sobral Dourado", chefia:"Chefe do Departamento de Tecnologia – DET", setores:["Divisão de Agricultura de Precisão (DIAP)","Divisão de Dados Estatísticos (DIDA)","Divisão de Geoprocessamento e Telemetria (DIGT)","Divisão de Sistema de Informação (DISOFT)"]}
-];
-
-function gerarTituloDept(d){
-  return "<b>Lotação de Usuário - "+d.nome+"</b>";
-}
-function gerarTituloDeptPlano(d){
-  return "Lotação de Usuário - "+d.nome;
-}
-function gerarTextoDept(d){
-  const lista = d.setores.map(s=>"<span class='u'>"+s+"</span>").join("<br>");
-  return "Solicito que "+d.nome+" seja adicionado(a) aos seguintes setores de lotação:<br>"+lista+"<br>de acordo com a Portaria nº "+d.n+", de 19 de junho de 2026.";
-}
-function gerarTextoDeptPlano(d){
-  const lista = d.setores.join("\n");
-  return "Solicito que "+d.nome+" seja adicionado(a) aos seguintes setores de lotação:\n"+lista+"\nde acordo com a Portaria nº "+d.n+", de 19 de junho de 2026.";
-}
-
-const tbody2 = document.querySelector("#tabela2 tbody");
-const estadoSalvo2 = JSON.parse(localStorage.getItem("portariasDeptCompletas") || "{}");
-const portariasDept = [];
-
-dadosDept.forEach(d=>{
-  const tr=document.createElement("tr");
-
-  tr.innerHTML =
-    "<td class='arq'><span class='num'>Portaria nº "+d.n+"</span><br>"+
-      "<span class='status-badge pendente'>Pendente</span><br>"+
-      "<span class='info-secundaria'>"+d.chefia+"</span></td>"+
-    "<td><div class='texto-container'>"+
-      "<div class='texto-titulo'>"+
-        "<div class='texto-titulo-text'>"+gerarTituloDept(d)+"</div>"+
-        "<button class='copy copy-titulo'>Copiar texto</button>"+
-      "</div>"+
-      "<div class='texto-corpo'>"+
-        "<div class='texto-corpo-text'>"+gerarTextoDept(d)+"</div>"+
-        "<button class='copy copy-corpo'>Copiar texto</button>"+
-      "</div>"+
-    "</div></td>";
-
-  const statusBadge = tr.querySelector(".status-badge");
-  const btnTitulo = tr.querySelector(".copy-titulo");
-  const btnCorpo = tr.querySelector(".copy-corpo");
-  const textoTitulo = tr.querySelector(".texto-titulo-text");
-  const textoCorpo = tr.querySelector(".texto-corpo-text");
-
-  if(estadoSalvo2[d.n]){
-    statusBadge.textContent = "Concluído";
-    statusBadge.classList.remove("pendente");
-    statusBadge.classList.add("concluido");
-  }
-
-  const portaria = {
-    numero: d.n,
-    statusBadge: statusBadge,
-    btnTitulo: btnTitulo,
-    btnCorpo: btnCorpo,
-    textoTitulo: textoTitulo,
-    textoCorpo: textoCorpo,
-    clicouTitulo: false,
-    clicouCorpo: false
-  };
-
-  portariasDept.push(portaria);
-  tbody2.appendChild(tr);
-});
-
-function atualizarBarraProgresso2(){
-  const concluidas = Object.keys(estadoSalvo2).length;
-  const total = dadosDept.length;
-  const percentual = Math.round((concluidas / total) * 100);
-  document.getElementById("progresso-fill2").style.width = percentual + "%";
-  document.getElementById("progresso-texto2").textContent = concluidas + "/" + total;
-  document.getElementById("progresso-percentual2").textContent = percentual + "%";
-}
-
-function marcarConcluida2(portaria){
-  portaria.statusBadge.textContent = "Concluído";
-  portaria.statusBadge.classList.remove("pendente");
-  portaria.statusBadge.classList.add("concluido");
-  estadoSalvo2[portaria.numero] = true;
-  localStorage.setItem("portariasDeptCompletas", JSON.stringify(estadoSalvo2));
-  atualizarBarraProgresso2();
-}
-
-portariasDept.forEach((portaria, indice)=>{
-  const d = dadosDept[indice];
-
-  portaria.btnTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloDeptPlano(d));
-    portaria.clicouTitulo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida2(portaria); }
-  });
-
-  portaria.btnCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoDeptPlano(d));
-    portaria.clicouCorpo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida2(portaria); }
-  });
-
-  portaria.textoTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloDeptPlano(d));
-    portaria.clicouTitulo = true;
-    portaria.btnTitulo.classList.add("copiado");
-    setTimeout(()=>portaria.btnTitulo.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida2(portaria); }
-  });
-
-  portaria.textoCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoDeptPlano(d));
-    portaria.clicouCorpo = true;
-    portaria.btnCorpo.classList.add("copiado");
-    setTimeout(()=>portaria.btnCorpo.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida2(portaria); }
-  });
-});
-
-atualizarBarraProgresso2();
-
-document.getElementById("limparProgresso2").addEventListener("click",function(){
-  if(confirm("Tem certeza que deseja limpar todo o progresso desta seção?")){
-    localStorage.removeItem("portariasDeptCompletas");
-    location.reload();
-  }
-});
-
-document.getElementById("busca2").addEventListener("input",function(){
-  const q=this.value.toLowerCase();
-  document.querySelectorAll("#tabela2 tbody tr").forEach(tr=>{
-    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
-  });
-});
-
-// ===================== SEÇÃO 3: Lotação de Usuário =====================
-const dadosLotacao = [
- {nome:"Michelma Neves de Lima", genero:"a", novoSetor:"Divisão de Agricultura – DIA", setorAtual:"Núcleo do Café – NUCAF"},
- {nome:"Hidelk Dinarte Farias de Albuquerque", genero:"o", novoSetor:"Divisão de Produção Indígena – DIVPI", setorAtual:"Núcleo Socioprodutivo Indígena – NUSPI"},
- {nome:"Bruna da Silva Diogo", genero:"a", novoSetor:"Divisão de Central de Incubação – DICI", setorAtual:"Núcleo de Avicultura – NUAV"},
- {nome:"Ariane Gadelha dos Santos", genero:"a", novoSetor:"Divisão de Apoio à Produção Familiar – DIAPF", setorAtual:"Divisão de Inclusão Socioprodutiva – DIIS"},
- {nome:"Camila de Melo Pires Arruda Oliveira", genero:"a", novoSetor:"Divisão de Finanças e Contabilidade – DIFC", setorAtual:"Divisão de Contabilidade – DIC"},
- {nome:"Carlos Antônio Pinheiro da Silva", genero:"o", novoSetor:"Divisão de Apoio à Produção Familiar – DIAPF", setorAtual:"Núcleo de Polos Agroflorestais – NPOLO"},
- {nome:"Marcela Rocha da Silva", genero:"a", novoSetor:"Divisão de Apoio à Produção Familiar – DIAPF", setorAtual:"Divisão de Segurança Alimentar – DISAN"},
- {nome:"Antônio José Pereira da Silva", genero:"o", novoSetor:"Divisão de Transporte – DIT", setorAtual:"Núcleo de Apoio Logístico – NAP"},
- {nome:"Maria da Conceição Almeida", genero:"a", novoSetor:"Divisão de Apoio à Produção Familiar – DIAPF", setorAtual:"Núcleo de Cadastro da Agricultura Familiar – NCAF"},
- {nome:"Claiton Roniere Oliveira", genero:"o", novoSetor:"Divisão de Apoio à Produção Familiar – DIAPF", setorAtual:"Núcleo do Programa de Aquisição de Alimentos – NPAA"}
-];
-
-function gerarTituloLotacao(d){
-  return "<b>Lotação de Usuário - "+d.nome+"</b>";
-}
-function gerarTituloLotacaoPlano(d){
-  return "Lotação de Usuário - "+d.nome;
-}
-function gerarTextoLotacao(d){
-  return "Solicito que <span class='u'>"+d.nome+"</span> seja adicionad"+d.genero+" ao seguinte setor de lotação: <span class='u'>"+d.novoSetor+"</span>, mantendo o setor de lotação atual: <span class='u'>"+d.setorAtual+"</span>.";
-}
-function gerarTextoLotacaoPlano(d){
-  return "Solicito que "+d.nome+" seja adicionad"+d.genero+" ao seguinte setor de lotação: "+d.novoSetor+", mantendo o setor de lotação atual: "+d.setorAtual+".";
-}
-
-const tbody3 = document.querySelector("#tabela3 tbody");
-const estadoSalvo3 = JSON.parse(localStorage.getItem("lotacaoCompletas") || "{}");
-const portariasLotacao = [];
-
-dadosLotacao.forEach((d, idx)=>{
-  const tr=document.createElement("tr");
-
-  tr.innerHTML =
-    "<td class='arq'><span class='num'>"+(idx+1)+"/"+dadosLotacao.length+"</span><br>"+
-      "<span class='status-badge pendente'>Pendente</span><br>"+
-      "<span class='info-secundaria'>"+d.nome+"</span></td>"+
-    "<td><div class='texto-container'>"+
-      "<div class='texto-titulo'>"+
-        "<div class='texto-titulo-text'>"+gerarTituloLotacao(d)+"</div>"+
-        "<button class='copy copy-titulo'>Copiar texto</button>"+
-      "</div>"+
-      "<div class='texto-corpo'>"+
-        "<div class='texto-corpo-text'>"+gerarTextoLotacao(d)+"</div>"+
-        "<button class='copy copy-corpo'>Copiar texto</button>"+
-      "</div>"+
-    "</div></td>";
-
-  const statusBadge = tr.querySelector(".status-badge");
-  const btnTitulo = tr.querySelector(".copy-titulo");
-  const btnCorpo = tr.querySelector(".copy-corpo");
-  const textoTitulo = tr.querySelector(".texto-titulo-text");
-  const textoCorpo = tr.querySelector(".texto-corpo-text");
-
-  if(estadoSalvo3[idx]){
-    statusBadge.textContent = "Concluído";
-    statusBadge.classList.remove("pendente");
-    statusBadge.classList.add("concluido");
-  }
-
-  const portaria = {
-    idx: idx,
-    statusBadge: statusBadge,
-    btnTitulo: btnTitulo,
-    btnCorpo: btnCorpo,
-    textoTitulo: textoTitulo,
-    textoCorpo: textoCorpo,
-    clicouTitulo: false,
-    clicouCorpo: false
-  };
-
-  portariasLotacao.push(portaria);
-  tbody3.appendChild(tr);
-});
-
-function atualizarBarraProgresso3(){
-  const concluidas = Object.keys(estadoSalvo3).length;
-  const total = dadosLotacao.length;
-  const percentual = Math.round((concluidas / total) * 100);
-  document.getElementById("progresso-fill3").style.width = percentual + "%";
-  document.getElementById("progresso-texto3").textContent = concluidas + "/" + total;
-  document.getElementById("progresso-percentual3").textContent = percentual + "%";
-}
-
-function marcarConcluida3(portaria){
-  portaria.statusBadge.textContent = "Concluído";
-  portaria.statusBadge.classList.remove("pendente");
-  portaria.statusBadge.classList.add("concluido");
-  estadoSalvo3[portaria.idx] = true;
-  localStorage.setItem("lotacaoCompletas", JSON.stringify(estadoSalvo3));
-  atualizarBarraProgresso3();
-}
-
-portariasLotacao.forEach((portaria, indice)=>{
-  const d = dadosLotacao[indice];
-
-  portaria.btnTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloLotacaoPlano(d));
-    portaria.clicouTitulo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida3(portaria); }
-  });
-
-  portaria.btnCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoLotacaoPlano(d));
-    portaria.clicouCorpo = true;
-    this.classList.add("copiado");
-    setTimeout(()=>this.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida3(portaria); }
-  });
-
-  portaria.textoTitulo.addEventListener("click",function(){
-    copiarTexto(gerarTituloLotacaoPlano(d));
-    portaria.clicouTitulo = true;
-    portaria.btnTitulo.classList.add("copiado");
-    setTimeout(()=>portaria.btnTitulo.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida3(portaria); }
-  });
-
-  portaria.textoCorpo.addEventListener("click",function(){
-    copiarTexto(gerarTextoLotacaoPlano(d));
-    portaria.clicouCorpo = true;
-    portaria.btnCorpo.classList.add("copiado");
-    setTimeout(()=>portaria.btnCorpo.classList.remove("copiado"),1500);
-    if(portaria.clicouTitulo && portaria.clicouCorpo){ marcarConcluida3(portaria); }
-  });
-});
-
-atualizarBarraProgresso3();
-
-document.getElementById("limparProgresso3").addEventListener("click",function(){
-  if(confirm("Tem certeza que deseja limpar todo o progresso desta seção?")){
-    localStorage.removeItem("lotacaoCompletas");
-    location.reload();
-  }
-});
-
-document.getElementById("busca3").addEventListener("input",function(){
-  const q=this.value.toLowerCase();
-  document.querySelectorAll("#tabela3 tbody tr").forEach(tr=>{
-    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
-  });
-});
-</script>
+    <button class="ch-btn pequeno" type="button" id="btnAtualizar"></button>
+    <button class="ch-btn pequeno" type="button" id="btnCsv"></button>
+    <button class="ch-btn pequeno" type="button" id="btnLinks"></button>
+    <a class="ch-btn pequeno" href="cadastros-chamados.html" id="btnCadastros"></a>
+  </section>
+  <p class="ch-status-fila" id="statusFila" role="status"></p>
+
+  <section id="area" aria-live="polite"></section>
+</main>
+
+<div class="ch-fundo" id="fundo" hidden></div>
+<aside class="ch-gaveta" id="gaveta" aria-hidden="true" aria-label="Detalhe do chamado" tabindex="-1"></aside>
+
+<script src="../js/chamados-dados.js?v=2026091930"></script>
+<script src="../js/chamados-ui.js?v=2026091930"></script>
+<script src="../js/chamados-fila.js?v=2026091930"></script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
 </body>
 </html>
