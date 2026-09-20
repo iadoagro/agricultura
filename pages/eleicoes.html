@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="../css/eleicoes.css?v=2026091526">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 </head>
 <body>
   <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
@@ -148,14 +149,14 @@
     <form id="cadastro">
       <h3 id="cadastro-titulo">Adicionar cadastro</h3>
       <label for="formMunicipio">Município</label><select id="formMunicipio" name="formMunicipio" required><option value="">Escolha um município</option></select>
-      <label for="nome">Nome</label><input id="nome" name="nome" autocomplete="name" maxlength="160" required>
-      <label for="telefone">Telefone</label><input id="telefone" name="telefone" type="tel" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required>
+      <label for="nome">Nome</label><input id="nome" name="nome" autocomplete="name" enterkeyhint="next" autocapitalize="words" maxlength="160" required>
+      <label for="telefone">Telefone</label><input id="telefone" name="telefone" type="tel" inputmode="tel" enterkeyhint="next" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required>
       <label for="regional">Regional</label>
       <select id="regional" name="regional" required>
         <option value="">Selecione a regional</option>
         <option>Alto Acre</option><option>Baixo Acre</option><option>Purus</option><option>Tarauacá/Envira</option><option>Juruá</option>
       </select>
-      <label for="bairro">Bairro</label><input id="bairro" name="bairro" maxlength="120">
+      <label for="bairro">Bairro</label><input id="bairro" name="bairro" maxlength="120" enterkeyhint="next" autocapitalize="words">
       <label for="zona">Zona eleitoral</label><select id="zona" name="zona" required><option value="">Selecione a zona</option></select>
       <label for="secao">Seção eleitoral</label><select id="secao" name="secao" required disabled><option value="">Selecione a zona primeiro</option></select>
       <button class="salvar" type="submit">Salvar cadastro</button>
@@ -237,5 +238,6 @@
   <script src="../js/eleicoes-abas.js?v=2026091401"></script>
   <script src="../js/select-busca.js?v=2026091401"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
+<script src="../js/motion-extras.js?v=2026092001"></script>
 </body>
 </html>

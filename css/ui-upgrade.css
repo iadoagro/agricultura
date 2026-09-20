@@ -1,0 +1,355 @@
+/* UI upgrade layer — responsive polish inspired by beUI, Aceternity,
+   Animate UI, Eldora UI and Magic UI, adapted to this vanilla PHP/HTML app.
+   The goal is quiet operational UX: better touch targets, responsive cards,
+   scrollable tab rails, readable tables and restrained microinteractions. */
+
+:root{
+  --ui-focus:#93c5fd;
+  --ui-focus-ring:0 0 0 3px rgba(37,99,235,.18);
+  --ui-soft-border:rgba(21,62,117,.14);
+  --ui-card-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -18px rgba(15,23,42,.28);
+  --ui-card-shadow-hover:0 8px 28px -18px rgba(21,62,117,.5);
+}
+
+html{-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
+body{overflow-x:clip}
+
+:where(button,a,input,select,textarea,[role="button"],[role="tab"],summary){touch-action:manipulation}
+:where(input,select,textarea,button,a,[tabindex]):focus-visible{
+  outline:3px solid var(--ui-focus);
+  outline-offset:3px;
+}
+
+:where(.card,.painel,.mapa-card,.resultados-card,.instantaneo-card,.municipios-lateral,#painel,
+  .ch-cartao,.ch-item,.ch-kpi,.ch-col,.portaria-card,.card-contato,.admin-card,
+  .permissoes-tabela,.permissoes-novo,.qr-modal,.relatorio-modal,.relatorio-sec){
+  box-shadow:var(--ui-card-shadow);
+}
+
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  :where(.card,.painel,.mapa-card,.resultados-card,.instantaneo-card,.ch-cartao,.ch-item,
+    .ch-kpi,.portaria-card,.card-contato,.admin-card){
+    transition-property:box-shadow,border-color,translate,scale,transform,background-color,color;
+    transition-duration:.32s;
+    transition-timing-function:var(--mo-out,cubic-bezier(.22,1,.36,1));
+  }
+  :where(.painel,.mapa-card,.resultados-card,.instantaneo-card,.ch-cartao,.portaria-card,.card-contato):hover{
+    box-shadow:var(--ui-card-shadow-hover);
+  }
+}
+
+:where(.tabela-scroll,.ch-tabela-rolagem,.prioridades-scroll,#prioridadesTabela,
+  #instantaneo-resultado,#instantaneo-tendencia,.relatorio-registros,.leaflet-popup-content){
+  -webkit-overflow-scrolling:touch;
+}
+
+@media(max-width:768px){
+  :where(input,select,textarea){font-size:16px}
+  :where(button,.btn,.ch-btn,.tool-button,.icon-button,.view-btn,.filtro-btn,.portaria-link,
+    .tema-btn,.admin-submit,.salvar,.btn-salvar,.btn-wa,.btn-editar,.btn-qr,.aba,.aba-el){
+    min-height:44px;
+  }
+  :where(.container,.ch-publico,.ch-fila,main,.wrap,.eleicoes){max-width:100%}
+  :where(.tabela-scroll,.ch-tabela-rolagem,#prioridadesTabela,.relatorio-registros){
+    overflow-x:auto;
+  }
+}
+
+/* ------------------------------ Home / module indexes */
+@media(max-width:520px){
+  .cards{grid-template-columns:1fr;max-width:360px;margin-inline:auto}
+  .cards-grade,.cards-grade-larga{grid-template-columns:1fr 1fr;max-width:100%}
+  .cards-grade .card,.cards-grade-larga .card{min-height:132px}
+}
+
+/* ------------------------------ Fiscais / Eleicoes */
+@media(max-width:768px){
+  .eleicoes{margin:0;padding:12px}
+  .barra-acesso{
+    position:sticky;top:0;z-index:32;margin:0 -12px 8px;padding:8px 12px;
+    background:rgba(250,250,250,.94);backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(21,62,117,.08);
+  }
+  .barra-acesso .voltar{margin:0}
+  .barra-acesso button{min-height:38px;margin:0}
+  .abas-eleicoes{
+    position:sticky;top:48px;z-index:31;margin:0 -12px 12px;padding:0 12px;
+    overflow-x:auto;scroll-snap-type:x proximity;justify-content:flex-start;
+    background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
+  }
+  .aba-el{flex:1 0 auto;scroll-snap-align:start;padding-inline:18px}
+  .resultados-card,.instantaneo-card,.mapa-card,.municipios-lateral,#painel,.resultados-lateral{
+    border-radius:12px;padding:14px;
+  }
+  .resultados-wrap,.area-municipios,.secoes-abaixo-mapa{gap:12px}
+  .resultados-topo h2,.mapa-topo h2{font-size:18px;line-height:1.25}
+  .resultados-topo p,.mapa-topo p{font-size:13px;line-height:1.5}
+  .resultados-ranking,.municipios-lateral{max-height:230px;overflow:auto}
+  .municipios-lateral h2,.resultados-ranking h2{
+    position:sticky;top:0;z-index:1;background:#fff;padding-bottom:8px;
+  }
+  #municipios-lista,#resultadosRanking{gap:8px}
+  #municipios-lista button,#resultadosRanking button{min-height:44px;padding:9px 10px}
+  #mapa,#mapaResultados{max-height:none;aspect-ratio:5/3;height:auto}
+  .mapa-rodape{font-size:12px}
+  .mapa-bairros-topo,.resultados-bairros-topo{gap:10px}
+  .mapa-bairros-acoes,.resultados-mapa-acoes{justify-content:stretch}
+  .mapa-bairros-acoes button,.resultados-mapa-acoes button,.resultados-bairros-topo button{
+    flex:1 1 auto;min-height:40px;
+  }
+  .fiscais-mapa-filtros{display:grid;grid-template-columns:1fr;gap:10px}
+  .fiscais-mapa-filtros label{align-items:flex-start}
+  .indicadores-grade{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .indicador{padding:11px}
+  .indicador-val{font-size:21px}
+  .prioridades-filtros,.busca-global-filtros{grid-template-columns:1fr}
+  .busca-global-filtros button{width:100%;min-height:46px}
+  #prioridadesTabela table,.prioridades-tabela{min-width:720px}
+  #cadastro label{margin:12px 0 6px}
+  #cadastro input,#cadastro select,.filtros-eleitorais select,
+  .busca-global-filtros input,.busca-global-filtros select{min-height:46px}
+  #cadastros li,.busca-global-lista li{padding:12px}
+  .cadastro-cabecalho{min-height:48px;align-items:center}
+  .cadastro-whatsapp-compacto{min-height:36px}
+  .cadastro-acoes-dialogo{width:min(92vw,320px)}
+  #banco-dialogo{width:min(92vw,440px);border-radius:14px}
+  .mapa-dica{display:none}
+  .leaflet-popup-content{max-width:calc(100vw - 72px);font-size:13px}
+}
+@media(max-width:430px){
+  #municipios-lista{grid-template-columns:1fr}
+  .indicadores-grade{grid-template-columns:1fr}
+  .resultados-lista li{display:grid;grid-template-columns:1fr;gap:3px}
+}
+
+/* ------------------------------ Dashboards / mecanizacao / DEAGRO */
+@media(max-width:768px){
+  .abas{top:0}
+  .abas-pista{scroll-snap-type:x proximity;padding-inline:10px}
+  .aba{scroll-snap-align:start;min-width:max-content;padding-inline:14px}
+  .wrap{padding:12px 10px 26px}
+  .wrap > .filtros{margin-bottom:12px;border-radius:12px;box-shadow:var(--ui-card-shadow)}
+  .multi-lista{max-height:min(280px,46vh)}
+  .kpis-sec span{white-space:normal}
+  .painel-grid{gap:12px}
+  .painel{border-radius:12px}
+  .painel-cab{align-items:stretch}
+  .painel-acoes{gap:8px}
+  .tipos{overflow-x:auto;max-width:100%}
+  table.dados,.lanc-tabela{min-width:680px}
+  .tabela-scroll{overflow-x:auto}
+  .mapa-mec-wrap{gap:12px}
+  #mapaMec{aspect-ratio:5/3;height:auto;max-height:none}
+  .lanc-form{gap:12px}
+  .lanc-campos{gap:12px}
+  .lanc-campos label,.lanc-caixas label{flex-basis:100%}
+  .lanc-caixas label{min-height:44px}
+  .lanc-cultura-linha,.lanc-dae-linha{gap:10px}
+  .upload-acoes{display:grid;grid-template-columns:1fr;gap:8px}
+  .upload-acoes .btn{width:100%}
+}
+@media(max-width:430px){
+  .relatorio-vis{width:100%}
+  .relatorio-vis button{flex:1;justify-content:center}
+}
+
+/* ------------------------------ Chamados */
+@media(max-width:768px){
+  .ch-topo-in{align-items:flex-start;flex-direction:column;gap:10px}
+  .ch-topo nav{width:100%;overflow-x:auto;padding-bottom:2px}
+  .ch-topo nav a{flex:0 0 auto;min-height:40px;display:inline-flex;align-items:center}
+  .ch-publico{padding:18px 12px 40px}
+  .ch-hero{margin-bottom:16px}
+  .ch-hero h1{font-size:24px}
+  .ch-cartao{border-radius:16px;padding:16px}
+  .ch-form-grade,.ch-layout,.ch-res-grid{grid-template-columns:1fr}
+  .ch-probs{grid-template-columns:1fr 1fr}
+  .ch-prob-caixa{min-height:76px}
+  .ch-impactos,.ch-cats{grid-template-columns:1fr}
+  .ch-acoes{align-items:stretch}
+  .ch-acoes .ch-btn,.ch-acoes p{width:100%}
+  .ch-fila{padding:14px 10px 44px}
+  .ch-cab{padding:18px 80px}
+  .ch-cab h1{font-size:20px}
+  .ch-kpis{grid-template-columns:1fr 1fr;gap:9px}
+  .ch-kpi{border-radius:13px;padding:12px 13px}
+  .ch-kpi b{font-size:25px}
+  .ch-barra{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:10px;border-radius:14px}
+  .ch-busca-fila,.ch-seg,.ch-barra select,#segVisao,#btnAtualizar,#btnCsv,#btnLinks,#btnCadastros{
+    grid-column:1 / -1;max-width:none;width:100%;min-width:0;
+  }
+  .ch-seg{display:grid;grid-auto-flow:column}
+  .ch-seg button{min-height:38px}
+  .ch-item{border-radius:14px;padding:13px 14px 13px 17px}
+  .ch-assunto{white-space:normal;line-height:1.35}
+  .ch-meta{gap:6px 10px}
+  .ch-lado{align-items:flex-start}
+  .ch-gaveta{width:100vw}
+  .ch-g-cab{position:sticky;top:0;z-index:2}
+  .ch-g-corpo{padding:16px 14px 24px}
+  .ch-compor-bar{align-items:stretch}
+  .ch-compor-bar .ch-btn{width:100%}
+  .ch-quadro{grid-auto-columns:minmax(82vw,1fr)}
+  .ch-aux-grade{grid-template-columns:1fr}
+  .ch-abas-aux{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+  .ch-aba-aux{flex:0 0 auto}
+  .ch-tabela{min-width:620px}
+  .ch-lista-cartao .ch-tabela-rolagem{overflow-x:auto}
+  .ch-pub-tabela{min-width:760px}
+}
+@media(max-width:460px){
+  .ch-probs,.ch-kpis{grid-template-columns:1fr}
+  .ch-cab{padding-inline:70px 16px;text-align:left}
+  .ch-pilula{white-space:normal}
+}
+
+/* ------------------------------ Admin */
+@media(max-width:768px){
+  .admin-auth{padding-inline:12px}
+  .admin-card{border-radius:14px;padding:20px}
+  .lista-solicitacoes li{align-items:stretch}
+  .sol-acoes{width:100%}
+  .sol-acoes button{flex:1 1 140px;min-height:40px}
+  .permissoes-layout{width:calc(100% - 20px);margin-block:18px 30px}
+  .permissoes-cabecalho{gap:10px}
+  .permissoes-contagem{white-space:normal}
+  .permissoes-tabela .sol-paginas{grid-template-columns:1fr}
+  .permissoes-tabela .sol-paginas label{min-height:44px}
+}
+
+/* ------------------------------ Contatos */
+@media(max-width:768px){
+  .controles{top:0;gap:10px;padding:12px}
+  .busca{flex:1 1 100%;min-width:0;min-height:44px}
+  .controles .filtros{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+  .filtro-btn{flex:0 0 auto}
+  .cards-grid{gap:12px}
+  .card-contato{border-radius:12px;padding:14px}
+  .campo-tel{display:grid;grid-template-columns:1fr auto auto;gap:8px}
+  .btn-wa{grid-column:1 / -1;justify-content:center}
+}
+@media(max-width:560px){
+  .cards-grid{grid-template-columns:1fr}
+  .campo-tel{grid-template-columns:1fr auto}
+  .campo-tel .input-tel{grid-column:1 / -1}
+  .btn-salvar,.btn-wa{width:100%;justify-content:center}
+}
+
+/* ------------------------------ Portarias */
+@media(max-width:768px){
+  .container{padding:18px 12px}
+  .search-box{margin-bottom:16px}
+  .search-box input{max-width:none;min-height:46px}
+  .view-controls{position:sticky;top:0;z-index:4;padding:8px 0;background:#fafafa}
+  .view-btn{flex:1}
+  .portaria-card{border-radius:12px}
+  .portaria-link{width:100%}
+}
+
+/* ------------------------------ Organograma */
+@media(max-width:768px){
+  body:has(.topbar){height:100dvh}
+  .topbar{max-height:42vh;overflow:auto;align-items:stretch}
+  .toolbar{width:100%;gap:8px}
+  .toolbar h1{flex:1 1 100%;font-size:16px!important}
+  .search-node-wrap{flex:1 1 100%;display:grid;grid-template-columns:auto minmax(0,1fr)}
+  .search-node-input{width:100%;min-height:40px}
+  .search-node-input:focus{width:100%}
+  .tool-button{min-height:40px}
+  .zoom-range{flex:1 1 150px}
+  .main-row{min-height:0}
+  .filter-panel.open,.detail-panel.open{
+    position:fixed;top:0;bottom:0;z-index:1200;width:min(92vw,360px);
+    box-shadow:12px 0 34px rgba(15,23,42,.22);
+  }
+  .detail-panel.open{right:0;box-shadow:-12px 0 34px rgba(15,23,42,.22)}
+  .filter-panel.open{left:0}
+  .viewport{min-height:0}
+  .pdf-viewer-panel{width:100vw!important;min-width:0;max-width:100vw}
+  .pdf-drag-handle{display:none}
+  .pdf-viewer-iframe{margin-left:0}
+  .toast{max-width:calc(100vw - 24px);white-space:normal;text-align:center}
+}
+
+@media(prefers-reduced-motion:reduce){
+  :where(.card,.painel,.mapa-card,.resultados-card,.instantaneo-card,.ch-cartao,.ch-item,
+    .ch-kpi,.portaria-card,.card-contato){transition:none!important}
+}
+
+/* ------------------------------ Celular: refinos de uso (2ª passada) */
+@media(max-width:768px){
+  /* cabeçalhos mais baixos: sobra mais tela para o conteúdo */
+  header{padding-block:14px}
+  header h1{font-size:19px;margin-bottom:2px}
+  header p{font-size:12px}
+  body:has(.eleicoes) header{padding:14px 16px}
+  body:has(.eleicoes) header h1{font-size:20px;margin-bottom:2px}
+
+  /* Fiscais: o select + o mapa já escolhem o município; a lista rolável repetia isso */
+  .municipios-lateral{display:none}
+  /* o município já está no título do painel e sincronizado — não pergunta de novo */
+  #cadastro label[for="formMunicipio"],#formMunicipio{display:none}
+  /* Salvar sempre ao alcance do polegar */
+  #cadastro .salvar{
+    position:sticky;bottom:10px;z-index:6;min-height:50px;font-size:16px;
+    box-shadow:0 10px 24px -8px rgba(21,62,117,.55);
+  }
+  #cadastro .cancelar-edicao{min-height:46px}
+  /* respiro para rolagem não ficar colada ao rodapé do aparelho */
+  body{padding-bottom:env(safe-area-inset-bottom)}
+}
+
+/* Chamados: KPIs viram atalhos de filtro compactos (2 por linha, sem a frase auxiliar) */
+@media(max-width:768px){
+  .ch-kpis,.ch-kpis{grid-template-columns:1fr 1fr;gap:8px}
+  .ch-kpi{padding:10px 12px 10px 14px;border-radius:12px;min-height:0}
+  .ch-kpi small{font-size:11px;line-height:1.2}
+  .ch-kpi b{font-size:22px;margin-top:4px}
+  .ch-kpi span{display:none}
+  .ch-kpi:last-child:nth-child(odd){grid-column:1 / -1}
+}
+@media(max-width:460px){.ch-kpis{grid-template-columns:1fr 1fr}}
+
+/* Organograma: barra de ferramentas mais baixa e título legível no fundo azul */
+@media(max-width:768px){
+  .toolbar h1{color:#fff}
+  .search-node-label{display:none}
+  .search-node-wrap{grid-template-columns:minmax(0,1fr)}
+  .toolbar{gap:6px}
+  .tool-button{padding-inline:12px;font-size:13px}
+  .topbar{padding:8px 10px}
+}
+
+/* Botão que recolhe os filtros dos painéis (só aparece no celular; ver js/mobile-ui.js) */
+.filtros-toggle{display:none}
+@media(max-width:768px){
+  .filtros-toggle{
+    display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin:0 0 10px;padding:0 16px;
+    border:1px solid var(--ui-soft-border);border-radius:12px;background:#fff;color:#1b375e;
+    font:600 15px/1 inherit;font-family:inherit;box-shadow:var(--ui-card-shadow);cursor:pointer;
+  }
+  .filtros-toggle-txt{flex:1;text-align:left}
+  .filtros-toggle-seta{transition:rotate .3s var(--mo-out,ease)}
+  .filtros-toggle.aberto .filtros-toggle-seta{rotate:180deg}
+  .filtros.recolhivel.recolhido{display:none}
+}
+
+/* ------------------------------ Extras: Magic Card / Ripple / Animated Badge */
+@media (prefers-reduced-motion:no-preference){
+  .mo-spot{
+    background-image:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(37,99,235,.075),transparent 70%);
+  }
+  .mo-ripple-host{overflow:hidden}
+  .mo-ripple{
+    position:absolute;border-radius:50%;pointer-events:none;background:currentColor;opacity:.22;
+    scale:0;animation:mo-ripple .6s var(--mo-out,ease-out) forwards;
+  }
+  @keyframes mo-ripple{to{scale:1;opacity:0}}
+
+  /* Animated Badge (beUI): alerta de prazo pulsa como um "ping" */
+  .ch-prazo.estourado svg{animation:mo-ping 1.8s ease-out infinite;border-radius:50%}
+  .ch-kpi.alerta::before{animation:mo-glow 2s ease-in-out infinite}
+  @keyframes mo-ping{0%{box-shadow:0 0 0 0 rgba(185,28,28,.45)}70%,100%{box-shadow:0 0 0 7px rgba(185,28,28,0)}}
+  @keyframes mo-glow{50%{opacity:.35}}
+}
+.mo-ripple-host{-webkit-tap-highlight-color:transparent}
