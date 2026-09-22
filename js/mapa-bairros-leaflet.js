@@ -90,6 +90,7 @@
       const mapa = obterMapa();
       if (!mapa) return;
       if (camadaPoligonos) mapa.removeLayer(camadaPoligonos);
+      limparDestaque();
       centroides.clear();
       const cor = cfg.corContorno || '#ffe066';
       camadaPoligonos = L.geoJSON({ type: 'FeatureCollection', features: features }, {
@@ -148,7 +149,28 @@
       if (mapaL) setTimeout(function () { mapaL.invalidateSize(); }, 0);
     }
 
-    return { desenhar: desenhar, atualizarPins: atualizarPins, atualizarPontos: atualizarPontos, atualizarPinsPorBairro: atualizarPinsPorBairro, invalidar: invalidar };
+    // Destaque de um ponto (ex.: a seção do fiscal clicado na lista): pin
+    // pulsante por cima dos demais, zoom até ele e popup aberto. Fica numa
+    // camada própria, então atualizarPontos() não apaga o destaque.
+    let camadaDestaque = null;
+    function limparDestaque() {
+      if (camadaDestaque) camadaDestaque.clearLayers();
+    }
+    function destacar(p) {
+      const mapa = obterMapa();
+      if (!mapa || !Number.isFinite(p.lat) || !Number.isFinite(p.lon)) return false;
+      if (!camadaDestaque) camadaDestaque = L.layerGroup().addTo(mapa);
+      camadaDestaque.clearLayers();
+      mapa.invalidateSize();
+      const icone = L.divIcon({ className: 'pin-destaque', html: '<span></span>', iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -12] });
+      const marcador = L.marker([p.lat, p.lon], { icon: icone, zIndexOffset: 1000, keyboard: false }).bindPopup(p.html);
+      marcador.addTo(camadaDestaque);
+      mapa.setView([p.lat, p.lon], Math.max(mapa.getZoom(), 17), { animate: false });
+      marcador.openPopup();
+      return true;
+    }
+
+    return { desenhar: desenhar, atualizarPins: atualizarPins, atualizarPontos: atualizarPontos, atualizarPinsPorBairro: atualizarPinsPorBairro, invalidar: invalidar, destacar: destacar, limparDestaque: limparDestaque };
   }
 
   window.criarMapaBairrosLeaflet = criarMapaBairrosLeaflet;

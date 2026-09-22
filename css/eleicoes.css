@@ -292,3 +292,16 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 
 /* .voltar tem display próprio, que venceria o atributo hidden (link Cadastro de bairros, só admin) */
 .barra-acesso [hidden]{display:none!important}
+
+/* Lista lateral de fiscais: busca, cartão em linha e destaque no mapa */
+.busca-cadastros{display:block;width:100%;box-sizing:border-box;margin:6px 0 4px;padding:8px 10px;border:1px solid #cfd8e3;border-radius:8px;font-size:13px}
+.destaque-fiscal{margin:4px 0 6px;padding:6px 8px;border-radius:6px;background:#fff8db;border:1px solid #f1d98a;color:#5c4a00;font-size:12px;line-height:1.35}
+#cadastros li.cadastro-compacto{display:block}
+#cadastros li.cadastro-compacto .cadastro-cabecalho strong{flex:1;min-width:0;overflow-wrap:normal;word-break:normal}
+#cadastros li.cadastro-compacto.selecionado{background:#fff8db;box-shadow:inset 3px 0 0 #e0a800}
+.cadastro-mais-acoes{flex:none;width:32px;height:32px;border:1px solid #d5deea;border-radius:8px;background:#fff;color:#153e75;font-size:16px;line-height:1;cursor:pointer}
+.cadastro-mais-acoes:hover{background:#eef3fb}
+.pin-destaque span{display:block;width:26px;height:26px;border-radius:50%;background:#ffd400;border:3px solid #153e75;box-sizing:border-box;box-shadow:0 0 0 0 rgba(255,212,0,.7);animation:pin-destaque-pulso 1.4s ease-out infinite}
+@keyframes pin-destaque-pulso{0%{box-shadow:0 0 0 0 rgba(255,212,0,.75)}100%{box-shadow:0 0 0 18px rgba(255,212,0,0)}}
+@media (prefers-reduced-motion:reduce){.pin-destaque span{animation:none}}
+.pin-destaque-fiscais{color:#1f6f3f;font-weight:600}

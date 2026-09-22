@@ -10,7 +10,7 @@
   <script src="../js/admin-gate.js?v=2026092203"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092204">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092205">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -165,7 +165,7 @@
       <button class="cancelar-edicao" type="button" id="cancelarEdicao" hidden>Cancelar edição</button>
       <p id="mensagem" role="status"></p>
     </form>
-    <section aria-labelledby="lista-titulo"><h3 id="lista-titulo">Cadastros do município</h3><ul id="cadastros"></ul><div id="paginacao" hidden><button id="anterior" type="button" aria-label="Cadastro anterior">←</button><span id="pagina-atual" aria-live="polite"></span><button id="proximo" type="button" aria-label="Próximo cadastro">→</button></div></section>
+    <section aria-labelledby="lista-titulo"><h3 id="lista-titulo">Cadastros do município</h3><input id="buscaCadastros" class="busca-cadastros" type="search" placeholder="Buscar fiscal (nome, telefone, seção…)" aria-label="Buscar fiscal na lista" autocomplete="off"><p id="destaqueFiscal" class="destaque-fiscal" role="status" hidden></p><ul id="cadastros"></ul><div id="paginacao" hidden><button id="anterior" type="button" aria-label="Cadastro anterior">←</button><span id="pagina-atual" aria-live="polite"></span><button id="proximo" type="button" aria-label="Próximo cadastro">→</button></div></section>
   </aside>
     </div>
     <div class="secoes-abaixo-mapa">
@@ -248,12 +248,12 @@
   <script src="../js/regionais-municipios.js?v=2026091411"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026092203"></script>
+  <script src="../js/banco-eleicoes.js?v=2026092205"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
-  <script src="../js/mapa-bairros-leaflet.js?v=2026091504"></script>
+  <script src="../js/mapa-bairros-leaflet.js?v=2026092201"></script>
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
-<script src="../js/eleicoes.js?v=2026092203"></script>
+<script src="../js/eleicoes.js?v=2026092205"></script>
   <script src="../js/eleicoes-resultados.js?v=2026091507"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026091802"></script>

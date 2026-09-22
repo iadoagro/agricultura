@@ -196,9 +196,23 @@
   function ler() {
     return window.BANCO_ELEICOES.ler();
   }
+  // Busca da lista lateral: nome, telefone, bairro, local, zona ou seção.
+  const campoBuscaCadastros = document.getElementById('buscaCadastros');
+  function bateBusca(r) {
+    const termo = campoBuscaCadastros ? campoBuscaCadastros.value.trim().toLowerCase() : '';
+    if (!termo) return true;
+    const semAcento = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const t = semAcento(termo), digitos = termo.replace(/\D/g, '');
+    if ([r.nome, r.bairro, r.localVotacao].some(v => semAcento(v).includes(t))) return true;
+    if (digitos && (r.telefone || '').replace(/\D/g, '').includes(digitos)) return true;
+    if (digitos && digitos === termo.replace(/\s/g, '') && (canonico(r.secao) === canonico(digitos) || canonico(r.zona) === canonico(digitos))) return true;
+    return /^se[cç][aã]o\s*\d+$/.test(termo) && canonico(r.secao) === canonico(digitos);
+  }
+  if (campoBuscaCadastros) campoBuscaCadastros.addEventListener('input', () => { pagina = 0; listar(); });
   function registrosFiltrados() {
     return ler().filter(r => {
       if (r.municipio !== selecionado) return false;
+      if (!bateBusca(r)) return false;
       if (cz.value && canonico(r.zona)!==canonico(cz.value)) return false;
       const idLocal = cs.value ? cs.value.split(':')[0] : cl.value;
       if (idLocal) {
@@ -272,26 +286,67 @@
     link.onclick = e => e.stopPropagation();
     return link;
   }
+  // Fiscal clicado na lista lateral: a seção dele fica em destaque no mapa
+  // de bairros (pin pulsante no local de votação, com zoom e popup). Quando
+  // o município não tem mapa de bairros ou o local não tem coordenada, só
+  // mostra seção/local na faixa abaixo da busca.
+  let destacadoId = null;
+  const avisoDestaque = document.getElementById('destaqueFiscal');
+  function limparDestaqueFiscal() {
+    destacadoId = null;
+    if (avisoDestaque) { avisoDestaque.hidden = true; avisoDestaque.textContent = ''; }
+    if (mapaBairros && mapaBairros.limparDestaque) mapaBairros.limparDestaque();
+    document.querySelectorAll('#cadastros li.selecionado').forEach(li => li.classList.remove('selecionado'));
+  }
+  function destacarFiscal(r) {
+    destacadoId = r._id || null;
+    document.querySelectorAll('#cadastros li.cadastro-compacto').forEach(li => li.classList.toggle('selecionado', li.dataset.id === String(r._id)));
+    const local = locais.find(l => l.id === r.localId) ||
+      doMunicipio().find(l => canonico(l.zona) === canonico(r.zona) && secoesDe([l]).some(s => canonico(s.numero) === canonico(r.secao)));
+    const coord = local && window.LOCAIS_COORDENADAS && window.LOCAIS_COORDENADAS[local.id];
+    const secaoMapa = document.getElementById('mapaBairrosSecao');
+    const noMapa = Boolean(mapaBairros && secaoMapa && !secaoMapa.hidden && coord && Number.isFinite(coord.lat) && Number.isFinite(coord.lon));
+    let mesmaSecao = [];
+    try { mesmaSecao = ler().filter(x => x.municipio === r.municipio && canonico(x.zona) === canonico(r.zona) && canonico(x.secao) === canonico(r.secao)); } catch (e) {}
+    const descricao = 'Seção ' + (r.secao || '—') + ' · Zona ' + (r.zona || '—') + (local ? ' — ' + local.nome : '');
+    if (noMapa) {
+      mapaBairros.destacar({ lat: coord.lat, lon: coord.lon, html:
+        '<strong>Seção ' + escBairro(r.secao) + '</strong> · Zona ' + escBairro(r.zona) +
+        '<br>' + escBairro(local.nome) + (coord.bairro ? '<br>' + escBairro(coord.bairro) : '') +
+        '<br><span class="pin-destaque-fiscais">Fiscal: ' + mesmaSecao.map(x => escBairro(x.nome)).join(', ') + '</span>' });
+      if (window.innerWidth < 1000) secaoMapa.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (mapaBairros && mapaBairros.limparDestaque) mapaBairros.limparDestaque();
+    if (avisoDestaque) {
+      avisoDestaque.hidden = false;
+      avisoDestaque.textContent = (r.nome || 'Fiscal') + ': ' + descricao +
+        (noMapa ? ' (em destaque no mapa)' : !local ? ' — local de votação não encontrado.' : ' — este local não tem localização no mapa.');
+    }
+  }
   // compacto: usado na barra lateral (vários cadastros empilhados) — só nome,
   // WhatsApp (sem o número) e zona/seção, sem os demais campos nem a data de
-  // cadastro; clicar no nome abre um popup com editar/excluir.
+  // cadastro. Clicar destaca a seção no mapa; "⋯" abre editar/excluir.
   function construirCartaoCadastro(r, compacto) {
     const li = document.createElement('li');
     if (compacto) {
-      li.className = 'cadastro-compacto';
+      li.className = 'cadastro-compacto' + (destacadoId && r._id === destacadoId ? ' selecionado' : '');
+      li.dataset.id = String(r._id || '');
       const cabecalho = document.createElement('div');
       cabecalho.className = 'cadastro-cabecalho';
       cabecalho.tabIndex = 0;
       cabecalho.setAttribute('role', 'button');
-      cabecalho.setAttribute('aria-label', 'Ações do cadastro de ' + (r.nome || ''));
+      cabecalho.setAttribute('aria-label', 'Mostrar no mapa a seção de ' + (r.nome || ''));
       const nome = document.createElement('strong');
       nome.textContent = r.nome || 'Não informado';
-      cabecalho.append(nome, criarWhatsAppCompacto(r));
-      cabecalho.onclick = () => abrirPopupAcoes(r);
-      cabecalho.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirPopupAcoes(r); } };
+      const acoes = document.createElement('button');
+      acoes.type = 'button'; acoes.className = 'cadastro-mais-acoes'; acoes.textContent = '⋯';
+      acoes.title = 'Editar ou excluir'; acoes.setAttribute('aria-label', 'Editar ou excluir o cadastro de ' + (r.nome || ''));
+      acoes.onclick = e => { e.stopPropagation(); abrirPopupAcoes(r); };
+      cabecalho.append(nome, criarWhatsAppCompacto(r), acoes);
+      cabecalho.onclick = () => destacarFiscal(r);
+      cabecalho.onkeydown = e => { if (e.target === cabecalho && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); destacarFiscal(r); } };
       const zonaSecao = document.createElement('span');
       zonaSecao.className = 'cadastro-info-compacta';
-      zonaSecao.textContent = 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—');
+      zonaSecao.textContent = 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—') + (r.bairro ? ' · ' + r.bairro : '');
       li.append(cabecalho, zonaSecao);
       return li;
     }
@@ -490,6 +545,10 @@
   function abrir(id) {
     if (!nomes.has(id)) return;
     encerrarEdicao();
+    if (selecionado !== id) {
+      limparDestaqueFiscal();
+      if (campoBuscaCadastros) campoBuscaCadastros.value = '';
+    }
     selecionado = id;
     pagina = 0;
     // Força reenquadrar o mapa de bairros (mesmo se for o mesmo município de
