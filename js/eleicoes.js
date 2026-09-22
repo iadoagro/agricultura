@@ -525,7 +525,7 @@
     form.elements.zona.value = r.zona || '';
     prepararSecoes();
     form.elements.secao.value = r.secao || '';
-    document.getElementById('cadastro-titulo').textContent = 'Editar cadastro';
+    document.getElementById('cadastro-titulo').textContent = 'Editar cadastro de fiscal';
     form.querySelector('.salvar').textContent = 'Salvar edição';
     document.getElementById('cancelarEdicao').hidden = false;
     mensagem.textContent = ''; mensagem.className = '';
@@ -553,7 +553,7 @@
     editandoId = null;
     form.reset();
     formMunicipio.value = selecionado;
-    document.getElementById('cadastro-titulo').textContent = 'Adicionar cadastro';
+    document.getElementById('cadastro-titulo').textContent = 'Cadastro de fiscais';
     form.querySelector('.salvar').textContent = 'Salvar cadastro';
     document.getElementById('cancelarEdicao').hidden = true;
     mensagem.textContent = ''; mensagem.className = '';
