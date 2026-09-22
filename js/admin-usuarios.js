@@ -75,8 +75,8 @@
     else if (acao === 'ativar') tarefa = function () { return auth.definirAtivo(id, true).then(function () { return 'Usuário reativado.'; }); };
     else if (acao === 'desativar') tarefa = function () { return auth.definirAtivo(id, false).then(function () { return 'Usuário desativado.'; }); };
     else if (acao === 'redefinir') {
-      if (email.toLowerCase().endsWith(DOMINIO_USUARIO)) { msg.textContent = 'Esse login não tem e-mail de verdade — peça pro responsável excluir e cadastrar de novo se precisar trocar a senha.'; msg.className = 'admin-msg erro'; return; }
-      tarefa = function () { return auth.redefinirSenha(email).then(function () { return 'E-mail de redefinição de senha enviado para ' + email + '.'; }); };
+      if (!window.confirm('Redefinir a senha de ' + mostrarLogin(email) + ' para ' + auth.SENHA_PADRAO + '? A pessoa vai ser obrigada a trocá-la no próximo acesso.')) return;
+      tarefa = function () { return auth.redefinirSenhaPadrao(id).then(function () { return 'Senha de ' + mostrarLogin(email) + ' redefinida para ' + auth.SENHA_PADRAO + '. Ela vai ser obrigada a trocar no próximo acesso.'; }); };
     } else if (acao === 'editar') {
       var atual = mostrarLogin(email);
       var novo = window.prompt('Novo login (nome.sobrenome) ou e-mail para ' + atual + ':', atual);

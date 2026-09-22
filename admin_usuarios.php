@@ -19,6 +19,7 @@ function responder(int $status, array $corpo): void
 }
 
 const RESPONSAVEL_EMAIL = 'root@root.com';
+const SENHA_PADRAO = '123456';
 
 $configPath = __DIR__ . '/admin_config.php';
 if (!file_exists($configPath)) {
@@ -195,6 +196,16 @@ if ($acao === 'excluir') {
         responder(200, ['ok' => true]);
     }
     responder(502, ['ok' => false, 'erro' => $corpo['msg'] ?? 'O Supabase não concluiu a exclusão.']);
+}
+
+if ($acao === 'redefinir_senha') {
+    // Volta a senha pra padrão e obriga a trocar no próximo acesso.
+    [$status, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'PUT', '/auth/v1/admin/users/' . $id, ['password' => SENHA_PADRAO]);
+    if ($status >= 200 && $status < 300) {
+        chamarSupabase($supabaseUrl, $serviceRole, 'PATCH', '/rest/v1/admin_solicitacoes?id=eq.' . $id, ['deve_trocar_senha' => true], ['Prefer: return=minimal']);
+        responder(200, ['ok' => true]);
+    }
+    responder(502, ['ok' => false, 'erro' => $corpo['msg'] ?? 'O Supabase não concluiu a redefinição da senha.']);
 }
 
 if ($acao === 'editar_email') {

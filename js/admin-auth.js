@@ -233,11 +233,12 @@
   }
   async function excluirUsuario(id) { await chamarAdminPHP('excluir', { id }); }
   async function editarEmail(id, email) { await chamarAdminPHP('editar_email', { id, email }); }
+  async function redefinirSenhaPadrao(id) { await chamarAdminPHP('redefinir_senha', { id }); }
 
   window.ADMIN_AUTH = {
     online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SENHA_PADRAO,
     cadastrarConta, entrar, sair, listarSolicitacoes, decidir, definirPaginas, definirAtivo, previewLogin,
-    cadastrarUsuario, redefinirSenha, excluirUsuario, editarEmail, alterarPropriaSenha,
+    cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
     sessaoAtual: () => sessao,
     papel: () => sessao ? sessao.papel : null,
     liberado: () => Boolean(sessao) && (sessao.papel === 'responsavel' || (sessao.papel === 'aprovado' && sessao.ativo !== false)),

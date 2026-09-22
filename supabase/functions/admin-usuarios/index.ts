@@ -8,6 +8,7 @@
 // sessão, e as ações de responsável conferem o token aqui dentro.
 
 const RESPONSAVEL_EMAIL = 'root@root.com';
+const SENHA_PADRAO = '123456';
 const SUPABASE_URL = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
@@ -131,6 +132,16 @@ Deno.serve(async (req) => {
     const [status, corpo] = await chamarSupabase('DELETE', '/auth/v1/admin/users/' + id);
     if (status >= 200 && status < 300) return responder(200, { ok: true });
     return responder(502, { ok: false, erro: mensagem(corpo, 'O Supabase não concluiu a exclusão.') });
+  }
+
+  if (acao === 'redefinir_senha') {
+    // Volta a senha pra padrão e obriga a trocar no próximo acesso.
+    const [status, corpo] = await chamarSupabase('PUT', '/auth/v1/admin/users/' + id, { password: SENHA_PADRAO });
+    if (status >= 200 && status < 300) {
+      await chamarSupabase('PATCH', '/rest/v1/admin_solicitacoes?id=eq.' + id, { deve_trocar_senha: true }, { Prefer: 'return=minimal' });
+      return responder(200, { ok: true });
+    }
+    return responder(502, { ok: false, erro: mensagem(corpo, 'O Supabase não concluiu a redefinição da senha.') });
   }
 
   if (acao === 'editar_email') {
