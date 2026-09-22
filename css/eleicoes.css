@@ -305,3 +305,28 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 @keyframes pin-destaque-pulso{0%{box-shadow:0 0 0 0 rgba(255,212,0,.75)}100%{box-shadow:0 0 0 18px rgba(255,212,0,0)}}
 @media (prefers-reduced-motion:reduce){.pin-destaque span{animation:none}}
 .pin-destaque-fiscais{color:#1f6f3f;font-weight:600}
+
+/* Lista de cadastros abaixo do mapa + mapa maior */
+.lista-cadastros{margin-top:14px;padding-top:12px;border-top:1px solid #e6ebf2}
+.lista-cadastros[hidden]{display:none}
+.lista-cadastros-topo{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+.lista-cadastros-topo h3{margin:0;font-size:15px;color:#153e75}
+.lista-cadastros-topo .busca-cadastros{flex:0 1 360px;margin:0}
+.lista-cadastros .destaque-fiscal{margin:10px 0 0}
+.lista-cadastros #cadastros{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:10px 0 0;padding:0;font-size:13px}
+.lista-cadastros #cadastros li.cadastro-compacto{display:block;margin:0;padding:8px 10px;border:1px solid #e3e8ef;border-radius:10px;background:#fff}
+.lista-cadastros #cadastros li.cadastro-compacto.selecionado{background:#fff8db;border-color:#e0a800;box-shadow:none}
+.lista-cadastros #cadastros strong{font-size:13px}
+.lista-cadastros #cadastros .cadastro-info-compacta{font-size:12px}
+.lista-cadastros #cadastros li.vazio-linha{grid-column:1/-1;display:block;padding:18px;text-align:center;color:#666;border:1px dashed #d5deea;border-radius:10px}
+.lista-cadastros #paginacao{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px}
+.lista-cadastros #paginacao[hidden]{display:none}
+/* Mapa de bairros ocupa quase toda a altura visível; a lista vem logo abaixo
+   (o cartão do mapa rola). Em tela cheia continua ocupando tudo. */
+.mapa-card #mapaBairrosSecao{flex:none;overflow:visible}
+.mapa-card .mapa-bairros-viewport{flex:none;height:max(520px,calc(100dvh - 130px))}
+#mapaBairrosSecao:fullscreen .mapa-bairros-viewport,#mapaBairrosSecao:-webkit-full-screen .mapa-bairros-viewport{flex:1;height:auto}
+@media(max-width:999px){.mapa-card .mapa-bairros-viewport{height:max(380px,65vh)}}
+
+/* Com a lista abaixo do mapa, a coluna do formulário pode ser mais estreita */
+@media(min-width:1000px) and (min-height:600px){.area-municipios{grid-template-columns:180px minmax(0,1fr) 290px}}

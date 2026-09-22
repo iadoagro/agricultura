@@ -10,7 +10,7 @@
   <script src="../js/admin-gate.js?v=2026092203"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092205">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092207">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -144,6 +144,12 @@
           <div id="mapaBairros" class="mapa-bairros-satelite" role="img" aria-label="Mapa de satélite dos bairros de Rio Branco, colorido pela cobertura de fiscais"></div>
         </div>
       </section>
+      <section id="listaCadastrosSecao" class="lista-cadastros" aria-labelledby="lista-titulo" hidden>
+        <div class="lista-cadastros-topo"><h3 id="lista-titulo">Cadastros do município</h3><input id="buscaCadastros" class="busca-cadastros" type="search" placeholder="Buscar fiscal (nome, telefone, bairro, seção…)" aria-label="Buscar fiscal na lista" autocomplete="off"></div>
+        <p id="destaqueFiscal" class="destaque-fiscal" role="status" hidden></p>
+        <ul id="cadastros"></ul>
+        <div id="paginacao" hidden><button id="anterior" type="button" aria-label="Página anterior">←</button><span id="pagina-atual" aria-live="polite"></span><button id="proximo" type="button" aria-label="Próxima página">→</button></div>
+      </section>
       <div class="mapa-rodape"><span id="municipio-hover">22 municípios · Acre</span><a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" target="_blank" rel="noopener">Malha municipal: IBGE</a></div>
     </section>
   <aside id="painel" aria-labelledby="painel-titulo">
@@ -165,7 +171,6 @@
       <button class="cancelar-edicao" type="button" id="cancelarEdicao" hidden>Cancelar edição</button>
       <p id="mensagem" role="status"></p>
     </form>
-    <section aria-labelledby="lista-titulo"><h3 id="lista-titulo">Cadastros do município</h3><input id="buscaCadastros" class="busca-cadastros" type="search" placeholder="Buscar fiscal (nome, telefone, seção…)" aria-label="Buscar fiscal na lista" autocomplete="off"><p id="destaqueFiscal" class="destaque-fiscal" role="status" hidden></p><ul id="cadastros"></ul><div id="paginacao" hidden><button id="anterior" type="button" aria-label="Cadastro anterior">←</button><span id="pagina-atual" aria-live="polite"></span><button id="proximo" type="button" aria-label="Próximo cadastro">→</button></div></section>
   </aside>
     </div>
     <div class="secoes-abaixo-mapa">
@@ -177,7 +182,7 @@
           <label>Seção<select id="consulta-secao"><option value="">Todas as seções</option></select></label>
         </div>
         <p id="local-detalhes" aria-live="polite"></p>
-        <p class="fonte-eleitoral">Fonte: anexos de locais de votação · 14/09/2026. As seleções filtram os cadastros à direita e abaixo.</p>
+        <p class="fonte-eleitoral">Fonte: anexos de locais de votação · 14/09/2026. As seleções filtram os cadastros abaixo do mapa.</p>
       </section>
       <section class="mapa-card busca-global-card" aria-labelledby="busca-global-titulo">
         <section id="cadastrosMapaSecao" class="cadastros-mapa" aria-labelledby="cadastrosMapaTitulo" hidden>
@@ -248,12 +253,12 @@
   <script src="../js/regionais-municipios.js?v=2026091411"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026092205"></script>
+  <script src="../js/banco-eleicoes.js?v=2026092206"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
   <script src="../js/mapa-bairros-leaflet.js?v=2026092201"></script>
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
-<script src="../js/eleicoes.js?v=2026092205"></script>
+<script src="../js/eleicoes.js?v=2026092206"></script>
   <script src="../js/eleicoes-resultados.js?v=2026091507"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026091802"></script>

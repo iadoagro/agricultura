@@ -187,12 +187,6 @@
   document.getElementById('mapaFiscaisPendentes').addEventListener('change', atualizarPinsBairros);
   document.getElementById('anterior').onclick = () => { pagina--; listar(); };
   document.getElementById('proximo').onclick = () => { pagina++; listar(); };
-  let redimensionandoListaTimer = null;
-  window.addEventListener('resize', () => {
-    if (!selecionado) return;
-    clearTimeout(redimensionandoListaTimer);
-    redimensionandoListaTimer = setTimeout(listar, 150);
-  });
   function ler() {
     return window.BANCO_ELEICOES.ler();
   }
@@ -314,7 +308,9 @@
         '<strong>Seção ' + escBairro(r.secao) + '</strong> · Zona ' + escBairro(r.zona) +
         '<br>' + escBairro(local.nome) + (coord.bairro ? '<br>' + escBairro(coord.bairro) : '') +
         '<br><span class="pin-destaque-fiscais">Fiscal: ' + mesmaSecao.map(x => escBairro(x.nome)).join(', ') + '</span>' });
-      if (window.innerWidth < 1000) secaoMapa.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // A lista fica abaixo do mapa: volta a rolagem até ele.
+      const viewport = document.getElementById('mapaBairrosViewport') || secaoMapa;
+      viewport.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else if (mapaBairros && mapaBairros.limparDestaque) mapaBairros.limparDestaque();
     if (avisoDestaque) {
       avisoDestaque.hidden = false;
@@ -366,26 +362,28 @@
     li.append(criarBotoesAcao(r));
     return li;
   }
+  // Lista de cadastros do município, abaixo do mapa, em grade de cartões.
+  const POR_PAGINA = 24;
   function listar() {
     const lista = document.getElementById('cadastros');
+    const secaoLista = document.getElementById('listaCadastrosSecao');
+    if (secaoLista) secaoLista.hidden = !selecionado;
     lista.replaceChildren();
     try {
       const registros = registrosFiltrados();
+      const buscando = campoBuscaCadastros && campoBuscaCadastros.value.trim();
       document.getElementById('lista-titulo').textContent = 'Cadastros do município (' + registros.length + ')';
       if (!registros.length) {
-        lista.textContent = 'Nenhum cadastro neste município.';
+        const vazio = document.createElement('li');
+        vazio.className = 'vazio-linha';
+        vazio.textContent = buscando ? 'Nenhum fiscal encontrado com essa busca.' : 'Nenhum cadastro neste município.';
+        lista.append(vazio);
         document.getElementById('paginacao').hidden = true;
         listarAbaixoDoMapa();
         renderizarMapaBairros();
         return;
       }
-      // Em vez de um cadastro por vez, empilha quantos couberem até a borda
-      // visível do painel e só então pagina os demais.
-      const primeiroCard = construirCartaoCadastro(registros[0], true);
-      lista.append(primeiroCard);
-      const alturaCard = primeiroCard.offsetHeight || 1;
-      const espacoDisponivel = window.innerHeight - lista.getBoundingClientRect().top - 70;
-      const porPagina = Math.max(1, Math.floor(espacoDisponivel / alturaCard));
+      const porPagina = POR_PAGINA;
       const totalPaginas = Math.ceil(registros.length / porPagina);
       pagina = Math.max(0, Math.min(pagina, totalPaginas - 1));
       const inicio = pagina * porPagina;
@@ -399,37 +397,14 @@
     listarAbaixoDoMapa();
     renderizarMapaBairros();
   }
-  // Lista completa (sem paginar) dos cadastros do município selecionado,
-  // abaixo do mapa — complementa o único registro por vez da barra lateral,
-  // pra ver todo mundo de uma vez sem clicar em "próximo" várias vezes.
+  // A lista do município agora fica logo abaixo do mapa (#listaCadastrosSecao);
+  // a caixa de baixo volta a ser só a busca em todos os municípios, sem
+  // repetir a mesma lista.
   function listarAbaixoDoMapa() {
     const secaoEl = document.getElementById('cadastrosMapaSecao');
-    const listaEl = document.getElementById('cadastrosMapaLista');
     const buscaGlobalConteudo = document.getElementById('buscaGlobalConteudo');
-    if (!secaoEl || !listaEl) return;
-    // Mesmo espaço da busca global: com um município selecionado, mostra os
-    // cadastros dele ali (em vez da caixa vazia que ficava embaixo do mapa);
-    // sem município, volta a mostrar a busca em todos os municípios.
-    if (!selecionado) {
-      secaoEl.hidden = true;
-      if (buscaGlobalConteudo) buscaGlobalConteudo.hidden = false;
-      return;
-    }
-    secaoEl.hidden = false;
-    if (buscaGlobalConteudo) buscaGlobalConteudo.hidden = true;
-    listaEl.replaceChildren();
-    try {
-      const registros = registrosFiltrados();
-      document.getElementById('cadastrosMapaTitulo').textContent = 'Cadastros do município (' + registros.length + ')';
-      if (!registros.length) {
-        const li = document.createElement('li');
-        li.className = 'vazio-linha';
-        li.textContent = 'Nenhum cadastro neste município.';
-        listaEl.append(li);
-        return;
-      }
-      registros.forEach(r => listaEl.append(construirCartaoCadastro(r)));
-    } catch (e) { listaEl.textContent = e.message; }
+    if (secaoEl) secaoEl.hidden = true;
+    if (buscaGlobalConteudo) buscaGlobalConteudo.hidden = false;
   }
   function iniciarEdicao(r) {
     if (!window.BANCO_ELEICOES.online && !r._id) {
