@@ -135,3 +135,29 @@ destinatário, não só pra você mesmo.
   `database/fiscais-acesso.sql` (ver `database/CONFIGURAR.md`).
 - Isso não muda os Admins do dashboard nem do organograma (edição de
   conteúdo), que continuam com a senha própria de cada página.
+
+## Cadastrar/editar/excluir usuários no GitHub Pages (Edge Function)
+
+O GitHub Pages não executa PHP, então no site publicado as ações que exigem
+a chave service_role (cadastrar usuário, autocadastro, editar login,
+excluir) rodam na Edge Function `admin-usuarios` do Supabase — código em
+`supabase/functions/admin-usuarios/index.ts`. O site tenta ela primeiro e,
+se ainda não foi publicada, cai pro `admin_usuarios.php` (só no XAMPP).
+
+Publicar pelo painel (não precisa instalar nada):
+
+1. No projeto Supabase, abra **Edge Functions** > **Deploy a new function**
+   > **Via Editor**.
+2. Nome da função: **admin-usuarios** (exatamente assim).
+3. Apague o código de exemplo e cole todo o conteúdo de
+   `supabase/functions/admin-usuarios/index.ts`. Clique em **Deploy**.
+4. Na função publicada, abra **Details** (ou **Settings**) e **desligue
+   "Verify JWT with legacy secret"** / "Enforce JWT verification". A função
+   confere o token sozinha; com a opção ligada o autocadastro e a chave
+   publishable são barrados.
+
+Não precisa configurar chave nenhuma: `SUPABASE_URL` e
+`SUPABASE_SERVICE_ROLE_KEY` já vêm preenchidas no ambiente da função.
+
+Pela CLI, alternativamente: `npx supabase login`, depois
+`npx supabase functions deploy admin-usuarios --project-ref nivbogsrfirumtbqpqff --no-verify-jwt`.

@@ -160,20 +160,40 @@
     });
   }
 
-  async function chamarPHPPublico(acao, dados) {
-    let resposta;
+  // Ações que exigem a service_role rodam no servidor: primeiro na Edge
+  // Function admin-usuarios do Supabase (funciona no GitHub Pages); se ela
+  // ainda não foi publicada, cai pro admin_usuarios.php (só no XAMPP).
+  async function chamarServidor(acao, dados, token) {
+    const corpoEnvio = JSON.stringify({ acao, ...dados });
+    let resposta = null;
     try {
-      resposta = await fetch('../admin_usuarios.php', {
+      configurar();
+      resposta = await fetch(cfg.url.replace(/\/$/, '') + '/functions/v1/admin-usuarios', {
         method: 'POST', signal: AbortSignal.timeout(20000),
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acao, ...dados })
+        headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+        body: corpoEnvio
       });
-    } catch (e) { throw new Error('Sem conexão com o servidor. Tente novamente.'); }
+      if (resposta.status === 404) resposta = null;
+    } catch (e) { resposta = null; }
+    if (!resposta) {
+      try {
+        resposta = await fetch('../admin_usuarios.php', {
+          method: 'POST', signal: AbortSignal.timeout(20000),
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+          body: corpoEnvio
+        });
+      } catch (e) { throw new Error('Sem conexão com o servidor. Tente novamente.'); }
+    }
     let corpo = null;
     try { corpo = await resposta.json(); } catch (e) {}
-    if (!resposta.ok || !corpo || corpo.ok !== true) throw new Error((corpo && corpo.erro) || 'Não foi possível concluir a operação (' + resposta.status + ').');
+    if (!resposta.ok || !corpo || corpo.ok !== true) {
+      if (!corpo && (resposta.status === 404 || resposta.status === 405)) throw new Error('A função admin-usuarios ainda não foi publicada no Supabase. Veja database/CONFIGURAR-ADMIN.md.');
+      throw new Error((corpo && corpo.erro) || 'Não foi possível concluir a operação (' + resposta.status + ').');
+    }
     return corpo;
   }
+
+  function chamarPHPPublico(acao, dados) { return chamarServidor(acao, dados, null); }
 
   async function cadastrarConta(nome, sobrenome, senha) {
     const login = gerarLogin(nome, sobrenome);
@@ -209,18 +229,7 @@
 
   async function chamarAdminPHP(acao, dados) {
     if (!sessao) throw new Error('Entre novamente para continuar.');
-    let resposta;
-    try {
-      resposta = await fetch('../admin_usuarios.php', {
-        method: 'POST', signal: AbortSignal.timeout(20000),
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + sessao.access_token },
-        body: JSON.stringify({ acao, ...dados })
-      });
-    } catch (e) { throw new Error('Sem conexão com o servidor. Tente novamente.'); }
-    let corpo = null;
-    try { corpo = await resposta.json(); } catch (e) {}
-    if (!resposta.ok || !corpo || corpo.ok !== true) throw new Error((corpo && corpo.erro) || 'Não foi possível concluir a operação (' + resposta.status + ').');
-    return corpo;
+    return chamarServidor(acao, dados, sessao.access_token);
   }
   async function excluirUsuario(id) { await chamarAdminPHP('excluir', { id }); }
   async function editarEmail(id, email) { await chamarAdminPHP('editar_email', { id, email }); }
