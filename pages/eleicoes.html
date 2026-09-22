@@ -10,7 +10,7 @@
   <script src="../js/admin-gate.js?v=2026092203"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092202">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092204">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -20,8 +20,9 @@
   <main class="eleicoes">
     <div class="barra-acesso"><a class="voltar" href="index.html">← Página inicial</a><a class="voltar" href="cadastros-fiscais.html" id="linkBairros" hidden>Cadastro de bairros</a><button id="banco-abrir" type="button" hidden>Banco online</button></div>
     <nav class="abas-eleicoes" role="tablist" aria-label="Seções de Eleições">
-      <button class="aba-el" data-aba="resultados" type="button" role="tab" id="aba-resultados" aria-controls="painel-resultados" aria-selected="false" tabindex="-1">Resultados</button>
       <button class="aba-el" data-aba="fiscais" type="button" role="tab" id="aba-fiscais" aria-controls="painel-fiscais" aria-selected="false" tabindex="-1">Fiscais</button>
+      <button class="aba-el" data-aba="resultados" type="button" role="tab" id="aba-resultados" aria-controls="painel-resultados" aria-selected="false" tabindex="-1">Resultados</button>
+      <button class="aba-el" data-aba="relatorio" type="button" role="tab" id="aba-relatorio" aria-controls="painel-relatorio" aria-selected="false" tabindex="-1">Relatório</button>
     </nav>
 
     <div class="aba-conteudo" data-aba="resultados" role="tabpanel" id="painel-resultados" aria-labelledby="aba-resultados" tabindex="0">
@@ -199,6 +200,27 @@
     </div>
     <p class="aviso" id="aviso-dados">Os cadastros são salvos somente neste navegador.</p>
     </div>
+    <div class="aba-conteudo" data-aba="relatorio" role="tabpanel" id="painel-relatorio" aria-labelledby="aba-relatorio" tabindex="0">
+      <section class="mapa-card relatorio" aria-labelledby="relatorio-titulo">
+        <div class="mapa-topo"><div><h2 id="relatorio-titulo">Relatório de fiscais</h2><p>Lista em tabelas os fiscais cadastrados. Escolha como agrupar, filtre se precisar e exporte.</p></div></div>
+        <div class="busca-global-filtros relatorio-filtros">
+          <label>Agrupar por<select id="relAgrupar"><option value="geral">Geral (sem agrupar)</option><option value="municipio">Município</option><option value="regional">Regional</option><option value="zona">Zona</option><option value="bairro">Bairro</option></select></label>
+          <label>Regional<select id="relRegional"><option value="">Todas</option></select></label>
+          <label>Município<select id="relMunicipio"><option value="">Todos</option></select></label>
+          <label>Zona<select id="relZona"><option value="">Todas</option></select></label>
+          <label>Bairro<select id="relBairro"><option value="">Todos</option></select></label>
+          <label>Nome ou telefone<input id="relBusca" type="search" placeholder="Buscar…"></label>
+        </div>
+        <div class="relatorio-acoes">
+          <button id="relCSV" type="button">Exportar CSV</button>
+          <button id="relExcel" type="button">Exportar Excel</button>
+          <button id="relImprimir" type="button">Imprimir / PDF</button>
+        </div>
+        <p id="relStatus" class="relatorio-status" role="status"></p>
+        <nav id="relResumo" class="relatorio-resumo" aria-label="Grupos do relatório"></nav>
+        <div id="relTabelas" class="relatorio-tabelas"></div>
+      </section>
+    </div>
   </main>
   <dialog id="cadastro-acoes-dialogo" class="cadastro-acoes-dialogo" aria-labelledby="cadastro-acoes-titulo">
     <h3 id="cadastro-acoes-titulo"></h3>
@@ -237,7 +259,8 @@
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026091802"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026091508"></script>
   <script src="../js/eleicoes-busca-exportar.js?v=2026091801"></script>
-  <script src="../js/eleicoes-abas.js?v=2026091401"></script>
+  <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
+<script src="../js/eleicoes-abas.js?v=2026092201"></script>
   <script src="../js/select-busca.js?v=2026091401"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>

@@ -251,3 +251,44 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 
 /* Dica abaixo do campo Bairro (js/eleicoes.js) */
 .bairro-dica{display:block;font-size:12px;line-height:1.4;color:#5b6b80;margin:4px 0 0}.bairro-dica:empty{display:none}
+
+/* Aba Relatório (js/eleicoes-relatorio.js) */
+.relatorio-acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.relatorio-acoes button{background:#153e75;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer}
+.relatorio-acoes button:hover{background:#2563eb}
+.relatorio-acoes button:disabled{opacity:.6;cursor:wait}
+.relatorio-acoes #relImprimir{background:#fff;color:#153e75;border:1px solid #153e75}
+.relatorio-acoes #relImprimir:hover{background:#eef3fb}
+.relatorio-status{margin:14px 0 8px;font-size:13px;color:#444}
+.relatorio-resumo{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.relatorio-resumo:empty{display:none}
+.relatorio-resumo a{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid #d5deea;border-radius:999px;background:#f5f8fc;color:#153e75;font-size:12px;text-decoration:none}
+.relatorio-resumo a:hover{background:#e7eef8}
+.relatorio-resumo b{background:#153e75;color:#fff;border-radius:999px;padding:0 7px;font-size:11px}
+.relatorio-grupo{margin-top:18px;scroll-margin-top:8px}
+.relatorio-grupo h3{font-size:15px;color:#153e75;margin:0 0 8px;display:flex;align-items:baseline;gap:8px}
+.relatorio-grupo h3 span{font-size:12px;color:#666;font-weight:400}
+.relatorio-rolagem{overflow-x:auto;border:1px solid #e3e8ef;border-radius:8px}
+.relatorio-tabela{width:100%;border-collapse:collapse;font-size:13px}
+.relatorio-tabela th{position:sticky;top:0;background:#f2f6fc;color:#4a5b73;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;white-space:nowrap}
+.relatorio-tabela td{padding:7px 10px;border-top:1px solid #eef1f5;vertical-align:top}
+.relatorio-tabela td:first-child,.relatorio-tabela th:first-child{color:#8a96a8;width:1%;text-align:right}
+.relatorio-tabela tbody tr:nth-child(even){background:#fafbfd}
+.relatorio-vazio{padding:28px;text-align:center;color:#666;border:1px dashed #d5deea;border-radius:8px}
+@media print{
+  body.imprimindo-relatorio{height:auto;display:block;background:#fff}
+  body.imprimindo-relatorio header,body.imprimindo-relatorio .barra-acesso,body.imprimindo-relatorio .abas-eleicoes,
+  body.imprimindo-relatorio .aba-conteudo:not([data-aba="relatorio"]),body.imprimindo-relatorio .relatorio-filtros,
+  body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-resumo,body.imprimindo-relatorio dialog{display:none!important}
+  body.imprimindo-relatorio .eleicoes,body.imprimindo-relatorio .aba-conteudo.ativa{display:block;overflow:visible;height:auto;padding:0;margin:0}
+  body.imprimindo-relatorio .mapa-card{border:0;padding:0;box-shadow:none}
+  body.imprimindo-relatorio .relatorio-rolagem{overflow:visible;border:0}
+  body.imprimindo-relatorio .relatorio-tabela{font-size:10px}
+  body.imprimindo-relatorio .relatorio-tabela th{position:static}
+  body.imprimindo-relatorio .relatorio-grupo{break-inside:auto}
+  body.imprimindo-relatorio .relatorio-grupo h3{break-after:avoid}
+  body.imprimindo-relatorio .relatorio-tabela tr{break-inside:avoid}
+}
+
+/* .voltar tem display próprio, que venceria o atributo hidden (link Cadastro de bairros, só admin) */
+.barra-acesso [hidden]{display:none!important}
