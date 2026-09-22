@@ -382,3 +382,6 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .ano-res.ativa{background:#153e75;border-color:#153e75;color:#fff}
 .resultados-aviso-ano{margin:6px 0 0;padding:6px 10px;border-radius:6px;background:#fff8db;border:1px solid #f1d98a;color:#5c4a00;font-size:12.5px}
 .resultados-aviso-ano[hidden]{display:none}
+
+/* Dica do mapa de Fiscais: bloco das seções com voto (2022) */
+.mapa-dica .linha.separador{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18)}

@@ -26,6 +26,16 @@
   var oficiaisPorMun = window.CoberturaFiscais.oficiaisPorMun();
   var comFiscalPorMun = new Map();
   var totalFiscaisPorMun = new Map();
+  var comFiscal = new Set();
+  // Seções que tiveram voto para o candidato em 2022 (mesmos dados da aba
+  // Resultados, js/dados-votacao-schafer.js), por município — pra dica dizer
+  // quantas delas ainda estão sem fiscal.
+  var VOTOS = window.DADOS_VOTACAO_SCHAFER;
+  var secoesComVotoPorMun = new Map();
+  (VOTOS ? VOTOS.porSecao : []).forEach(function (r) {
+    if (!secoesComVotoPorMun.has(r.municipio)) secoesComVotoPorMun.set(r.municipio, []);
+    secoesComVotoPorMun.get(r.municipio).push(r.municipio + '|' + r.zona + '|' + r.secao);
+  });
   var TETO_ESCALA = 10; // a partir de 10 fiscais já usa o tom mais escuro da escala.
 
   // Sem fiscal = cinza (cor padrão do mapa); 1 fiscal já aparece em verde
@@ -42,6 +52,7 @@
     var dados;
     try { dados = window.CoberturaFiscais.calcular(); } catch (e) { return; }
     comFiscalPorMun = dados.comFiscalPorMun;
+    comFiscal = dados.comFiscal;
     totalFiscaisPorMun = new Map();
     dados.registros.forEach(function (r) {
       if (!r.municipio) return;
@@ -56,13 +67,19 @@
   function mostrarDica(id) {
     if (!dica) return;
     var oficiais = oficiaisPorMun.get(id) || 0;
-    var comFiscal = comFiscalPorMun.get(id) || 0;
+    var comFiscalMun = comFiscalPorMun.get(id) || 0;
     var totalFiscais = totalFiscaisPorMun.get(id) || 0;
-    var pct = oficiais ? (comFiscal / oficiais * 100) : 0;
+    var pct = oficiais ? (comFiscalMun / oficiais * 100) : 0;
+    var comVoto = secoesComVotoPorMun.get(id) || [];
+    var comVotoSemFiscal = comVoto.filter(function (k) { return !comFiscal.has(k); }).length;
+    var pctVotoSem = comVoto.length ? (comVotoSemFiscal / comVoto.length * 100) : 0;
     dica.innerHTML = '<strong>' + esc(nomesMun.get(id) || id) + '</strong>' +
       '<div class="linha com"><span>Fiscais cadastrados</span><span>' + totalFiscais + '</span></div>' +
       '<div class="linha"><span>Cobertura de seções</span><span>' + pct.toFixed(1).replace('.', ',') + '%</span></div>' +
-      '<div class="linha sem"><span>Seções sem fiscal</span><span>' + Math.max(0, oficiais - comFiscal) + '</span></div>';
+      '<div class="linha sem"><span>Seções sem fiscal</span><span>' + Math.max(0, oficiais - comFiscalMun) + '</span></div>' +
+      (VOTOS ? '<div class="linha separador"><span>Seções com voto (' + esc(VOTOS.ano) + ')</span><span>' + comVoto.length + '</span></div>' +
+        '<div class="linha sem"><span>Com voto e sem fiscal</span><span>' + comVotoSemFiscal + ' de ' + comVoto.length +
+        (comVoto.length ? ' (' + pctVotoSem.toFixed(1).replace('.', ',') + '%)' : '') + '</span></div>' : '');
     dica.hidden = false;
   }
   function esconderDica() { if (dica) dica.hidden = true; }
@@ -71,8 +88,9 @@
     svg.addEventListener('mousemove', function (e) {
       if (dica.hidden) return;
       var margem = 16, x = e.clientX + margem, y = e.clientY + margem;
-      if (x + 250 > window.innerWidth) x = e.clientX - 250 - margem;
-      if (y + 110 > window.innerHeight) y = e.clientY - 110 - margem;
+      var larg = dica.offsetWidth || 250, alt = dica.offsetHeight || 160;
+      if (x + larg > window.innerWidth) x = e.clientX - larg - margem;
+      if (y + alt > window.innerHeight) y = e.clientY - alt - margem;
       dica.style.left = x + 'px'; dica.style.top = y + 'px';
     });
   }
