@@ -374,3 +374,11 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .cartoes-fiscais li.vazio-linha{grid-column:1/-1;padding:18px;text-align:center;color:#666;border:1px dashed #d5deea;border-radius:10px}
 /* Sem "Zonas e locais" (nenhum município escolhido), a busca ocupa a largura toda. */
 .secoes-abaixo-mapa>#consulta-eleitoral[hidden]+.busca-global-card{grid-column:1/-1}
+
+/* Resultados: sub-abas por ano (js/eleicoes-resultados.js) */
+.anos-resultados{display:flex;gap:6px;margin:0 0 10px}
+.ano-res{border:1px solid #cfd8e3;background:#fff;color:#153e75;border-radius:999px;padding:6px 18px;font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.ano-res:hover{background:#eef3fb}
+.ano-res.ativa{background:#153e75;border-color:#153e75;color:#fff}
+.resultados-aviso-ano{margin:6px 0 0;padding:6px 10px;border-radius:6px;background:#fff8db;border:1px solid #f1d98a;color:#5c4a00;font-size:12.5px}
+.resultados-aviso-ano[hidden]{display:none}

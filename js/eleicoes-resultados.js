@@ -21,21 +21,43 @@
     return;
   }
 
-  var DADOS = window.DADOS_VOTACAO_SCHAFER;
-  var votosPorMun = new Map(DADOS.porMunicipio.map(function (r) { return [r.municipio, r.votos]; }));
-  var maxVotos = DADOS.porMunicipio.reduce(function (a, r) { return Math.max(a, r.votos); }, 1);
-  var totalVotosEstado = DADOS.porMunicipio.reduce(function (a, r) { return a + r.votos; }, 0);
+  // Sub-abas por ano: 2022 com a votação real; 2026 com a mesma estrutura e
+  // tudo zerado (eleição ainda não apurada) — todas as seções oficiais de
+  // 2026 (window.LOCAIS_VOTACAO, incluindo agregadas) entram como "sem voto".
+  // Quando houver o resultado de 2026, basta trocar DADOS_2026 pelo arquivo
+  // gerado por tools/gerar_votacao_candidato.py.
+  var D2022 = window.DADOS_VOTACAO_SCHAFER;
+  function dadosZerados(base, ano) {
+    var semVotos = [];
+    window.LOCAIS_VOTACAO.locais.forEach(function (l) {
+      l.secoes.forEach(function (s) {
+        [s.numero].concat(s.agregadas || []).forEach(function (n) {
+          semVotos.push({ municipio: l.municipio, zona: l.zona, secao: n, local: l.nome });
+        });
+      });
+    });
+    return { candidato: base.candidato, numero: base.numero, cargo: base.cargo, ano: ano, porMunicipio: [], porSecao: [], semVotos: semVotos };
+  }
+  var ANOS = { '2022': D2022, '2026': window.DADOS_VOTACAO_SCHAFER_2026 || dadosZerados(D2022, 2026) };
 
-  var porSecaoPorMun = new Map();
-  DADOS.porSecao.forEach(function (r) {
-    if (!porSecaoPorMun.has(r.municipio)) porSecaoPorMun.set(r.municipio, []);
-    porSecaoPorMun.get(r.municipio).push(r);
-  });
-  var semVotosPorMun = new Map();
-  DADOS.semVotos.forEach(function (r) {
-    if (!semVotosPorMun.has(r.municipio)) semVotosPorMun.set(r.municipio, []);
-    semVotosPorMun.get(r.municipio).push(r);
-  });
+  var DADOS, votosPorMun, maxVotos, totalVotosEstado, porSecaoPorMun, semVotosPorMun;
+  function usarDados(d) {
+    DADOS = d;
+    votosPorMun = new Map(DADOS.porMunicipio.map(function (r) { return [r.municipio, r.votos]; }));
+    maxVotos = DADOS.porMunicipio.reduce(function (a, r) { return Math.max(a, r.votos); }, 1);
+    totalVotosEstado = DADOS.porMunicipio.reduce(function (a, r) { return a + r.votos; }, 0);
+    porSecaoPorMun = new Map();
+    DADOS.porSecao.forEach(function (r) {
+      if (!porSecaoPorMun.has(r.municipio)) porSecaoPorMun.set(r.municipio, []);
+      porSecaoPorMun.get(r.municipio).push(r);
+    });
+    semVotosPorMun = new Map();
+    DADOS.semVotos.forEach(function (r) {
+      if (!semVotosPorMun.has(r.municipio)) semVotosPorMun.set(r.municipio, []);
+      semVotosPorMun.get(r.municipio).push(r);
+    });
+  }
+  usarDados(D2022);
 
   function ordemZonaSecao(a, b) {
     return Number(a.zona) - Number(b.zona) || String(a.secao).localeCompare(String(b.secao));
@@ -169,7 +191,8 @@
   // de votos — mesma ação de clicar no mapa, só que em ordem de prioridade
   // em vez de posição geográfica.
   var elRanking = document.getElementById('resultadosRanking');
-  if (elRanking) {
+  function montarRanking() {
+    if (!elRanking) return;
     var itensRanking = Array.from(mapa.nomes.entries()).map(function (par) {
       return { id: par[0], nome: par[1], votos: votosPorMun.get(par[0]) || 0 };
     }).sort(function (a, b) { return b.votos - a.votos || a.nome.localeCompare(b.nome, 'pt-BR'); });
@@ -181,6 +204,7 @@
       btn.addEventListener('click', function () { mostrarDetalhe(btn.dataset.id); });
     });
   }
+  montarRanking();
 
   // Antes de clicar em qualquer município, o painel à direita mostra o
   // resumo geral do estado em vez de só um convite pra clicar — mesmas
@@ -207,6 +231,31 @@
       '<p class="resultados-dica">Clique num município no mapa (ou na lista à esquerda) para ver o detalhe por zona e seção.</p>';
   }
   mostrarResumoGeral();
+
+  // Troca de ano: recalcula tudo com os dados do ano e volta pra visão do
+  // estado (fecha o município/bairros abertos).
+  var tituloResultados = document.getElementById('resultados-titulo');
+  var avisoAno = document.getElementById('resultadosAvisoAno');
+  var botoesAno = document.querySelectorAll('.anos-resultados .ano-res');
+  function trocarAno(ano) {
+    if (!ANOS[ano]) return;
+    usarDados(ANOS[ano]);
+    botoesAno.forEach(function (b) {
+      var on = b.dataset.ano === ano;
+      b.classList.toggle('ativa', on);
+      b.setAttribute('aria-selected', String(on));
+    });
+    if (tituloResultados) tituloResultados.textContent = 'Votação por seção — José Luís Schafer (' + ano + ')';
+    svg.setAttribute('aria-label', 'Mapa de votos por município para José Luís Schafer em ' + ano);
+    if (avisoAno) avisoAno.hidden = DADOS.porMunicipio.length > 0;
+    if (secaoBairros) secaoBairros.hidden = true;
+    svg.removeAttribute('hidden');
+    mapa.destacar(null);
+    mapa.pintar(corMunicipio);
+    montarRanking();
+    mostrarResumoGeral();
+  }
+  botoesAno.forEach(function (b) { b.addEventListener('click', function () { trocarAno(b.dataset.ano); }); });
 
   function mostrarDetalhe(id) {
     mapa.destacar(id);

@@ -10,7 +10,7 @@
   <script src="../js/admin-gate.js?v=2026092203"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092212">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092213">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -26,6 +26,7 @@
     </nav>
 
     <div class="aba-conteudo" data-aba="resultados" role="tabpanel" id="painel-resultados" aria-labelledby="aba-resultados" tabindex="0">
+      <nav class="anos-resultados" role="tablist" aria-label="Ano da eleição"><button type="button" role="tab" class="ano-res ativa" data-ano="2022" aria-selected="true">2022</button><button type="button" role="tab" class="ano-res" data-ano="2026" aria-selected="false">2026</button></nav>
       <div class="resultados-wrap">
         <nav class="municipios-lateral resultados-ranking" aria-label="Municípios por votos">
           <h2>Municípios por votos</h2>
@@ -35,6 +36,7 @@
           <div class="resultados-topo">
             <h2 id="resultados-titulo">Votação por seção — José Luís Schafer (2022)</h2>
             <p>Mapa por município, conforme os votos do candidato. Clique num município para ver o detalhe por zona e seção, incluindo as seções sem voto para ele.</p>
+            <p id="resultadosAvisoAno" class="resultados-aviso-ano" hidden>Eleição de 2026 ainda sem votos apurados: os valores estão zerados e todas as seções aparecem como sem voto.</p>
           </div>
           <p id="resultadosStatus" role="status">Carregando mapa…</p>
           <svg id="mapaResultados" viewBox="0 0 1000 600" aria-label="Mapa de votos por município para José Luís Schafer"></svg>
@@ -262,7 +264,7 @@
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
 <script src="../js/eleicoes.js?v=2026092212"></script>
-  <script src="../js/eleicoes-resultados.js?v=2026091507"></script>
+  <script src="../js/eleicoes-resultados.js?v=2026092201"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026091802"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026091508"></script>
