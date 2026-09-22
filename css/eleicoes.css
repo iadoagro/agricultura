@@ -339,7 +339,7 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
   .coluna-central>#painel{flex:none;display:grid;grid-template-columns:160px minmax(0,1fr);gap:14px;align-items:start;padding:10px 12px}
   #painel .painel-topo{border:0;padding:0}
   #painel .painel-topo h2{font-size:17px;line-height:1.2}
-  #cadastro:not([hidden]){display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:6px 10px;align-items:end;padding:0}
+  #cadastro:not([hidden]){display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(130px,auto);gap:6px 10px;align-items:end;padding:0}
   #cadastro h3{grid-column:1/-1;margin:0;font-size:13px;color:#153e75}
   #cadastro .campo{min-width:0}
   #cadastro .campo label{display:block;margin:0 0 3px;font-size:12px}
@@ -351,8 +351,15 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 }/* Controles do mapa de bairros mais compactos (sobra mais altura pro mapa) */
 @media(min-width:1000px) and (min-height:600px){
   .coluna-central .mapa-topo p{display:none}
-  .coluna-central #mapaBairrosSecao{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 18px}
+  .coluna-central #mapaBairrosSecao:not([hidden]){display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 18px}
   .coluna-central #mapaBairrosSecao>.mapa-bairros-topo,.coluna-central #mapaBairrosSecao>.mapa-bairros-viewport{flex:0 0 100%}
   .coluna-central #mapaBairrosSecao>.fiscais-mapa-filtros,.coluna-central #mapaBairrosSecao>#mapaFiscaisResumo,.coluna-central #mapaBairrosSecao>.resultados-bairros-legenda{flex:0 1 auto;margin:0}
   .coluna-central #mapaBairrosSecao>#mapaFiscaisResumo{font-size:12px}
 }
+/* Faixa do cadastro: 8 colunas (7 campos + botão) na tela larga; em 4 colunas
+   quando a tela é mais estreita. Um bloco de fiscais aparece com ou sem
+   município escolhido. */
+@media(min-width:1000px) and (min-height:600px) and (max-width:1399px){
+  #cadastro:not([hidden]){grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+.lista-cadastros #cadastros .cadastro-municipio{display:inline;margin:0;font-weight:600;color:#153e75}

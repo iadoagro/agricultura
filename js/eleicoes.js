@@ -251,6 +251,10 @@
   }
   if (campoBuscaCadastros) campoBuscaCadastros.addEventListener('input', () => { pagina = 0; listar(); });
   function registrosFiltrados() {
+    // Sem município escolhido (tela inicial): fiscais de todos os municípios.
+    if (!selecionado) {
+      return ler().filter(bateBusca).sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+    }
     return ler().filter(r => {
       if (r.municipio !== selecionado) return false;
       if (!bateBusca(r)) return false;
@@ -340,6 +344,13 @@
     document.querySelectorAll('#cadastros li.selecionado').forEach(li => li.classList.remove('selecionado'));
   }
   function destacarFiscal(r) {
+    // Clicado na lista de todos os municípios: abre o município dele primeiro
+    // (desenha o mapa de bairros) e só então destaca a seção.
+    if (r.municipio && r.municipio !== selecionado && nomes.has(r.municipio)) {
+      abrir(r.municipio);
+      setTimeout(() => destacarFiscal(r), 350);
+      return;
+    }
     destacadoId = r._id || null;
     document.querySelectorAll('#cadastros li.cadastro-compacto').forEach(li => li.classList.toggle('selecionado', li.dataset.id === String(r._id)));
     const local = locais.find(l => l.id === r.localId) ||
@@ -390,6 +401,13 @@
       const zonaSecao = document.createElement('span');
       zonaSecao.className = 'cadastro-info-compacta';
       zonaSecao.textContent = 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—') + (r.bairro ? ' · ' + r.bairro : '');
+      // Na lista de todos os municípios, mostra de qual é o fiscal.
+      if (!selecionado) {
+        const mun = document.createElement('span');
+        mun.className = 'cadastro-municipio';
+        mun.textContent = (nomes.get(r.municipio) || r.municipio) + ' · ';
+        zonaSecao.prepend(mun);
+      }
       li.append(cabecalho, zonaSecao);
       return li;
     }
@@ -414,12 +432,12 @@
   function listar() {
     const lista = document.getElementById('cadastros');
     const secaoLista = document.getElementById('listaCadastrosSecao');
-    if (secaoLista) secaoLista.hidden = !selecionado;
+    if (secaoLista) secaoLista.hidden = false;
     lista.replaceChildren();
     try {
       const registros = registrosFiltrados();
       const buscando = campoBuscaCadastros && campoBuscaCadastros.value.trim();
-      document.getElementById('lista-titulo').textContent = 'Cadastros do município (' + registros.length + ')';
+      document.getElementById('lista-titulo').textContent = (selecionado ? 'Cadastros do município (' : 'Cadastros de todos os municípios (') + registros.length + ')';
       if (!registros.length) {
         const vazio = document.createElement('li');
         vazio.className = 'vazio-linha';
@@ -644,7 +662,7 @@
     } catch (e) { mensagem.className = 'erro'; mensagem.textContent = e.message; }
     finally { botaoSalvar.disabled = false; }
   });
-  window.addEventListener('banco-atualizado', () => { if (selecionado) listar(); });
+  window.addEventListener('banco-atualizado', () => listar());
   window.addEventListener('bairros-atualizado', () => { if (selecionado) atualizarCampoBairro(); });
   // Tela de cadastro de bairros é só do administrador.
   const linkBairros = document.getElementById('linkBairros');
@@ -654,7 +672,9 @@
   if (window.BAIRROS_FISCAIS && window.ADMIN_AUTH && (!window.BAIRROS_FISCAIS.online || window.ADMIN_AUTH.sessaoAtual())) {
     window.BAIRROS_FISCAIS.carregar().catch(() => {});
   }
-  window.addEventListener('storage', e => { if (e.key === chave && selecionado) listar(); });
+  window.addEventListener('storage', e => { if (e.key === chave) listar(); });
+  // Tela inicial (sem município): já mostra os fiscais de todos os municípios.
+  listar();
   const ns = 'http://www.w3.org/2000/svg';
   // O mapa acompanha a página e funciona também quando aberta como arquivo local.
   Promise.resolve().then(() => {
@@ -713,5 +733,6 @@
       mapa.append(texto);
     });
     document.getElementById('mapa-status').hidden = true;
+    if (!selecionado) listar();   // agora com os nomes dos municípios nos cartões
   }).catch(() => { document.getElementById('mapa-status').textContent = 'Não foi possível carregar o mapa. Recarregue a página para tentar novamente.'; });
 })();
