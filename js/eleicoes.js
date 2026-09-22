@@ -361,7 +361,17 @@
       mapaBairros.destacar({ lat: coord.lat, lon: coord.lon, html:
         '<strong>Seção ' + escBairro(r.secao) + '</strong> · Zona ' + escBairro(r.zona) +
         '<br>' + escBairro(local.nome) + (coord.bairro ? '<br>' + escBairro(coord.bairro) : '') +
-        '<br><span class="pin-destaque-fiscais">Fiscal: ' + mesmaSecao.map(x => escBairro(x.nome)).join(', ') + '</span>' });
+        '<div class="pin-destaque-fiscais">' + (mesmaSecao.length > 1 ? 'Fiscais:' : 'Fiscal:') +
+        mesmaSecao.map(x => {
+          // Cada fiscal da seção com o número; o número abre o WhatsApp.
+          const digitos = (x.telefone || '').replace(/\D/g, '');
+          const internacional = digitos.length === 10 || digitos.length === 11 ? '55' + digitos : digitos;
+          const tel = !x.telefone ? '<span class="pin-destaque-sem-tel">sem telefone</span>'
+            : /^\d{10,15}$/.test(internacional)
+              ? '<a href="https://wa.me/' + internacional + '" target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp">💬 ' + escBairro(x.telefone) + '</a>'
+              : escBairro(x.telefone);
+          return '<div class="pin-destaque-fiscal"><strong>' + escBairro(x.nome) + '</strong> ' + tel + '</div>';
+        }).join('') + '</div>' });
       // A lista fica abaixo do mapa: volta a rolagem até ele.
       const viewport = document.getElementById('mapaBairrosViewport') || secaoMapa;
       rolarAte(viewport, true);

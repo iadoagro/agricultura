@@ -304,7 +304,12 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .pin-destaque span{display:block;width:26px;height:26px;border-radius:50%;background:#ffd400;border:3px solid #153e75;box-sizing:border-box;box-shadow:0 0 0 0 rgba(255,212,0,.7);animation:pin-destaque-pulso 1.4s ease-out infinite}
 @keyframes pin-destaque-pulso{0%{box-shadow:0 0 0 0 rgba(255,212,0,.75)}100%{box-shadow:0 0 0 18px rgba(255,212,0,0)}}
 @media (prefers-reduced-motion:reduce){.pin-destaque span{animation:none}}
-.pin-destaque-fiscais{color:#1f6f3f;font-weight:600}
+.pin-destaque-fiscais{margin-top:4px;color:#1f6f3f;font-weight:600}
+.pin-destaque-fiscal{margin-top:2px;font-weight:400;color:#333}
+.pin-destaque-fiscal strong{color:#1f6f3f}
+.pin-destaque-fiscal a{color:#1f9d55;font-weight:600;text-decoration:none;white-space:nowrap}
+.pin-destaque-fiscal a:hover{text-decoration:underline}
+.pin-destaque-sem-tel{color:#999}
 
 /* Lista de cadastros abaixo do mapa + mapa maior */
 .lista-cadastros{margin-top:14px;padding-top:12px;border-top:1px solid #e6ebf2}
