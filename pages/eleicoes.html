@@ -10,7 +10,7 @@
   <script src="../js/admin-gate.js?v=2026092203"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092207">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092209">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -113,6 +113,27 @@
     <div class="aba-conteudo" data-aba="fiscais" role="tabpanel" id="painel-fiscais" aria-labelledby="aba-fiscais" tabindex="0">
     <div class="area-municipios">
     <nav class="municipios-lateral" aria-label="Municípios do Acre"><h2>Municípios</h2><div id="municipios-lista"></div></nav>
+    <div class="coluna-central">
+      <aside id="painel" aria-labelledby="painel-titulo">
+    <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
+    <form id="cadastro">
+      <h3 id="cadastro-titulo">Adicionar cadastro</h3>
+      <div class="campo"><label for="formMunicipio">Município</label><select id="formMunicipio" name="formMunicipio" required><option value="">Escolha um município</option></select></div>
+      <div class="campo"><label for="nome">Nome</label><input id="nome" name="nome" autocomplete="name" enterkeyhint="next" autocapitalize="words" maxlength="160" required></div>
+      <div class="campo"><label for="telefone">Telefone</label><input id="telefone" name="telefone" type="tel" inputmode="tel" enterkeyhint="next" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required></div>
+      <div class="campo"><label for="regional">Regional</label>
+      <select id="regional" name="regional" required>
+        <option value="">Selecione a regional</option>
+        <option>Alto Acre</option><option>Baixo Acre</option><option>Purus</option><option>Tarauacá/Envira</option><option>Juruá</option>
+      </select></div>
+      <div class="campo"><label for="bairro">Bairro</label><input id="bairro" name="bairro" maxlength="120" enterkeyhint="next" autocapitalize="words"></div>
+      <div class="campo"><label for="zona">Zona eleitoral</label><select id="zona" name="zona" required><option value="">Selecione a zona</option></select></div>
+      <div class="campo"><label for="secao">Seção eleitoral</label><select id="secao" name="secao" required disabled><option value="">Selecione a zona primeiro</option></select></div>
+      <div class="campo campo-acoes"><button class="salvar" type="submit">Salvar cadastro</button>
+      <button class="cancelar-edicao" type="button" id="cancelarEdicao" hidden>Cancelar edição</button></div>
+      <p id="mensagem" role="status"></p>
+    </form>
+  </aside>
     <section class="mapa-card" aria-labelledby="mapa-titulo">
       <div class="mapa-topo"><div><h2 id="mapa-titulo">Municípios do Acre</h2><p>Clique em um município para abrir os cadastros.</p></div>
         <label>Selecionar município<select id="municipio"><option value="">Escolha um município</option></select></label>
@@ -152,26 +173,8 @@
       </section>
       <div class="mapa-rodape"><span id="municipio-hover">22 municípios · Acre</span><a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" target="_blank" rel="noopener">Malha municipal: IBGE</a></div>
     </section>
-  <aside id="painel" aria-labelledby="painel-titulo">
-    <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
-    <form id="cadastro">
-      <h3 id="cadastro-titulo">Adicionar cadastro</h3>
-      <label for="formMunicipio">Município</label><select id="formMunicipio" name="formMunicipio" required><option value="">Escolha um município</option></select>
-      <label for="nome">Nome</label><input id="nome" name="nome" autocomplete="name" enterkeyhint="next" autocapitalize="words" maxlength="160" required>
-      <label for="telefone">Telefone</label><input id="telefone" name="telefone" type="tel" inputmode="tel" enterkeyhint="next" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required>
-      <label for="regional">Regional</label>
-      <select id="regional" name="regional" required>
-        <option value="">Selecione a regional</option>
-        <option>Alto Acre</option><option>Baixo Acre</option><option>Purus</option><option>Tarauacá/Envira</option><option>Juruá</option>
-      </select>
-      <label for="bairro">Bairro</label><input id="bairro" name="bairro" maxlength="120" enterkeyhint="next" autocapitalize="words">
-      <label for="zona">Zona eleitoral</label><select id="zona" name="zona" required><option value="">Selecione a zona</option></select>
-      <label for="secao">Seção eleitoral</label><select id="secao" name="secao" required disabled><option value="">Selecione a zona primeiro</option></select>
-      <button class="salvar" type="submit">Salvar cadastro</button>
-      <button class="cancelar-edicao" type="button" id="cancelarEdicao" hidden>Cancelar edição</button>
-      <p id="mensagem" role="status"></p>
-    </form>
-  </aside>
+    </div>
+
     </div>
     <div class="secoes-abaixo-mapa">
       <section id="consulta-eleitoral" class="mapa-card" hidden aria-label="Zonas e seções do município">
@@ -253,12 +256,12 @@
   <script src="../js/regionais-municipios.js?v=2026091411"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026092206"></script>
+  <script src="../js/banco-eleicoes.js?v=2026092209"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
   <script src="../js/mapa-bairros-leaflet.js?v=2026092201"></script>
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
-<script src="../js/eleicoes.js?v=2026092206"></script>
+<script src="../js/eleicoes.js?v=2026092209"></script>
   <script src="../js/eleicoes-resultados.js?v=2026091507"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026091802"></script>

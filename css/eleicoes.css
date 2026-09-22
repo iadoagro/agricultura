@@ -324,9 +324,35 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 /* Mapa de bairros ocupa quase toda a altura visível; a lista vem logo abaixo
    (o cartão do mapa rola). Em tela cheia continua ocupando tudo. */
 .mapa-card #mapaBairrosSecao{flex:none;overflow:visible}
-.mapa-card .mapa-bairros-viewport{flex:none;height:max(520px,calc(100dvh - 130px))}
+.mapa-card .mapa-bairros-viewport{flex:none;height:max(320px,calc(100dvh - 400px))}
 #mapaBairrosSecao:fullscreen .mapa-bairros-viewport,#mapaBairrosSecao:-webkit-full-screen .mapa-bairros-viewport{flex:1;height:auto}
 @media(max-width:999px){.mapa-card .mapa-bairros-viewport{height:max(380px,65vh)}}
 
-/* Com a lista abaixo do mapa, a coluna do formulário pode ser mais estreita */
-@media(min-width:1000px) and (min-height:600px){.area-municipios{grid-template-columns:180px minmax(0,1fr) 290px}}
+
+/* Cadastro em faixa horizontal acima do mapa (sem coluna à direita). A
+   altura do mapa é ajustada por js/eleicoes.js (ajustarAlturaMapa) pra
+   formulário + mapa caberem na tela; a lista de cadastros vem ao rolar. */
+@media(min-width:1000px) and (min-height:600px){
+  .area-municipios{grid-template-columns:180px minmax(0,1fr)}
+  .coluna-central{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
+  .coluna-central>.mapa-card{flex:none;overflow:visible}
+  .coluna-central>#painel{flex:none;display:grid;grid-template-columns:160px minmax(0,1fr);gap:14px;align-items:start;padding:10px 12px}
+  #painel .painel-topo{border:0;padding:0}
+  #painel .painel-topo h2{font-size:17px;line-height:1.2}
+  #cadastro:not([hidden]){display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:6px 10px;align-items:end;padding:0}
+  #cadastro h3{grid-column:1/-1;margin:0;font-size:13px;color:#153e75}
+  #cadastro .campo{min-width:0}
+  #cadastro .campo label{display:block;margin:0 0 3px;font-size:12px}
+  #cadastro .campo-acoes{display:flex;gap:6px}
+  #cadastro .campo-acoes .salvar{flex:1;margin:0;height:32px;padding:0 10px;white-space:nowrap}
+  #cadastro .campo-acoes .cancelar-edicao{height:32px;margin:0;white-space:nowrap}
+  #cadastro #mensagem{grid-column:1/-1;margin:0}
+  #cadastro #mensagem:empty{display:none}
+}/* Controles do mapa de bairros mais compactos (sobra mais altura pro mapa) */
+@media(min-width:1000px) and (min-height:600px){
+  .coluna-central .mapa-topo p{display:none}
+  .coluna-central #mapaBairrosSecao{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 18px}
+  .coluna-central #mapaBairrosSecao>.mapa-bairros-topo,.coluna-central #mapaBairrosSecao>.mapa-bairros-viewport{flex:0 0 100%}
+  .coluna-central #mapaBairrosSecao>.fiscais-mapa-filtros,.coluna-central #mapaBairrosSecao>#mapaFiscaisResumo,.coluna-central #mapaBairrosSecao>.resultados-bairros-legenda{flex:0 1 auto;margin:0}
+  .coluna-central #mapaBairrosSecao>#mapaFiscaisResumo{font-size:12px}
+}

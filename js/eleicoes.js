@@ -88,7 +88,54 @@
     corContorno: '#ffe066',
     obterDica: htmlDicaBairro
   }) : null;
+  // Na tela grande, formulário (em cima) + mapa têm que caber na altura
+  // visível da coluna central: o mapa fica com o espaço que sobra (mínimo
+  // 320px). A lista de cadastros, abaixo do mapa, aparece ao rolar. No
+  // celular a coluna não rola sozinha, então vale a altura do CSS.
+  const telaGrande = window.matchMedia('(min-width:1000px) and (min-height:600px)');
+  // Rola até um elemento. Na tela grande só o painel da aba rola (sem mexer
+  // na janela, que deslocaria o cabeçalho); no celular, a página.
+  function rolarAte(el, centralizar) {
+    const rolagem = document.getElementById('painel-fiscais');
+    if (!el) return;
+    if (!rolagem || !telaGrande.matches) { el.scrollIntoView({ behavior: 'smooth', block: centralizar ? 'center' : 'start' }); return; }
+    const r = el.getBoundingClientRect(), topo = rolagem.getBoundingClientRect().top;
+    let alvo = rolagem.scrollTop + (r.top - topo) - 8;
+    if (centralizar) alvo -= Math.max(0, (rolagem.clientHeight - r.height) / 2 - 8);
+    // Imediata: a suave é cancelada quando o formulário/mapa mudam de altura
+    // no meio do caminho (ex.: ao abrir a edição).
+    rolagem.scrollTo({ top: Math.max(0, alvo), behavior: 'auto' });
+  }
+  function ajustarAlturaMapa() {
+    // Quem rola na tela grande é o painel da aba (#painel-fiscais).
+    const rolagem = document.getElementById('painel-fiscais');
+    const viewport = document.getElementById('mapaBairrosViewport');
+    const svgEstado = document.getElementById('mapa');
+    if (!rolagem || !telaGrande.matches || !rolagem.clientHeight) {
+      if (viewport) viewport.style.height = '';
+      if (svgEstado) svgEstado.style.maxHeight = '';
+      return;
+    }
+    const topoRolagem = rolagem.getBoundingClientRect().top - rolagem.scrollTop;
+    const sobra = el => rolagem.clientHeight - (el.getBoundingClientRect().top - topoRolagem) - 24;
+    const secaoBairros = document.getElementById('mapaBairrosSecao');
+    if (viewport && secaoBairros && !secaoBairros.hidden) {
+      viewport.style.height = Math.max(320, sobra(viewport)) + 'px';
+      if (mapaBairros) mapaBairros.invalidar();
+    }
+    const areaEstado = document.getElementById('mapaEstadoArea');
+    if (svgEstado && areaEstado && !areaEstado.hidden) {
+      const legenda = areaEstado.querySelector('.cobertura-legenda');
+      svgEstado.style.maxHeight = Math.max(260, sobra(svgEstado) - (legenda ? legenda.offsetHeight + 6 : 0)) + 'px';
+    }
+  }
+  let ajusteMapaTimer = null;
+  const agendarAjusteMapa = () => { clearTimeout(ajusteMapaTimer); ajusteMapaTimer = setTimeout(ajustarAlturaMapa, 60); };
+  window.addEventListener('resize', agendarAjusteMapa);
+  // O formulário muda de altura (mensagem, dica do bairro, quebra de linha).
+  if (window.ResizeObserver && painel) new ResizeObserver(agendarAjusteMapa).observe(painel);
   function renderizarMapaBairros() {
+    agendarAjusteMapa();
     const secaoEl = document.getElementById('mapaBairrosSecao');
     if (!secaoEl) return;
     const dadosBairros = dadosBairrosDoMunicipio(selecionado);
@@ -310,7 +357,7 @@
         '<br><span class="pin-destaque-fiscais">Fiscal: ' + mesmaSecao.map(x => escBairro(x.nome)).join(', ') + '</span>' });
       // A lista fica abaixo do mapa: volta a rolagem até ele.
       const viewport = document.getElementById('mapaBairrosViewport') || secaoMapa;
-      viewport.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      rolarAte(viewport, true);
     } else if (mapaBairros && mapaBairros.limparDestaque) mapaBairros.limparDestaque();
     if (avisoDestaque) {
       avisoDestaque.hidden = false;
@@ -428,7 +475,9 @@
     // Agora que a lista lateral pode empilhar vários cadastros, o formulário
     // (no topo do painel) pode ficar fora da área visível quando se clica
     // num cadastro mais abaixo — rola até ele sempre, não só no mobile.
-    form.scrollIntoView({behavior:'smooth', block:'start'});
+    // Depois do popup fechar e devolver o foco ao botão "⋯" (lá embaixo),
+    // senão essa devolução cancela a rolagem.
+    setTimeout(() => { form.elements.nome.focus({ preventScroll: true }); rolarAte(painel || form, false); }, 50);
   }
   function excluirRegistro(r) {
     if (!window.BANCO_ELEICOES.online && !r._id) {
