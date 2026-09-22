@@ -14,6 +14,13 @@
   var contagem = document.getElementById('usuariosContagem');
   var DOMINIO_USUARIO = '@sistema.local';
   var linhas = [];
+  // Acessos (antes numa tela à parte, admin-permissoes.html): clicar na
+  // pessoa abre as páginas liberadas pra ela. Fiscais é sempre liberado
+  // (auth.SEMPRE_LIBERADAS), então aparece marcado e travado.
+  var PAGINAS = [['eleicoes', 'Fiscais'], ['portarias', 'Portarias'], ['organograma', 'Organograma'],
+    ['chamados', 'Chamados'], ['dashboards', 'Dashboards'], ['contatos', 'Contatos']];
+  var aberto = null;            // id da pessoa com os acessos abertos
+  var rascunhos = new Map();    // id → páginas marcadas ainda não salvas
 
   function atualizarPreviaLogin() { novoLogin.value = auth.previewLogin(novoNome.value, novoSobrenome.value); }
   novoNome.addEventListener('input', atualizarPreviaLogin);
@@ -53,11 +60,16 @@
       botoes.push('<button type="button" class="redefinir" data-acao="redefinir">Redefinir senha</button>');
       botoes.push('<button type="button" class="editar" data-acao="editar">Editar login/e-mail</button>');
       botoes.push('<button type="button" class="excluir" data-acao="excluir">Excluir</button>');
+      var expandido = aberto === l.id;
+      li.classList.toggle('expandido', expandido);
       li.innerHTML =
-        '<div class="sol-info"><strong>' + escapar(mostrarLogin(l.email)) + '</strong></div>' +
+        '<div class="sol-info"><button type="button" class="sol-pessoa" aria-expanded="' + expandido + '" title="Ver e alterar os acessos">' +
+        '<strong>' + escapar(mostrarLogin(l.email)) + '</strong><span>' + (expandido ? 'Ocultar acessos ▴' : 'Ver acessos ▾') + '</span></button></div>' +
         '<div class="sol-situacao"><span class="sol-status ' + escapar(l.status) + '">' + rotuloStatus(l.status) + '</span>' +
         '<span class="sol-status ' + (ativo ? 'ativo' : 'inativo') + '">' + (ativo ? 'Ativo' : 'Desativado') + '</span></div>' +
         '<div class="sol-acoes" data-id="' + escapar(l.id) + '" data-email="' + escapar(l.email) + '">' + botoes.join('') + '</div>';
+      li.querySelector('.sol-pessoa').addEventListener('click', function () { aberto = aberto === l.id ? null : l.id; render(); });
+      if (expandido) li.appendChild(painelAcessos(l, li));
       lista.appendChild(li);
     });
     lista.querySelectorAll('.sol-acoes').forEach(function (bloco) {
@@ -65,6 +77,48 @@
         botao.addEventListener('click', function () { executar(bloco, botao); });
       });
     });
+  }
+
+  function painelAcessos(l, li) {
+    var sempre = auth.SEMPRE_LIBERADAS || [];
+    var salvas = Array.isArray(l.paginas) ? l.paginas : [];
+    var marcadas = rascunhos.get(l.id) || salvas;
+    var painel = document.createElement('div');
+    painel.className = 'usuario-acessos';
+    var aviso = l.status !== 'aprovado' ? '<p class="usuario-acessos-aviso">Os acessos só valem depois que o cadastro for aprovado.</p>'
+      : l.ativo === false ? '<p class="usuario-acessos-aviso">Conta desativada: enquanto estiver assim, não acessa nenhuma página.</p>' : '';
+    painel.innerHTML = '<strong class="usuario-acessos-tit">Acesso às páginas</strong>' + aviso +
+      '<div class="sol-paginas">' + PAGINAS.map(function (p) {
+        var fixa = sempre.indexOf(p[0]) !== -1;
+        return '<label' + (fixa ? ' title="Liberado para todos"' : '') + '><input type="checkbox" data-chave="' + p[0] + '"' +
+          (fixa || marcadas.indexOf(p[0]) !== -1 ? ' checked' : '') + (fixa ? ' disabled' : '') + '><span>' + p[1] + (fixa ? ' <em>(todos)</em>' : '') + '</span></label>';
+      }).join('') + '</div>' +
+      '<div class="permissoes-acao"><button type="button" class="permissoes-salvar"' + (rascunhos.has(l.id) ? '' : ' disabled') + '>Salvar acessos</button><span class="permissoes-linha-msg" aria-live="polite"></span></div>';
+    var botao = painel.querySelector('.permissoes-salvar');
+    var linhaMsg = painel.querySelector('.permissoes-linha-msg');
+    var caixas = painel.querySelectorAll('input[type="checkbox"]:not([disabled])');
+    var escolhidas = function () {
+      return sempre.concat(Array.prototype.filter.call(caixas, function (c) { return c.checked; }).map(function (c) { return c.dataset.chave; }));
+    };
+    if (rascunhos.has(l.id)) li.classList.add('alterada');
+    caixas.forEach(function (c) { c.addEventListener('change', function () {
+      rascunhos.set(l.id, escolhidas());
+      botao.disabled = false; li.classList.add('alterada'); linhaMsg.textContent = '';
+    }); });
+    botao.addEventListener('click', function () {
+      var paginas = escolhidas();
+      botao.disabled = true; caixas.forEach(function (c) { c.disabled = true; });
+      linhaMsg.textContent = 'Salvando…';
+      auth.definirPaginas(l.id, paginas).then(function () {
+        l.paginas = paginas; rascunhos.delete(l.id); li.classList.remove('alterada');
+        linhaMsg.textContent = 'Salvo';
+        msg.textContent = 'Acessos de ' + mostrarLogin(l.email) + ' atualizados.'; msg.className = 'admin-msg';
+      }).catch(function (e) {
+        botao.disabled = false; linhaMsg.textContent = 'Falha ao salvar';
+        msg.textContent = e.message; msg.className = 'admin-msg erro';
+      }).finally(function () { caixas.forEach(function (c) { c.disabled = false; }); });
+    });
+    return painel;
   }
 
   function executar(bloco, botao) {

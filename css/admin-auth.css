@@ -1,4 +1,4 @@
-/* Login de Admin com aprovação — admin-login.html, admin-usuarios.html e admin-permissoes.html */
+/* Login de Admin com aprovação — admin-login.html, admin-usuarios.html (com os acessos de cada pessoa) */
 header{background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:22px 20px;text-align:center}
 header h1{font-size:22px;margin-bottom:4px}
 header p{font-size:13px;opacity:.9}
@@ -132,3 +132,17 @@ header p{font-size:13px;opacity:.9}
 .permissoes-novo label span{white-space:nowrap}
 .usuarios-tabela .permissoes-colunas span:last-child{text-align:right}
 @media(max-width:900px){.usuarios-tabela .permissoes-colunas span:last-child{text-align:left}}
+
+/* Usuários: clicar na pessoa abre os acessos dela (js/admin-usuarios.js) */
+.usuarios-tabela .sol-pessoa{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:0;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.usuarios-tabela .sol-pessoa span{font-size:12px;color:#2f4f9e;font-weight:600}
+.usuarios-tabela .sol-pessoa:hover strong{text-decoration:underline}
+.usuarios-tabela .sol-pessoa:focus-visible{outline:2px solid #4472c4;outline-offset:4px;border-radius:4px}
+.usuarios-tabela .lista-solicitacoes li.expandido{background:#f7faff}
+.usuarios-tabela .lista-solicitacoes li.expandido.alterada{background:#fffaf0}
+.usuario-acessos{grid-column:1/-1;flex-basis:100%;display:flex;flex-direction:column;gap:12px;padding:16px 18px;border:1px solid #dbe4f0;border-radius:10px;background:#fff}
+.usuario-acessos-tit{font-size:13px;color:#172b4d}
+.usuario-acessos-aviso{margin:0;font-size:12px;color:#8a5a00}
+.usuario-acessos .sol-paginas{margin:0}
+.usuario-acessos .sol-paginas em{font-style:normal;color:#62728a;font-size:11px}
+.usuario-acessos .permissoes-acao{display:flex;align-items:center;gap:12px}

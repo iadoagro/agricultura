@@ -7,6 +7,8 @@
   const cfg = window.BANCO_CONFIG || {};
   const RESPONSAVEL_EMAIL = 'root@root.com';
   const PAGINAS_PADRAO = ['eleicoes', 'dashboards'];
+  // Liberadas para toda conta aprovada e ativa, marcadas ou não em Acessos.
+  const SEMPRE_LIBERADAS = ['eleicoes'];
   const SENHA_PADRAO = '123456';
   const DOMINIO_USUARIO = 'sistema.local';
   const online = Boolean(cfg.url || cfg.chavePublica);
@@ -236,7 +238,7 @@
   async function redefinirSenhaPadrao(id) { await chamarAdminPHP('redefinir_senha', { id }); }
 
   window.ADMIN_AUTH = {
-    online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SENHA_PADRAO,
+    online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SEMPRE_LIBERADAS, SENHA_PADRAO,
     cadastrarConta, entrar, sair, listarSolicitacoes, decidir, definirPaginas, definirAtivo, previewLogin,
     cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
     sessaoAtual: () => sessao,
@@ -247,6 +249,7 @@
       if (!sessao) return false;
       if (sessao.papel === 'responsavel') return true;
       if (sessao.papel !== 'aprovado' || sessao.ativo === false) return false;
+      if (SEMPRE_LIBERADAS.indexOf(chave) !== -1) return true;
       return Array.isArray(sessao.paginas) && sessao.paginas.indexOf(chave) !== -1;
     }
   };

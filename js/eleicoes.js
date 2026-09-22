@@ -563,6 +563,11 @@
   });
   window.addEventListener('banco-atualizado', () => { if (selecionado) listar(); });
   window.addEventListener('bairros-atualizado', () => { if (selecionado) atualizarCampoBairro(); });
+  // Tela de cadastro de bairros é só do administrador.
+  const linkBairros = document.getElementById('linkBairros');
+  const mostrarLinkBairros = () => { if (linkBairros) linkBairros.hidden = !(window.ADMIN_AUTH && window.ADMIN_AUTH.papel() === 'responsavel'); };
+  window.addEventListener('admin-auth-atualizado', mostrarLinkBairros);
+  mostrarLinkBairros();
   if (window.BAIRROS_FISCAIS && window.ADMIN_AUTH && (!window.BAIRROS_FISCAIS.online || window.ADMIN_AUTH.sessaoAtual())) {
     window.BAIRROS_FISCAIS.carregar().catch(() => {});
   }

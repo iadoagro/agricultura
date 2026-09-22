@@ -9,7 +9,6 @@
 
   var CHAVES_POR_ARQUIVO = {
     'eleicoes.html': 'eleicoes',
-    'cadastros-fiscais.html': 'eleicoes',
     'portarias.html': 'portarias',
     'organograma.html': 'organograma',
     'chamados.html': 'chamados',
@@ -21,8 +20,11 @@
     'deagro.html': 'dashboards',
     'deagro-secoes.html': 'dashboards'
   };
+  // Páginas só do administrador (responsável), independente de Acessos.
+  var SO_ADMINISTRADOR = ['cadastros-fiscais.html', 'admin-usuarios.html'];
   var arquivo = location.pathname.split('/').pop();
   var chave = CHAVES_POR_ARQUIVO[arquivo] || null;
+  var soAdministrador = SO_ADMINISTRADOR.indexOf(arquivo) !== -1;
   var ehTrocaSenha = arquivo === 'admin-trocar-senha.html';
 
   function paraLogin() {
@@ -40,6 +42,7 @@
     var papel = auth.papel();
     if (papel !== 'responsavel' && papel !== 'aprovado') { paraLogin(); return; }
     if (auth.deveTrocarSenha()) { paraTrocaSenha(); return; }
+    if (soAdministrador && papel !== 'responsavel') { paraInicio(); return; }
     if (chave && !auth.podeAcessar(chave)) { paraInicio(); return; }
   }
   checar();
