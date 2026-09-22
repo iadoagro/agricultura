@@ -251,10 +251,6 @@
   }
   if (campoBuscaCadastros) campoBuscaCadastros.addEventListener('input', () => { pagina = 0; listar(); });
   function registrosFiltrados() {
-    // Sem município escolhido (tela inicial): fiscais de todos os municípios.
-    if (!selecionado) {
-      return ler().filter(bateBusca).sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
-    }
     return ler().filter(r => {
       if (r.municipio !== selecionado) return false;
       if (!bateBusca(r)) return false;
@@ -379,7 +375,7 @@
   // compacto: usado na barra lateral (vários cadastros empilhados) — só nome,
   // WhatsApp (sem o número) e zona/seção, sem os demais campos nem a data de
   // cadastro. Clicar destaca a seção no mapa; "⋯" abre editar/excluir.
-  function construirCartaoCadastro(r, compacto) {
+  function construirCartaoCadastro(r, compacto, mostrarMunicipio) {
     const li = document.createElement('li');
     if (compacto) {
       li.className = 'cadastro-compacto' + (destacadoId && r._id === destacadoId ? ' selecionado' : '');
@@ -401,8 +397,8 @@
       const zonaSecao = document.createElement('span');
       zonaSecao.className = 'cadastro-info-compacta';
       zonaSecao.textContent = 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—') + (r.bairro ? ' · ' + r.bairro : '');
-      // Na lista de todos os municípios, mostra de qual é o fiscal.
-      if (!selecionado) {
+      // Na busca em todos os municípios, mostra de qual é o fiscal.
+      if (mostrarMunicipio) {
         const mun = document.createElement('span');
         mun.className = 'cadastro-municipio';
         mun.textContent = (nomes.get(r.municipio) || r.municipio) + ' · ';
@@ -432,12 +428,15 @@
   function listar() {
     const lista = document.getElementById('cadastros');
     const secaoLista = document.getElementById('listaCadastrosSecao');
-    if (secaoLista) secaoLista.hidden = false;
+    // Sem município, os fiscais de todos aparecem em "Buscar fiscais em todos
+    // os municípios" (js/eleicoes-busca-exportar.js), não aqui.
+    if (secaoLista) secaoLista.hidden = !selecionado;
+    if (!selecionado) { listarAbaixoDoMapa(); renderizarMapaBairros(); return; }
     lista.replaceChildren();
     try {
       const registros = registrosFiltrados();
       const buscando = campoBuscaCadastros && campoBuscaCadastros.value.trim();
-      document.getElementById('lista-titulo').textContent = (selecionado ? 'Cadastros do município (' : 'Cadastros de todos os municípios (') + registros.length + ')';
+      document.getElementById('lista-titulo').textContent = 'Cadastros do município (' + registros.length + ')';
       if (!registros.length) {
         const vazio = document.createElement('li');
         vazio.className = 'vazio-linha';
@@ -673,8 +672,10 @@
     window.BAIRROS_FISCAIS.carregar().catch(() => {});
   }
   window.addEventListener('storage', e => { if (e.key === chave) listar(); });
-  // Tela inicial (sem município): já mostra os fiscais de todos os municípios.
-  listar();
+  // Cartão de fiscal (com município) pra busca em todos os municípios
+  // (js/eleicoes-busca-exportar.js): mesmo visual e mesmas ações daqui —
+  // clicar abre o município e destaca a seção; "⋯" edita/exclui.
+  window.CARTAO_FISCAL = r => construirCartaoCadastro(r, true, true);
   const ns = 'http://www.w3.org/2000/svg';
   // O mapa acompanha a página e funciona também quando aberta como arquivo local.
   Promise.resolve().then(() => {
@@ -733,6 +734,6 @@
       mapa.append(texto);
     });
     document.getElementById('mapa-status').hidden = true;
-    if (!selecionado) listar();   // agora com os nomes dos municípios nos cartões
+    window.dispatchEvent(new Event('municipios-carregados'));   // nomes nos cartões da busca
   }).catch(() => { document.getElementById('mapa-status').textContent = 'Não foi possível carregar o mapa. Recarregue a página para tentar novamente.'; });
 })();

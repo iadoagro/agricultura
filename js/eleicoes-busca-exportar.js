@@ -1,9 +1,9 @@
 /* Busca global de Fiscais (por nome/telefone, município, regional e zona) e
    exportação CSV da lista filtrada, para o time de campo. Independente do
    painel de cadastro por município de js/eleicoes.js — não lê nem altera o
-   estado dele, só window.BANCO_ELEICOES.ler(); "Abrir cadastro" reaproveita
-   o <select id="municipio"> já ligado por js/eleicoes.js (dispara um evento
-   "change" nele, que já chama abrir(id) lá) em vez de duplicar essa lógica. */
+   estado dele, só window.BANCO_ELEICOES.ler(). Mostra os fiscais com o mesmo
+   cartão da lista do município (window.CARTAO_FISCAL), que abre o município
+   e destaca a seção no mapa ao clicar. */
 (function () {
   'use strict';
   var campoTexto = document.getElementById('buscaGlobalTexto');
@@ -17,12 +17,6 @@
 
   var LIMITE_EXIBICAO = 300;
   var canonico = function (n) { return String(n || '').replace(/^0+/, '') || ''; };
-
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
 
   var nomesMun = new Map((window.MAPA_ACRE ? window.MAPA_ACRE.localidades : [])
     .map(function (m) { return [String(m.id), m.nome]; }));
@@ -49,41 +43,31 @@
     });
   }
 
-  function linkWhatsApp(r) {
-    var digitos = (r.telefone || '').replace(/\D/g, '');
-    var internacional = digitos.length === 10 || digitos.length === 11 ? '55' + digitos : digitos;
-    if (!/^\d{10,15}$/.test(internacional)) return esc(r.telefone || 'Não informado');
-    return '<a href="https://wa.me/' + internacional + '" target="_blank" rel="noopener noreferrer">' +
-      esc(r.telefone) + ' — WhatsApp</a>';
-  }
-
+  // Mesmo cartão da lista do município (window.CARTAO_FISCAL, de
+  // js/eleicoes.js), com o município do fiscal: clicar abre o município e
+  // destaca a seção no mapa; "⋯" edita/exclui.
   function renderizar() {
     // No modo online, window.BANCO_ELEICOES.ler() lança enquanto o banco
     // ainda está buscando os cadastros na 1ª carga da página — tenta de novo
     // quando o evento "banco-atualizado" avisar que terminou.
     var registros;
-    try { registros = filtrados(); } catch (e) { status.textContent = e.message; lista.innerHTML = ''; return; }
+    try { registros = filtrados(); } catch (e) { status.textContent = e.message; lista.replaceChildren(); return; }
+    registros.sort(function (a, b) { return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'); });
     status.textContent = registros.length + (registros.length === 1 ? ' fiscal encontrado.' : ' fiscais encontrados.') +
       (registros.length > LIMITE_EXIBICAO ? ' Mostrando os primeiros ' + LIMITE_EXIBICAO + '; refine a busca para ver os demais.' : '');
-    lista.innerHTML = registros.slice(0, LIMITE_EXIBICAO).map(function (r) {
-      return '<li>' +
-        '<strong>' + esc(r.nome) + '</strong>' +
-        '<span class="cadastro-telefone">' + linkWhatsApp(r) + '</span>' +
-        '<span>' + esc(nomesMun.get(r.municipio) || r.municipio) + ' · ' + esc(window.REGIONAIS_MUNICIPIOS[r.municipio] || '—') + '</span>' +
-        '<span>Zona ' + esc(r.zona || '—') + ' · Seção ' + esc(r.secao || '—') + '</span>' +
-        '<button type="button" class="busca-global-abrir" data-mun="' + esc(r.municipio) + '">Abrir cadastro</button>' +
-        '</li>';
-    }).join('');
-    lista.querySelectorAll('.busca-global-abrir').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var sel = document.getElementById('municipio');
-        if (!sel) return;
-        sel.value = btn.dataset.mun;
-        sel.dispatchEvent(new Event('change'));
-        var painel = document.getElementById('painel');
-        if (painel) painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
+    if (!registros.length) {
+      var vazio = document.createElement('li');
+      vazio.className = 'vazio-linha';
+      vazio.textContent = 'Nenhum fiscal encontrado com esses filtros.';
+      lista.replaceChildren(vazio);
+      return;
+    }
+    lista.replaceChildren.apply(lista, registros.slice(0, LIMITE_EXIBICAO).map(function (r) {
+      if (window.CARTAO_FISCAL) return window.CARTAO_FISCAL(r);
+      var li = document.createElement('li');
+      li.textContent = (r.nome || '') + ' — ' + (nomesMun.get(r.municipio) || r.municipio);
+      return li;
+    }));
   }
 
   function paraCSV(valor) {
@@ -115,5 +99,6 @@
   });
   btnExportar.addEventListener('click', exportarCSV);
   window.addEventListener('banco-atualizado', renderizar);
+  window.addEventListener('municipios-carregados', renderizar);
   renderizar();
 })();

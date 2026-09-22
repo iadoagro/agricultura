@@ -363,3 +363,14 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
   #cadastro:not([hidden]){grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 .lista-cadastros #cadastros .cadastro-municipio{display:inline;margin:0;font-weight:600;color:#153e75}
+/* "Buscar fiscais em todos os municípios": mesmos cartões da lista do
+   município, com o município do fiscal (js/eleicoes-busca-exportar.js). */
+.cartoes-fiscais{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:10px 0 0;padding:0;font-size:13px}
+.cartoes-fiscais li.cadastro-compacto{display:block;margin:0;padding:8px 10px;border:1px solid #e3e8ef;border-radius:10px;background:#fff}
+.cartoes-fiscais li.cadastro-compacto.selecionado{background:#fff8db;border-color:#e0a800}
+.cartoes-fiscais .cadastro-cabecalho strong{flex:1;min-width:0;font-size:13px;overflow-wrap:normal;word-break:normal}
+.cartoes-fiscais .cadastro-info-compacta{display:block;margin:4px 0 0;font-size:12px;color:#666}
+.cartoes-fiscais .cadastro-municipio{display:inline;font-weight:600;color:#153e75}
+.cartoes-fiscais li.vazio-linha{grid-column:1/-1;padding:18px;text-align:center;color:#666;border:1px dashed #d5deea;border-radius:10px}
+/* Sem "Zonas e locais" (nenhum município escolhido), a busca ocupa a largura toda. */
+.secoes-abaixo-mapa>#consulta-eleitoral[hidden]+.busca-global-card{grid-column:1/-1}
