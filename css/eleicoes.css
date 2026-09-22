@@ -385,3 +385,17 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 
 /* Dica do mapa de Fiscais: bloco das seções com voto (2022) */
 .mapa-dica .linha.separador{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18)}
+
+/* Meta 2026 (faixa acima do mapa) e Prioridades na aba Fiscais */
+.meta-votos{flex:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,260px) auto;gap:6px 16px;align-items:center;padding:10px 14px;border:1px solid #f1d98a;border-left:4px solid #e0a800;border-radius:12px;background:#fffbea}
+.meta-votos h3{margin:0;font-size:13px;color:#5c4a00}
+.meta-votos p{margin:2px 0 0;font-size:13px;color:#3d3200;font-weight:600}
+.meta-votos-barra{height:10px;border-radius:999px;background:#f3e6b5;overflow:hidden}
+.meta-votos-barra span{display:block;height:100%;width:0;border-radius:999px;background:#1f9d55;transition:width .4s}
+.meta-votos button{border:0;border-radius:8px;background:#153e75;color:#fff;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.meta-votos button:hover{background:#2563eb}
+.meta-votos button[hidden]{display:none}
+.meta-votos.cumprida{border-color:#bfe6cf;border-left-color:#1f9d55;background:#f1faf4}
+@media(max-width:760px){.meta-votos{grid-template-columns:1fr}}
+.prioridades-fiscais{margin-top:16px}
+.prioridades-fiscais .prioridades-card{margin:0}

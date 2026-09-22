@@ -423,9 +423,50 @@
     li.append(criarBotoesAcao(r));
     return li;
   }
+  // Meta 2026: toda seção que teve voto para o candidato em 2022 (aba
+  // Resultados, window.DADOS_VOTACAO_SCHAFER) tem que ter fiscal. Mostra
+  // quantas dessas já têm — do Acre inteiro ou do município aberto.
+  function atualizarMeta() {
+    const resumo = document.getElementById('metaVotosResumo');
+    const barra = document.getElementById('metaVotosProgresso');
+    const votos = window.DADOS_VOTACAO_SCHAFER;
+    if (!resumo || !votos || !window.CoberturaFiscais) return;
+    let comFiscal;
+    try { comFiscal = window.CoberturaFiscais.calcular().comFiscal; }
+    catch (e) { resumo.textContent = e.message; return; }
+    const alvo = votos.porSecao.filter(r => !selecionado || r.municipio === selecionado);
+    const cobertas = alvo.filter(r => comFiscal.has(r.municipio + '|' + r.zona + '|' + r.secao)).length;
+    const faltam = alvo.length - cobertas;
+    const pct = alvo.length ? cobertas / alvo.length * 100 : 0;
+    const onde = selecionado ? (nomes.get(selecionado) || 'Município') : 'Acre';
+    const num = n => n.toLocaleString('pt-BR');
+    resumo.textContent = !alvo.length
+      ? onde + ': nenhuma seção teve voto em ' + votos.ano + ' — sem meta aqui.'
+      : onde + ': ' + num(cobertas) + ' de ' + num(alvo.length) + ' seções com voto em ' + votos.ano + ' já têm fiscal (' +
+        pct.toFixed(1).replace('.', ',') + '%) · ' + (faltam ? 'faltam ' + num(faltam) : 'meta cumprida!');
+    if (barra) barra.style.width = pct.toFixed(1) + '%';
+    document.getElementById('metaVotos').classList.toggle('cumprida', Boolean(alvo.length) && !faltam);
+    const ver = document.getElementById('metaVotosVer');
+    if (ver) ver.hidden = !faltam;
+  }
+  const btnMetaVer = document.getElementById('metaVotosVer');
+  if (btnMetaVer) btnMetaVer.addEventListener('click', () => {
+    // Abre a lista de prioridades já filtrada pelo município aberto.
+    const sel = document.getElementById('prioridadesMunicipio');
+    if (sel) { sel.value = selecionado || ''; sel.dispatchEvent(new Event('change')); }
+    rolarAte(document.getElementById('prioridadesCard'), false);
+  });
+
   // Lista de cadastros do município, abaixo do mapa, em grade de cartões.
   const POR_PAGINA = 24;
   function listar() {
+    atualizarMeta();
+    // A lista de prioridades acompanha o município aberto.
+    const selPrioridades = document.getElementById('prioridadesMunicipio');
+    if (selPrioridades && selPrioridades.value !== (selecionado || '') && [...selPrioridades.options].some(o => o.value === (selecionado || ''))) {
+      selPrioridades.value = selecionado || '';
+      selPrioridades.dispatchEvent(new Event('change'));
+    }
     const lista = document.getElementById('cadastros');
     const secaoLista = document.getElementById('listaCadastrosSecao');
     // Sem município, os fiscais de todos aparecem em "Buscar fiscais em todos
@@ -676,6 +717,7 @@
   // (js/eleicoes-busca-exportar.js): mesmo visual e mesmas ações daqui —
   // clicar abre o município e destaca a seção; "⋯" edita/exclui.
   window.CARTAO_FISCAL = r => construirCartaoCadastro(r, true, true);
+  atualizarMeta();
   const ns = 'http://www.w3.org/2000/svg';
   // O mapa acompanha a página e funciona também quando aberta como arquivo local.
   Promise.resolve().then(() => {

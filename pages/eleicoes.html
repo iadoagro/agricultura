@@ -10,7 +10,7 @@
   <script src="../js/admin-gate.js?v=2026092203"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092214">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092215">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -74,24 +74,6 @@
           </div>
         </div>
       </section>
-      <section class="resultados-card prioridades-card" aria-labelledby="prioridades-titulo">
-        <div class="resultados-topo">
-          <h2 id="prioridades-titulo">Prioridades — seções com voto e sem fiscal</h2>
-          <p>Seções que tiveram voto para o candidato em 2022 e hoje não têm nenhum fiscal cadastrado — por aqui costuma valer mais a pena recrutar primeiro.</p>
-        </div>
-        <div class="filtros-eleitorais prioridades-filtros">
-          <label>Regional<select id="prioridadesRegional"><option value="">Todas as regionais</option></select></label>
-          <label>Município<select id="prioridadesMunicipio"><option value="">Todos os municípios</option></select></label>
-          <label>Zona<select id="prioridadesZona"><option value="">Todas as zonas</option></select></label>
-          <label>Ordenar por<select id="prioridadesOrdenar">
-            <option value="municipio-votos">Município (A-Z) e votos</option>
-            <option value="votos-desc">Votos (maior para o menor)</option>
-            <option value="votos-asc">Votos (menor para o maior)</option>
-          </select></label>
-        </div>
-        <p id="prioridadesStatus" role="status" class="resultados-dica"></p>
-        <div id="prioridadesTabela"></div>
-      </section>
       <section class="instantaneo-card" aria-labelledby="instantaneo-titulo">
         <div class="instantaneo-topo">
           <div>
@@ -136,6 +118,11 @@
       <p id="mensagem" role="status"></p>
     </form>
   </aside>
+      <section id="metaVotos" class="meta-votos" aria-labelledby="metaVotosTitulo">
+        <div class="meta-votos-texto"><h3 id="metaVotosTitulo">Meta 2026: fiscal em toda seção que teve voto em 2022</h3><p id="metaVotosResumo" role="status">Carregando…</p></div>
+        <div class="meta-votos-barra" aria-hidden="true"><span id="metaVotosProgresso"></span></div>
+        <button id="metaVotosVer" type="button">Ver seções que faltam</button>
+      </section>
     <section class="mapa-card" aria-labelledby="mapa-titulo">
       <div class="mapa-topo"><div><h2 id="mapa-titulo">Municípios do Acre</h2><p>Clique em um município para abrir os cadastros.</p></div>
         <label>Selecionar município<select id="municipio"><option value="">Escolha um município</option></select></label>
@@ -208,6 +195,26 @@
         </div>
       </section>
     </div>
+    <div class="prioridades-fiscais">
+      <section id="prioridadesCard" class="resultados-card prioridades-card" aria-labelledby="prioridades-titulo">
+        <div class="resultados-topo">
+          <h2 id="prioridades-titulo">Prioridades 2026 — seções com voto em 2022 e sem fiscal</h2>
+          <p>Onde houve voto para o candidato em 2022 tem que ter fiscal em 2026. Estas seções tiveram voto e ainda não têm nenhum fiscal cadastrado — recrute primeiro por aqui.</p>
+        </div>
+        <div class="filtros-eleitorais prioridades-filtros">
+          <label>Regional<select id="prioridadesRegional"><option value="">Todas as regionais</option></select></label>
+          <label>Município<select id="prioridadesMunicipio"><option value="">Todos os municípios</option></select></label>
+          <label>Zona<select id="prioridadesZona"><option value="">Todas as zonas</option></select></label>
+          <label>Ordenar por<select id="prioridadesOrdenar">
+            <option value="municipio-votos">Município (A-Z) e votos</option>
+            <option value="votos-desc">Votos (maior para o menor)</option>
+            <option value="votos-asc">Votos (menor para o maior)</option>
+          </select></label>
+        </div>
+        <p id="prioridadesStatus" role="status" class="resultados-dica"></p>
+        <div id="prioridadesTabela"></div>
+      </section>
+    </div>
     <p class="aviso" id="aviso-dados">Os cadastros são salvos somente neste navegador.</p>
     </div>
     <div class="aba-conteudo" data-aba="relatorio" role="tabpanel" id="painel-relatorio" aria-labelledby="aba-relatorio" tabindex="0">
@@ -258,16 +265,16 @@
   <script src="../js/regionais-municipios.js?v=2026091411"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026092212"></script>
+  <script src="../js/banco-eleicoes.js?v=2026092215"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
   <script src="../js/mapa-bairros-leaflet.js?v=2026092201"></script>
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
-<script src="../js/eleicoes.js?v=2026092212"></script>
+<script src="../js/eleicoes.js?v=2026092215"></script>
   <script src="../js/eleicoes-resultados.js?v=2026092201"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026092201"></script>
-  <script src="../js/eleicoes-prioridades.js?v=2026091508"></script>
+  <script src="../js/eleicoes-prioridades.js?v=2026092203"></script>
   <script src="../js/eleicoes-busca-exportar.js?v=2026092201"></script>
   <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
 <script src="../js/eleicoes-abas.js?v=2026092201"></script>

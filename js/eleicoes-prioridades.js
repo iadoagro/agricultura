@@ -1,8 +1,9 @@
-/* Lista de prioridade da aba "Resultados": seções que tiveram voto para o
+/* Lista de prioridade da aba "Fiscais": seções que tiveram voto para o
    candidato em 2022 (window.DADOS_VOTACAO_SCHAFER.porSecao) e hoje não têm
    nenhum fiscal (window.CoberturaFiscais, ver js/eleicoes-cobertura.js) —
    onde vale mais a pena recrutar primeiro, sem precisar abrir município por
-   município na aba Fiscais. Filtra por regional e zona. */
+   município. Filtra por regional, município e zona; js/eleicoes.js sincroniza o
+   filtro de município com o município aberto no mapa. */
 (function () {
   'use strict';
   var status = document.getElementById('prioridadesStatus');
@@ -79,17 +80,20 @@
     try { dados = window.CoberturaFiscais.calcular(); }
     catch (e) { status.textContent = e.message; tabelaEl.innerHTML = ''; return; }
 
-    var linhasPorSecao = window.DADOS_VOTACAO_SCHAFER.porSecao
-      .filter(function (r) { return !dados.comFiscal.has(r.municipio + '|' + r.zona + '|' + r.secao); })
+    // Seções com voto dentro dos filtros (a base do "X de Y") e, delas, as
+    // que ainda não têm fiscal.
+    var comVotoNoFiltro = window.DADOS_VOTACAO_SCHAFER.porSecao
       .filter(function (r) { return !selRegional.value || window.REGIONAIS_MUNICIPIOS[r.municipio] === selRegional.value; })
       .filter(function (r) { return !selMunicipio.value || r.municipio === selMunicipio.value; })
       .filter(function (r) { return !selZona.value || r.zona === selZona.value; });
+    var linhasPorSecao = comVotoNoFiltro
+      .filter(function (r) { return !dados.comFiscal.has(r.municipio + '|' + r.zona + '|' + r.secao); });
 
     var linhas = agruparPorLocal(linhasPorSecao)
       .sort(ORDENACOES[selOrdenar.value] || ORDENACOES['municipio-votos']);
 
     status.textContent = linhasPorSecao.length
-      ? linhasPorSecao.length + ' de ' + window.DADOS_VOTACAO_SCHAFER.porSecao.length + ' seções com voto ainda não têm fiscal, em ' + linhas.length + ' locais de votação.'
+      ? linhasPorSecao.length + ' de ' + comVotoNoFiltro.length + ' seções com voto ainda não têm fiscal, em ' + linhas.length + ' locais de votação.'
       : 'Todas as seções com voto (com esses filtros) já têm fiscal.';
 
     tabelaEl.innerHTML = !linhas.length ? '' : '<div class="tabela-scroll prioridades-scroll"><table class="dados prioridades-tabela"><thead><tr>' +
