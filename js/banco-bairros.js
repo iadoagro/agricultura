@@ -3,8 +3,9 @@
    (js/eleicoes.js), que lista os bairros ativos do município, e pela tela
    de manutenção pages/cadastros-fiscais.html (js/fiscais-bairros.js).
 
-   Bairro novo informado num cadastro de fiscal entra na tabela sozinho,
-   por gatilho no banco; aqui só recarregamos a lista depois de salvar.
+   Bairro digitado num cadastro de fiscal passa por garantir(): se já existe
+   (sem diferenciar maiúsculas/acentos/espaços) vale o nome do banco; se
+   não existe, é cadastrado.
    Reaproveita a sessão do login do site (admin-auth.js). Sem banco online
    configurado, guarda a lista neste navegador. */
 (function () {
@@ -14,7 +15,10 @@
   const localKey = 'seagri_fiscais_bairros_v1';
   let cache = [], carregado = false, indisponivel = false;
   const avisar = () => window.dispatchEvent(new Event('bairros-atualizado'));
-  const chaveNome = s => String(s || '').trim().toLowerCase();
+  // Mesma regra de public.normalizar_bairro() no banco: ignora maiúsculas,
+  // acentos e espaços repetidos ("sao  francisco" = "São Francisco").
+  const chaveNome = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
+  const limparNome = s => String(s || '').trim().replace(/\s+/g, ' ');
   const ordenar = l => l.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   function lerLocal() {
@@ -58,13 +62,13 @@
   }
 
   function validar(item) {
-    const nome = String(item.nome || '').trim().replace(/\s+/g, ' ');
+    const nome = limparNome(item.nome);
     if (!/^\d{7}$/.test(String(item.municipio || ''))) throw new Error('Selecione o município.');
     if (!nome) throw new Error('Informe o nome do bairro.');
     if (nome.length > 120) throw new Error('O nome do bairro pode ter no máximo 120 caracteres.');
     if (!/\p{L}/u.test(nome)) throw new Error('O nome do bairro precisa ter letras.');
     const repetido = cache.find(b => b.id !== item.id && b.municipio === item.municipio && chaveNome(b.nome) === chaveNome(nome));
-    if (repetido) throw new Error('Esse bairro já está cadastrado neste município' + (repetido.ativo ? '.' : ' (está desativado — reative-o na lista).'));
+    if (repetido) throw new Error('Esse bairro já está cadastrado neste município como "' + repetido.nome + '"' + (repetido.ativo ? '.' : ' (está desativado — reative-o na lista).'));
     return nome;
   }
 
@@ -89,21 +93,35 @@
     return carregar();
   }
 
-  /* Depois de salvar um fiscal: no banco online o gatilho já incluiu o
-     bairro (se era novo), então só recarrega; no modo local, inclui aqui. */
-  async function aposSalvarFiscal(municipio, nome) {
-    nome = String(nome || '').trim();
+  /* Bairro já cadastrado no município (ativo ou não) que bate com o nome
+     digitado, ignorando maiúsculas/acentos/espaços — ou undefined. */
+  function encontrar(municipio, nome) {
+    const k = chaveNome(nome);
+    return k ? cache.find(b => b.municipio === municipio && chaveNome(b.nome) === k) : undefined;
+  }
+
+  /* Bairro digitado no cadastro de fiscal: se já existe no banco, descarta
+     o digitado e devolve o nome do banco; se não existe, cadastra e devolve
+     o digitado (com espaços limpos). Texto sem letras não é cadastrado —
+     devolve como veio. No banco online quem decide é garantir_bairro()
+     (database/fiscais-bairros-normalizar.sql), que evita duplicar mesmo com
+     duas pessoas cadastrando ao mesmo tempo. */
+  async function garantir(municipio, nome) {
+    const limpo = limparNome(nome);
+    if (!limpo || !/\p{L}/u.test(limpo) || limpo.length > 120) return limpo;
     if (!online) {
-      if (nome && /\p{L}/u.test(nome) && !cache.some(b => b.municipio === municipio && chaveNome(b.nome) === chaveNome(nome))) {
-        const l = lerLocal(); l.push({ id: crypto.randomUUID(), municipio, nome, ativo: true, criado_em: new Date().toISOString() }); gravarLocal(l);
-      }
-      return carregar();
+      const achado = encontrar(municipio, limpo);
+      if (achado) return achado.nome;
+      const l = lerLocal(); l.push({ id: crypto.randomUUID(), municipio, nome: limpo, ativo: true, criado_em: new Date().toISOString() }); gravarLocal(l);
+      await carregar(); return limpo;
     }
-    return carregar();
+    const doBanco = await requisicao('/rest/v1/rpc/garantir_bairro', { method: 'POST', body: JSON.stringify({ p_municipio: municipio, p_nome: limpo }) });
+    if (!encontrar(municipio, doBanco || limpo)) await carregar();
+    return doBanco || limpo;
   }
 
   window.BAIRROS_FISCAIS = {
-    online, carregar, salvar, excluir, aposSalvarFiscal,
+    online, carregar, salvar, excluir, garantir, encontrar,
     carregado: () => carregado,
     indisponivel: () => indisponivel,
     todos: () => ordenar(cache),

@@ -248,3 +248,6 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .fiscais-mapa-secoes th,.fiscais-mapa-secoes td{padding:6px;text-align:left;border-bottom:1px solid #e5e7eb}
 .fiscais-mapa-secoes .fiscal-presente{color:#15803d;font-weight:700}.fiscais-mapa-secoes .fiscal-ausente{color:#b91c1c;font-weight:700}
 .leaflet-popup-content{max-height:330px;overflow:auto}
+
+/* Dica abaixo do campo Bairro (js/eleicoes.js) */
+.bairro-dica{display:block;font-size:12px;line-height:1.4;color:#5b6b80;margin:4px 0 0}.bairro-dica:empty{display:none}

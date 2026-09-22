@@ -13,7 +13,6 @@
   let selecionado = '';
   let pagina = 0;
   let editandoId = null;
-  const NOVO_BAIRRO = '__novo_bairro__';
   let porBairroAtual = new Map();
   let locaisMapaAtual = [];
   let coberturaMapaCarregada = false;
@@ -445,54 +444,48 @@
     });
     return [...dasSecoes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
-  // Troca o campo "Bairro" do formulário entre texto livre (padrão) e uma
-  // lista fechada, conforme bairrosDoMunicipio(). Mantém o mesmo id/name
-  // pra form.elements.bairro continuar funcionando igual.
+  // Campo "Bairro": texto livre com sugestões (<datalist>) dos bairros do
+  // município — dá pra escolher da lista ou digitar um novo. Ao salvar,
+  // BAIRROS_FISCAIS.garantir() troca o digitado pelo nome do banco se ele
+  // já existe (sem diferenciar maiúsculas/acentos/espaços) ou o cadastra.
+  const campoBairro = form.elements.bairro;
+  const sugestoesBairro = document.createElement('datalist');
+  sugestoesBairro.id = 'bairrosSugestoes';
+  campoBairro.setAttribute('list', sugestoesBairro.id);
+  campoBairro.setAttribute('autocomplete', 'off');
+  campoBairro.placeholder = 'Escolha da lista ou digite um novo';
+  const dicaBairro = document.createElement('small');
+  dicaBairro.className = 'bairro-dica';
+  dicaBairro.setAttribute('aria-live', 'polite');
+  campoBairro.after(sugestoesBairro, dicaBairro);
   function atualizarCampoBairro() {
-    const atual = document.getElementById('bairro');
-    const bairros = bairrosDoMunicipio();
-    const valorAtual = atual.value;
-    if (bairros && bairros.length) {
-      let campo = atual;
-      if (atual.tagName !== 'SELECT') {
-        campo = document.createElement('select');
-        campo.id = 'bairro'; campo.name = 'bairro';
-        atual.replaceWith(campo);
-      }
-      opcoes(campo, bairros.map(b => [b, b]), 'Selecione o bairro');
-      if (window.BAIRROS_FISCAIS) campo.add(new Option('+ Adicionar novo bairro…', NOVO_BAIRRO));
-      definirBairro(valorAtual === NOVO_BAIRRO ? '' : valorAtual);
-    } else if (atual.tagName !== 'INPUT') {
-      const input = document.createElement('input');
-      input.id = 'bairro'; input.name = 'bairro'; input.maxLength = 120;
-      input.value = valorAtual === NOVO_BAIRRO ? '' : valorAtual;
-      atual.replaceWith(input);
-    }
+    const bairros = bairrosDoMunicipio() || [];
+    sugestoesBairro.replaceChildren(...bairros.map(b => new Option(b)));
+    atualizarDicaBairro();
   }
-  // Põe um bairro no campo. Se for lista e o valor não estiver nela (ex.:
-  // cadastro antigo com bairro depois desativado), inclui a opção pra não
-  // perder o valor ao editar.
-  function definirBairro(valor) {
-    const campo = form.elements.bairro;
-    if (campo.tagName === 'SELECT' && valor && ![...campo.options].some(o => o.value === valor)) {
-      campo.add(new Option(valor, valor), campo.querySelector('option[value="' + NOVO_BAIRRO + '"]'));
-    }
-    campo.value = valor;
+  function atualizarDicaBairro() {
+    const aux = window.BAIRROS_FISCAIS, valor = campoBairro.value.trim();
+    if (!valor || !aux || !aux.carregado() || !/\p{L}/u.test(valor)) { dicaBairro.textContent = ''; return; }
+    const achado = aux.encontrar(selecionado, valor);
+    dicaBairro.textContent = !achado ? 'Bairro novo: será incluído no cadastro de bairros ao salvar.'
+      : achado.nome !== valor ? 'Já cadastrado como "' + achado.nome + '" — será usado o nome do cadastro.'
+      : !achado.ativo ? 'Bairro cadastrado, mas desativado.' : '';
   }
-  // "+ Adicionar novo bairro…": cadastra no auxiliar e já seleciona.
-  form.addEventListener('change', async e => {
-    const campo = e.target;
-    if (campo.id !== 'bairro' || campo.value !== NOVO_BAIRRO) return;
-    const nome = (window.prompt('Nome do novo bairro em ' + (nomes.get(selecionado) || 'este município') + ':') || '').trim();
-    if (!nome) { campo.value = ''; return; }
-    try {
-      await window.BAIRROS_FISCAIS.salvar({ municipio: selecionado, nome });
-      definirBairro(window.BAIRROS_FISCAIS.ativosDoMunicipio(selecionado).find(b => b.toLowerCase() === nome.toLowerCase().replace(/\s+/g, ' ')) || nome);
-      mensagem.className = ''; mensagem.textContent = 'Bairro "' + nome + '" adicionado ao cadastro auxiliar.';
-    } catch (err) {
-      campo.value = '';
-      mensagem.className = 'erro'; mensagem.textContent = err.message;
-    }
+  function definirBairro(valor) { campoBairro.value = valor; atualizarDicaBairro(); }
+  campoBairro.addEventListener('input', atualizarDicaBairro);
+  // form.reset() também apagava a Regional, que fica travada no valor do
+  // município — o cadastro seguinte falhava em "Preencha todos os campos".
+  form.addEventListener('reset', () => setTimeout(() => {
+    const regional = window.REGIONAIS_MUNICIPIOS && window.REGIONAIS_MUNICIPIOS[selecionado];
+    if (regional) form.elements.regional.value = regional;
+    atualizarDicaBairro();
+  }));
+  // Ao sair do campo, já troca pelo nome do banco se o bairro existe.
+  campoBairro.addEventListener('change', () => {
+    const aux = window.BAIRROS_FISCAIS;
+    const achado = aux && aux.carregado() && aux.encontrar(selecionado, campoBairro.value);
+    if (achado) campoBairro.value = achado.nome;
+    atualizarDicaBairro();
   });
   function abrir(id) {
     if (!nomes.has(id)) return;
@@ -551,7 +544,11 @@
     if (botaoSalvar.disabled) return;
     botaoSalvar.disabled = true;
     try {
-      if (registro.bairro === NOVO_BAIRRO) registro.bairro = '';
+      // Bairro existente → nome do banco (descarta o digitado); novo → cadastra.
+      if (registro.bairro && window.BAIRROS_FISCAIS) {
+        registro.bairro = await window.BAIRROS_FISCAIS.garantir(registro.municipio, registro.bairro);
+        definirBairro(registro.bairro);
+      }
       if (editandoId) {
         await window.BANCO_ELEICOES.editar(editandoId, registro);
         encerrarEdicao(); atualizarConsulta('secao');
@@ -561,9 +558,6 @@
         form.reset(); formMunicipio.value = selecionado; atualizarConsulta('secao'); mensagem.className = ''; mensagem.textContent = window.BANCO_ELEICOES.online ? 'Cadastro salvo no banco online.' : 'Cadastro salvo neste navegador.';
         document.getElementById('nome').focus();
       }
-      // Bairro novo digitado: o gatilho do banco já o incluiu no cadastro
-      // auxiliar — recarrega pra ele aparecer na lista a partir de agora.
-      if (registro.bairro && window.BAIRROS_FISCAIS) window.BAIRROS_FISCAIS.aposSalvarFiscal(registro.municipio, registro.bairro).catch(() => {});
     } catch (e) { mensagem.className = 'erro'; mensagem.textContent = e.message; }
     finally { botaoSalvar.disabled = false; }
   });
