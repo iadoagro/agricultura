@@ -9,6 +9,7 @@
 
   var CHAVES_POR_ARQUIVO = {
     'eleicoes.html': 'eleicoes',
+    'cadastros-fiscais.html': 'eleicoes',
     'portarias.html': 'portarias',
     'organograma.html': 'organograma',
     'chamados.html': 'chamados',

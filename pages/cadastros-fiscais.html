@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastros auxiliares | Fiscais</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026092202"></script>
+<script src="../js/admin-gate.js?v=2026092201"></script>
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/chamados-comum.css?v=2026091930">
+<link rel="stylesheet" href="../css/chamados.css?v=2026091930">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
+<link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
+</head>
+<body class="ch-fila-pagina">
+<header class="ch-cab">
+  <a class="voltar-btn" href="eleicoes.html">&#8592; Fiscais</a>
+  <h1>Cadastros auxiliares</h1>
+  <p>Bairros usados no formulário de cadastro de fiscais</p>
+</header>
+
+<main class="ch-fila">
+  <div class="ch-faixa-demo" id="faixaDemo" hidden>
+    <b>Modo demonstração.</b> O banco de dados ainda não está configurado: os bairros ficam salvos só neste navegador.
+  </div>
+
+  <nav class="ch-abas-aux" role="tablist" aria-label="Tipo de cadastro">
+    <button type="button" role="tab" class="ch-aba-aux on" aria-selected="true">Bairros <span id="totalAba">0</span></button>
+  </nav>
+
+  <div class="ch-aux-grade">
+    <section class="ch-cartao-aux" aria-labelledby="tituloNovo">
+      <h2 id="tituloNovo">Novo bairro</h2>
+      <p class="ch-dica">Aparece na lista "Bairro" do cadastro de fiscais, quando o município é escolhido. Bairro novo digitado num cadastro de fiscal também entra aqui sozinho.</p>
+      <form id="formNovo" novalidate>
+        <div class="ch-campo">
+          <label for="novoMunicipio">Município</label>
+          <select id="novoMunicipio"><option value="">Selecione o município…</option></select>
+        </div>
+        <div class="ch-campo">
+          <label for="novoNome">Nome</label>
+          <input id="novoNome" type="text" maxlength="120" autocomplete="off">
+        </div>
+        <p class="ch-erro-msg" id="erroNovo" role="alert"></p>
+        <button class="ch-btn primario" type="submit" id="btnAdd">Adicionar</button>
+      </form>
+    </section>
+
+    <section class="ch-cartao-aux lista" aria-label="Bairros cadastrados">
+      <div class="ch-aux-barra">
+        <div class="ch-busca-fila"><span id="icoBusca"></span><input id="buscaAux" type="search" placeholder="Buscar por nome…" autocomplete="off" aria-label="Buscar"></div>
+        <select id="filtroMunicipio" aria-label="Filtrar por município"><option value="">Todos os municípios</option></select>
+        <div class="ch-seg" id="segSit" role="group" aria-label="Situação">
+          <button type="button" data-v="todos" class="on">Todos</button>
+          <button type="button" data-v="ativos">Ativos</button>
+          <button type="button" data-v="inativos">Inativos</button>
+        </div>
+      </div>
+      <p class="ch-status-fila" id="contagem" role="status"></p>
+      <div class="ch-tabela-rolagem"><table class="ch-tabela" id="tabela"></table></div>
+    </section>
+  </div>
+</main>
+
+<script src="../js/mapa-acre.js?v=2026091402"></script>
+<script src="../js/chamados-ui.js?v=2026091930"></script>
+<script src="../js/banco-bairros.js?v=2026092201"></script>
+<script src="../js/fiscais-bairros.js?v=2026092201"></script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
+<script src="../js/motion-extras.js?v=2026092001"></script>
+<script src="../js/fx-ui.js?v=2026092102" defer></script>
+</body>
+</html>

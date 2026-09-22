@@ -13,6 +13,7 @@
   let selecionado = '';
   let pagina = 0;
   let editandoId = null;
+  const NOVO_BAIRRO = '__novo_bairro__';
   let porBairroAtual = new Map();
   let locaisMapaAtual = [];
   let coberturaMapaCarregada = false;
@@ -386,7 +387,7 @@
     form.elements.telefone.value = r.telefone || '';
     // Regional não é mais digitada/escolhida à parte — abrir() já a define
     // (e trava) a partir do município, então nem entra aqui.
-    form.elements.bairro.value = r.bairro || '';
+    definirBairro(r.bairro || '');
     form.elements.zona.value = r.zona || '';
     prepararSecoes();
     form.elements.secao.value = r.secao || '';
@@ -422,12 +423,18 @@
     mensagem.textContent = ''; mensagem.className = '';
   }
   document.getElementById('cancelarEdicao').onclick = encerrarEdicao;
-  // Bairros válidos do município selecionado: cruza quem tem seção de
-  // votação (window.LOCAIS_COORDENADAS, por local de votação) com os
-  // bairros oficiais do mapa desse município (dadosBairrosDoMunicipio) —
-  // só existe pra quem tem bairro oficializado (Rio Branco + os 8 do IBGE).
-  // Devolve null nos demais, pra manter "Bairro" como texto livre.
+  // Bairros do município selecionado. Vêm do cadastro auxiliar de Bairros
+  // (js/banco-bairros.js, tela pages/cadastros-fiscais.html) — só os
+  // ativos. Enquanto ele não carregou (ou a tabela ainda não existe no
+  // banco), usa a lista antiga: bairros oficiais do mapa (Rio Branco + os 8
+  // do IBGE) que têm local de votação. Sem nenhum bairro, devolve null pra
+  // manter "Bairro" como texto livre.
   function bairrosDoMunicipio() {
+    const aux = window.BAIRROS_FISCAIS;
+    if (aux && aux.carregado()) {
+      const lista = aux.ativosDoMunicipio(selecionado);
+      return lista.length ? lista : null;
+    }
     const dados = dadosBairrosDoMunicipio(selecionado);
     if (!dados || !window.LOCAIS_COORDENADAS) return null;
     const oficiais = new Set(dados.features.map(f => f.properties.bairro));
@@ -453,13 +460,40 @@
         atual.replaceWith(campo);
       }
       opcoes(campo, bairros.map(b => [b, b]), 'Selecione o bairro');
-      if (bairros.includes(valorAtual)) campo.value = valorAtual;
+      if (window.BAIRROS_FISCAIS) campo.add(new Option('+ Adicionar novo bairro…', NOVO_BAIRRO));
+      definirBairro(valorAtual === NOVO_BAIRRO ? '' : valorAtual);
     } else if (atual.tagName !== 'INPUT') {
       const input = document.createElement('input');
       input.id = 'bairro'; input.name = 'bairro'; input.maxLength = 120;
+      input.value = valorAtual === NOVO_BAIRRO ? '' : valorAtual;
       atual.replaceWith(input);
     }
   }
+  // Põe um bairro no campo. Se for lista e o valor não estiver nela (ex.:
+  // cadastro antigo com bairro depois desativado), inclui a opção pra não
+  // perder o valor ao editar.
+  function definirBairro(valor) {
+    const campo = form.elements.bairro;
+    if (campo.tagName === 'SELECT' && valor && ![...campo.options].some(o => o.value === valor)) {
+      campo.add(new Option(valor, valor), campo.querySelector('option[value="' + NOVO_BAIRRO + '"]'));
+    }
+    campo.value = valor;
+  }
+  // "+ Adicionar novo bairro…": cadastra no auxiliar e já seleciona.
+  form.addEventListener('change', async e => {
+    const campo = e.target;
+    if (campo.id !== 'bairro' || campo.value !== NOVO_BAIRRO) return;
+    const nome = (window.prompt('Nome do novo bairro em ' + (nomes.get(selecionado) || 'este município') + ':') || '').trim();
+    if (!nome) { campo.value = ''; return; }
+    try {
+      await window.BAIRROS_FISCAIS.salvar({ municipio: selecionado, nome });
+      definirBairro(window.BAIRROS_FISCAIS.ativosDoMunicipio(selecionado).find(b => b.toLowerCase() === nome.toLowerCase().replace(/\s+/g, ' ')) || nome);
+      mensagem.className = ''; mensagem.textContent = 'Bairro "' + nome + '" adicionado ao cadastro auxiliar.';
+    } catch (err) {
+      campo.value = '';
+      mensagem.className = 'erro'; mensagem.textContent = err.message;
+    }
+  });
   function abrir(id) {
     if (!nomes.has(id)) return;
     encerrarEdicao();
@@ -517,6 +551,7 @@
     if (botaoSalvar.disabled) return;
     botaoSalvar.disabled = true;
     try {
+      if (registro.bairro === NOVO_BAIRRO) registro.bairro = '';
       if (editandoId) {
         await window.BANCO_ELEICOES.editar(editandoId, registro);
         encerrarEdicao(); atualizarConsulta('secao');
@@ -526,10 +561,17 @@
         form.reset(); formMunicipio.value = selecionado; atualizarConsulta('secao'); mensagem.className = ''; mensagem.textContent = window.BANCO_ELEICOES.online ? 'Cadastro salvo no banco online.' : 'Cadastro salvo neste navegador.';
         document.getElementById('nome').focus();
       }
+      // Bairro novo digitado: o gatilho do banco já o incluiu no cadastro
+      // auxiliar — recarrega pra ele aparecer na lista a partir de agora.
+      if (registro.bairro && window.BAIRROS_FISCAIS) window.BAIRROS_FISCAIS.aposSalvarFiscal(registro.municipio, registro.bairro).catch(() => {});
     } catch (e) { mensagem.className = 'erro'; mensagem.textContent = e.message; }
     finally { botaoSalvar.disabled = false; }
   });
   window.addEventListener('banco-atualizado', () => { if (selecionado) listar(); });
+  window.addEventListener('bairros-atualizado', () => { if (selecionado) atualizarCampoBairro(); });
+  if (window.BAIRROS_FISCAIS && window.ADMIN_AUTH && (!window.BAIRROS_FISCAIS.online || window.ADMIN_AUTH.sessaoAtual())) {
+    window.BAIRROS_FISCAIS.carregar().catch(() => {});
+  }
   window.addEventListener('storage', e => { if (e.key === chave && selecionado) listar(); });
   const ns = 'http://www.w3.org/2000/svg';
   // O mapa acompanha a página e funciona também quando aberta como arquivo local.
