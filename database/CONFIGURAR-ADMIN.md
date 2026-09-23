@@ -6,7 +6,7 @@ Usa o mesmo projeto Supabase de `database/eleicoes.sql` (a URL e a chave em
 e-mail de verdade. Qualquer pessoa pode criar a própria conta pela tela de
 login informando Nome, Sobrenome e senha, mas só tem acesso liberado depois
 que luansobraldourado5@gmail.com aprova o cadastro — e só enxerga as
-páginas que ela liberar pra essa pessoa (por padrão, Fiscais e Dashboards).
+páginas que ela liberar pra essa pessoa (por padrão, só Fiscais).
 
 O login agora é exigido em **todas** as páginas do site, não só nas que
 antes ficavam escondidas na tela inicial.
@@ -56,7 +56,7 @@ antes ficavam escondidas na tela inicial.
      entrar em contato.
    - **Acessos** — pra cada pessoa, escolhe quais páginas (Fiscais,
      Portarias, Organograma, Chamados, Dashboards, Contatos) ela pode ver.
-     Toda conta nova começa só com Fiscais e Dashboards marcados.
+     Toda conta nova começa só com Fiscais marcado.
 6. Para cada pessoa que precisa de acesso, ou você cadastra direto em
    **Usuários**, ou ela mesma cria a própria conta (Nome, Sobrenome,
    senha) na tela de login e fica pendente até você aprovar.

@@ -12,13 +12,13 @@ create table if not exists public.admin_solicitacoes (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   status text not null default 'pendente' check (status in ('pendente','aprovado','recusado')),
-  paginas text[] not null default array['eleicoes','dashboards'],
+  paginas text[] not null default array['eleicoes'],
   criado_em timestamptz not null default now(),
   decidido_em timestamptz,
   decidido_por uuid references auth.users(id)
 );
 -- Garante a coluna "paginas" mesmo se a tabela já existia de uma versão anterior.
-alter table public.admin_solicitacoes add column if not exists paginas text[] not null default array['eleicoes','dashboards'];
+alter table public.admin_solicitacoes add column if not exists paginas text[] not null default array['eleicoes'];
 
 alter table public.admin_solicitacoes enable row level security;
 revoke all on public.admin_solicitacoes from anon, authenticated;

@@ -6,7 +6,7 @@
   'use strict';
   const cfg = window.BANCO_CONFIG || {};
   const RESPONSAVEL_EMAIL = 'root@root.com';
-  const PAGINAS_PADRAO = ['eleicoes', 'dashboards'];
+  const PAGINAS_PADRAO = ['eleicoes'];   // conta nova: só Fiscais; o resto o responsável libera em Usuários
   // Liberadas para toda conta aprovada e ativa, marcadas ou não em Acessos.
   const SEMPRE_LIBERADAS = ['eleicoes'];
   const SENHA_PADRAO = '123456';

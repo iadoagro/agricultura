@@ -11,7 +11,7 @@
 --    gatilho do cadastro, que rodam como security definer.
 begin;
 
-alter table public.admin_solicitacoes alter column paginas set default array['eleicoes', 'dashboards']::text[];
+alter table public.admin_solicitacoes alter column paginas set default array['eleicoes']::text[];   -- conta nova: só Fiscais
 update public.admin_solicitacoes
   set paginas = array_append(coalesce(paginas, '{}'::text[]), 'eleicoes')
   where not coalesce('eleicoes' = any(paginas), false);
