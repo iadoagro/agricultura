@@ -213,7 +213,9 @@
     const auth = window.ADMIN_AUTH;
     const adminSessao = auth && auth.sessaoAtual();
     if (adminSessao) {
-      sessao = { access_token: adminSessao.access_token, expires_at: adminSessao.expires_at, user: { id: adminSessao.user.id } };
+      // a própria sessão do login (não uma cópia): quando admin-auth.js renova
+      // o token antes de vencer, este módulo já passa a usar o novo
+      sessao = adminSessao;
       atualizar().catch(e => { status.textContent = e.message; });
     }
   }

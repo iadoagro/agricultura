@@ -349,6 +349,16 @@
         .then(function (j) { return { status: r.status, corpo: j || {} }; });
     }
     var cfg = window.BANCO_CONFIG || {};
+    var auth = window.ADMIN_AUTH;
+    // token sempre atual: quem passou mais de 1 h preenchendo a ficha teria
+    // o token vencido — garantirSessao() renova antes (ver admin-auth.js)
+    var pronto = auth && auth.garantirSessao
+      ? auth.garantirSessao().then(function (s) { if (s && s.access_token && fd.has('token')) fd.set('token', s.access_token); }, function () {})
+      : Promise.resolve();
+    return pronto.then(function () { return enviarAgora(fd, cfg, lerJson); });
+  }
+
+  function enviarAgora(fd, cfg, lerJson) {
     var edge = cfg.url
       ? fetch(cfg.url.replace(/\/$/, '') + '/functions/v1/lancar-mecanizacao', {
           method: 'POST', headers: { apikey: cfg.chavePublica }, body: fd

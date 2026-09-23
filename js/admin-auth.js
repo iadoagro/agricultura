@@ -43,11 +43,13 @@
     if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(cfg.url || '') || !/^sb_publishable_/.test(cfg.chavePublica || '')) throw new Error('A configuração do banco online está incompleta.');
   }
   function limpar() {
+    clearTimeout(timerRenovar);
     sessao = null;
     sessionStorage.removeItem(sessionKey); avisar();
   }
   async function requisicao(caminho, options = {}, autenticada = true) {
     configurar();
+    if (autenticada && sessao && venceEmBreve()) await renovar().catch(() => {});
     if (autenticada && (!sessao || sessao.expires_at * 1000 <= Date.now())) {
       limpar(); throw new Error('Entre novamente para continuar.');
     }
@@ -77,6 +79,91 @@
     }
     const texto = await resposta.text(); return texto ? JSON.parse(texto) : null;
   }
+
+  /* ------------------------------------------------ renovação da sessão
+     O token do Supabase vale 1 h. Sem renovar, quem passava mais que isso
+     numa página (preenchendo fichas de mecanização, cadastrando fiscais…)
+     recebia "sessão expirou" ao salvar e, ao recarregar, perdia o que tinha
+     digitado. Agora o refresh_token troca o token antes de vencer: por
+     timer, ao voltar pra aba (o timer não roda com o computador dormindo)
+     e antes de qualquer requisição. O objeto "sessao" é atualizado no
+     lugar, então quem guardou a referência (sessaoAtual()) já enxerga o
+     token novo.
+     Várias abas do mesmo login: cada aba tem a sua cópia em sessionStorage,
+     e o Supabase invalida um refresh_token já usado. Por isso o par mais
+     novo também fica em localStorage (chave por usuário): antes de renovar,
+     a aba adota o par de outra aba se ele for mais novo que o dela. */
+  const MARGEM_RENOVAR = 120;   // segundos antes de vencer
+  const chaveCompartilhada = () => 'seagri_admin_renovacao:' + cfg.url + ':' + ((sessao && sessao.user && sessao.user.id) || '');
+  let renovando = null, timerRenovar = null;
+
+  function venceEmBreve() {
+    return Boolean(sessao) && sessao.expires_at - Date.now() / 1000 < MARGEM_RENOVAR;
+  }
+  function gravarSessao() {
+    try { sessionStorage.setItem(sessionKey, JSON.stringify(sessao)); } catch (e) {}
+    try {
+      if (sessao && sessao.refresh_token) {
+        localStorage.setItem(chaveCompartilhada(), JSON.stringify({ access_token: sessao.access_token, refresh_token: sessao.refresh_token, expires_at: sessao.expires_at }));
+      }
+    } catch (e) { /* modo privado */ }
+  }
+  function adotarDeOutraAba() {
+    try {
+      const outro = JSON.parse(localStorage.getItem(chaveCompartilhada()) || 'null');
+      if (outro && outro.expires_at > sessao.expires_at && outro.expires_at - Date.now() / 1000 > MARGEM_RENOVAR) {
+        Object.assign(sessao, outro);
+        try { sessionStorage.setItem(sessionKey, JSON.stringify(sessao)); } catch (e) {}
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+  async function renovar() {
+    if (!sessao) throw new Error('Entre novamente para continuar.');
+    if (adotarDeOutraAba()) { agendarRenovacao(); return sessao; }
+    if (!sessao.refresh_token) throw new Error('Entre novamente para continuar.');   // login feito antes desta versão
+    if (!renovando) {
+      renovando = (async () => {
+        let resposta;
+        try {
+          resposta = await fetch(cfg.url.replace(/\/$/, '') + '/auth/v1/token?grant_type=refresh_token', {
+            method: 'POST', signal: AbortSignal.timeout(20000),
+            headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: sessao.refresh_token })
+          });
+        } catch (e) { throw new Error('Sem conexão com o banco. Tente novamente.'); }
+        const r = await resposta.json().catch(() => null);
+        if (!resposta.ok || !r || !r.access_token) {
+          // outra aba pode ter acabado de usar este refresh_token
+          if (adotarDeOutraAba()) return sessao;
+          throw new Error('Sua sessão expirou. Entre novamente.');
+        }
+        sessao.access_token = r.access_token;
+        sessao.refresh_token = r.refresh_token || sessao.refresh_token;
+        sessao.expires_at = r.expires_at || Math.floor(Date.now() / 1000) + (r.expires_in || 3600);
+        gravarSessao();
+        return sessao;
+      })().finally(() => { renovando = null; agendarRenovacao(); });
+    }
+    return renovando;
+  }
+  function agendarRenovacao() {
+    clearTimeout(timerRenovar);
+    if (!sessao || !sessao.refresh_token) return;
+    const espera = Math.max(5, sessao.expires_at - Date.now() / 1000 - MARGEM_RENOVAR);
+    timerRenovar = setTimeout(() => { renovar().catch(() => {}); }, espera * 1000);
+  }
+  /** Para quem manda o token por conta própria (lancamento-*.js etc.):
+      devolve a sessão com um token que ainda vale, renovando se preciso. */
+  async function garantirSessao() {
+    if (!sessao) return null;
+    if (venceEmBreve()) { try { await renovar(); } catch (e) { /* devolve a que tem */ } }
+    return sessao;
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && venceEmBreve()) renovar().catch(() => {});
+  });
 
   function ehResponsavel(email) {
     return (email || '').toLowerCase() === RESPONSAVEL_EMAIL;
@@ -170,7 +257,9 @@
     configurar();
     const email = normalizarEmailLogin(login);
     const r = await requisicao('/auth/v1/token?grant_type=password', { method: 'POST', body: JSON.stringify({ email, password: senha }) }, false);
-    sessao = { access_token: r.access_token, expires_at: r.expires_at || Math.floor(Date.now() / 1000) + r.expires_in, user: { id: r.user.id, email: r.user.email } };
+    sessao = { access_token: r.access_token, refresh_token: r.refresh_token, expires_at: r.expires_at || Math.floor(Date.now() / 1000) + r.expires_in, user: { id: r.user.id, email: r.user.email } };
+    gravarSessao();
+    agendarRenovacao();
     try { await atualizarStatus(); }
     catch (e) { limpar(); throw e; }
     registrarEvento('login', 'acesso', 'Entrou no sistema');
@@ -180,7 +269,10 @@
     try {
       if (sessao) { registrarEvento('logout', 'acesso', 'Saiu do sistema'); await requisicao('/auth/v1/logout', { method: 'POST' }); }
     }
-    finally { limpar(); }
+    finally {
+      try { localStorage.removeItem(chaveCompartilhada()); } catch (e) {}
+      limpar();
+    }
   }
 
   async function listarSolicitacoes() {
@@ -300,6 +392,7 @@
     cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
     registrarEvento, listarEventos, resumirEventos,
     sessaoAtual: () => sessao,
+    garantirSessao, renovarSessao: renovar,
     papel: () => sessao ? sessao.papel : null,
     liberado: () => Boolean(sessao) && (sessao.papel === 'responsavel' || (sessao.papel === 'aprovado' && sessao.ativo !== false)),
     deveTrocarSenha: () => Boolean(sessao) && Boolean(sessao.deveTrocarSenha),
@@ -314,6 +407,11 @@
 
   if (online) {
     try { sessao = JSON.parse(sessionStorage.getItem(sessionKey) || 'null'); } catch (e) { sessao = null; }
-    if (sessao) atualizarStatus().catch(() => limpar());
+    if (sessao) {
+      (venceEmBreve() && sessao.refresh_token ? renovar().catch(() => {}) : Promise.resolve())
+        .then(() => atualizarStatus())
+        .then(() => agendarRenovacao())
+        .catch(() => limpar());
+    }
   }
 })();
