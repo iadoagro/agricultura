@@ -92,8 +92,7 @@
     var botao = el('lancSalvar');
     botao.disabled = true;
     aviso('lancSalvarStatus', 'carregando', 'Salvando…');
-    fetch('../lancar_mecanizacao.php', { method: 'POST', body: fd })
-      .then(function (r) { return r.json().then(function (j) { return { status: r.status, corpo: j }; }); })
+    window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
         botao.disabled = false;
         if (!res.corpo.ok) { aviso('lancSalvarStatus', 'erro', esc(res.corpo.erro || 'Não foi possível salvar.')); return; }
@@ -137,8 +136,7 @@
     fd.append('token', sessao.access_token);
     fd.append('id', id);
     aviso('lancListaAviso', 'carregando', 'Excluindo…');
-    fetch('../lancar_mecanizacao.php', { method: 'POST', body: fd })
-      .then(function (r) { return r.json().then(function (j) { return { status: r.status, corpo: j }; }); })
+    window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
         if (!res.corpo.ok) { aviso('lancListaAviso', 'erro', esc(res.corpo.erro || 'Não foi possível excluir.')); return; }
         window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('excluir', 'mecanizacao', 'Excluiu o lançamento de mecanização de "' + nome + '"');
@@ -159,8 +157,7 @@
     fd.append('acao', 'listar');
     fd.append('token', sessao.access_token);
     fd.append('limite', '15');
-    fetch('../lancar_mecanizacao.php', { method: 'POST', body: fd })
-      .then(function (r) { return r.json().then(function (j) { return { status: r.status, corpo: j }; }); })
+    window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
         if (res.status === 401) { el('lancRecentes').innerHTML = '<p class="nota">Sua sessão do site expirou. Recarregue a página e entre de novo.</p>'; return; }
         if (!res.corpo.ok) { el('lancRecentes').innerHTML = '<p class="nota">Não foi possível carregar os lançamentos.</p>'; return; }

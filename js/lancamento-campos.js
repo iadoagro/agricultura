@@ -336,5 +336,28 @@
     };
   }
 
-  window.LANCAMENTO_CAMPOS = { criar: criar, esc: esc };
+  /** Manda o FormData (acao salvar/listar/carregar/editar/excluir) pro
+      servidor e devolve {status, corpo}. Primeiro na Edge Function
+      lancar-mecanizacao do Supabase — o GitHub Pages não executa PHP (o POST
+      pro .php volta 405 sem JSON e nada era gravado); se ela ainda não foi
+      publicada (404), cai pro lancar_mecanizacao.php (só no XAMPP). Mesmo
+      esquema de chamarServidor() em js/admin-auth.js. */
+  function enviar(fd) {
+    function lerJson(r) {
+      return r.json()
+        .catch(function () { return { ok: false, erro: 'O servidor respondeu de um jeito inesperado (HTTP ' + r.status + ').' }; })
+        .then(function (j) { return { status: r.status, corpo: j || {} }; });
+    }
+    var cfg = window.BANCO_CONFIG || {};
+    var edge = cfg.url
+      ? fetch(cfg.url.replace(/\/$/, '') + '/functions/v1/lancar-mecanizacao', {
+          method: 'POST', headers: { apikey: cfg.chavePublica }, body: fd
+        }).then(function (r) { return r.status === 404 ? null : r; }, function () { return null; })
+      : Promise.resolve(null);
+    return edge.then(function (r) {
+      return r || fetch('../lancar_mecanizacao.php', { method: 'POST', body: fd });
+    }).then(lerJson);
+  }
+
+  window.LANCAMENTO_CAMPOS = { criar: criar, esc: esc, enviar: enviar };
 })();

@@ -99,8 +99,7 @@
     var botao = el('lancSalvar');
     botao.disabled = true;
     aviso('lancSalvarStatus', 'carregando', 'Salvando…');
-    fetch('../lancar_mecanizacao.php', { method: 'POST', body: fd })
-      .then(function (r) { return r.json().then(function (j) { return { status: r.status, corpo: j }; }); })
+    window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
         botao.disabled = false;
         if (!res.corpo.ok) { aviso('lancSalvarStatus', 'erro', esc(res.corpo.erro || 'Não foi possível salvar.')); return; }
@@ -130,8 +129,7 @@
     fd.append('acao', 'carregar');
     fd.append('token', sessao.access_token);
     fd.append('id', id);
-    fetch('../lancar_mecanizacao.php', { method: 'POST', body: fd })
-      .then(function (r) { return r.json().then(function (j) { return { status: r.status, corpo: j }; }); })
+    window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
         if (!res.corpo.ok) {
           el('lancEditarContexto').textContent = 'Não foi possível abrir este lançamento.';

@@ -161,3 +161,21 @@ Não precisa configurar chave nenhuma: `SUPABASE_URL` e
 
 Pela CLI, alternativamente: `npx supabase login`, depois
 `npx supabase functions deploy admin-usuarios --project-ref nivbogsrfirumtbqpqff --no-verify-jwt`.
+
+## Lançamento de mecanização no GitHub Pages (Edge Function)
+
+Mesma situação: a aba **Lançamento** do painel de mecanização (salvar,
+listar, editar, excluir) grava em `mecanizacao_lancamentos` com a
+service_role. No site publicado isso roda na Edge Function
+`lancar-mecanizacao` — código em
+`supabase/functions/lancar-mecanizacao/index.ts`. Sem ela publicada, o site
+cai pro `lancar_mecanizacao.php`, que só funciona no XAMPP (com
+`admin_config.php`); no GitHub Pages o lançamento **não é salvo**.
+
+Publique do mesmo jeito da `admin-usuarios` acima: nome da função
+**lancar-mecanizacao**, cole o conteúdo do `index.ts`, **Deploy** e
+**desligue a verificação de JWT**. Pela CLI:
+`npx supabase functions deploy lancar-mecanizacao --project-ref nivbogsrfirumtbqpqff --no-verify-jwt`.
+
+Antes, confirme que `database/mecanizacao-lancamentos.sql` já rodou no SQL
+Editor (cria a tabela e o `grant` pra service_role).
