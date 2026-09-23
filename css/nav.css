@@ -1,0 +1,178 @@
+/* Navegação única (js/nav.js): menu lateral fixo + barra do topo com a trilha.
+   O menu é position:fixed; o espaço dele é reservado com padding-left no
+   <body> (html.sb-on), então as páginas de altura cheia (body em coluna com
+   100vh/100dvh — organograma, fiscais, painéis) só ficam mais estreitas, sem
+   nada por baixo do menu. Recolhido (html.sb-mini) vira uma faixa de ícones.
+   Até 900px não reserva espaço nenhum: vira gaveta (html.sb-gaveta).
+   Tema escuro: segue o data-tema="escuro" que os painéis já usam. */
+:root{
+  --sb-w:248px;
+  --sb-mini:64px;
+  --snav-h:44px;
+  --sb-fundo:#0f2547;
+  --sb-fundo2:#13305c;
+  --sb-texto:#dbe6f7;
+  --sb-suave:#8fa6c8;
+  --sb-hover:rgba(255,255,255,.07);
+  --sb-ativo:#2563eb;
+  --sb-ativo-texto:#ffffff;
+  --sb-borda:rgba(255,255,255,.09);
+  --snav-fundo:#ffffff;
+  --snav-borda:#dfe7f2;
+  --snav-texto:#172b4d;
+  --snav-suave:#62728a;
+  --snav-hover:#f2f6fc;
+}
+:root[data-tema="escuro"]{
+  --sb-fundo:#0b1220;
+  --sb-fundo2:#101a2c;
+  --sb-borda:rgba(255,255,255,.07);
+  --snav-fundo:#131c2b;
+  --snav-borda:#26344a;
+  --snav-texto:#e6edf7;
+  --snav-suave:#9aa9bf;
+  --snav-hover:#1a2537;
+}
+
+/* espaço reservado pro menu */
+html.sb-on>body{padding-left:var(--sb-w);transition:padding-left .2s ease}
+html.sb-on.sb-mini>body{padding-left:var(--sb-mini)}
+
+.sb *,.snav *{box-sizing:border-box}
+.sb-ico{width:18px;height:18px;flex:none}
+
+/* ------------------------------------------------------------ menu lateral */
+.sb{
+  position:fixed;top:0;bottom:0;left:0;z-index:800;
+  width:var(--sb-w);display:flex;flex-direction:column;
+  background:linear-gradient(180deg,var(--sb-fundo),var(--sb-fundo2));color:var(--sb-texto);
+  border-right:1px solid var(--sb-borda);
+  font:14px/1.3 "Segoe UI",Roboto,Arial,sans-serif;
+  transition:width .2s ease,transform .22s ease;
+  box-sizing:border-box;
+}
+.sb button,.sb input{font:inherit;color:inherit}
+.sb a{color:inherit;text-decoration:none}
+.sb :focus-visible{outline:2px solid #7fb0ff;outline-offset:-2px}
+
+.sb-topo{display:flex;align-items:center;gap:6px;height:56px;padding:0 10px 0 14px;flex:none;border-bottom:1px solid var(--sb-borda)}
+.sb-marca{display:flex;align-items:center;gap:10px;min-width:0;flex:1;font-weight:700;letter-spacing:.08em}
+.sb-logo{display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:9px;background:var(--sb-ativo);color:#fff;font-size:15px}
+.sb-marca-txt{white-space:nowrap;overflow:hidden}
+.sb-recolher,.sb-fechar{display:grid;place-items:center;width:32px;height:32px;flex:none;border:0;border-radius:8px;background:none;color:var(--sb-suave);cursor:pointer}
+.sb-recolher:hover,.sb-fechar:hover{background:var(--sb-hover);color:var(--sb-texto)}
+.sb-fechar{display:none}
+
+.sb-busca{display:flex;align-items:center;gap:8px;margin:12px 12px 6px;padding:0 10px;height:38px;flex:none;border:1px solid var(--sb-borda);border-radius:9px;background:rgba(255,255,255,.05);color:var(--sb-suave);cursor:text}
+.sb-busca:focus-within{border-color:#5b8def;background:rgba(255,255,255,.09)}
+.sb-busca input{flex:1;min-width:0;height:100%;border:0;background:none;outline:none;color:var(--sb-texto)}
+.sb-busca input::placeholder{color:var(--sb-suave)}
+.sb-busca input::-webkit-search-cancel-button{display:none}
+.sb kbd{padding:1px 5px;border:1px solid var(--sb-borda);border-radius:4px;color:var(--sb-suave);font-size:10.5px;font-family:inherit;white-space:nowrap}
+
+.sb-lista{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:6px 10px 12px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+.sb-inicio,.sb-item{display:flex;align-items:center;gap:10px;min-height:36px;padding:7px 10px;border-radius:8px;color:var(--sb-texto)}
+.sb-inicio:hover,.sb-item:hover{background:var(--sb-hover)}
+.sb-inicio.atual,.sb-item.atual{background:var(--sb-ativo);color:var(--sb-ativo-texto);font-weight:600}
+.sb-inicio[hidden],.sb-item[hidden],.sb-grupo[hidden],.sb-vazio[hidden]{display:none}
+.sb-inicio span,.sb-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-item{padding-left:38px;font-size:13.5px}
+.sb-grupo{margin-top:12px}
+.sb-grupo h3{display:flex;align-items:center;gap:10px;margin:0 0 2px;padding:4px 10px;color:var(--sb-suave);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.sb-grupo.atual h3{color:#b9d0ff}
+.sb-grupo-ico{display:grid;place-items:center;width:18px;height:18px;padding:0;border:0;background:none;cursor:default}
+.sb-vazio{margin:12px 10px;color:var(--sb-suave);font-size:13px}
+
+.sb-rodape{display:flex;align-items:center;gap:8px;padding:10px 12px;flex:none;border-top:1px solid var(--sb-borda)}
+.sb-usuario{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+.sb-avatar{display:grid;place-items:center;width:30px;height:30px;flex:none;border-radius:50%;background:rgba(255,255,255,.14);font-size:13px;font-weight:700}
+.sb-login{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-sair{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;flex:none;border:1px solid var(--sb-borda);border-radius:8px;background:none;cursor:pointer;font-size:13px}
+.sb-sair:hover{background:rgba(220,60,60,.18);border-color:rgba(255,120,120,.35)}
+
+/* recolhido: faixa só de ícones (os ícones de grupo abrem o menu no grupo) */
+html.sb-mini .sb{width:var(--sb-mini)}
+html.sb-mini .sb-topo{justify-content:center;flex-direction:column;gap:4px;height:auto;padding:10px 0}
+html.sb-mini .sb-marca{flex:none}
+html.sb-mini .sb-marca-txt,html.sb-mini .sb-busca,html.sb-mini .sb-item,html.sb-mini .sb-grupo h3 span,
+html.sb-mini .sb-inicio span,html.sb-mini .sb-login,html.sb-mini .sb-sair span,html.sb-mini .sb-vazio{display:none}
+html.sb-mini .sb-recolher .sb-ico{transform:scaleX(-1)}
+html.sb-mini .sb-lista{padding:8px 0}
+html.sb-mini .sb-inicio{justify-content:center;margin:0 10px;padding:9px 0}
+html.sb-mini .sb-grupo{margin-top:6px}
+html.sb-mini .sb-grupo h3{justify-content:center;padding:0;margin:0 10px}
+html.sb-mini .sb-grupo-ico{width:44px;height:38px;border-radius:8px;color:var(--sb-texto);cursor:pointer}
+html.sb-mini .sb-grupo-ico .sb-ico{width:19px;height:19px}
+html.sb-mini .sb-grupo-ico:hover{background:var(--sb-hover)}
+html.sb-mini .sb-grupo.atual .sb-grupo-ico{background:var(--sb-ativo);color:#fff}
+html.sb-mini .sb-rodape{flex-direction:column;padding:10px 0}
+html.sb-mini .sb-usuario{flex:none}
+html.sb-mini .sb-sair{width:40px;padding:0;justify-content:center}
+
+/* ------------------------------------------------------------ barra do topo */
+.snav{
+  position:relative;z-index:700;flex:none;
+  display:flex;align-items:center;gap:6px;
+  height:var(--snav-h);padding:0 12px 0 8px;
+  background:var(--snav-fundo);border-bottom:1px solid var(--snav-borda);color:var(--snav-texto);
+  font:14px/1.2 "Segoe UI",Roboto,Arial,sans-serif;
+}
+.snav button{font:inherit}
+.snav-menu,.snav-sair{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:32px;min-width:34px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:none;color:inherit;cursor:pointer}
+.snav-menu:hover,.snav-sair:hover{background:var(--snav-hover)}
+.snav-sair{margin-left:auto;border-color:var(--snav-borda);font-weight:600}
+.snav button:focus-visible,.snav a:focus-visible{outline:2px solid #6f9be6;outline-offset:1px}
+.snav-trilha{display:flex;align-items:center;min-width:0;flex:1;margin:0 0 0 2px;padding:0;list-style:none;overflow:hidden}
+.snav-trilha li{display:flex;align-items:center;min-width:0;white-space:nowrap}
+.snav-trilha li+li::before{content:"›";flex:none;margin:0 7px;color:var(--snav-suave);font-size:16px}
+.snav-trilha li:last-child{flex:0 1 auto}
+.snav-trilha li:not(:last-child){flex:0 0 auto}
+.snav-trilha a{display:inline-flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;color:var(--snav-suave);text-decoration:none}
+.snav-trilha a:hover{background:var(--snav-hover);color:var(--snav-texto)}
+.snav-trilha [aria-current]{padding:4px 6px;font-weight:600;color:var(--snav-texto);overflow:hidden;text-overflow:ellipsis}
+.snav-ico-inicio{width:16px;height:16px}
+
+.sb-veu{display:none}
+
+/* impressão (relatórios em PDF): nada de navegação no papel */
+@media print{
+  .sb,.snav,.sb-veu{display:none!important}
+  html.sb-on>body{padding-left:0!important}
+}
+@media(prefers-reduced-motion:reduce){.sb,html.sb-on>body{transition:none}}
+
+/* ------------------------------------------------ celular / tela estreita */
+@media(max-width:900px){
+  html.sb-on>body,html.sb-on.sb-mini>body{padding-left:0}
+  .sb,html.sb-mini .sb{width:min(300px,86vw);transform:translateX(-102%);z-index:1100}
+  html.sb-gaveta .sb{transform:none;box-shadow:12px 0 40px rgba(0,0,0,.35)}
+  html.sb-gaveta{overflow:hidden}
+  .sb-veu{display:block;position:fixed;inset:0;z-index:1090;background:rgba(10,20,40,.45);opacity:0;pointer-events:none;transition:opacity .2s}
+  html.sb-gaveta .sb-veu{opacity:1;pointer-events:auto}
+  .sb-recolher{display:none}
+  .sb-fechar{display:grid}
+  .sb kbd{display:none}
+  /* na gaveta o menu é sempre o completo, mesmo com "recolhido" guardado */
+  html.sb-mini .sb-topo{flex-direction:row;height:56px;padding:0 10px 0 14px;justify-content:flex-start}
+  html.sb-mini .sb-marca{flex:1}
+  html.sb-mini .sb-marca-txt,html.sb-mini .sb-inicio span,html.sb-mini .sb-login,html.sb-mini .sb-sair span,html.sb-mini .sb-grupo h3 span{display:initial}
+  html.sb-mini .sb-busca,html.sb-mini .sb-item{display:flex}
+  html.sb-mini .sb-item[hidden]{display:none}
+  html.sb-mini .sb-lista{padding:6px 10px 12px}
+  html.sb-mini .sb-inicio{justify-content:flex-start;margin:0;padding:7px 10px}
+  html.sb-mini .sb-grupo{margin-top:12px}
+  html.sb-mini .sb-grupo h3{justify-content:flex-start;padding:4px 10px;margin:0 0 2px}
+  html.sb-mini .sb-grupo-ico{width:18px;height:18px;background:none!important;color:inherit!important;cursor:default}
+  html.sb-mini .sb-rodape{flex-direction:row;padding:10px 12px}
+  html.sb-mini .sb-usuario{flex:1}
+  html.sb-mini .sb-sair{width:auto;padding:0 10px}
+}
+@media(max-width:640px){
+  .snav{padding:0 8px 0 4px;gap:2px}
+  /* no celular a trilha mostra só o nível de cima e a página atual */
+  .snav-trilha li:not(:nth-last-child(-n+2)){display:none}
+  .snav-trilha li:nth-last-child(2)::before{display:none}
+  .snav-trilha li:nth-last-child(2){flex:0 1 auto;min-width:0}
+  .snav-trilha li:nth-last-child(2) a{min-width:0}
+  .snav-trilha li:nth-last-child(2) a span{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}

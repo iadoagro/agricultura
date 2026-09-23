@@ -34,7 +34,9 @@
     irDireto();
   }
 
-  loginBtn.addEventListener('click', function () {
+  // O "Sair" agora fica na barra de navegação (js/nav.js), que também limpa
+  // MARCA; este só existe se alguma página ainda tiver o botão antigo.
+  if (loginBtn) loginBtn.addEventListener('click', function () {
     if (!auth) return;
     try { sessionStorage.removeItem(MARCA); } catch (e) {}
     auth.sair().then(function () { location.href = 'admin-login.html'; });

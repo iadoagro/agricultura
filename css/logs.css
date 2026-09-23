@@ -12,10 +12,50 @@
 .logs-badge.bairros{background:#e3f3ec;color:#1f7a4d}
 .logs-badge.chamados{background:#fff3cd;color:#8a6100}
 .logs-badge.mecanizacao{background:#f3e8ff;color:#6b21a8}
+.logs-badge.navegacao{background:#eef1f5;color:#4a5a70}
 .logs-acao{font-size:12px;font-weight:700;color:#42536e}
 .logs-acao.excluir,.logs-acao.recusar,.logs-acao.desativar{color:#c0392b}
+.logs-acao.excluir,.logs-acao.erro{color:#c0392b}
 .logs-acao.criar,.logs-acao.aprovar,.logs-acao.ativar,.logs-acao.login{color:#1f7a4d}
+.logs-acao.visita,.logs-acao.saida,.logs-acao.aba,.logs-acao.clique,.logs-acao.filtro{color:#62728a;font-weight:600}
 .logs-desc{font-size:13.5px;color:#172b4d;line-height:1.45}
+/* abas Equipe / Root / Todos */
+.logs-abas{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid #dfe7f2;overflow-x:auto}
+.logs-aba{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;background:none;color:#62728a;font:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.logs-aba:hover{color:#172b4d}
+.logs-aba.ativa{color:#2f4f9e;border-bottom-color:#4472c4}
+.logs-aba:focus-visible{outline:2px solid #9ab9ed;outline-offset:-2px;border-radius:6px 6px 0 0}
+.logs-aba-num{min-width:22px;padding:1px 8px;border-radius:999px;background:#eef1f5;color:#4a5a70;font-size:11.5px;font-variant-numeric:tabular-nums;text-align:center}
+.logs-aba-num:empty{display:none}
+.logs-aba.ativa .logs-aba-num{background:#eaf2ff;color:#2f4f9e}
+/* filtros: menores que o padrão de admin-auth.css, são 8 lado a lado */
+.logs-filtros{align-items:flex-end}
+.logs-filtros input,.logs-filtros select{min-width:170px}
+.logs-filtros label[hidden]{display:none}
+.logs-limpar{min-height:42px;padding:8px 14px;border:1px solid #cbd8e9;border-radius:9px;background:#fff;color:#42536e;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.logs-limpar:hover{background:#f2f6fc}
+/* resumo do período */
+.logs-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.logs-kpis:empty{display:none}
+.logs-kpi{display:grid;gap:2px;padding:14px 16px;border:1px solid #dfe7f2;border-radius:12px;background:#fff}
+.logs-kpi span{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#62728a}
+.logs-kpi strong{font-size:22px;color:#172b4d;font-variant-numeric:tabular-nums}
+.logs-kpi small{font-size:11.5px;color:#8494ab}
+/* lista */
+.logs-link{padding:0;border:0;background:none;color:#2f4f9e;font:inherit;font-size:13px;text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.logs-link:hover{text-decoration:underline}
+.logs-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.logs-chips span{padding:2px 8px;border-radius:6px;background:#f2f6fc;color:#4a5a70;font-size:11.5px;overflow-wrap:anywhere}
+/* agrupado */
+.logs-grupos .permissoes-colunas,.logs-grupos .lista-solicitacoes li{display:grid;grid-template-columns:minmax(220px,2fr) minmax(80px,.6fr) minmax(120px,.8fr) minmax(70px,.5fr) minmax(110px,.8fr) minmax(110px,.8fr);gap:18px;align-items:center}
+.logs-grupos .num{font-variant-numeric:tabular-nums;font-size:13.5px;color:#172b4d}
+.logs-grupo{cursor:pointer}
+.logs-grupo:hover,.logs-grupo:focus-visible{background:#f7faff;outline:none}
+.logs-grupo-nome{font-size:13.5px;color:#172b4d;font-weight:600;overflow-wrap:anywhere}
+.logs-grupo-pai{background:#f7f9fc}
+.logs-grupo-filho .logs-grupo-nome{font-weight:400;padding-left:18px}
+.logs-grupo-filho .logs-grupo-nome span{color:#8494ab}
+.logs-dica{margin:12px 22px;color:#8494ab;font-size:12px}
 #logsMais{margin-top:16px;width:100%}
 #logsMais[hidden]{display:none}
-@media(max-width:900px){.logs-tabela .permissoes-colunas{display:none}.logs-tabela .lista-solicitacoes li{grid-template-columns:1fr;gap:6px}}
+@media(max-width:900px){.logs-tabela .permissoes-colunas,.logs-grupos .permissoes-colunas{display:none}.logs-tabela .lista-solicitacoes li{grid-template-columns:1fr;gap:6px}.logs-grupos .lista-solicitacoes li{grid-template-columns:1fr 1fr 1fr;gap:6px 12px}.logs-grupos .logs-grupo-nome{grid-column:1/-1}}

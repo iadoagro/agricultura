@@ -7,26 +7,43 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/admin-auth.css?v=2026092203">
-<link rel="stylesheet" href="../css/logs.css?v=2026092203">
+<link rel="stylesheet" href="../css/logs.css?v=2026092302">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
+<link rel="stylesheet" href="../css/nav.css?v=2026092402">
 </head>
 <body>
 <header><h1>SISTEMA</h1><p>Registro de eventos</p></header>
 <main class="permissoes-layout">
   <section class="permissoes-cabecalho">
-    <div><span class="permissoes-sobretitulo">ADMINISTRAÇÃO</span><h2>Eventos do sistema</h2><p>Histórico de login, cadastro, edição e exclusão feitos por todo mundo — não dá pra alterar ou apagar uma linha já gravada.</p></div>
+    <div><span class="permissoes-sobretitulo">ADMINISTRAÇÃO</span><h2>Eventos do sistema</h2><p>Tudo o que cada pessoa fez no sistema: páginas abertas, tempo em cada uma, abas, cliques, filtros, cadastros, edições, exclusões e erros. Nenhuma linha gravada pode ser alterada ou apagada.</p></div>
     <span id="logsContagem" class="permissoes-contagem"></span>
   </section>
 
   <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável.</p>
 
   <div id="painelLogs">
-    <div class="permissoes-filtros">
-      <label>Buscar<input id="logsBusca" type="search" placeholder="Login, e-mail ou texto do evento"></label>
+    <div class="logs-abas" role="tablist" aria-label="De quem são os eventos">
+      <button type="button" role="tab" class="logs-aba" data-aba="equipe" aria-selected="true">Equipe <span class="logs-aba-num" id="logsNumEquipe"></span></button>
+      <button type="button" role="tab" class="logs-aba" data-aba="root" aria-selected="false">Root <span class="logs-aba-num" id="logsNumRoot"></span></button>
+      <button type="button" role="tab" class="logs-aba" data-aba="todos" aria-selected="false">Todos <span class="logs-aba-num" id="logsNumTodos"></span></button>
+    </div>
+
+    <div class="permissoes-filtros logs-filtros">
+      <label>Agrupar por<select id="logsAgrupar">
+        <option value="">Não agrupar (lista de eventos)</option>
+        <option value="pessoa">Pessoa</option>
+        <option value="acao">Ação</option>
+        <option value="pessoa_acao">Pessoa → ação</option>
+        <option value="pagina">Página</option>
+        <option value="pessoa_pagina">Pessoa → página</option>
+        <option value="modulo">Módulo</option>
+      </select></label>
+      <label>Pessoa<select id="logsPessoa"><option value="">Todas</option></select></label>
       <label>Módulo<select id="logsModulo">
         <option value="">Todos</option>
+        <option value="navegacao">Navegação (páginas, cliques, tempo)</option>
         <option value="acesso">Acesso (login/logout)</option>
         <option value="usuarios">Usuários</option>
         <option value="fiscais">Fiscais</option>
@@ -36,36 +53,60 @@
       </select></label>
       <label>Ação<select id="logsAcao">
         <option value="">Todas</option>
-        <option value="login">Login</option>
-        <option value="logout">Logout</option>
-        <option value="cadastro">Cadastro (solicitação)</option>
-        <option value="criar">Criar</option>
-        <option value="editar">Editar</option>
-        <option value="excluir">Excluir</option>
-        <option value="aprovar">Aprovar</option>
-        <option value="recusar">Recusar</option>
-        <option value="ativar">Ativar</option>
-        <option value="desativar">Desativar</option>
-        <option value="trocar_senha">Trocar senha</option>
-        <option value="redefinir">Redefinir senha</option>
+        <optgroup label="Navegação">
+          <option value="visita">Abriu página</option>
+          <option value="saida">Tempo na página</option>
+          <option value="aba">Trocou de aba</option>
+          <option value="clique">Clique</option>
+          <option value="filtro">Filtro / opção</option>
+          <option value="enviar">Enviou formulário</option>
+          <option value="erro">Erro na página</option>
+        </optgroup>
+        <optgroup label="Acesso e cadastros">
+          <option value="login">Login</option>
+          <option value="logout">Logout</option>
+          <option value="cadastro">Cadastro (solicitação)</option>
+          <option value="criar">Criar</option>
+          <option value="editar">Editar</option>
+          <option value="excluir">Excluir</option>
+          <option value="aprovar">Aprovar</option>
+          <option value="recusar">Recusar</option>
+          <option value="ativar">Ativar</option>
+          <option value="desativar">Desativar</option>
+          <option value="trocar_senha">Trocar senha</option>
+          <option value="redefinir">Redefinir senha</option>
+        </optgroup>
       </select></label>
+      <label>Página<select id="logsPagina"><option value="">Todas</option></select></label>
       <label>De<input id="logsDesde" type="date"></label>
       <label>Até<input id="logsAte" type="date"></label>
+      <label id="logsBuscaRotulo">Buscar<input id="logsBusca" type="search" placeholder="Login, e-mail ou texto do evento"></label>
+      <button type="button" class="logs-limpar" id="logsLimpar">Limpar filtros</button>
     </div>
+
+    <section class="logs-kpis" id="logsKpis" aria-label="Resumo do período"></section>
 
     <p class="admin-msg" id="logsMsg" role="status"></p>
 
-    <div class="permissoes-tabela logs-tabela">
+    <div class="permissoes-tabela logs-tabela" id="logsVisLista">
       <div class="permissoes-colunas"><span>QUANDO</span><span>QUEM</span><span>MÓDULO</span><span>AÇÃO</span><span>O QUE ACONTECEU</span></div>
       <ul class="lista-solicitacoes" id="listaLogs"></ul>
     </div>
     <button type="button" class="permissoes-salvar" id="logsMais" hidden>Carregar mais eventos</button>
+
+    <div class="permissoes-tabela logs-grupos" id="logsVisGrupos" hidden>
+      <div class="permissoes-colunas"><span id="logsColGrupo">GRUPO</span><span>EVENTOS</span><span>TEMPO NAS PÁGINAS</span><span>PESSOAS</span><span>PRIMEIRO</span><span>ÚLTIMO</span></div>
+      <ul class="lista-solicitacoes" id="listaGrupos"></ul>
+      <p class="logs-dica">Clique numa linha para ver os eventos daquele grupo.</p>
+    </div>
   </div>
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/admin-auth.js?v=2026092203"></script>
+<script src="../js/admin-auth.js?v=2026092302"></script>
 <script src="../js/admin-gate.js?v=2026092203"></script>
-<script src="../js/logs.js?v=2026092203"></script>
+<script src="../js/rastreio.js?v=2026092301"></script>
+<script src="../js/nav.js?v=2026092402"></script>
+<script src="../js/logs.js?v=2026092302"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

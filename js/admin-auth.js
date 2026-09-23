@@ -89,13 +89,16 @@
     if (!online) return;
     var usuario = sessao && sessao.user;
     if (!usuario) return;
+    // A página de onde veio a ação — é o que a página de logs usa para
+    // agrupar por página junto com a navegação de js/rastreio.js.
+    detalhes = Object.assign({ pagina: location.pathname.split('/').pop() || 'index.html' }, detalhes || {});
     try {
       await requisicao('/rest/v1/log_eventos', {
         method: 'POST', headers: { Prefer: 'return=minimal' },
         body: JSON.stringify({
           usuario_id: usuario.id, usuario_email: usuario.email,
           acao: acao, modulo: modulo, descricao: descricao,
-          detalhes: detalhes || null
+          detalhes: detalhes
         })
       }, true);
     } catch (e) { console.warn('Não foi possível registrar o evento de auditoria:', e.message); }
@@ -108,9 +111,26 @@
     if (filtros.modulo) params.push('modulo=eq.' + encodeURIComponent(filtros.modulo));
     if (filtros.acao) params.push('acao=eq.' + encodeURIComponent(filtros.acao));
     if (filtros.usuarioEmail) params.push('usuario_email=ilike.*' + encodeURIComponent(filtros.usuarioEmail) + '*');
+    if (filtros.usuario) params.push('usuario_email=eq.' + encodeURIComponent(filtros.usuario));
+    if (filtros.semUsuario) params.push('usuario_email=neq.' + encodeURIComponent(filtros.semUsuario));
+    if (filtros.pagina) params.push('detalhes->>pagina=eq.' + encodeURIComponent(filtros.pagina));
     if (filtros.desde) params.push('criado_em=gte.' + encodeURIComponent(filtros.desde));
     if (filtros.ate) params.push('criado_em=lte.' + encodeURIComponent(filtros.ate));
     return requisicao('/rest/v1/log_eventos?' + params.join('&'));
+  }
+
+  /* Resumo agrupado (função log_eventos_resumo, database/log-eventos-navegacao.sql).
+     agrupar: 'pessoa' | 'acao' | 'modulo' | 'pagina' | 'pessoa_acao' | 'pessoa_pagina'. */
+  async function resumirEventos(agrupar, filtros) {
+    filtros = filtros || {};
+    return requisicao('/rest/v1/rpc/log_eventos_resumo', {
+      method: 'POST',
+      body: JSON.stringify({
+        p_agrupar: agrupar, p_desde: filtros.desde || null, p_ate: filtros.ate || null,
+        p_modulo: filtros.modulo || null, p_acao: filtros.acao || null, p_usuario: filtros.usuario || null,
+        p_pagina: filtros.pagina || null, p_sem_usuario: filtros.semUsuario || null
+      })
+    });
   }
 
   async function buscarPerfil() {
@@ -278,7 +298,7 @@
     online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SEMPRE_LIBERADAS, SENHA_PADRAO,
     cadastrarConta, entrar, sair, listarSolicitacoes, decidir, definirPaginas, definirAtivo, previewLogin,
     cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
-    registrarEvento, listarEventos,
+    registrarEvento, listarEventos, resumirEventos,
     sessaoAtual: () => sessao,
     papel: () => sessao ? sessao.papel : null,
     liberado: () => Boolean(sessao) && (sessao.papel === 'responsavel' || (sessao.papel === 'aprovado' && sessao.ativo !== false)),
