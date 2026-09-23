@@ -58,7 +58,10 @@
       caixas().forEach(function (c) { c.addEventListener('change', function () { atualizarBotao(); if (aoMudar) aoMudar(); }); });
       atualizarBotao();
     }
-    return { definirOpcoes: definirOpcoes, selecionados: selecionados };
+    // Desmarca tudo sem disparar aoMudar em cada caixa — quem chama isso
+    // (os relatórios prontos) já vai mandar renderizar uma vez só no final.
+    function limpar() { caixas().forEach(function (c) { c.checked = false; }); atualizarBotao(); }
+    return { definirOpcoes: definirOpcoes, selecionados: selecionados, limpar: limpar };
   }
   var msRegional = criarMultiSelect('relRegional', 'Todas', function () { renderizar(); });
   var msMunicipio = criarMultiSelect('relMunicipio', 'Todos', function () { renderizar(); });
@@ -108,6 +111,22 @@
     });
   });
   atualizarSetas();
+
+  // Usado pelos "Relatórios prontos": marca exatamente os níveis de "modos",
+  // na ordem dada, reordenando as linhas do menu pra bater (os níveis que
+  // ficam de fora vão pro final, desmarcados, na ordem que já estavam).
+  function definirAgrupamento(modos) {
+    var todos = agruparItens.map(function (it) { return it.dataset.valor; });
+    var ordemNova = modos.concat(todos.filter(function (v) { return modos.indexOf(v) === -1; }));
+    ordemNova.forEach(function (valor) {
+      var it = agruparItens.filter(function (i) { return i.dataset.valor === valor; })[0];
+      if (it) agruparMenu.appendChild(it);
+    });
+    agruparItens = Array.prototype.slice.call(agruparMenu.querySelectorAll('.rel-agrupar-item'));
+    agruparItens.forEach(function (it) { it.querySelector('input').checked = modos.indexOf(it.dataset.valor) !== -1; });
+    atualizarSetas();
+    atualizarBotaoAgrupar();
+  }
 
   var XLSX_URL = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
   var ROTULO_GRUPO = { geral: 'Geral', municipio: 'Município', regional: 'Regional', zona: 'Zona', secao: 'Seção', bairro: 'Bairro' };
@@ -368,10 +387,58 @@
     window.print();
   }
 
+  // Só os filtros (Regional/Município/Zona/Bairro/busca) — o agrupamento
+  // escolhido em "Agrupar por" não mexe, já que é uma escolha à parte.
+  function limparFiltros() {
+    msRegional.limpar(); msMunicipio.limpar(); msZona.limpar(); msBairro.limpar();
+    campoBusca.value = '';
+    renderizar();
+  }
+
+  /* --------------------------------------------------- relatórios prontos */
+  // Combinações mais pedidas, prontas pra baixar num clique — mesmos dados
+  // e mesmo motor de agrupar/exportar da listagem acima, só com os filtros
+  // e a ordem já configurados.
+  var relProntos = $('relProntos');
+  var PRESETS = [
+    { titulo: 'Lista geral de fiscais', descricao: 'Todos os fiscais cadastrados, numa lista só.', modos: [] },
+    { titulo: 'Por Regional', descricao: 'Agrupado por regional.', modos: ['regional'] },
+    { titulo: 'Por Município', descricao: 'Agrupado por município.', modos: ['municipio'] },
+    { titulo: 'Regional e Município', descricao: 'Cada regional, com os municípios dentro.', modos: ['regional', 'municipio'] },
+    { titulo: 'Por Bairro', descricao: 'Agrupado por bairro.', modos: ['bairro'] },
+    { titulo: 'Zona e Seção', descricao: 'Pra conferência no dia da eleição — fiscal de cada seção.', modos: ['zona', 'secao'] }
+  ];
+  if (relProntos) {
+    relProntos.innerHTML = PRESETS.map(function (p, i) {
+      return '<div class="relatorio-pronto">' +
+        '<div class="relatorio-pronto-tit">' + esc(p.titulo) + '</div>' +
+        '<p class="relatorio-pronto-desc">' + esc(p.descricao) + '</p>' +
+        '<div class="relatorio-pronto-acoes">' +
+        '<button type="button" data-preset="' + i + '" data-formato="pdf">PDF</button>' +
+        '<button type="button" data-preset="' + i + '" data-formato="excel">Excel</button>' +
+        '</div></div>';
+    }).join('');
+    relProntos.addEventListener('click', function (e) {
+      var botao = e.target.closest('button[data-preset]');
+      if (!botao) return;
+      var preset = PRESETS[Number(botao.dataset.preset)];
+      if (!preset) return;
+      msRegional.limpar(); msMunicipio.limpar(); msZona.limpar(); msBairro.limpar();
+      campoBusca.value = '';
+      definirAgrupamento(preset.modos);
+      renderizar();
+      var topo = $('relatorio-titulo');
+      if (topo) topo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (botao.dataset.formato === 'pdf') imprimir();
+      else exportarExcel(botao);
+    });
+  }
+
   campoBusca.addEventListener('input', renderizar);
-  $('relCSV').addEventListener('click', exportarCSV);
-  $('relExcel').addEventListener('click', function (e) { exportarExcel(e.currentTarget); });
   $('relImprimir').addEventListener('click', imprimir);
+  $('relExcel').addEventListener('click', function (e) { exportarExcel(e.currentTarget); });
+  $('relCSV').addEventListener('click', exportarCSV);
+  $('relLimpar').addEventListener('click', limparFiltros);
   window.addEventListener('banco-atualizado', renderizar);
   atualizarBotaoAgrupar();
   renderizar();

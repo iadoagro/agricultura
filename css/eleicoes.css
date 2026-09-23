@@ -294,6 +294,8 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .relatorio-acoes button:disabled{opacity:.6;cursor:wait}
 .relatorio-acoes #relImprimir{background:#fff;color:#153e75;border:1px solid #153e75}
 .relatorio-acoes #relImprimir:hover{background:#eef3fb}
+.relatorio-acoes .relatorio-limpar{background:transparent;color:#8a5a00;border:1px solid #e3c98a}
+.relatorio-acoes .relatorio-limpar:hover{background:#fff8e6}
 .relatorio-status{margin:14px 0 8px;font-size:13px;color:#444}
 .relatorio-resumo{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .relatorio-resumo:empty{display:none}
@@ -321,19 +323,53 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .relatorio-tabela td:first-child,.relatorio-tabela th:first-child{color:#8a96a8;width:1%;text-align:right}
 .relatorio-tabela tbody tr:nth-child(even){background:#fafbfd}
 .relatorio-vazio{padding:28px;text-align:center;color:#666;border:1px dashed #d5deea;border-radius:8px}
+
+/* ---------- Relatórios prontos: combinações comuns, um clique baixa ---------- */
+.relatorio-prontos-card{margin-top:16px}
+.relatorio-prontos{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:14px}
+.relatorio-pronto{border:1px solid #e3e8ef;border-radius:10px;padding:14px;background:#fafbfd;display:flex;flex-direction:column;gap:4px}
+.relatorio-pronto-tit{font-size:14px;font-weight:700;color:#153e75}
+.relatorio-pronto-desc{margin:0;font-size:12.5px;color:#666;line-height:1.4;flex:1}
+.relatorio-pronto-acoes{display:flex;gap:6px;margin-top:10px}
+.relatorio-pronto-acoes button{flex:1;background:#153e75;color:#fff;border:0;border-radius:7px;padding:8px 10px;font-size:12.5px;cursor:pointer}
+.relatorio-pronto-acoes button:hover{background:#2563eb}
+.relatorio-pronto-acoes button:disabled{opacity:.6;cursor:wait}
+.relatorio-pronto-acoes button[data-formato="pdf"]{flex:0 0 auto;background:#fff;color:#153e75;border:1px solid #153e75}
+.relatorio-pronto-acoes button[data-formato="pdf"]:hover{background:#eef3fb}
 @media print{
   body.imprimindo-relatorio{height:auto;display:block;background:#fff}
   body.imprimindo-relatorio header,body.imprimindo-relatorio .barra-acesso,body.imprimindo-relatorio .abas-eleicoes,
   body.imprimindo-relatorio .aba-conteudo:not([data-aba="relatorio"]),body.imprimindo-relatorio .relatorio-filtros,
-  body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-resumo,body.imprimindo-relatorio dialog{display:none!important}
+  body.imprimindo-relatorio .relatorio-acoes,body.imprimindo-relatorio .relatorio-resumo,
+  body.imprimindo-relatorio .relatorio-prontos-card,body.imprimindo-relatorio dialog{display:none!important}
   body.imprimindo-relatorio .eleicoes,body.imprimindo-relatorio .aba-conteudo.ativa{display:block;overflow:visible;height:auto;padding:0;margin:0}
   body.imprimindo-relatorio .mapa-card{border:0;padding:0;box-shadow:none}
   body.imprimindo-relatorio .relatorio-rolagem{overflow:visible;border:0}
-  body.imprimindo-relatorio .relatorio-tabela{font-size:10px}
+  /* table-layout:fixed com largura por coluna: sem isso, colunas com texto
+     longo e sem espaço pra quebrar (telefone, local de votação) empurravam
+     a tabela pra além da largura da página, e o nome — mesmo cabendo —
+     saía cortado na borda do papel junto com o resto. */
+  body.imprimindo-relatorio .relatorio-tabela{font-size:9.5px;width:100%;table-layout:fixed}
   body.imprimindo-relatorio .relatorio-tabela th{position:static}
+  body.imprimindo-relatorio .relatorio-tabela th,body.imprimindo-relatorio .relatorio-tabela td{
+    overflow-wrap:break-word;word-break:break-word;white-space:normal;
+  }
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(1),body.imprimindo-relatorio .relatorio-tabela td:nth-child(1){width:3%}
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(2),body.imprimindo-relatorio .relatorio-tabela td:nth-child(2){width:19%}
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(3),body.imprimindo-relatorio .relatorio-tabela td:nth-child(3){width:12%}
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(4),body.imprimindo-relatorio .relatorio-tabela td:nth-child(4){width:13%}
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(5),body.imprimindo-relatorio .relatorio-tabela td:nth-child(5){width:11%}
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(6),body.imprimindo-relatorio .relatorio-tabela td:nth-child(6){width:14%}
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(7),body.imprimindo-relatorio .relatorio-tabela td:nth-child(7){width:6%}
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(8),body.imprimindo-relatorio .relatorio-tabela td:nth-child(8){width:7%}
+  body.imprimindo-relatorio .relatorio-tabela th:nth-child(9),body.imprimindo-relatorio .relatorio-tabela td:nth-child(9){width:15%}
   body.imprimindo-relatorio .relatorio-grupo{break-inside:auto}
   body.imprimindo-relatorio .relatorio-grupo h3{break-after:avoid}
-  body.imprimindo-relatorio .relatorio-tabela tr{break-inside:avoid}
+  /* break-inside (padrão atual) e page-break-inside (nome antigo, ainda é o
+     que alguns motores de impressão/PDF realmente respeitam) juntos, senão
+     uma linha alta (nome que quebrou em 2 linhas) partia bem no meio entre
+     duas páginas — metade do nome em cada uma. */
+  body.imprimindo-relatorio .relatorio-tabela tr{break-inside:avoid;page-break-inside:avoid}
 }
 
 /* .voltar tem display próprio, que venceria o atributo hidden (link Cadastro de bairros, só admin) */

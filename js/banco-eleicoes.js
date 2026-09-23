@@ -20,16 +20,35 @@
   // uuid → login exibido ("Cadastrado por"); some fica pra sempre em cache,
   // não muda depois que o cadastro foi feito. Quem não resolve (conta
   // excluída) ou não tem criado_por vira "Sistema" na tela.
+  //
+  // Roda À PARTE do carregamento principal (nunca no meio do await de
+  // atualizar()): é só um enfeite (mostrar quem cadastrou), e se travar ou
+  // falhar — coluna nova sem cache do PostgREST atualizado ainda, RPC fora
+  // do ar, RLS bloqueando por algum motivo — não pode derrubar a lista de
+  // fiscais inteira com ela. Busca o criado_por à parte (não vem mais no
+  // select principal) e preenche quando terminar, avisando de novo pra
+  // tela atualizar só essa informação.
   const criadores = new Map();
   async function preencherCriadores(registros) {
-    const faltando = [...new Set(registros.map(r => r._criadoPorId).filter(id => id && !criadores.has(id)))];
-    if (faltando.length) {
-      try {
+    try {
+      const ids = registros.map(r => r._id);
+      const doresPorFiscal = new Map();
+      for (let offset = 0; offset < ids.length; offset += 500) {
+        const lote = await requisicao('/rest/v1/eleicoes_cadastros?select=id,criado_por&id=in.(' + ids.slice(offset, offset + 500).map(encodeURIComponent).join(',') + ')');
+        lote.forEach(r => doresPorFiscal.set(r.id, r.criado_por));
+      }
+      const faltando = [...new Set([...doresPorFiscal.values()].filter(id => id && !criadores.has(id)))];
+      if (faltando.length) {
         const nomes = await requisicao('/rest/v1/rpc/fiscais_criadores', { method: 'POST', body: JSON.stringify({ p_ids: faltando }) });
         (nomes || []).forEach(n => criadores.set(n.id, n.login));
-      } catch (e) { /* sem nome resolvido pra esses ids, cai no "Sistema" abaixo */ }
-    }
-    registros.forEach(r => { r._criadoPor = (r._criadoPorId && criadores.get(r._criadoPorId)) || 'Sistema'; });
+      }
+      registros.forEach(r => {
+        const criadoPorId = doresPorFiscal.get(r._id);
+        r._criadoPorId = criadoPorId;
+        r._criadoPor = (criadoPorId && criadores.get(criadoPorId)) || 'Sistema';
+      });
+      avisar();
+    } catch (e) { /* só o "Cadastrado por" fica sem preencher — o resto da tela já carregou normalmente */ }
   }
   function local() {
     const registros = JSON.parse(localStorage.getItem(localKey) || '[]');
@@ -63,12 +82,12 @@
     if (!sessao) throw new Error('Sua sessão expirou. Volte à página inicial e entre de novo.');
     const registros = [];
     for (let offset = 0; ; offset += 500) {
-      const lote = await requisicao('/rest/v1/eleicoes_cadastros?select=id,dados,criado_em,criado_por&order=criado_em.asc,id.asc&limit=500&offset=' + offset);
-      registros.push(...lote.map(r => ({ ...r.dados, _id: r.id, _criadoEm: r.criado_em, _criadoPorId: r.criado_por })));
+      const lote = await requisicao('/rest/v1/eleicoes_cadastros?select=id,dados,criado_em&order=criado_em.asc,id.asc&limit=500&offset=' + offset);
+      registros.push(...lote.map(r => ({ ...r.dados, _id: r.id, _criadoEm: r.criado_em })));
       if (lote.length < 500) break;
     }
-    await preencherCriadores(registros);
     cache = registros; carregado = true; avisar();
+    preencherCriadores(registros); // "Cadastrado por": preenche depois, sem atrasar a lista
   }
   async function salvar(registro) {
     if (!online) { const dados = local(); registro._id = crypto.randomUUID(); registro._criadoEm = new Date().toISOString(); dados.push(registro); localStorage.setItem(localKey, JSON.stringify(dados)); return; }

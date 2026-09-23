@@ -271,13 +271,18 @@
           <label>Nome ou telefone<input id="relBusca" type="search" placeholder="Buscar…"></label>
         </div>
         <div class="relatorio-acoes">
-          <button id="relCSV" type="button">Exportar CSV</button>
-          <button id="relExcel" type="button">Exportar Excel</button>
           <button id="relImprimir" type="button">Imprimir / PDF</button>
+          <button id="relExcel" type="button">Exportar Excel</button>
+          <button id="relCSV" type="button">Exportar CSV</button>
+          <button id="relLimpar" type="button" class="relatorio-limpar">Limpar filtros</button>
         </div>
         <p id="relStatus" class="relatorio-status" role="status"></p>
         <nav id="relResumo" class="relatorio-resumo" aria-label="Grupos do relatório"></nav>
         <div id="relTabelas" class="relatorio-tabelas"></div>
+      </section>
+      <section class="mapa-card relatorio-prontos-card" aria-labelledby="relatorio-prontos-titulo">
+        <div class="mapa-topo"><div><h2 id="relatorio-prontos-titulo">Relatórios prontos</h2><p>Os pedidos mais comuns, já configurados — um clique aplica os filtros acima e baixa.</p></div></div>
+        <div id="relProntos" class="relatorio-prontos"></div>
       </section>
     </div>
   </main>
