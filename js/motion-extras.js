@@ -11,8 +11,13 @@
 
   /* ---------- Spotlight (só ponteiro fino = mouse) ---------- */
   if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    var ultimo = null;
-    document.addEventListener('pointermove', function (e) {
+    var ultimo = null, pendente = null, quadroPedido = false;
+    // pointermove pode disparar centenas de vezes por segundo; sem isso,
+    // cada evento repintava o gradiente na hora — em computador fraco isso
+    // sozinho já deixa o mouse "engasgado". Um só update por quadro de tela.
+    function aplicar() {
+      quadroPedido = false;
+      var e = pendente; if (!e) return;
       var c = e.target.closest && e.target.closest(CARTOES);
       if (ultimo && ultimo !== c) { ultimo.classList.remove('mo-spot'); ultimo = null; }
       if (!c) return;
@@ -21,8 +26,13 @@
       c.style.setProperty('--my', (e.clientY - r.top) + 'px');
       c.classList.add('mo-spot');
       ultimo = c;
+    }
+    document.addEventListener('pointermove', function (e) {
+      pendente = e;
+      if (!quadroPedido) { quadroPedido = true; requestAnimationFrame(aplicar); }
     }, { passive: true });
     document.addEventListener('pointerleave', function () {
+      pendente = null;
       if (ultimo) { ultimo.classList.remove('mo-spot'); ultimo = null; }
     });
   }

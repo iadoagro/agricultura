@@ -84,12 +84,15 @@
     }
     if (item.id) await requisicao('/rest/v1/fiscais_bairros?id=eq.' + encodeURIComponent(item.id), { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(dados) });
     else await requisicao('/rest/v1/fiscais_bairros', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(dados) });
+    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento(item.id ? 'editar' : 'criar', 'bairros', (item.id ? 'Editou' : 'Cadastrou') + ' o bairro "' + nome + '"');
     return carregar();
   }
 
   async function excluir(id) {
     if (!online) { gravarLocal(lerLocal().filter(b => b.id !== id)); return carregar(); }
+    const alvo = cache.find(b => b.id === id);
     await requisicao('/rest/v1/fiscais_bairros?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('excluir', 'bairros', 'Excluiu o bairro "' + (alvo && alvo.nome || '') + '"');
     return carregar();
   }
 

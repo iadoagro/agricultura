@@ -18,6 +18,8 @@
 }
 
 /* ============ Fundo: aurora + grade de pontos (fica atrás de tudo) ============ */
+/* Fixo na tela inteira: parado por padrão (computador fraco/GPU integrada
+   sofre com um gradiente de viewport inteiro repintando pra sempre). */
 body:not(.login-page)::before{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:
@@ -28,50 +30,14 @@ body:not(.login-page)::before{
   -webkit-mask-image:linear-gradient(180deg,#000 0,#000 55%,rgba(0,0,0,.55) 100%);
   mask-image:linear-gradient(180deg,#000 0,#000 55%,rgba(0,0,0,.55) 100%);
 }
-@media (prefers-reduced-motion:no-preference){
-  body:not(.login-page)::before{background-size:auto,auto,auto,22px 22px;animation:fx-aurora 22s ease-in-out infinite alternate}
-}
-@keyframes fx-aurora{
-  0%{background-position:0 0,0 0,0 0,0 0}
-  100%{background-position:6% 10%,-8% 6%,-6% -8%,22px 22px}
-}
 
-/* ============ Cabeçalho: orbes flutuantes + meteoros ============ */
-.fx-cab{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit;z-index:0}
-.fx-orbe{position:absolute;border-radius:50%;filter:blur(38px);opacity:.5;mix-blend-mode:soft-light;background:#fff}
-.fx-orbe.a{width:220px;height:220px;left:-40px;top:-90px;background:#93c5fd}
-.fx-orbe.b{width:260px;height:260px;right:-60px;bottom:-140px;background:#a5f3fc}
-.fx-meteoro{position:absolute;top:-10px;width:1px;height:70px;border-radius:2px;opacity:0;rotate:215deg;
-  background:linear-gradient(180deg,rgba(255,255,255,.9),transparent)}
-.fx-meteoro::before{content:"";position:absolute;top:0;left:-1px;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px rgba(255,255,255,.8)}
-@media (prefers-reduced-motion:no-preference){
-  .fx-orbe.a{animation:fx-flutua 11s ease-in-out infinite alternate}
-  .fx-orbe.b{animation:fx-flutua 14s ease-in-out -4s infinite alternate-reverse}
-  .fx-meteoro{animation:fx-meteoro 6s linear infinite}
-  .fx-meteoro:nth-of-type(3){left:22%;animation-delay:.6s;animation-duration:5.2s}
-  .fx-meteoro:nth-of-type(4){left:51%;animation-delay:2.4s;animation-duration:6.8s}
-  .fx-meteoro:nth-of-type(5){left:78%;animation-delay:4.1s;animation-duration:5.6s}
-  .fx-meteoro:nth-of-type(6){left:93%;animation-delay:1.5s;animation-duration:7.2s}
-}
-@keyframes fx-flutua{to{translate:60px 26px;scale:1.18}}
-@keyframes fx-meteoro{
-  0%{opacity:0;translate:0 0}
-  6%{opacity:1}
-  22%{opacity:0;translate:-190px 170px}
-  100%{opacity:0;translate:-190px 170px}
-}
+/* ============ Cabeçalho ============ */
+/* Antes tinha orbes com filter:blur(38px) + meteoros animados aqui — puro
+   enfeite, mas blur grande é caro de renderizar mesmo rodando só umas
+   vezes. Removido (js/fx-ui.js não injeta mais .fx-cab). O brilho animado
+   no título (background-clip:text repintando) também saiu pelo mesmo
+   motivo — "leve" venceu "bonitinho" aqui. */
 header{overflow:clip}
-
-/* ============ Título com brilho que passeia (Animated Gradient Text) ============ */
-@media (prefers-reduced-motion:no-preference){
-  header h1,.login-title{
-    background:linear-gradient(100deg,#fff 0%,#fff 36%,#bfdbfe 46%,#67e8f9 50%,#bfdbfe 54%,#fff 64%,#fff 100%);
-    background-size:260% 100%;background-position:120% 0;
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
-    animation:fx-brilho-texto 7s ease-in-out 1.2s infinite;
-  }
-}
-@keyframes fx-brilho-texto{0%,55%{background-position:120% 0}100%{background-position:-20% 0}}
 
 /* ============ Border Beam (feixe girando na borda) ============ */
 .fx-beam{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;z-index:3;
@@ -82,21 +48,12 @@ header{overflow:clip}
   mask-composite:exclude;
   transition:opacity .45s var(--mo-out,ease)}
 .fx-beam-host{position:relative}
+/* O giro só roda em quem está com o mouse em cima (curto por natureza) —
+   antes os KPIs giravam pra sempre, mesmo sem ninguém olhando. */
 @media (prefers-reduced-motion:no-preference){
   .fx-beam-host:hover>.fx-beam,.fx-beam-host:focus-within>.fx-beam,.card-link:hover .fx-beam{opacity:1;animation:fx-gira 3.2s linear infinite}
-  .kpi.fx-beam-host>.fx-beam,.ch-kpi.fx-beam-host>.fx-beam{opacity:.55;animation:fx-gira 6s linear infinite}
 }
 @keyframes fx-gira{to{--fx-a:360deg}}
-
-/* ============ Shimmer Button ============ */
-.ch-btn.primario,.btn-verde,.admin-submit,.salvar,.btn-salvar,.btn.primario,button.primario{position:relative;overflow:hidden;isolation:isolate}
-@media (prefers-reduced-motion:no-preference){
-  .ch-btn.primario::after,.btn-verde::after,.admin-submit:not(:disabled)::after,.salvar::after,.btn-salvar::after,.btn.primario::after,button.primario::after{
-    content:"";position:absolute;inset:-2px;z-index:-1;pointer-events:none;
-    background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.42) 50%,transparent 65%);
-    translate:-120% 0;animation:fx-shimmer 3.8s ease-in-out 1s infinite}
-}
-@keyframes fx-shimmer{0%,60%{translate:-120% 0}100%{translate:120% 0}}
 
 /* ============ Animate UI "Highlight": linhas e itens de lista ============ */
 @media (hover:hover){
@@ -105,16 +62,11 @@ header{overflow:clip}
   #cadastros li:hover,.busca-global-lista li:hover,.ch-item:hover{background-color:rgba(var(--fx-azul),.05)}
 }
 
-/* ============ Cartões: vidro leve sobre a aurora ============ */
-:where(.card,.painel,.mapa-card,.resultados-card,.instantaneo-card,.ch-cartao,.portaria-card,.card-contato,.kpi,.ch-kpi,.admin-card,.permissoes-tabela,.permissoes-novo){
-  -webkit-backdrop-filter:saturate(1.15);backdrop-filter:saturate(1.15);
-}
-
 /* ============ Floating Dock (navegação flutuante) ============ */
 .fx-dock{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:2500;
   display:flex;align-items:center;gap:4px;padding:6px;border-radius:999px;
-  background:rgba(255,255,255,.78);border:1px solid rgba(21,62,117,.16);
-  -webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);
+  background:rgba(255,255,255,.86);border:1px solid rgba(21,62,117,.16);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   box-shadow:0 12px 32px -12px rgba(15,23,42,.45),0 0 0 1px rgba(255,255,255,.6) inset;
   translate:-50% 140%;opacity:0;pointer-events:none;
   transition:translate .55s var(--mo-spring,cubic-bezier(.2,.9,.3,1.25)),opacity .3s ease}
@@ -131,7 +83,7 @@ header{overflow:clip}
   .fx-dock.on{translate:0 0}
   .fx-dock{flex-direction:column;padding:5px}
 }
-@media print{.fx-dock,.fx-cab,.fx-beam{display:none!important}body::before{display:none!important}}
+@media print{.fx-dock,.fx-beam{display:none!important}body::before{display:none!important}}
 
 /* ============ Rolagem elegante ============ */
 @media (hover:hover){
@@ -144,7 +96,6 @@ header{overflow:clip}
   img,svg,canvas,video{max-width:100%}
   table{max-width:100%}
   pre,code{white-space:pre-wrap;word-break:break-word}
-  .fx-orbe{filter:blur(28px)}
 }
 
 /* ============ Correções responsivas ============ */

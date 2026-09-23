@@ -13,25 +13,12 @@
     return e;
   }
 
-  /* ---------- Cabeçalho: orbes + meteoros ---------- */
-  function cabecalho() {
-    if (calmo || login) return;
-    var h = document.querySelector('body > header');
-    if (!h || h.querySelector('.fx-cab')) return;
-    var c = el('span', 'fx-cab');
-    c.appendChild(el('i', 'fx-orbe a'));
-    c.appendChild(el('i', 'fx-orbe b'));
-    for (var i = 0; i < 4; i++) c.appendChild(el('i', 'fx-meteoro'));
-    h.insertBefore(c, h.firstChild);
-    if (getComputedStyle(h).position === 'static') h.style.position = 'relative';
-  }
-
   /* ---------- Border Beam nos cartões ---------- */
   var ALVOS = '.card,.painel,.mapa-card,.resultados-card,.instantaneo-card,.ch-cartao,.portaria-card,.card-contato,.kpi,.ch-kpi,.admin-card,.permissoes-tabela,.permissoes-novo,.ch-col';
   function feixes(raiz) {
     if (calmo) return;
     var lista = (raiz || document).querySelectorAll(ALVOS);
-    for (var i = 0; i < lista.length && i < 400; i++) {
+    for (var i = 0; i < lista.length && i < 150; i++) {
       var c = lista[i];
       if (c.__fx || c.querySelector(':scope > .fx-beam')) { c.__fx = 1; continue; }
       c.__fx = 1;
@@ -83,15 +70,16 @@
   }
 
   function iniciar() {
-    cabecalho();
     feixes();
     dock();
-    /* conteúdo montado depois (painéis, listas): reaplica sem custo perceptível */
+    /* conteúdo montado depois (painéis, listas): reaplica, mas sem pressa —
+       janela maior entre reaplicações pra não competir com o resto da
+       página enquanto ela ainda está mudando (busca digitando, etc.). */
     if ('MutationObserver' in window && !calmo) {
       var t = 0;
       new MutationObserver(function () {
         clearTimeout(t);
-        t = setTimeout(function () { feixes(); }, 350);
+        t = setTimeout(function () { feixes(); }, 700);
       }).observe(document.body, { childList: true, subtree: true });
     }
   }

@@ -82,6 +82,37 @@
     return (email || '').toLowerCase() === RESPONSAVEL_EMAIL;
   }
 
+  /* Registro de auditoria (database/log-eventos.sql). Nunca deve travar a
+     ação que está sendo registrada: falha em silêncio (só um aviso no
+     console) se o banco não tiver a tabela ou a pessoa estiver offline. */
+  async function registrarEvento(acao, modulo, descricao, detalhes) {
+    if (!online) return;
+    var usuario = sessao && sessao.user;
+    if (!usuario) return;
+    try {
+      await requisicao('/rest/v1/log_eventos', {
+        method: 'POST', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          usuario_id: usuario.id, usuario_email: usuario.email,
+          acao: acao, modulo: modulo, descricao: descricao,
+          detalhes: detalhes || null
+        })
+      }, true);
+    } catch (e) { console.warn('Não foi possível registrar o evento de auditoria:', e.message); }
+  }
+
+  // Só o responsável enxerga (política "Responsavel le todos os eventos").
+  async function listarEventos(filtros) {
+    filtros = filtros || {};
+    var params = ['select=*', 'order=criado_em.desc', 'limit=' + (filtros.limite || 200)];
+    if (filtros.modulo) params.push('modulo=eq.' + encodeURIComponent(filtros.modulo));
+    if (filtros.acao) params.push('acao=eq.' + encodeURIComponent(filtros.acao));
+    if (filtros.usuarioEmail) params.push('usuario_email=ilike.*' + encodeURIComponent(filtros.usuarioEmail) + '*');
+    if (filtros.desde) params.push('criado_em=gte.' + encodeURIComponent(filtros.desde));
+    if (filtros.ate) params.push('criado_em=lte.' + encodeURIComponent(filtros.ate));
+    return requisicao('/rest/v1/log_eventos?' + params.join('&'));
+  }
+
   async function buscarPerfil() {
     if (ehResponsavel(sessao.user.email)) return { papel: 'responsavel', paginas: null, ativo: true, deveTrocarSenha: false };
     // As colunas "ativo" e "deve_trocar_senha" podem não existir ainda (as
@@ -122,10 +153,13 @@
     sessao = { access_token: r.access_token, expires_at: r.expires_at || Math.floor(Date.now() / 1000) + r.expires_in, user: { id: r.user.id, email: r.user.email } };
     try { await atualizarStatus(); }
     catch (e) { limpar(); throw e; }
+    registrarEvento('login', 'acesso', 'Entrou no sistema');
   }
 
   async function sair() {
-    try { if (sessao) await requisicao('/auth/v1/logout', { method: 'POST' }); }
+    try {
+      if (sessao) { registrarEvento('logout', 'acesso', 'Saiu do sistema'); await requisicao('/auth/v1/logout', { method: 'POST' }); }
+    }
     finally { limpar(); }
   }
 
@@ -202,6 +236,7 @@
     const email = login + '@' + DOMINIO_USUARIO;
     await chamarPHPPublico('autocadastro', { email, senha });
     await entrar(login, senha);
+    registrarEvento('cadastro', 'usuarios', 'Solicitou acesso ao sistema (login ' + login + ')');
     return login;
   }
 
@@ -216,6 +251,7 @@
     if (r.aviso) return { login, aviso: r.aviso };
     await decidir(r.id, true);
     try { await definirDeveTrocarSenha(r.id, true); } catch (e) {}
+    registrarEvento('criar', 'usuarios', 'Cadastrou o usuário ' + login);
     return { login };
   }
 
@@ -227,6 +263,7 @@
     await requisicao('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password: novaSenha }) });
     try { await requisicao('/rest/v1/rpc/confirmar_troca_senha', { method: 'POST', body: '{}' }); } catch (e) {}
     if (sessao) { sessao.deveTrocarSenha = false; sessionStorage.setItem(sessionKey, JSON.stringify(sessao)); avisar(); }
+    registrarEvento('trocar_senha', 'usuarios', 'Alterou a própria senha');
   }
 
   async function chamarAdminPHP(acao, dados) {
@@ -241,6 +278,7 @@
     online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SEMPRE_LIBERADAS, SENHA_PADRAO,
     cadastrarConta, entrar, sair, listarSolicitacoes, decidir, definirPaginas, definirAtivo, previewLogin,
     cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
+    registrarEvento, listarEventos,
     sessaoAtual: () => sessao,
     papel: () => sessao ? sessao.papel : null,
     liberado: () => Boolean(sessao) && (sessao.papel === 'responsavel' || (sessao.papel === 'aprovado' && sessao.ativo !== false)),

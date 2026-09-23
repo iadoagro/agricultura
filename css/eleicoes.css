@@ -195,7 +195,42 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .busca-global-card{grid-column:1/-1}
 .busca-global-filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:14px;align-items:end}
 .busca-global-filtros label{font-size:12px;color:#666}
+.busca-global-filtros label small{display:block;font-weight:400;color:#8a96a8;margin-top:2px}
 .busca-global-filtros input,.busca-global-filtros select{display:block;width:100%;margin-top:4px;box-sizing:border-box}
+/* Dropdown com caixas de marcar, reaproveitado por todos os filtros do
+   Relatório (Agrupar por, Regional, Município, Zona, Bairro) em vez de
+   <select multiple> (feio e exige Ctrl+clique) ou <select> comum (só deixa
+   escolher um). js/eleicoes-relatorio.js monta tudo via criarMultiSelect(). */
+.rel-multi{position:relative;display:flex;flex-direction:column;font-size:12px;color:#666}
+.rel-multi-rotulo{margin-bottom:4px}
+/* .busca-global-filtros na frente: só .rel-multi-btn perde pra regra
+   genérica ".busca-global-filtros button" (mesmo tipo de seletor, mas ela
+   tem uma classe A MAIS de especificidade) e fica azul cheio feito os
+   botões de ação, em vez do visual de campo de formulário que queremos. */
+.busca-global-filtros .rel-multi-btn{display:block;width:100%;box-sizing:border-box;min-height:38px;padding:8px 30px 8px 12px;
+  border:1px solid #cbd8e9;border-radius:8px;background:#fff;font:inherit;font-size:13.5px;color:#172b4d;
+  text-align:left;cursor:pointer;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rel-multi-btn::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#7b8ba3;font-size:11px}
+.busca-global-filtros .rel-multi-btn:hover{background:#fff;border-color:#9ab9ed}
+.busca-global-filtros .rel-multi-btn[aria-expanded="true"]{border-color:#2563eb;box-shadow:0 0 0 3px #2563eb20}
+.rel-multi-menu{position:absolute;top:100%;left:0;z-index:20;margin-top:4px;min-width:230px;max-height:280px;overflow-y:auto;
+  background:#fff;border:1px solid #cbd8e9;border-radius:10px;box-shadow:0 10px 28px rgba(21,46,89,.14);padding:6px}
+.rel-multi-menu label{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:6px;font-size:13px;color:#172b4d;cursor:pointer}
+.rel-multi-menu label:hover{background:#f2f6fc}
+.rel-multi-menu input{width:auto;margin:0;accent-color:#2563eb}
+.rel-multi-vazio{margin:4px 6px;font-size:12px;color:#8a96a8}
+.rel-agrupar-dica{margin:2px 6px 6px;font-size:11px;color:#7b8ba3;line-height:1.4}
+/* "Agrupar por" tem mais uma coisa: setas pra reordenar os níveis marcados. */
+.rel-agrupar-item{display:flex;align-items:center;justify-content:space-between;gap:6px;border-radius:6px}
+.rel-agrupar-item:hover{background:#f2f6fc}
+.rel-agrupar-item label{display:flex;align-items:center;gap:8px;padding:8px 9px;font-size:13px;color:#172b4d;cursor:pointer;flex:1;min-width:0}
+.rel-agrupar-item input{width:auto;margin:0;accent-color:#2563eb}
+.rel-agrupar-setas{display:flex;gap:2px;flex:none;padding-right:4px}
+.busca-global-filtros .rel-agrupar-setas button{background:#fff;color:#42536e;border:1px solid #e3eaf4;border-radius:5px;
+  width:22px;height:22px;padding:0;font-size:10px;line-height:1;cursor:pointer}
+.busca-global-filtros .rel-agrupar-setas button:hover:not(:disabled){background:#eaf2ff;border-color:#9ab9ed;color:#153e75}
+.rel-agrupar-setas button:disabled{opacity:.35;cursor:default}
+@media(max-width:650px){.busca-global-filtros .rel-multi-btn{min-height:46px}}
 .busca-global-filtros button{background:#153e75;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-size:13px;white-space:nowrap;cursor:pointer}
 .busca-global-filtros button:hover{background:#2563eb}
 #buscaGlobalStatus{font-size:13px;color:#666;margin:10px 0}
@@ -266,8 +301,19 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .relatorio-resumo a:hover{background:#e7eef8}
 .relatorio-resumo b{background:#153e75;color:#fff;border-radius:999px;padding:0 7px;font-size:11px}
 .relatorio-grupo{margin-top:18px;scroll-margin-top:8px}
-.relatorio-grupo h3{font-size:15px;color:#153e75;margin:0 0 8px;display:flex;align-items:baseline;gap:8px}
-.relatorio-grupo h3 span{font-size:12px;color:#666;font-weight:400}
+.relatorio-grupo :is(h3,h4,h5,h6){color:#153e75;margin:0 0 8px;display:flex;align-items:baseline;gap:8px}
+.relatorio-grupo :is(h3,h4,h5,h6) span{font-size:12px;color:#666;font-weight:400}
+.relatorio-grupo h3{font-size:15px}
+.relatorio-grupo h4{font-size:14px}
+.relatorio-grupo h5{font-size:13px}
+.relatorio-grupo h6{font-size:12.5px}
+/* Níveis dentro de níveis (Regional > Município > Zona > Bairro, ou só os
+   marcados): recuo crescente + linha à esquerda deixam visível que um grupo
+   está dentro do outro, mesmo com cada um separado por espaço. */
+.relatorio-nivel-1{margin-top:14px;margin-left:16px;padding-left:14px;border-left:2px solid #d5deea}
+.relatorio-nivel-2{margin-top:12px;margin-left:14px;padding-left:12px;border-left:2px solid #e3e8ef}
+.relatorio-nivel-3{margin-top:10px;margin-left:12px;padding-left:10px;border-left:2px solid #edf1f6}
+.relatorio-folha{margin-top:10px}
 .relatorio-rolagem{overflow-x:auto;border:1px solid #e3e8ef;border-radius:8px}
 .relatorio-tabela{width:100%;border-collapse:collapse;font-size:13px}
 .relatorio-tabela th{position:sticky;top:0;background:#f2f6fc;color:#4a5b73;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;white-space:nowrap}
@@ -301,7 +347,7 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 #cadastros li.cadastro-compacto.selecionado{background:#fff8db;box-shadow:inset 3px 0 0 #e0a800}
 .cadastro-mais-acoes{flex:none;width:32px;height:32px;border:1px solid #d5deea;border-radius:8px;background:#fff;color:#153e75;font-size:16px;line-height:1;cursor:pointer}
 .cadastro-mais-acoes:hover{background:#eef3fb}
-.pin-destaque span{display:block;width:26px;height:26px;border-radius:50%;background:#ffd400;border:3px solid #153e75;box-sizing:border-box;box-shadow:0 0 0 0 rgba(255,212,0,.7);animation:pin-destaque-pulso 1.4s ease-out infinite}
+.pin-destaque span{display:block;width:26px;height:26px;border-radius:50%;background:#ffd400;border:3px solid #153e75;box-sizing:border-box;box-shadow:0 0 0 0 rgba(255,212,0,.7);animation:pin-destaque-pulso 1.4s ease-out 5}
 @keyframes pin-destaque-pulso{0%{box-shadow:0 0 0 0 rgba(255,212,0,.75)}100%{box-shadow:0 0 0 18px rgba(255,212,0,0)}}
 @media (prefers-reduced-motion:reduce){.pin-destaque span{animation:none}}
 .pin-destaque-fiscais{margin-top:4px;color:#1f6f3f;font-weight:600}
@@ -356,10 +402,13 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 }/* Controles do mapa de bairros mais compactos (sobra mais altura pro mapa) */
 @media(min-width:1000px) and (min-height:600px){
   .coluna-central .mapa-topo p{display:none}
-  .coluna-central #mapaBairrosSecao:not([hidden]){display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 18px}
-  .coluna-central #mapaBairrosSecao>.mapa-bairros-topo,.coluna-central #mapaBairrosSecao>.mapa-bairros-viewport{flex:0 0 100%}
-  .coluna-central #mapaBairrosSecao>.fiscais-mapa-filtros,.coluna-central #mapaBairrosSecao>#mapaFiscaisResumo,.coluna-central #mapaBairrosSecao>.resultados-bairros-legenda{flex:0 1 auto;margin:0}
-  .coluna-central #mapaBairrosSecao>#mapaFiscaisResumo{font-size:12px}
+  /* :not(:fullscreen) em cada seletor: sem isso, essas regras (mais
+     específicas por causa de .coluna-central) vencem as de tela cheia lá
+     em cima e forçam tudo em linha, colapsando a altura do mapa. */
+  .coluna-central #mapaBairrosSecao:not([hidden]):not(:fullscreen):not(:-webkit-full-screen){display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 18px}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.mapa-bairros-topo,.coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.mapa-bairros-viewport{flex:0 0 100%}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.fiscais-mapa-filtros,.coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>#mapaFiscaisResumo,.coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.resultados-bairros-legenda{flex:0 1 auto;margin:0}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>#mapaFiscaisResumo{font-size:12px}
 }
 /* Faixa do cadastro: 8 colunas (7 campos + botão) na tela larga; em 4 colunas
    quando a tela é mais estreita. Um bloco de fiscais aparece com ou sem

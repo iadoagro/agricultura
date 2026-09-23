@@ -51,7 +51,11 @@
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/admin-auth.js?v=2026092203"></script>
 <script src="../js/shader-login.js?v=2026091901"></script>
-<script>if(typeof montarShaderBackground==="function"){try{montarShaderBackground(document.getElementById("loginShader"),{colors:["#dbeafe","#2563eb","#1e3a8a","#60a5fa"],speed:0.4,distortion:0.8,swirl:0.2});}catch(e){}}</script>
+<script>if(typeof montarShaderBackground==="function"){try{
+  var _shaderLogin=montarShaderBackground(document.getElementById("loginShader"),{colors:["#dbeafe","#2563eb","#1e3a8a","#60a5fa"],speed:0.28,distortion:0.8,swirl:0.2});
+  /* Roda pra sempre numa GPU (só para com prefers-reduced-motion ou aba escondida) — limita bem a resolução interna pra pesar menos em computador fraco, sem mudar o tamanho na tela (o shader só reamostra). */
+  if(_shaderLogin&&_shaderLogin.setMaxPixelCount)_shaderLogin.setMaxPixelCount(650000);
+}catch(e){}}</script>
 <script src="../js/admin-login.js?v=2026091950"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>

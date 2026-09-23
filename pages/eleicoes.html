@@ -221,11 +221,53 @@
       <section class="mapa-card relatorio" aria-labelledby="relatorio-titulo">
         <div class="mapa-topo"><div><h2 id="relatorio-titulo">Relatório de fiscais</h2><p>Lista em tabelas os fiscais cadastrados. Escolha como agrupar, filtre se precisar e exporte.</p></div></div>
         <div class="busca-global-filtros relatorio-filtros">
-          <label>Agrupar por<select id="relAgrupar"><option value="geral">Geral (sem agrupar)</option><option value="municipio">Município</option><option value="regional">Regional</option><option value="zona">Zona</option><option value="bairro">Bairro</option></select></label>
-          <label>Regional<select id="relRegional"><option value="">Todas</option></select></label>
-          <label>Município<select id="relMunicipio"><option value="">Todos</option></select></label>
-          <label>Zona<select id="relZona"><option value="">Todas</option></select></label>
-          <label>Bairro<select id="relBairro"><option value="">Todos</option></select></label>
+          <div class="rel-multi" id="relAgruparCampo">
+            <span class="rel-multi-rotulo">Agrupar por</span>
+            <button type="button" id="relAgruparBtn" class="rel-multi-btn" aria-haspopup="true" aria-expanded="false">Sem agrupar</button>
+            <div id="relAgruparMenu" class="rel-multi-menu" hidden>
+              <p class="rel-agrupar-dica">Marque os níveis; as setas definem a ordem (do maior pro menor).</p>
+              <div class="rel-agrupar-item" data-valor="regional">
+                <label><input type="checkbox" value="regional"> Regional</label>
+                <span class="rel-agrupar-setas"><button type="button" data-mover="cima" aria-label="Mover Regional para cima">▲</button><button type="button" data-mover="baixo" aria-label="Mover Regional para baixo">▼</button></span>
+              </div>
+              <div class="rel-agrupar-item" data-valor="municipio">
+                <label><input type="checkbox" value="municipio"> Município</label>
+                <span class="rel-agrupar-setas"><button type="button" data-mover="cima" aria-label="Mover Município para cima">▲</button><button type="button" data-mover="baixo" aria-label="Mover Município para baixo">▼</button></span>
+              </div>
+              <div class="rel-agrupar-item" data-valor="zona">
+                <label><input type="checkbox" value="zona"> Zona</label>
+                <span class="rel-agrupar-setas"><button type="button" data-mover="cima" aria-label="Mover Zona para cima">▲</button><button type="button" data-mover="baixo" aria-label="Mover Zona para baixo">▼</button></span>
+              </div>
+              <div class="rel-agrupar-item" data-valor="secao">
+                <label><input type="checkbox" value="secao"> Seção</label>
+                <span class="rel-agrupar-setas"><button type="button" data-mover="cima" aria-label="Mover Seção para cima">▲</button><button type="button" data-mover="baixo" aria-label="Mover Seção para baixo">▼</button></span>
+              </div>
+              <div class="rel-agrupar-item" data-valor="bairro">
+                <label><input type="checkbox" value="bairro"> Bairro</label>
+                <span class="rel-agrupar-setas"><button type="button" data-mover="cima" aria-label="Mover Bairro para cima">▲</button><button type="button" data-mover="baixo" aria-label="Mover Bairro para baixo">▼</button></span>
+              </div>
+            </div>
+          </div>
+          <div class="rel-multi" id="relRegionalCampo">
+            <span class="rel-multi-rotulo">Regional</span>
+            <button type="button" id="relRegionalBtn" class="rel-multi-btn" aria-haspopup="true" aria-expanded="false">Todas</button>
+            <div id="relRegionalMenu" class="rel-multi-menu" hidden></div>
+          </div>
+          <div class="rel-multi" id="relMunicipioCampo">
+            <span class="rel-multi-rotulo">Município</span>
+            <button type="button" id="relMunicipioBtn" class="rel-multi-btn" aria-haspopup="true" aria-expanded="false">Todos</button>
+            <div id="relMunicipioMenu" class="rel-multi-menu" hidden></div>
+          </div>
+          <div class="rel-multi" id="relZonaCampo">
+            <span class="rel-multi-rotulo">Zona</span>
+            <button type="button" id="relZonaBtn" class="rel-multi-btn" aria-haspopup="true" aria-expanded="false">Todas</button>
+            <div id="relZonaMenu" class="rel-multi-menu" hidden></div>
+          </div>
+          <div class="rel-multi" id="relBairroCampo">
+            <span class="rel-multi-rotulo">Bairro</span>
+            <button type="button" id="relBairroBtn" class="rel-multi-btn" aria-haspopup="true" aria-expanded="false">Todos</button>
+            <div id="relBairroMenu" class="rel-multi-menu" hidden></div>
+          </div>
           <label>Nome ou telefone<input id="relBusca" type="search" placeholder="Buscar…"></label>
         </div>
         <div class="relatorio-acoes">

@@ -104,6 +104,8 @@
       .then(function (res) {
         botao.disabled = false;
         if (!res.corpo.ok) { aviso('lancSalvarStatus', 'erro', esc(res.corpo.erro || 'Não foi possível salvar.')); return; }
+        var nome = form.elements['nome_beneficiario'].value;
+        window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'mecanizacao', 'Editou o lançamento de mecanização de "' + nome + '"');
         aviso('lancSalvarStatus', 'ok', 'Alterações salvas. Voltando para a lista…');
         setTimeout(function () { location.href = 'dashboard.html#lancamento'; }, 900);
       })

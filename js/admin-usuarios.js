@@ -113,6 +113,7 @@
         l.paginas = paginas; rascunhos.delete(l.id); li.classList.remove('alterada');
         linhaMsg.textContent = 'Salvo';
         msg.textContent = 'Acessos de ' + mostrarLogin(l.email) + ' atualizados.'; msg.className = 'admin-msg';
+        auth.registrarEvento('editar', 'usuarios', 'Alterou os acessos de ' + mostrarLogin(l.email), { paginas: paginas });
       }).catch(function (e) {
         botao.disabled = false; linhaMsg.textContent = 'Falha ao salvar';
         msg.textContent = e.message; msg.className = 'admin-msg erro';
@@ -146,7 +147,7 @@
     bloco.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
     msg.textContent = 'Aguarde…'; msg.className = 'admin-msg';
     tarefa()
-      .then(function (texto) { msg.textContent = texto; carregar(); })
+      .then(function (texto) { msg.textContent = texto; auth.registrarEvento(acao, 'usuarios', texto + ' (' + mostrarLogin(email) + ')'); carregar(); })
       .catch(function (e) { msg.textContent = e.message; msg.className = 'admin-msg erro'; bloco.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); });
   }
 
@@ -160,6 +161,7 @@
       .then(function (r) {
         if (r.aviso) { msg.textContent = r.aviso; msg.className = 'admin-msg erro'; }
         else { msg.textContent = 'Usuário cadastrado e aprovado. Login: ' + r.login + ' — senha: ' + auth.SENHA_PADRAO + '. Informe pra pessoa; ela vai ser obrigada a trocar no primeiro acesso.'; msg.className = 'admin-msg'; }
+        // auth.cadastrarUsuario já registra o evento "criar" — nada a fazer aqui.
         formNovo.reset(); novoLogin.value = ''; carregar();
       })
       .catch(function (err) { msg.textContent = err.message; msg.className = 'admin-msg erro'; })

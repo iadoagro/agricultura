@@ -140,7 +140,7 @@
     var exc = el('button', { class: 'ch-btn pequeno perigo', type: 'button', text: 'Excluir' });
     exc.addEventListener('click', function () {
       if (!window.confirm('Excluir "' + i.nome + '"?\n\nOs chamados já abertos não mudam. Se só quer tirar do formulário, use Desativar.')) return;
-      C.excluirCadastro(i.id).then(function () { U.aviso('Excluído.'); return carregar(); }, function (e) { U.aviso(e.message, 'erro'); });
+      C.excluirCadastro(i.id, i.nome, i.tipo).then(function () { U.aviso('Excluído.'); return carregar(); }, function (e) { U.aviso(e.message, 'erro'); });
     });
     return el('tr', { class: i.ativo ? '' : 'inativo' }, [
       el('td', { class: 'nome', text: i.nome }),

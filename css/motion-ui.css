@@ -14,9 +14,9 @@
 
 /* ============ 1. Base: transições padrão de peso zero (as das páginas vencem) ============ */
 :where(a,button,input,select,textarea,summary,label,tr,[role="tab"],[role="button"]){
-  transition:color .3s var(--mo-out),background-color .3s var(--mo-out),border-color .3s var(--mo-out),
-    box-shadow .35s var(--mo-out),opacity .3s var(--mo-out),outline-color .3s var(--mo-out),
-    outline-offset .3s var(--mo-out),scale .4s var(--mo-spring);
+  transition:color .18s var(--mo-out),background-color .18s var(--mo-out),border-color .18s var(--mo-out),
+    box-shadow .2s var(--mo-out),opacity .18s var(--mo-out),outline-color .18s var(--mo-out),
+    outline-offset .18s var(--mo-out),scale .22s var(--mo-spring);
 }
 :where(button,a,[role="tab"],[role="button"],input,select,textarea):focus-visible{outline-offset:3px}
 
@@ -24,7 +24,7 @@
   html{scroll-behavior:smooth}
 
   /* ---------- 2. Button / Checkbox / Radio: clique com mola ---------- */
-  button:not(:disabled),.btn,[role="button"],.aba,.card-link{transition-property:scale,color,background,background-color,border-color,box-shadow,opacity,transform,filter;transition-duration:.35s;transition-timing-function:var(--mo-out)}
+  button:not(:disabled),.btn,[role="button"],.aba,.card-link{transition-property:scale,color,background,background-color,border-color,box-shadow,opacity,transform,filter;transition-duration:.2s;transition-timing-function:var(--mo-out)}
   button:not(:disabled):active,.btn:active,[role="button"]:active,.aba:active{scale:.965;transition-duration:.08s}
   button:not(:disabled):not(:active),.btn:not(:active),.aba:not(:active){transition-timing-function:var(--mo-spring)}
   .card-link:active .card{scale:.985}
@@ -32,62 +32,63 @@
 
   /* ---------- 3. Página: entra deslizando, sai deslizando ---------- */
   body>*:not(script,style,link,template,[hidden],.mo-progress,.mo-tip,.login-shader,[class*="overlay"],[class*="backdrop"],[class*="modal"],[class*="toast"]){
-    animation:mo-page-in .6s var(--mo-out) backwards;
+    animation:mo-page-in .35s var(--mo-out) backwards;
   }
-  body>*:nth-child(2){animation-delay:.04s}
-  body>*:nth-child(3){animation-delay:.08s}
-  body>*:nth-child(4){animation-delay:.12s}
-  body>*:nth-child(n+5){animation-delay:.16s}
+  body>*:nth-child(2){animation-delay:.02s}
+  body>*:nth-child(3){animation-delay:.04s}
+  body>*:nth-child(4){animation-delay:.06s}
+  body>*:nth-child(n+5){animation-delay:.08s}
   html.mo-saindo body>*:not(script,style,link,template,[hidden],.mo-progress,.mo-tip,.login-shader){
-    animation:mo-page-out .24s var(--mo-in) forwards;animation-delay:0s;
+    animation:mo-page-out .16s var(--mo-in) forwards;animation-delay:0s;
   }
 
-  /* ---------- 4. Text Animation: títulos entram com blur ---------- */
-  header h1,.login-title{animation:mo-blur-in .8s var(--mo-out) .12s backwards}
-  header p,.login-eyebrow,.login-layout .admin-desc{animation:mo-blur-in .8s var(--mo-out) .26s backwards}
+  /* ---------- 4. Text Animation: títulos entram com blur (raio baixo: filter:blur
+     pesa pra renderizar, por isso é curto, de raio pequeno e só uma vez) ---------- */
+  header h1,.login-title{animation:mo-blur-in .45s var(--mo-out) .08s backwards}
+  header p,.login-eyebrow,.login-layout .admin-desc{animation:mo-blur-in .45s var(--mo-out) .16s backwards}
 
   /* ---------- 5. Listas: entrada escalonada ---------- */
-  .cards .card-link{animation:mo-rise .65s var(--mo-out) backwards}
-  .cards .card-link:nth-child(2){animation-delay:.06s}
-  .cards .card-link:nth-child(3){animation-delay:.12s}
-  .cards .card-link:nth-child(4){animation-delay:.18s}
-  .cards .card-link:nth-child(5){animation-delay:.24s}
-  .cards .card-link:nth-child(6){animation-delay:.3s}
-  .cards .card-link:nth-child(n+7){animation-delay:.36s}
-  .kpi{animation:mo-rise .55s var(--mo-out) backwards}
-  .kpi:nth-child(2){animation-delay:.04s}
-  .kpi:nth-child(3){animation-delay:.08s}
-  .kpi:nth-child(4){animation-delay:.12s}
-  .kpi:nth-child(5){animation-delay:.16s}
-  .kpi:nth-child(n+6){animation-delay:.2s}
-  tbody tr:nth-child(-n+14){animation:mo-fade-rise .5s var(--mo-out) backwards}
-  tbody tr:nth-child(2){animation-delay:24ms}
-  tbody tr:nth-child(3){animation-delay:48ms}
-  tbody tr:nth-child(4){animation-delay:72ms}
-  tbody tr:nth-child(5){animation-delay:96ms}
-  tbody tr:nth-child(6){animation-delay:120ms}
-  tbody tr:nth-child(7){animation-delay:144ms}
-  tbody tr:nth-child(8){animation-delay:168ms}
-  tbody tr:nth-child(9){animation-delay:192ms}
-  tbody tr:nth-child(10){animation-delay:216ms}
-  tbody tr:nth-child(11){animation-delay:240ms}
-  tbody tr:nth-child(12){animation-delay:264ms}
-  tbody tr:nth-child(13){animation-delay:288ms}
-  tbody tr:nth-child(14){animation-delay:312ms}
+  .cards .card-link{animation:mo-rise .38s var(--mo-out) backwards}
+  .cards .card-link:nth-child(2){animation-delay:.04s}
+  .cards .card-link:nth-child(3){animation-delay:.08s}
+  .cards .card-link:nth-child(4){animation-delay:.12s}
+  .cards .card-link:nth-child(5){animation-delay:.16s}
+  .cards .card-link:nth-child(6){animation-delay:.2s}
+  .cards .card-link:nth-child(n+7){animation-delay:.24s}
+  .kpi{animation:mo-rise .32s var(--mo-out) backwards}
+  .kpi:nth-child(2){animation-delay:.03s}
+  .kpi:nth-child(3){animation-delay:.06s}
+  .kpi:nth-child(4){animation-delay:.09s}
+  .kpi:nth-child(5){animation-delay:.12s}
+  .kpi:nth-child(n+6){animation-delay:.15s}
+  tbody tr:nth-child(-n+14){animation:mo-fade-rise .28s var(--mo-out) backwards}
+  tbody tr:nth-child(2){animation-delay:14ms}
+  tbody tr:nth-child(3){animation-delay:28ms}
+  tbody tr:nth-child(4){animation-delay:42ms}
+  tbody tr:nth-child(5){animation-delay:56ms}
+  tbody tr:nth-child(6){animation-delay:70ms}
+  tbody tr:nth-child(7){animation-delay:84ms}
+  tbody tr:nth-child(8){animation-delay:98ms}
+  tbody tr:nth-child(9){animation-delay:112ms}
+  tbody tr:nth-child(10){animation-delay:126ms}
+  tbody tr:nth-child(11){animation-delay:140ms}
+  tbody tr:nth-child(12){animation-delay:154ms}
+  tbody tr:nth-child(13){animation-delay:168ms}
+  tbody tr:nth-child(14){animation-delay:182ms}
 
   /* ---------- 6. Tabs: conteúdo entra suave; o traço desliza (ver .mo-glide) ---------- */
-  .aba-conteudo.ativa,.conteudo-abas>.ativa{animation:mo-fade .45s var(--mo-out)}
+  .aba-conteudo.ativa,.conteudo-abas>.ativa{animation:mo-fade .25s var(--mo-out)}
 
   /* ---------- 7. Input: tremida quando o formulário recusa ---------- */
-  .mo-shake{animation:mo-shake .42s cubic-bezier(.36,.07,.19,.97)}
+  .mo-shake{animation:mo-shake .36s cubic-bezier(.36,.07,.19,.97)}
 
   /* ---------- 8. Toast: sobe com mola ---------- */
-  .toast{translate:0 16px;transition:opacity .4s var(--mo-out),translate .55s var(--mo-spring),transform .4s var(--mo-out)}
+  .toast{translate:0 16px;transition:opacity .25s var(--mo-out),translate .35s var(--mo-spring),transform .25s var(--mo-out)}
   .toast.show{translate:none}
-  .toast-notificacao{animation-duration:.6s;animation-timing-function:var(--mo-spring)}
+  .toast-notificacao{animation-duration:.4s;animation-timing-function:var(--mo-spring)}
 
   /* ---------- 9. Select: o painel desdobra do campo ---------- */
-  .select-busca-painel{animation:mo-drop .3s var(--mo-out) backwards;transform-origin:50% 0}
+  .select-busca-painel{animation:mo-drop .2s var(--mo-out) backwards;transform-origin:50% 0}
 }
 
 /* ---------- Scroll Animation: blocos aparecem conforme entram na tela ---------- */
@@ -101,15 +102,15 @@
 
 @media screen and (prefers-reduced-motion:no-preference){
   /* Modal: fundo esmaece e o painel "pula" para dentro */
-  .admin-overlay.show,.qr-modal-backdrop.show,.relatorio-overlay.show,.pdf-overlay.open{animation:mo-fade .28s var(--mo-out)}
-  .admin-overlay.show>.admin-box,.qr-modal-backdrop.show>.qr-modal,.relatorio-overlay.show>.relatorio-modal{animation:mo-pop .42s var(--mo-spring)}
+  .admin-overlay.show,.qr-modal-backdrop.show,.relatorio-overlay.show,.pdf-overlay.open{animation:mo-fade .18s var(--mo-out)}
+  .admin-overlay.show>.admin-box,.qr-modal-backdrop.show>.qr-modal,.relatorio-overlay.show>.relatorio-modal{animation:mo-pop .28s var(--mo-spring)}
 }
 
 /* ---------- Tabs: traço deslizante (JS cria .mo-glide dentro do container) ---------- */
 .mo-glide-host{position:relative}
 .mo-glide-host .aba.ativa,.mo-glide-host .aba-el.ativa{border-bottom-color:transparent!important}
 .mo-glide{position:absolute;left:0;top:0;height:3px;width:0;border-radius:3px 3px 0 0;pointer-events:none;opacity:0;
-  transition:translate .55s var(--mo-spring),width .55s var(--mo-spring),background-color .35s var(--mo-out),opacity .25s}
+  transition:translate .35s var(--mo-spring),width .35s var(--mo-spring),background-color .2s var(--mo-out),opacity .18s}
 
 /* ---------- Scroll Animation: barra de progresso de leitura ---------- */
 .mo-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:3000;pointer-events:none;
@@ -136,7 +137,9 @@
 
 @keyframes mo-page-in{from{opacity:0;translate:0 22px}to{opacity:1;translate:none}}
 @keyframes mo-page-out{to{opacity:0;translate:-26px 0}}
-@keyframes mo-blur-in{from{opacity:0;filter:blur(10px);translate:0 10px}to{opacity:1;filter:blur(0);translate:none}}
+/* Sem filter:blur — é a propriedade mais cara de animar; opacity+translate
+   fazem o mesmo "entra suave" só no compositor, sem repintar nada. */
+@keyframes mo-blur-in{from{opacity:0;translate:0 10px}to{opacity:1;translate:none}}
 @keyframes mo-rise{from{opacity:0;translate:0 16px}to{opacity:1;translate:none}}
 @keyframes mo-fade-rise{from{opacity:0;translate:0 8px}to{opacity:1;translate:none}}
 @keyframes mo-fade{from{opacity:0}to{opacity:1}}

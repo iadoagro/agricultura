@@ -1,0 +1,21 @@
+/* Tela de auditoria (pages/logs.html) — histórico de eventos, mesmo padrão
+   visual de admin-auth.css, só que com mais colunas e sem ações por linha. */
+.logs-tabela .permissoes-colunas,.logs-tabela .lista-solicitacoes li{grid-template-columns:minmax(140px,.8fr) minmax(160px,1fr) minmax(100px,.6fr) minmax(90px,.5fr) minmax(320px,3fr)}
+.logs-tabela .lista-solicitacoes li{align-items:start}
+.logs-quando{font-size:12.5px;color:#42536e;white-space:nowrap}
+.logs-quando span{display:block;color:#8494ab;font-size:11px}
+.logs-quem{font-size:13px;color:#172b4d;overflow-wrap:anywhere}
+.logs-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.logs-badge.acesso{background:#eaf2ff;color:#2f4f9e}
+.logs-badge.usuarios{background:#eef2fb;color:#4472c4}
+.logs-badge.fiscais{background:#d4deed;color:#2f5233}
+.logs-badge.bairros{background:#e3f3ec;color:#1f7a4d}
+.logs-badge.chamados{background:#fff3cd;color:#8a6100}
+.logs-badge.mecanizacao{background:#f3e8ff;color:#6b21a8}
+.logs-acao{font-size:12px;font-weight:700;color:#42536e}
+.logs-acao.excluir,.logs-acao.recusar,.logs-acao.desativar{color:#c0392b}
+.logs-acao.criar,.logs-acao.aprovar,.logs-acao.ativar,.logs-acao.login{color:#1f7a4d}
+.logs-desc{font-size:13.5px;color:#172b4d;line-height:1.45}
+#logsMais{margin-top:16px;width:100%}
+#logsMais[hidden]{display:none}
+@media(max-width:900px){.logs-tabela .permissoes-colunas{display:none}.logs-tabela .lista-solicitacoes li{grid-template-columns:1fr;gap:6px}}

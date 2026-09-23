@@ -4,6 +4,7 @@
   var loginBtn = document.getElementById('adminLoginBtn');
   var cardUsuarios = document.getElementById('cardUsuarios');
   var cardBairros = document.getElementById('cardBairros');
+  var cardLogs = document.getElementById('cardLogs');
   var cartoes = document.querySelectorAll('.card-link[data-chave]');
 
   /* Quem tem acesso a um único módulo vai direto para ele, sem passar pela lista.
@@ -12,7 +13,7 @@
   var MARCA = 'seagri_home_direto';
   function irDireto() {
     if (!auth || !auth.liberado || !auth.liberado() || auth.deveTrocarSenha()) return;
-    var visiveis = [cardUsuarios, cardBairros].concat(Array.prototype.slice.call(cartoes)).filter(function (a) { return !a.hidden; });
+    var visiveis = [cardUsuarios, cardBairros, cardLogs].concat(Array.prototype.slice.call(cartoes)).filter(function (a) { return !a.hidden; });
     if (visiveis.length !== 1) return;
     var quem = (auth.sessaoAtual() && auth.sessaoAtual().user && auth.sessaoAtual().user.id) || '1';
     try {
@@ -26,6 +27,7 @@
     var responsavel = Boolean(auth) && auth.papel() === 'responsavel';
     cardUsuarios.hidden = !responsavel;
     cardBairros.hidden = !responsavel;
+    cardLogs.hidden = !responsavel;
     cartoes.forEach(function (a) {
       a.hidden = !auth || !auth.podeAcessar(a.dataset.chave);
     });

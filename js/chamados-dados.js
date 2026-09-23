@@ -350,9 +350,11 @@
       if (TIPOS_AUX[item.tipo].pai && !corpo.pai_id) throw ErroChamado('Escolha a que ' + TIPOS_AUX[TIPOS_AUX[item.tipo].pai].rot.toLowerCase() + ' pertence.');
       if (item.id) await pedir('/rest/v1/chamados_aux?id=eq.' + encodeURIComponent(item.id), { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(corpo) }, true);
       else await pedir('/rest/v1/chamados_aux', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(corpo) }, true);
+      window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento(item.id ? 'editar' : 'criar', 'chamados', (item.id ? 'Editou' : 'Cadastrou') + ' ' + TIPOS_AUX[item.tipo].rot.toLowerCase() + ' "' + corpo.nome + '"');
     },
-    async excluirCadastro(id) {
+    async excluirCadastro(id, nome, tipo) {
       await pedir('/rest/v1/chamados_aux?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } }, true);
+      window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('excluir', 'chamados', 'Excluiu ' + (TIPOS_AUX[tipo] ? TIPOS_AUX[tipo].rot.toLowerCase() : 'cadastro') + ' "' + (nome || '') + '"');
     },
     async carregarSugestoes() {
       var atuais = await pedir('/rest/v1/chamados_aux?select=nome&tipo=eq.problema&limit=2000', {}, true), tem = {};
@@ -395,6 +397,13 @@
         p_responsavel: typeof m.responsavel === 'string' ? m.responsavel : null,
         p_texto: m.texto || null, p_publico: m.publico !== false
       }, true);
+      var partes = [];
+      if (m.status) partes.push('status para "' + (STATUS[m.status] ? STATUS[m.status].rot : m.status) + '"');
+      if (m.prioridade) partes.push('prioridade para "' + (PRIORIDADES[m.prioridade] ? PRIORIDADES[m.prioridade].rot : m.prioridade) + '"');
+      if (m.assumir) partes.push('assumiu o atendimento');
+      else if (typeof m.responsavel === 'string') partes.push('responsável para "' + (m.responsavel || '(ninguém)') + '"');
+      if (m.texto && m.texto.trim()) partes.push(m.publico === false ? 'adicionou uma nota interna' : 'respondeu ao solicitante');
+      window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'chamados', 'Atualizou o chamado' + (partes.length ? ': ' + partes.join(', ') : ''), { chamado_id: id });
     }
   };
 
@@ -430,7 +439,7 @@
     avaliar: function (c, n, t) { return drv.avaliar(normalizarCodigo(c), n, t); },
     cadastros: function (todos) { return drv.cadastros(Boolean(todos)); },
     salvarCadastro: function (i) { return drv.salvarCadastro(i); },
-    excluirCadastro: function (id) { return drv.excluirCadastro(id); },
+    excluirCadastro: function (id, nome, tipo) { return drv.excluirCadastro(id, nome, tipo); },
     carregarSugestoes: function () { return drv.carregarSugestoes(); },
     listarPublico: function () { return drv.listarPublico(); },
     detalhePublico: function (n) { return drv.detalhePublico(n); },

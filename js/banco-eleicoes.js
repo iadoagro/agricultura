@@ -11,6 +11,26 @@
   let sessao = null, cache = [], carregado = false;
   const pendentes = new Map();
   const avisar = () => window.dispatchEvent(new Event('banco-atualizado'));
+  const DOMINIO_USUARIO = '@sistema.local';
+  function loginDoEmail(email) {
+    if (!email) return 'Sistema';
+    return email.toLowerCase() === 'root@root.com' || !email.toLowerCase().endsWith(DOMINIO_USUARIO)
+      ? email : email.slice(0, -DOMINIO_USUARIO.length);
+  }
+  // uuid → login exibido ("Cadastrado por"); some fica pra sempre em cache,
+  // não muda depois que o cadastro foi feito. Quem não resolve (conta
+  // excluída) ou não tem criado_por vira "Sistema" na tela.
+  const criadores = new Map();
+  async function preencherCriadores(registros) {
+    const faltando = [...new Set(registros.map(r => r._criadoPorId).filter(id => id && !criadores.has(id)))];
+    if (faltando.length) {
+      try {
+        const nomes = await requisicao('/rest/v1/rpc/fiscais_criadores', { method: 'POST', body: JSON.stringify({ p_ids: faltando }) });
+        (nomes || []).forEach(n => criadores.set(n.id, n.login));
+      } catch (e) { /* sem nome resolvido pra esses ids, cai no "Sistema" abaixo */ }
+    }
+    registros.forEach(r => { r._criadoPor = (r._criadoPorId && criadores.get(r._criadoPorId)) || 'Sistema'; });
+  }
   function local() {
     const registros = JSON.parse(localStorage.getItem(localKey) || '[]');
     if (!Array.isArray(registros) || registros.some(r => !r || ['municipio','nome','telefone','regional'].some(k => typeof r[k] !== 'string'))) throw new Error('Não foi possível ler os cadastros locais.');
@@ -43,10 +63,11 @@
     if (!sessao) throw new Error('Sua sessão expirou. Volte à página inicial e entre de novo.');
     const registros = [];
     for (let offset = 0; ; offset += 500) {
-      const lote = await requisicao('/rest/v1/eleicoes_cadastros?select=id,dados,criado_em&order=criado_em.asc,id.asc&limit=500&offset=' + offset);
-      registros.push(...lote.map(r => ({ ...r.dados, _id: r.id, _criadoEm: r.criado_em })));
+      const lote = await requisicao('/rest/v1/eleicoes_cadastros?select=id,dados,criado_em,criado_por&order=criado_em.asc,id.asc&limit=500&offset=' + offset);
+      registros.push(...lote.map(r => ({ ...r.dados, _id: r.id, _criadoEm: r.criado_em, _criadoPorId: r.criado_por })));
       if (lote.length < 500) break;
     }
+    await preencherCriadores(registros);
     cache = registros; carregado = true; avisar();
   }
   async function salvar(registro) {
@@ -56,7 +77,8 @@
     pendentes.set(assinatura, id);
     await requisicao('/rest/v1/eleicoes_cadastros?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates' }, body: JSON.stringify({ id, dados: registro }) });
     pendentes.delete(assinatura);
-    cache.push({ ...registro, _id: id }); carregado = true; avisar();
+    cache.push({ ...registro, _id: id, _criadoPorId: sessao.user.id, _criadoPor: loginDoEmail(sessao.user.email) }); carregado = true; avisar();
+    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('criar', 'fiscais', 'Cadastrou o fiscal "' + (registro.nome || '') + '" (' + (registro.municipio || '') + ')');
   }
   async function editar(id, registro) {
     if (!online) {
@@ -71,8 +93,9 @@
     }
     await requisicao('/rest/v1/eleicoes_cadastros?id=eq.' + encodeURIComponent(id), { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ dados: registro }) });
     const idx = cache.findIndex(r => r._id === id);
-    if (idx !== -1) cache[idx] = { ...registro, _id: id, _criadoEm: cache[idx]._criadoEm };
+    if (idx !== -1) cache[idx] = { ...registro, _id: id, _criadoEm: cache[idx]._criadoEm, _criadoPorId: cache[idx]._criadoPorId, _criadoPor: cache[idx]._criadoPor };
     avisar();
+    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'fiscais', 'Editou o fiscal "' + (registro.nome || '') + '" (' + (registro.municipio || '') + ')');
   }
   async function excluir(id) {
     if (!online) {
@@ -81,9 +104,11 @@
       avisar();
       return;
     }
+    const alvo = cache.find(r => r._id === id);
     await requisicao('/rest/v1/eleicoes_cadastros?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
     cache = cache.filter(r => r._id !== id);
     avisar();
+    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('excluir', 'fiscais', 'Excluiu o fiscal "' + (alvo && alvo.nome || '') + '" (' + (alvo && alvo.municipio || '') + ')');
   }
   async function importar() {
     const registros = local(), repetidos = new Map(), lote = [];

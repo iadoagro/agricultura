@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SISTEMA</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026092203">
+<link rel="stylesheet" href="../css/logs.css?v=2026092203">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
+<link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
+</head>
+<body>
+<header><h1>SISTEMA</h1><p>Registro de eventos</p></header>
+<main class="permissoes-layout">
+  <section class="permissoes-cabecalho">
+    <div><span class="permissoes-sobretitulo">ADMINISTRAÇÃO</span><h2>Eventos do sistema</h2><p>Histórico de login, cadastro, edição e exclusão feitos por todo mundo — não dá pra alterar ou apagar uma linha já gravada.</p></div>
+    <span id="logsContagem" class="permissoes-contagem"></span>
+  </section>
+
+  <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável.</p>
+
+  <div id="painelLogs">
+    <div class="permissoes-filtros">
+      <label>Buscar<input id="logsBusca" type="search" placeholder="Login, e-mail ou texto do evento"></label>
+      <label>Módulo<select id="logsModulo">
+        <option value="">Todos</option>
+        <option value="acesso">Acesso (login/logout)</option>
+        <option value="usuarios">Usuários</option>
+        <option value="fiscais">Fiscais</option>
+        <option value="bairros">Bairros</option>
+        <option value="chamados">Chamados</option>
+        <option value="mecanizacao">Mecanização</option>
+      </select></label>
+      <label>Ação<select id="logsAcao">
+        <option value="">Todas</option>
+        <option value="login">Login</option>
+        <option value="logout">Logout</option>
+        <option value="cadastro">Cadastro (solicitação)</option>
+        <option value="criar">Criar</option>
+        <option value="editar">Editar</option>
+        <option value="excluir">Excluir</option>
+        <option value="aprovar">Aprovar</option>
+        <option value="recusar">Recusar</option>
+        <option value="ativar">Ativar</option>
+        <option value="desativar">Desativar</option>
+        <option value="trocar_senha">Trocar senha</option>
+        <option value="redefinir">Redefinir senha</option>
+      </select></label>
+      <label>De<input id="logsDesde" type="date"></label>
+      <label>Até<input id="logsAte" type="date"></label>
+    </div>
+
+    <p class="admin-msg" id="logsMsg" role="status"></p>
+
+    <div class="permissoes-tabela logs-tabela">
+      <div class="permissoes-colunas"><span>QUANDO</span><span>QUEM</span><span>MÓDULO</span><span>AÇÃO</span><span>O QUE ACONTECEU</span></div>
+      <ul class="lista-solicitacoes" id="listaLogs"></ul>
+    </div>
+    <button type="button" class="permissoes-salvar" id="logsMais" hidden>Carregar mais eventos</button>
+  </div>
+</main>
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/admin-auth.js?v=2026092203"></script>
+<script src="../js/admin-gate.js?v=2026092203"></script>
+<script src="../js/logs.js?v=2026092203"></script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
+<script src="../js/motion-extras.js?v=2026092001"></script>
+<script src="../js/fx-ui.js?v=2026092102" defer></script>
+</body>
+</html>

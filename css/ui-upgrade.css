@@ -30,7 +30,7 @@ body{overflow-x:clip}
   :where(.card,.painel,.mapa-card,.resultados-card,.instantaneo-card,.ch-cartao,.ch-item,
     .ch-kpi,.portaria-card,.card-contato,.admin-card){
     transition-property:box-shadow,border-color,translate,scale,transform,background-color,color;
-    transition-duration:.32s;
+    transition-duration:.2s;
     transition-timing-function:var(--mo-out,cubic-bezier(.22,1,.36,1));
   }
   :where(.painel,.mapa-card,.resultados-card,.instantaneo-card,.ch-cartao,.portaria-card,.card-contato):hover{

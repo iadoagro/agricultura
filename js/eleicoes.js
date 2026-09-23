@@ -427,7 +427,7 @@
     if (r._criadoEm) {
       const auditoria = document.createElement('span');
       auditoria.className = 'cadastro-auditoria';
-      auditoria.textContent = 'Cadastrado em ' + new Date(r._criadoEm).toLocaleDateString('pt-BR');
+      auditoria.textContent = 'Cadastrado em ' + new Date(r._criadoEm).toLocaleDateString('pt-BR') + ' por ' + (r._criadoPor || 'Sistema');
       li.append(auditoria);
     }
     li.append(criarBotoesAcao(r));

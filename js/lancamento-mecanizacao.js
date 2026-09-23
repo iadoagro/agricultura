@@ -100,6 +100,7 @@
         loteAnterior = {};
         CAMPOS_MANTIDOS_APOS_SALVAR.forEach(function (c) { loteAnterior[c] = form.elements[c].value; });
         var nome = form.elements['nome_beneficiario'].value;
+        window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('criar', 'mecanizacao', 'Cadastrou o lançamento de mecanização de "' + nome + '"');
         limparFormulario(false);
         aviso('lancSalvarStatus', '', '');
         mostrarLista();
@@ -140,6 +141,7 @@
       .then(function (r) { return r.json().then(function (j) { return { status: r.status, corpo: j }; }); })
       .then(function (res) {
         if (!res.corpo.ok) { aviso('lancListaAviso', 'erro', esc(res.corpo.erro || 'Não foi possível excluir.')); return; }
+        window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('excluir', 'mecanizacao', 'Excluiu o lançamento de mecanização de "' + nome + '"');
         aviso('lancListaAviso', 'ok', 'Lançamento excluído.');
         carregarRecentes();
       })

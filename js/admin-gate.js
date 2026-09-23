@@ -21,7 +21,7 @@
     'deagro-secoes.html': 'dashboards'
   };
   // Páginas só do administrador (responsável), independente de Acessos.
-  var SO_ADMINISTRADOR = ['cadastros-fiscais.html', 'admin-usuarios.html'];
+  var SO_ADMINISTRADOR = ['cadastros-fiscais.html', 'admin-usuarios.html', 'logs.html'];
   var arquivo = location.pathname.split('/').pop();
   var chave = CHAVES_POR_ARQUIVO[arquivo] || null;
   var soAdministrador = SO_ADMINISTRADOR.indexOf(arquivo) !== -1;
