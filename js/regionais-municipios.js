@@ -6,11 +6,11 @@
    pessoa e não vem do município. Chave = codarea do IBGE (mesmo id de
    js/mapa-acre.js e assets/acre-localidades.json). */
 window.REGIONAIS_MUNICIPIOS = {
-  '1200013': 'Alto Acre',       // Acrelândia
+  '1200013': 'Baixo Acre',      // Acrelândia
   '1200054': 'Alto Acre',       // Assis Brasil
   '1200104': 'Alto Acre',       // Brasiléia
   '1200138': 'Baixo Acre',      // Bujari
-  '1200179': 'Alto Acre',       // Capixaba
+  '1200179': 'Baixo Acre',      // Capixaba
   '1200203': 'Juruá',           // Cruzeiro do Sul
   '1200252': 'Alto Acre',       // Epitaciolândia
   '1200302': 'Tarauacá/Envira', // Feijó
@@ -18,7 +18,7 @@ window.REGIONAIS_MUNICIPIOS = {
   '1200336': 'Juruá',           // Mâncio Lima
   '1200344': 'Purus',           // Manoel Urbano
   '1200351': 'Juruá',           // Marechal Thaumaturgo
-  '1200385': 'Alto Acre',       // Plácido de Castro
+  '1200385': 'Baixo Acre',      // Plácido de Castro
   '1200393': 'Juruá',           // Porto Walter
   '1200401': 'Baixo Acre',      // Rio Branco
   '1200427': 'Juruá',           // Rodrigues Alves
