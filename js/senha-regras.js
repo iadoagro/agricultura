@@ -23,6 +23,10 @@
     '147369', '963852', '741852', '852963', '123321', '321123', '654456', '100200', '010203', '101010', '202020',
     '200000', '696969', '171717', '242424', '123654', '789456', '456789', '159357', '753951', '142536', '124578'];
   var CHAVE_MODO = 'seagri-modo-senha';   // último modo usado neste navegador (o login abre nele)
+  // botão Mostrar/Ocultar: olho aberto (mostrar) e olho riscado (ocultar)
+  var SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  var OLHO = SVG + '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var OLHO_RISCADO = SVG + '<path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-2.2 3.1"/><path d="M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/></svg>';
 
   function repeticaoSeguida(s, n) {   // mesmo dígito n vezes seguidas: 111...
     return new RegExp('(\\d)\\1{' + (n - 1) + '}').test(s);
@@ -111,8 +115,8 @@
       botao.className = 'senha-mostrar';
       botao.setAttribute('aria-controls', input.id);
       (antigo || input).replaceWith(campo);
-      area.append(caixas, input);
-      campo.append(area, botao);
+      area.append(caixas, input, botao);   // olho dentro do campo, no canto direito
+      campo.append(area);
       input.removeAttribute('minlength');
       input.addEventListener('input', function () {
         if (modo === 'pin') {
@@ -150,7 +154,9 @@
         if (pin) { m.input.setAttribute('inputmode', 'numeric'); m.input.maxLength = 6; }
         else { m.input.removeAttribute('inputmode'); m.input.removeAttribute('maxlength'); }
         m.input.placeholder = pin ? '' : (m.input.dataset.placeholder || m.input.placeholder);
-        m.botao.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+        m.botao.innerHTML = mostrar ? OLHO_RISCADO : OLHO;
+        m.botao.setAttribute('aria-label', (mostrar ? 'Ocultar ' : 'Mostrar ') + (pin ? 'o PIN' : 'a senha'));
+        m.botao.title = m.botao.getAttribute('aria-label');
         m.botao.setAttribute('aria-pressed', String(mostrar));
         Array.prototype.forEach.call(m.caixas.children, function (c, i) {
           c.textContent = v[i] ? (mostrar ? v[i] : '•') : '';
@@ -208,7 +214,11 @@
       '.senha-campo.pin.foco .senha-caixas span.atual{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.2)}' +
       /* no PIN o campo de verdade fica por cima dos quadrados, invisível: recebe o toque/teclado */
       '.senha-campo.pin .senha-area input{position:absolute;inset:0;height:100%;opacity:0;cursor:pointer;caret-color:transparent;font-size:16px}' +
-      '.senha-mostrar{flex:none;min-height:36px;padding:0 8px;border:0;border-radius:6px;background:none;color:#2563eb;font:inherit;font-size:13px;font-weight:600;cursor:pointer}' +
+      '.senha-mostrar{position:absolute;right:4px;top:50%;z-index:2;transform:translateY(-50%);display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:none;color:#5b6b80;cursor:pointer}' +
+      /* espaço pro olho: no fim do campo de senha e depois dos quadrados do PIN */
+      '.senha-campo:not(.pin) .senha-area input{padding-right:44px}' +
+      '.senha-campo.pin .senha-caixas{padding-right:44px}' +
+      '.senha-mostrar[aria-pressed="true"]{color:#2563eb}' +
       '.senha-mostrar:hover{background:#eef4ff}' +
       '.senha-regras{margin:6px 0 10px;padding:8px 10px;border:1px solid #dfe7f2;border-radius:8px;background:#f7f9fc;font-size:12.5px;color:#42536e;text-align:left}' +
       '.senha-regras p{margin:0}' +

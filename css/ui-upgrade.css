@@ -70,10 +70,12 @@ body{overflow-x:clip}
     background:rgba(250,250,250,.94);backdrop-filter:blur(12px);
     border-bottom:1px solid rgba(21,62,117,.08);
   }
+  .barra-acesso:empty{display:none}   /* sem o antigo "Banco online" ela ficava vazia, mas ocupando espaço */
   .barra-acesso .voltar{margin:0}
   .barra-acesso button{min-height:38px;margin:0}
+  /* abas rolam junto com a página (presas no topo cobriam o formulário ao rolar) */
   .abas-eleicoes{
-    position:sticky;top:48px;z-index:31;margin:0 -12px 12px;padding:0 12px;
+    position:static;margin:0 -12px 12px;padding:0 12px;
     overflow-x:auto;scroll-snap-type:x proximity;justify-content:flex-start;
     background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
   }

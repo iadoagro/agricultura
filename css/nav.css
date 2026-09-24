@@ -144,7 +144,11 @@ html.sb-mini .sb-sair{width:40px;padding:0;justify-content:center}
 @media(prefers-reduced-motion:reduce){.sb,html.sb-on>body{transition:none}}
 
 /* ------------------------------------------------ celular / tela estreita */
+.snav-sair-celular{display:none}
 @media(max-width:900px){
+  /* sem menu lateral no celular: navega pelo Início e pela trilha; Sair na barra */
+  .snav-menu,.sb,.sb-veu{display:none!important}
+  .snav-sair-celular{display:inline-flex}
   html.sb-on>body,html.sb-on.sb-mini>body{padding-left:0}
   .sb,html.sb-mini .sb{width:min(300px,86vw);transform:translateX(-102%);z-index:1100}
   html.sb-gaveta .sb{transform:none;box-shadow:12px 0 40px rgba(0,0,0,.35)}

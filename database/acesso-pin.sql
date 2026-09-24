@@ -9,8 +9,6 @@
 --   usa_pin       — a senha atual é um PIN (gravado pela função
 --                   admin-usuarios ao trocar a senha ou no autocadastro);
 --   nao_perguntar — a pessoa marcou "Não perguntar de novo".
---   biometria_nao_perguntar — idem, pro convite de entrar com a biometria do
---                   aparelho (passkey, js/biometria.js).
 begin;
 
 create table if not exists public.acesso_pin (
@@ -20,7 +18,10 @@ create table if not exists public.acesso_pin (
   atualizado_em timestamptz not null default now()
 );
 
-alter table public.acesso_pin add column if not exists biometria_nao_perguntar boolean not null default false;
+-- A entrada por biometria (passkey) foi testada e retirada do sistema: sai o
+-- que ela tinha criado aqui.
+drop function if exists public.biometria_nao_perguntar();
+alter table public.acesso_pin drop column if exists biometria_nao_perguntar;
 
 alter table public.acesso_pin enable row level security;
 revoke all on public.acesso_pin from anon, authenticated;
@@ -51,23 +52,5 @@ $$;
 
 revoke all on function public.pin_nao_perguntar() from public, anon;
 grant execute on function public.pin_nao_perguntar() to authenticated;
-
--- "Não perguntar de novo" do convite de biometria.
-create or replace function public.biometria_nao_perguntar()
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if auth.uid() is null then return; end if;
-  insert into public.acesso_pin (usuario_id, biometria_nao_perguntar, atualizado_em)
-  values (auth.uid(), true, now())
-  on conflict (usuario_id) do update set biometria_nao_perguntar = true, atualizado_em = now();
-end;
-$$;
-
-revoke all on function public.biometria_nao_perguntar() from public, anon;
-grant execute on function public.biometria_nao_perguntar() to authenticated;
 
 commit;

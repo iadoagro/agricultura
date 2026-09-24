@@ -8,8 +8,9 @@
        que a pessoa pode abrir (mesma regra de admin-gate.js / admin-home.js),
        com busca (Ctrl+K), quem está logado e Sair. No computador fica sempre
        à esquerda e o ☰ da barra do topo o recolhe numa faixa só de ícones (a
-       escolha fica guardada); no celular vira uma gaveta aberta pelo mesmo ☰.
-       É o único botão pra isso (antes havia outro dentro do menu, repetido).
+       escolha fica guardada). No celular (até 900px) não há menu lateral nem
+       ☰: navega-se pelo Início (cartões grandes) e pela trilha, e o Sair fica
+       na barra do topo — mais simples no toque.
      - Barra do topo (.snav): o ☰ e a trilha Início › Painéis › DEAGRO,
        em que cada nível é um link — "voltar um nível" é o item anterior.
    Tudo o que a navegação sabe sobre o sistema está em MAPA: página nova entra
@@ -96,12 +97,20 @@
     return !p.chave || auth.podeAcessar(p.chave);
   }
 
+  // Módulos (páginas logo abaixo do Início) que a pessoa pode abrir.
+  function modulosAcessiveis() {
+    return Object.keys(MAPA).filter(function (a) { return MAPA[a].pai === 'index.html' && MAPA[a].menu !== false && pode(a); });
+  }
+
   function trilha() {
     var passos = [], arq = arquivo, guarda = 0;
     while (arq && MAPA[arq] && guarda++ < 8) {
       passos.unshift(arq);
       arq = MAPA[arq].pai;
     }
+    // Um módulo só: o Início leva direto a ele (js/admin-home.js), então não
+    // entra na trilha — senão o link voltava pro mesmo lugar.
+    if (passos.length > 1 && passos[0] === 'index.html' && modulosAcessiveis().length === 1) passos.shift();
     return passos;
   }
 
@@ -124,7 +133,8 @@
     barra.innerHTML =
       (restrita ? '' : '<button type="button" class="snav-menu" aria-controls="sbLateral" aria-expanded="true" title="Mostrar/recolher o menu">' + icone('menu') + '</button>') +
       '<ol class="snav-trilha">' + trilhaHtml + '</ol>' +
-      (restrita ? '<button type="button" class="snav-sair">' + icone('sair') + '<span>Sair</span></button>' : '');
+      // Sair na barra: sempre na troca de senha; no celular (sem menu lateral) também
+      '<button type="button" class="snav-sair' + (restrita ? '' : ' snav-sair-celular') + '">' + icone('sair') + '<span>Sair</span></button>';
     document.body.insertBefore(barra, document.body.firstChild);
     var bm = barra.querySelector('.snav-menu');
     if (bm) bm.addEventListener('click', alternarMenu);

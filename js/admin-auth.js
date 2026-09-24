@@ -284,17 +284,13 @@
   async function statusPin() {
     if (!sessao) return null;
     try {
-      const r = await requisicao('/rest/v1/acesso_pin?select=usa_pin,nao_perguntar,biometria_nao_perguntar&usuario_id=eq.' + encodeURIComponent(sessao.user.id));
+      const r = await requisicao('/rest/v1/acesso_pin?select=usa_pin,nao_perguntar&usuario_id=eq.' + encodeURIComponent(sessao.user.id));
       const l = (r || [])[0];
-      return { usaPin: Boolean(l && l.usa_pin), naoPerguntar: Boolean(l && l.nao_perguntar),
-        biometriaNaoPerguntar: Boolean(l && l.biometria_nao_perguntar) };
+      return { usaPin: Boolean(l && l.usa_pin), naoPerguntar: Boolean(l && l.nao_perguntar) };
     } catch (e) { return null; }
   }
   async function pinNaoPerguntar() {
     await requisicao('/rest/v1/rpc/pin_nao_perguntar', { method: 'POST', body: '{}' });
-  }
-  async function biometriaNaoPerguntar() {
-    await requisicao('/rest/v1/rpc/biometria_nao_perguntar', { method: 'POST', body: '{}' });
   }
 
   async function buscarPerfil() {
@@ -340,21 +336,6 @@
     try { await atualizarStatus(); }
     catch (e) { limpar(); throw e; }
     registrarEvento('login', 'acesso', 'Entrou no sistema');
-  }
-
-  /* Entrada por biometria (js/biometria.js): o Supabase já conferiu a
-     passkey e devolveu a sessão; aqui ela vira a sessão do sistema, igual ao
-     login por senha. */
-  async function entrarComSessao(s) {
-    configurar();
-    if (!s || !s.access_token || !s.user) throw new Error('A biometria não devolveu uma sessão válida.');
-    sessao = { access_token: s.access_token, refresh_token: s.refresh_token,
-      expires_at: s.expires_at || Math.floor(Date.now() / 1000) + (s.expires_in || 3600), user: { id: s.user.id, email: s.user.email } };
-    gravarSessao();
-    agendarRenovacao();
-    try { await atualizarStatus(); }
-    catch (e) { limpar(); throw e; }
-    registrarEvento('login', 'acesso', 'Entrou no sistema com biometria', { metodo: 'biometria' });
   }
 
   async function sair() {
@@ -494,7 +475,7 @@
     cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
     registrarEvento, listarEventos, resumirEventos, localizarIPs,
     listarAlertas, contarAlertasNaoVistos, marcarAlertasVistos,
-    listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinNaoPerguntar, biometriaNaoPerguntar, entrarComSessao,
+    listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinNaoPerguntar,
     sessaoAtual: () => sessao,
     garantirSessao, renovarSessao: renovar,
     papel: () => sessao ? sessao.papel : null,

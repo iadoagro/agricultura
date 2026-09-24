@@ -561,7 +561,13 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 .busca-global-visao label[hidden]{display:none}
 .busca-global-visao select{padding:5px 8px;font-size:12.5px}
 /* cartões: N por linha (padrão 6) na tela larga */
-@media(min-width:1000px){.cartoes-fiscais{grid-template-columns:repeat(var(--por-linha,6),minmax(0,1fr))}}
+/* "Por linha" é um máximo: até N colunas, mas nenhum cartão mais estreito que
+   210px — se não couber, usa menos colunas sozinho (8 numa tela menor vira 5…) */
+@media(min-width:1000px){.cartoes-fiscais{grid-template-columns:repeat(auto-fill,minmax(max(210px,calc((100% - (var(--por-linha,6) - 1) * 8px) / var(--por-linha,6))),1fr))}}
+/* cartão estreito: o nome fica em cima e o WhatsApp/⋯ descem, sem sobrepor */
+.cartoes-fiscais .cadastro-cabecalho{flex-wrap:wrap;row-gap:4px}
+.cartoes-fiscais .cadastro-cabecalho strong{flex:1 1 110px;overflow-wrap:anywhere}
+.cartoes-fiscais .cadastro-cabecalho .cadastro-whatsapp-compacto{margin-left:auto}
 /* lista: um fiscal por linha, nome e ações à esquerda, dados ao lado */
 .cartoes-fiscais.modo-lista{grid-template-columns:minmax(0,1fr);gap:0;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}
 .cartoes-fiscais.modo-lista li.cadastro-compacto{display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);align-items:center;gap:12px;border:0;border-bottom:1px solid #eef1f5;border-radius:0;padding:6px 12px}

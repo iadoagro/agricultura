@@ -7,19 +7,14 @@
   var cardLogs = document.getElementById('cardLogs');
   var cartoes = document.querySelectorAll('.card-link[data-chave]');
 
-  /* Quem tem acesso a um único módulo vai direto para ele, sem passar pela lista.
-     Só acontece uma vez por login: o "Início" dentro do módulo volta para esta tela
-     (que então mostra o cartão único e o botão Sair), em vez de prender a pessoa. */
-  var MARCA = 'seagri_home_direto';
+  /* Quem tem acesso a um único módulo vai sempre direto para ele: esta tela
+     só teria um cartão. Dentro do módulo a trilha não mostra "Início" (ver
+     js/nav.js) e o Sair fica na barra do topo, então ninguém fica preso. */
+  var MARCA = 'seagri_home_direto';   // não é mais usada; o Sair antigo ainda limpa
   function irDireto() {
     if (!auth || !auth.liberado || !auth.liberado() || auth.deveTrocarSenha()) return;
     var visiveis = [cardUsuarios, cardBairros, cardLogs].concat(Array.prototype.slice.call(cartoes)).filter(function (a) { return !a.hidden; });
     if (visiveis.length !== 1) return;
-    var quem = (auth.sessaoAtual() && auth.sessaoAtual().user && auth.sessaoAtual().user.id) || '1';
-    try {
-      if (sessionStorage.getItem(MARCA) === quem) return;
-      sessionStorage.setItem(MARCA, quem);
-    } catch (e) { return; }
     location.replace(visiveis[0].getAttribute('href'));
   }
 
