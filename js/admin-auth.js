@@ -178,7 +178,9 @@
     if (!usuario) return;
     // A página de onde veio a ação — é o que a página de logs usa para
     // agrupar por página junto com a navegação de js/rastreio.js.
-    detalhes = Object.assign({ pagina: location.pathname.split('/').pop() || 'index.html' }, detalhes || {});
+    // Navegador, sistema e tela (js/ambiente-cliente.js); o IP o banco põe.
+    var amb = window.AMBIENTE_CLIENTE ? window.AMBIENTE_CLIENTE.coletar() : {};
+    detalhes = Object.assign({ pagina: location.pathname.split('/').pop() || 'index.html' }, amb, detalhes || {});
     try {
       await requisicao('/rest/v1/log_eventos', {
         method: 'POST', headers: { Prefer: 'return=minimal' },

@@ -104,10 +104,14 @@
     if (d.pagina && l.acao !== 'visita' && l.acao !== 'saida') chips.push('Página: ' + nomePagina(d.pagina));
     if (d.aba && l.acao !== 'aba') chips.push('Aba: ' + d.aba);
     if (l.acao === 'saida' && d.tempo_total_seg && d.tempo_total_seg !== d.duracao_seg) chips.push('Total na visita: ' + duracao(d.tempo_total_seg));
-    if (l.acao === 'visita') {
-      if (d.dispositivo) chips.push(d.dispositivo);
-      if (d.navegador) chips.push(d.navegador + (d.sistema ? ' · ' + d.sistema : ''));
+    // Ambiente (js/ambiente-cliente.js + IP do banco): na visita e nas ações
+    // de verdade (login, cadastros de fiscais...); em cada clique seria ruído.
+    if (l.acao === 'visita' || l.modulo !== 'navegacao') {
+      if (l.ip) chips.push('IP ' + l.ip);
+      if (d.sistema) chips.push(d.sistema);
+      if (d.navegador) chips.push(d.navegador);
       if (d.tela) chips.push('Tela ' + d.tela);
+      if (d.dispositivo) chips.push(d.dispositivo);
     }
     if (d.destino) chips.push('→ ' + d.destino);
     if (l.acao === 'erro' && d.arquivo) chips.push(d.arquivo + (d.linha ? ':' + d.linha : ''));
@@ -118,7 +122,8 @@
   function renderLista() {
     var termo = busca.value.trim().toLowerCase();
     var visiveis = termo ? linhas.filter(function (l) {
-      return (l.usuario_email || '').toLowerCase().indexOf(termo) >= 0 || (l.descricao || '').toLowerCase().indexOf(termo) >= 0;
+      return (l.usuario_email || '').toLowerCase().indexOf(termo) >= 0 || (l.descricao || '').toLowerCase().indexOf(termo) >= 0 ||
+        (l.ip || '').indexOf(termo) >= 0;
     }) : linhas;
     contagem.textContent = numero(visiveis.length) + (visiveis.length === 1 ? ' evento' : ' eventos') + (acabou ? '' : ' carregados');
     lista.innerHTML = '';

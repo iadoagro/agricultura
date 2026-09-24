@@ -123,21 +123,14 @@
 
   /* -------------------------------------------------------------- visita */
   function ambiente() {
-    var ua = navigator.userAgent || '';
-    var navegador = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /SamsungBrowser/.test(ua) ? 'Samsung Internet' :
-      /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Outro';
-    var sistema = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iOS' :
-      /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'Outro';
     var ref = '';
     try { ref = document.referrer ? new URL(document.referrer) : ''; } catch (e) { ref = ''; }
     var anterior = ref && ref.origin === location.origin ? (NOMES[ref.pathname.split('/').pop()] || ref.pathname.split('/').pop()) : (ref ? ref.hostname : '');
-    return {
-      navegador: navegador, sistema: sistema,
-      dispositivo: /Mobi|Android|iPhone|iPod/.test(ua) ? 'Celular' : /iPad|Tablet/.test(ua) ? 'Tablet' : 'Computador',
-      tela: screen.width + '×' + screen.height, janela: innerWidth + '×' + innerHeight,
-      idioma: navigator.language || '', pagina_anterior: anterior || null,
-      endereco: location.pathname + location.search + location.hash
-    };
+    // navegador, sistema, dispositivo, tela, janela e idioma: js/ambiente-cliente.js
+    var amb = window.AMBIENTE_CLIENTE ? window.AMBIENTE_CLIENTE.coletar() : {};
+    amb.pagina_anterior = anterior || null;
+    amb.endereco = location.pathname + location.search + location.hash;
+    return amb;
   }
 
   function registrarVisita() {
