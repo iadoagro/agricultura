@@ -46,6 +46,9 @@
 .logs-link:hover{text-decoration:underline}
 .logs-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .logs-chips span{padding:2px 8px;border-radius:6px;background:#f2f6fc;color:#4a5a70;font-size:11.5px;overflow-wrap:anywhere}
+.logs-chips span.alerta{background:#fff4e5;color:#9a5b00;font-weight:600}
+.logs-aparelhos{margin-left:6px;padding:1px 7px;border-radius:10px;background:#eef2f7;color:#5b6b80;font-size:11px;font-weight:500}
+.logs-aparelhos.varios{background:#fff4e5;color:#9a5b00;font-weight:600}
 /* agrupado */
 .logs-grupos .permissoes-colunas,.logs-grupos .lista-solicitacoes li{display:grid;grid-template-columns:minmax(220px,2fr) minmax(80px,.6fr) minmax(120px,.8fr) minmax(70px,.5fr) minmax(110px,.8fr) minmax(110px,.8fr);gap:18px;align-items:center}
 .logs-grupos .num{font-variant-numeric:tabular-nums;font-size:13.5px;color:#172b4d}
@@ -57,5 +60,61 @@
 .logs-grupo-filho .logs-grupo-nome span{color:#8494ab}
 .logs-dica{margin:12px 22px;color:#8494ab;font-size:12px}
 #logsMais{margin-top:16px;width:100%}
+/* chip do IP (clicável para dar nome) e da posição do aparelho */
+.logs-chip-ip,.logs-chip-geo{padding:2px 8px;border:1px dashed #b8c7dc;border-radius:6px;background:#f2f6fc;color:#2f4f9e;font:inherit;font-size:11.5px;text-decoration:none;cursor:pointer;overflow-wrap:anywhere}
+.logs-chip-ip:hover,.logs-chip-geo:hover{background:#e6eefb}
+.logs-chip-ip.conhecido{border-style:solid;border-color:#2f6fd6;background:#eaf2ff;font-weight:700}
+.logs-chip-geo{border-style:solid;border-color:#d8c4ee;background:#f5edfd;color:#6b21a8;font-weight:600}
+/* diálogo "nome deste local" */
+.logs-dialogo{width:min(440px,calc(100vw - 32px));margin:auto;padding:0;border:1px solid #dfe7f2;border-radius:14px;box-shadow:0 18px 48px rgba(23,43,77,.25);color:#172b4d}
+.logs-dialogo::backdrop{background:rgba(23,43,77,.35)}
+.logs-dialogo form{display:grid;gap:10px;padding:18px 20px}
+.logs-dialogo h3{margin:0;font-size:17px}
+.logs-dialogo p{margin:0;color:#62728a;font-size:13px}
+.logs-dialogo label{display:grid;gap:4px;font-size:13px;font-weight:600;color:#42536e}
+.logs-dialogo input{min-height:42px;padding:8px 12px;border:1px solid #cbd8e9;border-radius:9px;font:inherit;font-size:14px}
+.logs-dialogo small{color:#8494ab;font-size:12px}
+.logs-dialogo div{display:flex;flex-direction:row-reverse;flex-wrap:wrap;gap:8px;margin-top:6px}
+.logs-dialogo button[hidden]{display:none}
+.logs-dialogo #dialogoIpRemover{margin-right:auto;color:#c0392b}
+.logs-dialogo .permissoes-salvar{width:auto;margin:0;min-height:42px;padding:8px 18px}
+/* mapa dos acessos (posição aproximada pelo IP) */
+.logs-mapa{margin-bottom:16px;border:1px solid #dfe7f2;border-radius:12px;background:#fff}
+.logs-mapa[hidden],#logsMapaCorpo[hidden]{display:none}
+.logs-mapa-topo{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 16px}
+.logs-mapa-topo h3{margin:0;font-size:15px;color:#172b4d}
+.logs-mapa-resumo{font-size:12.5px;color:#62728a}
+.logs-mapa-topo .logs-alerta-visto{margin-left:auto}
+.logs-mapa-area{height:420px;border-top:1px solid #dfe7f2;background:#eef2f7}
+.logs-mapa .logs-dica{margin:10px 16px 12px}
+.logs-mapa-legenda{display:inline-flex;flex-wrap:wrap;gap:4px 12px;margin-left:8px;color:#62728a}
+.logs-mapa-legenda i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:50%;vertical-align:-1px}
+.logs-mapa-legenda i.conhecido{background:#2f6fd6}.logs-mapa-legenda i.posicao{background:#6b21a8;width:8px;height:8px}
+.logs-mapa-legenda i.ac{background:#1f7a4d}.logs-mapa-legenda i.fora{background:#d98200}.logs-mapa-legenda i.proxy{background:#c0392b}
+.logs-mapa-pop{font-size:13px;line-height:1.45;color:#172b4d;min-width:200px}
+.logs-mapa-pop strong{font-size:14px}
+.logs-mapa-pop small{display:block;color:#62728a}
+.logs-mapa-pop ul{margin:6px 0 0;padding:0;list-style:none;max-height:160px;overflow-y:auto}
+.logs-mapa-pop li{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+/* alertas de segurança (database/log-alertas.sql) */
+.logs-alertas{margin-bottom:16px;border:1px solid #f1d9b5;border-radius:12px;background:#fffaf2}
+.logs-alertas[hidden]{display:none}
+.logs-alertas-topo{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 16px;border-bottom:1px solid #f1d9b5}
+.logs-alertas-topo h3{margin:0;font-size:15px;color:#172b4d}
+.logs-alertas-num{padding:1px 9px;border-radius:999px;background:#c0392b;color:#fff;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.logs-alertas-num.zero{background:#e3f3ec;color:#1f7a4d}
+.logs-alertas-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-left:auto;font-size:13px;color:#42536e}
+.logs-alertas-acoes label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.logs-alertas-lista{margin:0;padding:0;list-style:none;max-height:340px;overflow-y:auto}
+.logs-alertas-lista li{display:grid;grid-template-columns:70px minmax(110px,.6fr) minmax(0,3fr) auto;gap:12px;align-items:start;padding:10px 16px;border-bottom:1px solid #f5e6cf}
+.logs-alertas-lista li:last-child{border-bottom:0}
+.logs-alertas-lista li.visto{opacity:.55}
+.logs-alertas-lista li.vazio{display:block;color:#62728a;font-size:13px}
+.logs-grav{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;text-align:center}
+.logs-grav.alta{background:#fde2df;color:#a8261a}
+.logs-grav.media{background:#fff0d6;color:#9a5b00}
+.logs-grav.baixa{background:#eef1f5;color:#4a5a70}
+.logs-alerta-visto{padding:4px 10px;border:1px solid #cbd8e9;border-radius:8px;background:#fff;color:#42536e;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.logs-alerta-visto:hover{background:#f2f6fc}
 #logsMais[hidden]{display:none}
-@media(max-width:900px){.logs-tabela .permissoes-colunas,.logs-grupos .permissoes-colunas{display:none}.logs-tabela .lista-solicitacoes li{grid-template-columns:1fr;gap:6px}.logs-grupos .lista-solicitacoes li{grid-template-columns:1fr 1fr 1fr;gap:6px 12px}.logs-grupos .logs-grupo-nome{grid-column:1/-1}}
+@media(max-width:900px){.logs-mapa-area{height:320px}.logs-alertas-lista li{grid-template-columns:auto 1fr;gap:6px 10px}.logs-alertas-lista .logs-desc{grid-column:1/-1}.logs-alertas-acoes{margin-left:0}.logs-tabela .permissoes-colunas,.logs-grupos .permissoes-colunas{display:none}.logs-tabela .lista-solicitacoes li{grid-template-columns:1fr;gap:6px}.logs-grupos .lista-solicitacoes li{grid-template-columns:1fr 1fr 1fr;gap:6px 12px}.logs-grupos .logs-grupo-nome{grid-column:1/-1}}

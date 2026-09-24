@@ -146,3 +146,10 @@ header p{font-size:13px;opacity:.9}
 .usuario-acessos .sol-paginas{margin:0}
 .usuario-acessos .sol-paginas em{font-style:normal;color:#62728a;font-size:11px}
 .usuario-acessos .permissoes-acao{display:flex;align-items:center;gap:12px}
+/* convite pra cadastrar PIN depois do login (js/admin-login.js) */
+#painelPin[hidden],#painelBiometria[hidden],.login-biometria[hidden]{display:none}
+.login-biometria{display:flex;align-items:center;justify-content:center;gap:8px}
+.login-page .admin-submit.login-biometria{margin-top:10px}
+.admin-submit.admin-submit-sec,.login-page .admin-submit.admin-submit-sec{margin-top:10px;background:#fff;color:#2563eb;border:1px solid #cbd8e9;box-shadow:none}
+.admin-submit.admin-submit-sec:hover,.login-page .admin-submit.admin-submit-sec:hover{background:#eef4ff}
+.login-pin-nunca{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;font-weight:400;color:#42536e;cursor:pointer}

@@ -37,6 +37,9 @@
     secoesComVotoPorMun.get(r.municipio).push(r.municipio + '|' + r.zona + '|' + r.secao);
   });
   var TETO_ESCALA = 10; // a partir de 10 fiscais já usa o tom mais escuro da escala.
+  var meta = null;       // CoberturaFiscais.meta(): quanto falta por município, regional e Acre
+  var porcento = window.CoberturaFiscais.pct;   // "12,3%"
+  var REGIONAIS = window.REGIONAIS_MUNICIPIOS || {};
 
   // Sem fiscal = cinza (cor padrão do mapa); 1 fiscal já aparece em verde
   // claro, ficando mais escuro conforme mais fiscais são cadastrados.
@@ -62,24 +65,37 @@
       var qtd = totalFiscaisPorMun.get(path.dataset.id) || 0;
       path.style.fill = qtd ? corPresenca(qtd) : '';
     });
+    meta = window.CoberturaFiscais.meta(comFiscal);
   }
 
+  // Dica do município (só ao passar o mouse; o mapa mostra só o nome).
+  // Primeiro o que falta da meta — seções com voto em 2022 sem fiscal — e o
+  // que falta em todas as seções (com ou sem voto); depois o peso do
+  // município no que falta na regional e no Acre, e os números de cadastro.
   function mostrarDica(id) {
     if (!dica) return;
     var oficiais = oficiaisPorMun.get(id) || 0;
     var comFiscalMun = comFiscalPorMun.get(id) || 0;
+    var semFiscal = Math.max(0, oficiais - comFiscalMun);
     var totalFiscais = totalFiscaisPorMun.get(id) || 0;
-    var pct = oficiais ? (comFiscalMun / oficiais * 100) : 0;
     var comVoto = secoesComVotoPorMun.get(id) || [];
     var comVotoSemFiscal = comVoto.filter(function (k) { return !comFiscal.has(k); }).length;
-    var pctVotoSem = comVoto.length ? (comVotoSemFiscal / comVoto.length * 100) : 0;
-    dica.innerHTML = '<strong>' + esc(nomesMun.get(id) || id) + '</strong>' +
-      '<div class="linha com"><span>Fiscais cadastrados</span><span>' + totalFiscais + '</span></div>' +
-      '<div class="linha"><span>Cobertura de seções</span><span>' + pct.toFixed(1).replace('.', ',') + '%</span></div>' +
-      '<div class="linha sem"><span>Seções sem fiscal</span><span>' + Math.max(0, oficiais - comFiscalMun) + '</span></div>' +
-      (VOTOS ? '<div class="linha separador"><span>Seções com voto (' + esc(VOTOS.ano) + ')</span><span>' + comVoto.length + '</span></div>' +
-        '<div class="linha sem"><span>Com voto e sem fiscal</span><span>' + comVotoSemFiscal + ' de ' + comVoto.length +
-        (comVoto.length ? ' (' + pctVotoSem.toFixed(1).replace('.', ',') + '%)' : '') + '</span></div>' : '');
+    var regional = REGIONAIS[id], reg = regional && meta && meta.porReg.get(regional);
+    function linha(classe, rotulo, valor) {
+      return '<div class="linha' + (classe ? ' ' + classe : '') + '"><span>' + rotulo + '</span><span>' + valor + '</span></div>';
+    }
+    var html = '<strong>' + esc(nomesMun.get(id) || id) + '</strong>';
+    if (VOTOS) {
+      html += linha('sem', 'Falta nas seções com voto (' + esc(VOTOS.ano) + ')',
+        comVoto.length ? porcento(comVotoSemFiscal, comVoto.length) + ' · ' + comVotoSemFiscal + ' de ' + comVoto.length : 'sem seção com voto');
+    }
+    html += linha('sem', 'Falta em todas as seções', porcento(semFiscal, oficiais) + ' · ' + semFiscal + ' de ' + oficiais);
+    if (meta && comVotoSemFiscal) {
+      html += linha('separador', 'Do que falta na regional' + (regional ? ' ' + esc(regional) : ''), reg ? porcento(comVotoSemFiscal, reg.faltam) : '—');
+      html += linha('', 'Do que falta no Acre', porcento(comVotoSemFiscal, meta.total.faltam));
+    }
+    html += linha('com separador', 'Fiscais cadastrados', totalFiscais);
+    dica.innerHTML = html;
     dica.hidden = false;
   }
   function esconderDica() { if (dica) dica.hidden = true; }

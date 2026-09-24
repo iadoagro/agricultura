@@ -32,7 +32,8 @@
     function atualizarBotoesZoom() {
       if (!mapaL) return;
       const z = mapaL.getZoom();
-      if (elZoomValor) elZoomValor.textContent = 'Zoom ' + z;
+      // zoom agora pode ser fracionado (zoomSnap 0.1): mostra com 1 casa, "12,1"
+      if (elZoomValor) elZoomValor.textContent = 'Zoom ' + String(Math.round(z * 10) / 10).replace('.', ',');
       if (btnZoomMenos) btnZoomMenos.disabled = z <= mapaL.getMinZoom();
       if (btnZoomMais) btnZoomMais.disabled = z >= mapaL.getMaxZoom();
     }
@@ -44,7 +45,10 @@
       // zoomAnimation:false — a animação de zoom do Leaflet trava em alguns
       // navegadores/contextos (fica preso no zoom antigo até um setZoom com
       // animate:false); zoom instantâneo é menos bonito mas sempre funciona.
-      mapaL = L.map(container, { zoomControl: false, zoomAnimation: false, minZoom: 11, maxZoom: 19 });
+      // zoomSnap 0.1: o enquadramento usa o zoom exato que faz os bairros
+      // ocuparem 95% da área (com zoom só inteiro sobrava muito espaço);
+      // os botões +/− continuam andando de 1 em 1 (zoomDelta).
+      mapaL = L.map(container, { zoomControl: false, zoomAnimation: false, minZoom: 11, maxZoom: 19, zoomSnap: 0.1, zoomDelta: 1 });
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
         attribution: 'Imagens: Esri, Maxar, Earthstar Geographics'
@@ -56,9 +60,19 @@
 
     if (btnZoomMais) btnZoomMais.onclick = () => { if (mapaL) mapaL.zoomIn(); };
     if (btnZoomMenos) btnZoomMenos.onclick = () => { if (mapaL) mapaL.zoomOut(); };
-    if (btnZoomReset) btnZoomReset.onclick = () => {
-      if (mapaL && camadaPoligonos) mapaL.fitBounds(camadaPoligonos.getBounds(), { padding: [12, 12] });
-    };
+    // Bairros ocupando 95% da área: 2,5% de respiro em cada lado.
+    let ultimoEnquadramento = null;
+    function enquadrar() {
+      if (!mapaL || !camadaPoligonos) return;
+      const t = mapaL.getSize();
+      mapaL.fitBounds(camadaPoligonos.getBounds(), { padding: [Math.round(t.x * 0.025), Math.round(t.y * 0.025)] });
+      ultimoEnquadramento = { zoom: mapaL.getZoom(), centro: mapaL.getCenter() };
+    }
+    // A vista ainda é a do último enquadramento (ninguém deu zoom nem arrastou)?
+    function vistaIntacta() {
+      return ultimoEnquadramento && mapaL.getZoom() === ultimoEnquadramento.zoom && mapaL.getCenter().equals(ultimoEnquadramento.centro);
+    }
+    if (btnZoomReset) btnZoomReset.onclick = enquadrar;
 
     function emTelaCheia() {
       return document.fullscreenElement === secaoEl || document.webkitFullscreenElement === secaoEl;
@@ -105,7 +119,7 @@
           centroides.set(nomeBairro, layer.getBounds().getCenter());
         }
       }).addTo(mapa);
-      mapa.fitBounds(camadaPoligonos.getBounds(), { padding: [12, 12] });
+      enquadrar();
     }
 
     function atualizarPins(nomesComPin, corPin, tituloPin) {
@@ -145,8 +159,15 @@
       });
     }
 
+    // A área do mapa mudou de tamanho: se a pessoa ainda não mexeu na vista,
+    // reenquadra pros bairros continuarem ocupando 95% dela.
     function invalidar() {
-      if (mapaL) setTimeout(function () { mapaL.invalidateSize(); }, 0);
+      if (!mapaL) return;
+      setTimeout(function () {
+        const intacta = vistaIntacta();
+        mapaL.invalidateSize();
+        if (intacta) enquadrar();
+      }, 0);
     }
 
     // Destaque de um ponto (ex.: a seção do fiscal clicado na lista): pin

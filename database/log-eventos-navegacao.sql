@@ -1,4 +1,5 @@
--- Executar no SQL Editor do mesmo projeto Supabase, DEPOIS de log-eventos.sql.
+-- Executar no SQL Editor do mesmo projeto Supabase, DEPOIS de log-eventos.sql
+-- e de log-eventos-origem.sql.
 -- Pode ser executado de novo sem problema (idempotente).
 --
 -- Navegação no registro de auditoria: js/rastreio.js passa a gravar em
@@ -17,10 +18,16 @@ create index if not exists log_eventos_acao_idx on public.log_eventos (acao);
 -- recebe alguma linha — os demais recebem o resumo vazio.
 -- As páginas saem pelo nome do arquivo (detalhes.pagina); a tela troca pelo nome legível.
 -- p_sem_usuario: deixa uma conta de fora (a aba "Equipe" da página de logs tira o root).
---   p_agrupar: 'pessoa' | 'acao' | 'modulo' | 'pagina' | 'pessoa_acao' | 'pessoa_pagina'
+-- p_ip / p_navegador / p_sistema: colunas preenchidas no servidor pelo gatilho
+--   log_eventos_origem (database/log-eventos-origem.sql).
+--   p_agrupar: 'pessoa' | 'acao' | 'modulo' | 'pagina' | 'aparelho' | 'ip' | 'navegador' | 'sistema'
+--            | 'pessoa_acao' | 'pessoa_pagina' | 'pessoa_aparelho' | 'pessoa_ip'
+-- Aparelho = detalhes.aparelho_id (js/ambiente-cliente.js, um por navegador);
+-- "rotulo" traz a descrição dele (modelo · sistema · navegador).
 drop function if exists public.log_eventos_resumo(text, timestamptz, timestamptz, text, text, text);
 drop function if exists public.log_eventos_resumo(text, timestamptz, timestamptz, text, text, text, text);
 drop function if exists public.log_eventos_resumo(text, timestamptz, timestamptz, text, text, text, text, text);
+drop function if exists public.log_eventos_resumo(text, timestamptz, timestamptz, text, text, text, text, text, text, text, text);
 create function public.log_eventos_resumo(
   p_agrupar text,
   p_desde timestamptz default null,
@@ -29,16 +36,19 @@ create function public.log_eventos_resumo(
   p_acao text default null,
   p_usuario text default null,
   p_pagina text default null,
-  p_sem_usuario text default null
+  p_sem_usuario text default null,
+  p_ip text default null,
+  p_navegador text default null,
+  p_sistema text default null
 )
-returns table (chave text, subchave text, eventos bigint, tempo_seg bigint, pessoas bigint, primeiro timestamptz, ultimo timestamptz)
+returns table (chave text, subchave text, eventos bigint, tempo_seg bigint, pessoas bigint, primeiro timestamptz, ultimo timestamptz, rotulo text)
 language sql
 stable
 security invoker
 set search_path = public
 as $$
   with base as (
-    select e.*, e.detalhes ->> 'pagina' as pagina
+    select e.*, e.detalhes ->> 'pagina' as pagina, e.detalhes ->> 'aparelho_id' as aparelho
     from public.log_eventos e
     where (p_desde is null or e.criado_em >= p_desde)
       and (p_ate is null or e.criado_em <= p_ate)
@@ -47,17 +57,26 @@ as $$
       and (p_usuario is null or e.usuario_email = p_usuario)
       and (p_pagina is null or e.detalhes ->> 'pagina' = p_pagina)
       and (p_sem_usuario is null or e.usuario_email is distinct from p_sem_usuario)
+      and (p_ip is null or e.ip = p_ip)
+      and (p_navegador is null or e.navegador = p_navegador)
+      and (p_sistema is null or e.sistema = p_sistema)
   )
   select
     case p_agrupar
       when 'acao' then b.acao
       when 'modulo' then b.modulo
       when 'pagina' then coalesce(b.pagina, '(sem página)')
+      when 'aparelho' then coalesce(b.aparelho, '(sem aparelho)')
+      when 'ip' then coalesce(b.ip, '(sem IP)')
+      when 'navegador' then coalesce(b.navegador, '(não identificado)')
+      when 'sistema' then coalesce(b.sistema, '(não identificado)')
       else coalesce(b.usuario_email, '(sem usuário)')
     end as chave,
     case p_agrupar
       when 'pessoa_acao' then b.acao
       when 'pessoa_pagina' then coalesce(b.pagina, '(sem página)')
+      when 'pessoa_aparelho' then coalesce(b.aparelho, '(sem aparelho)')
+      when 'pessoa_ip' then coalesce(b.ip, '(sem IP)')
       else null
     end as subchave,
     count(*) as eventos,
@@ -65,13 +84,14 @@ as $$
                       then (b.detalhes ->> 'duracao_seg')::numeric end), 0)::bigint as tempo_seg,
     count(distinct b.usuario_email) as pessoas,
     min(b.criado_em) as primeiro,
-    max(b.criado_em) as ultimo
+    max(b.criado_em) as ultimo,
+    case when p_agrupar in ('aparelho', 'pessoa_aparelho') then max(b.detalhes ->> 'aparelho_desc') end as rotulo
   from base b
   group by 1, 2
   order by 1, 3 desc
 $$;
 
-revoke all on function public.log_eventos_resumo(text, timestamptz, timestamptz, text, text, text, text, text) from public, anon;
-grant execute on function public.log_eventos_resumo(text, timestamptz, timestamptz, text, text, text, text, text) to authenticated;
+revoke all on function public.log_eventos_resumo(text, timestamptz, timestamptz, text, text, text, text, text, text, text, text) from public, anon;
+grant execute on function public.log_eventos_resumo(text, timestamptz, timestamptz, text, text, text, text, text, text, text, text) to authenticated;
 
 commit;

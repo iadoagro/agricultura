@@ -133,8 +133,10 @@
     return amb;
   }
 
-  function registrarVisita() {
+  function registrarVisita() { registrarVisitaCom(null); }
+  function registrarVisitaCom(extras) {
     var amb = ambiente();
+    if (extras) Object.keys(extras).forEach(function (k) { amb[k] = extras[k]; });
     registrar('visita', 'Abriu ' + paginaNome + (amb.pagina_anterior ? ' (vindo de ' + amb.pagina_anterior + ')' : ''), amb);
   }
 
@@ -209,5 +211,62 @@
 
   // A sessão pode ainda estar sendo confirmada (admin-auth.js); a visita
   // entra na fila agora e só vai quando houver login válido.
-  registrarVisita();
+  /* ------------------------------------------------ localização do aparelho */
+  // Aviso próprio antes da pergunta do navegador: explica o motivo e só
+  // chama a geolocalização se a pessoa clicar em "Permitir". "Agora não"
+  // adia por 7 dias. Quem já respondeu ao navegador (permitiu ou negou)
+  // não vê mais o aviso.
+  var CHAVE_ADIADO = 'seagri-geo-adiado';
+  var ADIAR_MS = 7 * 24 * 3600 * 1000;
+
+  function adiadoRecente() {
+    try { return Date.now() - (+localStorage.getItem(CHAVE_ADIADO) || 0) < ADIAR_MS; } catch (e) { return false; }
+  }
+
+  function mostrarAvisoLocalizacao() {
+    if (document.getElementById('avisoLocalizacao')) return;
+    var estilo = document.createElement('style');
+    estilo.textContent =
+      '#avisoLocalizacao{position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:460px;margin:0 auto;padding:16px 18px;' +
+      'border:1px solid #cbd8e9;border-radius:14px;background:#fff;box-shadow:0 12px 32px rgba(23,43,77,.18);color:#172b4d;font-size:14px;line-height:1.45}' +
+      '#avisoLocalizacao strong{display:block;margin-bottom:4px;font-size:15px}' +
+      '#avisoLocalizacao p{margin:0 0 12px;color:#42536e}' +
+      '#avisoLocalizacao div{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}' +
+      '#avisoLocalizacao button{min-height:40px;padding:8px 16px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}' +
+      '#avisoLocalizacao .sim{border:0;background:#2f4f9e;color:#fff}' +
+      '#avisoLocalizacao .nao{border:1px solid #cbd8e9;background:#fff;color:#42536e}';
+    document.head.appendChild(estilo);
+    var aviso = document.createElement('section');
+    aviso.id = 'avisoLocalizacao';
+    aviso.setAttribute('role', 'dialog');
+    aviso.setAttribute('aria-labelledby', 'avisoLocalizacaoTitulo');
+    aviso.innerHTML =
+      '<strong id="avisoLocalizacaoTitulo">Permitir a localização deste aparelho?</strong>' +
+      '<p>O sistema registra de onde são feitos os acessos e cadastros, para auditoria e segurança da conta. ' +
+      'Não precisa ligar o GPS. A localização só é usada nesse registro.</p>' +
+      '<div><button type="button" class="nao">Agora não</button><button type="button" class="sim">Permitir</button></div>';
+    document.body.appendChild(aviso);
+
+    aviso.querySelector('.sim').addEventListener('click', function () {
+      aviso.remove();
+      window.AMBIENTE_CLIENTE.pedirPosicao().then(function (p) {
+        if (p) registrar('localizacao', 'Permitiu a localização do aparelho (precisão de ' + p.precisao_m + ' m)', { geo: p, geo_permissao: 'permitida' });
+        else registrar('localizacao', 'Não permitiu a localização do aparelho', { geo_permissao: 'negada' });
+      });
+    });
+    aviso.querySelector('.nao').addEventListener('click', function () {
+      aviso.remove();
+      try { localStorage.setItem(CHAVE_ADIADO, String(Date.now())); } catch (e) { /* modo privado */ }
+      registrar('localizacao', 'Adiou a permissão de localização', { geo_permissao: 'adiada' });
+    });
+  }
+
+  // Modelo, versão exata do sistema e posição chegam depois (ambiente-cliente.js).
+  var amb = window.AMBIENTE_CLIENTE;
+  if (!amb) { registrarVisita(); return; }
+  Promise.all([amb.pronto, amb.estadoPermissao(), amb.posicao().catch(function () { return null; })]).then(function (r) {
+    var estado = r[1], geo = r[2];
+    registrarVisitaCom(geo ? { geo: geo, geo_permissao: 'permitida' } : { geo_permissao: estado === 'denied' ? 'negada' : estado });
+    if ((estado === 'prompt' || (estado === 'desconhecido' && !geo)) && !adiadoRecente()) mostrarAvisoLocalizacao();
+  });
 })();

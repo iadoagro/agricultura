@@ -3213,13 +3213,12 @@
     } catch (e) { location.hash = h; }   // file:// em navegador antigo
   }
 
-  /** O painel abre direto a partir de dashboards.html (sem as páginas
-      intermediárias de ano/seção, removidas), então o "voltar" leva sempre
-      para lá. */
+  /** O painel abre direto do Início (a página "Todos os painéis" foi
+      removida), então o "voltar" leva sempre para lá. */
   function atualizarVoltar() {
     var a = el('voltarSecoes');
     if (!a) return;
-    a.href = 'dashboards.html';
+    a.href = 'index.html';
   }
 
   function lerHash() {

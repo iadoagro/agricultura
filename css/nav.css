@@ -59,8 +59,8 @@ html.sb-on.sb-mini>body{padding-left:var(--sb-mini)}
 .sb-marca{display:flex;align-items:center;gap:10px;min-width:0;flex:1;font-weight:700;letter-spacing:.08em}
 .sb-logo{display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:9px;background:var(--sb-ativo);color:#fff;font-size:15px}
 .sb-marca-txt{white-space:nowrap;overflow:hidden}
-.sb-recolher,.sb-fechar{display:grid;place-items:center;width:32px;height:32px;flex:none;border:0;border-radius:8px;background:none;color:var(--sb-suave);cursor:pointer}
-.sb-recolher:hover,.sb-fechar:hover{background:var(--sb-hover);color:var(--sb-texto)}
+.sb-fechar{display:grid;place-items:center;width:32px;height:32px;flex:none;border:0;border-radius:8px;background:none;color:var(--sb-suave);cursor:pointer}
+.sb-fechar:hover{background:var(--sb-hover);color:var(--sb-texto)}
 .sb-fechar{display:none}
 
 .sb-busca{display:flex;align-items:center;gap:8px;margin:12px 12px 6px;padding:0 10px;height:38px;flex:none;border:1px solid var(--sb-borda);border-radius:9px;background:rgba(255,255,255,.05);color:var(--sb-suave);cursor:text}
@@ -78,6 +78,9 @@ html.sb-on.sb-mini>body{padding-left:var(--sb-mini)}
 .sb-inicio span,.sb-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-item{padding-left:38px;font-size:13.5px}
 .sb-grupo{margin-top:12px}
+/* link solto entre grupos (Painéis): mesmo espaço dos grupos, pra não parecer item do grupo de cima */
+.sb-solto{margin-top:12px}
+html.sb-mini .sb-solto{margin-top:6px}
 .sb-grupo h3{display:flex;align-items:center;gap:10px;margin:0 0 2px;padding:4px 10px;color:var(--sb-suave);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .sb-grupo.atual h3{color:#b9d0ff}
 .sb-grupo-ico{display:grid;place-items:center;width:18px;height:18px;padding:0;border:0;background:none;cursor:default}
@@ -96,7 +99,6 @@ html.sb-mini .sb-topo{justify-content:center;flex-direction:column;gap:4px;heigh
 html.sb-mini .sb-marca{flex:none}
 html.sb-mini .sb-marca-txt,html.sb-mini .sb-busca,html.sb-mini .sb-item,html.sb-mini .sb-grupo h3 span,
 html.sb-mini .sb-inicio span,html.sb-mini .sb-login,html.sb-mini .sb-sair span,html.sb-mini .sb-vazio{display:none}
-html.sb-mini .sb-recolher .sb-ico{transform:scaleX(-1)}
 html.sb-mini .sb-lista{padding:8px 0}
 html.sb-mini .sb-inicio{justify-content:center;margin:0 10px;padding:9px 0}
 html.sb-mini .sb-grupo{margin-top:6px}
@@ -149,7 +151,6 @@ html.sb-mini .sb-sair{width:40px;padding:0;justify-content:center}
   html.sb-gaveta{overflow:hidden}
   .sb-veu{display:block;position:fixed;inset:0;z-index:1090;background:rgba(10,20,40,.45);opacity:0;pointer-events:none;transition:opacity .2s}
   html.sb-gaveta .sb-veu{opacity:1;pointer-events:auto}
-  .sb-recolher{display:none}
   .sb-fechar{display:grid}
   .sb kbd{display:none}
   /* na gaveta o menu é sempre o completo, mesmo com "recolhido" guardado */

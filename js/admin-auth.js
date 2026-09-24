@@ -178,8 +178,15 @@
     if (!usuario) return;
     // A página de onde veio a ação — é o que a página de logs usa para
     // agrupar por página junto com a navegação de js/rastreio.js.
-    // Navegador, sistema e tela (js/ambiente-cliente.js); o IP o banco põe.
-    var amb = window.AMBIENTE_CLIENTE ? window.AMBIENTE_CLIENTE.coletar() : {};
+    // Navegador, sistema, aparelho, tela... (js/ambiente-cliente.js); o IP o banco põe.
+    var amb = {};
+    if (window.AMBIENTE_CLIENTE) {
+      await window.AMBIENTE_CLIENTE.pronto;
+      amb = window.AMBIENTE_CLIENTE.coletar();
+      // posição do aparelho, só se a pessoa já permitiu (nunca pergunta daqui)
+      var geo = await window.AMBIENTE_CLIENTE.posicao().catch(function () { return null; });
+      if (geo) amb.geo = geo;
+    }
     detalhes = Object.assign({ pagina: location.pathname.split('/').pop() || 'index.html' }, amb, detalhes || {});
     try {
       await requisicao('/rest/v1/log_eventos', {
@@ -203,6 +210,7 @@
     if (filtros.usuario) params.push('usuario_email=eq.' + encodeURIComponent(filtros.usuario));
     if (filtros.semUsuario) params.push('usuario_email=neq.' + encodeURIComponent(filtros.semUsuario));
     if (filtros.pagina) params.push('detalhes->>pagina=eq.' + encodeURIComponent(filtros.pagina));
+    if (filtros.comGeo) params.push('detalhes->geo=not.is.null');   // só eventos com a posição do aparelho
     if (filtros.desde) params.push('criado_em=gte.' + encodeURIComponent(filtros.desde));
     if (filtros.ate) params.push('criado_em=lte.' + encodeURIComponent(filtros.ate));
     return requisicao('/rest/v1/log_eventos?' + params.join('&'));
@@ -220,6 +228,73 @@
         p_pagina: filtros.pagina || null, p_sem_usuario: filtros.semUsuario || null
       })
     });
+  }
+
+  /* Cidade, estado e provedor de cada IP (função ip_localizar,
+     database/log-eventos-localizacao.sql) — só o responsável. */
+  async function localizarIPs(ips) {
+    return requisicao('/rest/v1/rpc/ip_localizar', { method: 'POST', body: JSON.stringify({ p_ips: ips }) });
+  }
+
+  /* Locais conhecidos: nome dado a um IP fixo (ip_nomes, database/ip-nomes.sql). */
+  async function listarNomesIP() {
+    return requisicao('/rest/v1/ip_nomes?select=ip,nome&order=nome');
+  }
+  async function salvarNomeIP(ip, nome) {
+    return requisicao('/rest/v1/ip_nomes?on_conflict=ip', {
+      method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ ip: ip, nome: nome, atualizado_em: new Date().toISOString() })
+    });
+  }
+  async function removerNomeIP(ip) {
+    return requisicao('/rest/v1/ip_nomes?ip=eq.' + encodeURIComponent(ip), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+  }
+
+  /* Alertas de segurança (log_alertas, database/log-alertas.sql) — gerados
+     pelo banco; aqui só se lê e marca como visto. Só o responsável. */
+  async function listarAlertas(filtros) {
+    filtros = filtros || {};
+    var params = ['select=*', 'order=criado_em.desc', 'limit=' + (filtros.limite || 50)];
+    if (!filtros.incluirVistos) params.push('visto=is.false');
+    if (filtros.usuario) params.push('usuario_email=eq.' + encodeURIComponent(filtros.usuario));
+    if (filtros.semUsuario) params.push('usuario_email=neq.' + encodeURIComponent(filtros.semUsuario));
+    return requisicao('/rest/v1/log_alertas?' + params.join('&'));
+  }
+  async function contarAlertasNaoVistos(filtros) {
+    filtros = filtros || {};
+    var params = ['select=id', 'visto=is.false', 'limit=1000'];
+    if (filtros.usuario) params.push('usuario_email=eq.' + encodeURIComponent(filtros.usuario));
+    if (filtros.semUsuario) params.push('usuario_email=neq.' + encodeURIComponent(filtros.semUsuario));
+    var r = await requisicao('/rest/v1/log_alertas?' + params.join('&'));
+    return (r || []).length;
+  }
+  // ids: lista de ids, ou null para todos os não vistos (dentro de filtros)
+  async function marcarAlertasVistos(ids, filtros) {
+    filtros = filtros || {};
+    var params = ids ? ['id=in.(' + ids.map(Number).join(',') + ')'] : ['visto=is.false'];
+    if (!ids && filtros.usuario) params.push('usuario_email=eq.' + encodeURIComponent(filtros.usuario));
+    if (!ids && filtros.semUsuario) params.push('usuario_email=neq.' + encodeURIComponent(filtros.semUsuario));
+    return requisicao('/rest/v1/log_alertas?' + params.join('&'), {
+      method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ visto: true })
+    });
+  }
+
+  /* Convite pra cadastrar PIN (database/acesso-pin.sql): { usaPin, naoPerguntar }
+     da conta logada; sem linha = ainda não respondeu. null se a tabela não existe. */
+  async function statusPin() {
+    if (!sessao) return null;
+    try {
+      const r = await requisicao('/rest/v1/acesso_pin?select=usa_pin,nao_perguntar,biometria_nao_perguntar&usuario_id=eq.' + encodeURIComponent(sessao.user.id));
+      const l = (r || [])[0];
+      return { usaPin: Boolean(l && l.usa_pin), naoPerguntar: Boolean(l && l.nao_perguntar),
+        biometriaNaoPerguntar: Boolean(l && l.biometria_nao_perguntar) };
+    } catch (e) { return null; }
+  }
+  async function pinNaoPerguntar() {
+    await requisicao('/rest/v1/rpc/pin_nao_perguntar', { method: 'POST', body: '{}' });
+  }
+  async function biometriaNaoPerguntar() {
+    await requisicao('/rest/v1/rpc/biometria_nao_perguntar', { method: 'POST', body: '{}' });
   }
 
   async function buscarPerfil() {
@@ -265,6 +340,21 @@
     try { await atualizarStatus(); }
     catch (e) { limpar(); throw e; }
     registrarEvento('login', 'acesso', 'Entrou no sistema');
+  }
+
+  /* Entrada por biometria (js/biometria.js): o Supabase já conferiu a
+     passkey e devolveu a sessão; aqui ela vira a sessão do sistema, igual ao
+     login por senha. */
+  async function entrarComSessao(s) {
+    configurar();
+    if (!s || !s.access_token || !s.user) throw new Error('A biometria não devolveu uma sessão válida.');
+    sessao = { access_token: s.access_token, refresh_token: s.refresh_token,
+      expires_at: s.expires_at || Math.floor(Date.now() / 1000) + (s.expires_in || 3600), user: { id: s.user.id, email: s.user.email } };
+    gravarSessao();
+    agendarRenovacao();
+    try { await atualizarStatus(); }
+    catch (e) { limpar(); throw e; }
+    registrarEvento('login', 'acesso', 'Entrou no sistema com biometria', { metodo: 'biometria' });
   }
 
   async function sair() {
@@ -345,7 +435,14 @@
 
   function chamarPHPPublico(acao, dados) { return chamarServidor(acao, dados, null); }
 
+  // Regras de senha (js/senha-regras.js); o servidor confere de novo.
+  function exigirSenhaForte(senha) {
+    const r = window.SENHA_REGRAS && window.SENHA_REGRAS.avaliar(senha);
+    if (r && !r.ok) throw new Error(r.erro);
+  }
+
   async function cadastrarConta(nome, sobrenome, senha) {
+    exigirSenhaForte(senha);
     const login = gerarLogin(nome, sobrenome);
     const email = login + '@' + DOMINIO_USUARIO;
     await chamarPHPPublico('autocadastro', { email, senha });
@@ -373,8 +470,11 @@
     await requisicao('/auth/v1/recover', { method: 'POST', body: JSON.stringify({ email }) }, false);
   }
 
+  // Pela função admin-usuarios (ação trocar_propria_senha), que confere a
+  // regra de senha no servidor antes de gravar — não direto no Supabase Auth.
   async function alterarPropriaSenha(novaSenha) {
-    await requisicao('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password: novaSenha }) });
+    exigirSenhaForte(novaSenha);
+    await chamarAdminPHP('trocar_propria_senha', { senha: novaSenha });
     try { await requisicao('/rest/v1/rpc/confirmar_troca_senha', { method: 'POST', body: '{}' }); } catch (e) {}
     if (sessao) { sessao.deveTrocarSenha = false; sessionStorage.setItem(sessionKey, JSON.stringify(sessao)); avisar(); }
     registrarEvento('trocar_senha', 'usuarios', 'Alterou a própria senha');
@@ -392,7 +492,9 @@
     online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SEMPRE_LIBERADAS, SENHA_PADRAO,
     cadastrarConta, entrar, sair, listarSolicitacoes, decidir, definirPaginas, definirAtivo, previewLogin,
     cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
-    registrarEvento, listarEventos, resumirEventos,
+    registrarEvento, listarEventos, resumirEventos, localizarIPs,
+    listarAlertas, contarAlertasNaoVistos, marcarAlertasVistos,
+    listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinNaoPerguntar, biometriaNaoPerguntar, entrarComSessao,
     sessaoAtual: () => sessao,
     garantirSessao, renovarSessao: renovar,
     papel: () => sessao ? sessao.papel : null,

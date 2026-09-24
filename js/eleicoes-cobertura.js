@@ -43,9 +43,40 @@ window.CoberturaFiscais = (function () {
     return { registros: registros, comFiscal: comFiscal, comFiscalPorMun: comFiscalPorMun, totalOficiais: oficiais.size };
   }
 
+  /** Meta 2026 (toda seção com voto em 2022 com fiscal) em números: quanto
+      falta em cada município, em cada regional (window.REGIONAIS_MUNICIPIOS)
+      e no Acre. comFiscal: o Set de calcular(). Devolve
+      {porMun, porReg: Map(nome → {alvo, faltam}), total: {alvo, faltam}}
+      — base da faixa da meta (js/eleicoes.js) e do mapa (js/eleicoes-fiscais-mapa.js). */
+  function meta(comFiscal) {
+    var votos = window.DADOS_VOTACAO_SCHAFER;
+    var regionais = window.REGIONAIS_MUNICIPIOS || {};
+    var porMun = new Map(), porReg = new Map(), total = { alvo: 0, faltam: 0 };
+    function somar(mapa, chave, falta) {
+      if (!chave) return;
+      var v = mapa.get(chave) || { alvo: 0, faltam: 0 };
+      v.alvo++; if (falta) v.faltam++;
+      mapa.set(chave, v);
+    }
+    (votos ? votos.porSecao : []).forEach(function (r) {
+      var falta = !comFiscal.has(r.municipio + '|' + r.zona + '|' + r.secao);
+      somar(porMun, r.municipio, falta);
+      somar(porReg, regionais[r.municipio], falta);
+      total.alvo++; if (falta) total.faltam++;
+    });
+    return { porMun: porMun, porReg: porReg, total: total };
+  }
+
+  /** "12,3%" — parte / todo, com vírgula; "0%" quando o todo é zero. */
+  function pct(parte, todo) {
+    return (todo ? parte / todo * 100 : 0).toFixed(1).replace('.', ',').replace(',0', '') + '%';
+  }
+
   return {
     oficiaisPorMun: function () { preparar(); return oficiaisPorMun; },
     oficiais: function () { preparar(); return oficiais; },
-    calcular: calcular
+    calcular: calcular,
+    meta: meta,
+    pct: pct
   };
 })();

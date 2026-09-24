@@ -423,7 +423,7 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
   .area-municipios{grid-template-columns:180px minmax(0,1fr)}
   .coluna-central{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
   .coluna-central>.mapa-card{flex:none;overflow:visible}
-  .coluna-central>#painel{flex:none;display:grid;grid-template-columns:160px minmax(0,1fr);gap:14px;align-items:start;padding:10px 12px}
+  .coluna-central #painel{flex:none;display:grid;grid-template-columns:160px minmax(0,1fr);gap:14px;align-items:start;padding:10px 12px}
   #painel .painel-topo{border:0;padding:0}
   #painel .painel-topo h2{font-size:17px;line-height:1.2}
   #cadastro:not([hidden]){display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(130px,auto);gap:6px 10px;align-items:end;padding:0}
@@ -489,3 +489,105 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
 @media(max-width:760px){.meta-votos{grid-template-columns:1fr}}
 .prioridades-fiscais{margin-top:16px}
 .prioridades-fiscais .prioridades-card{margin:0}
+
+/* Aba Fiscais: a meta numa faixa fina na largura toda; embaixo, o mapa com a
+   altura que sobra da tela (ajustarAlturaMapa em js/eleicoes.js) e, à
+   direita dele, o cadastro com um campo embaixo do outro, da mesma altura
+   do mapa. A lista de cadastros do município (cartão próprio) vem ao rolar,
+   na largura toda. */
+#listaCadastrosSecao.mapa-card{margin:0;padding:14px 18px;border-top:1px solid #e0e0e0}
+#listaCadastrosSecao[hidden]{display:none}
+.cadastro-e-meta{display:grid;gap:16px;margin:16px 0}
+/* sobra do antigo "sticky; top:16px": deslocava os cartões 16px pra baixo, por cima do bloco seguinte (mapa sobre o cadastro, busca sobre as prioridades) */
+.eleicoes .mapa-card{top:0}
+.campo-opcional{font-weight:400;color:#8494ab}
+/* obrigatórios: asterisco no rótulo e borda vermelha no que ficou vazio ao tentar salvar */
+.campo-obrigatorio{color:#c0392b;font-weight:700}
+#cadastro.tentou :is(input,select):invalid{border-color:#c0392b;box-shadow:0 0 0 2px rgba(192,57,43,.15)}
+@media(min-width:1000px) and (min-height:600px){
+  .coluna-central{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:10px 16px;align-items:stretch}
+  .coluna-central>.mapa-card{grid-column:1}
+  .coluna-central>#listaCadastrosSecao{grid-column:1/-1}
+  .cadastro-e-meta{grid-column:2;display:flex;flex-direction:column;margin:0;min-height:0}
+  .cadastro-e-meta>#painel{flex:1 1 auto;display:block;padding:12px 14px}
+  .cadastro-e-meta>#painel .painel-topo{margin-bottom:4px}
+  /* um campo embaixo do outro */
+  .cadastro-e-meta #cadastro:not([hidden]){grid-template-columns:minmax(0,1fr);gap:16px}
+  .cadastro-e-meta #cadastro .campo-acoes{margin-top:4px}
+  .cadastro-e-meta #cadastro .campo-acoes .salvar{height:36px}
+}
+@media(min-width:1000px) and (min-height:600px){
+  /* no mapa de bairros o título do estado, a dica e o rodapé só tomam altura */
+  .coluna-central>.mapa-card{padding:12px 14px}
+  .coluna-central>.mapa-card:has(#mapaBairrosSecao:not([hidden]))>.mapa-topo,
+  .coluna-central>.mapa-card:has(#mapaBairrosSecao:not([hidden]))>.mapa-rodape,
+  .coluna-central #mapaBairrosSecao .mapa-esquematico-dica{display:none}
+  /* título, filtros e zoom na mesma linha (sobra mais altura pro mapa) */
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.mapa-bairros-topo{display:contents}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.mapa-bairros-topo>div:first-child{order:1}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.fiscais-mapa-filtros{order:2}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen) .mapa-bairros-acoes{order:3;margin-left:auto}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>#mapaFiscaisResumo{order:4}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.resultados-bairros-legenda{order:5}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.mapa-bairros-viewport{order:6}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.mapa-bairros-topo h4{margin:0;font-size:13px}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.fiscais-mapa-filtros{gap:10px}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.fiscais-mapa-filtros label{gap:5px;font-size:12px}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.fiscais-mapa-filtros select{padding:4px 6px;font-size:12px}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen) .mapa-bairros-acoes button{padding:4px 8px;font-size:12px}
+  .coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>#mapaFiscaisResumo,.coluna-central #mapaBairrosSecao:not(:fullscreen):not(:-webkit-full-screen)>.resultados-bairros-legenda{font-size:11.5px}
+}
+/* Meta: faixa fina na largura toda, acima dos municípios, do mapa e do cadastro */
+.meta-faixa{margin-bottom:16px}
+@media(min-width:1000px) and (min-height:600px){
+  .meta-faixa{flex:none;min-height:45px;grid-template-columns:auto minmax(120px,1fr) auto;gap:12px;padding:6px 8px 6px 12px;border-width:1px 1px 1px 3px;border-radius:6px}
+  .meta-faixa .meta-votos-texto{display:flex;align-items:baseline;gap:8px;min-width:0;white-space:nowrap;overflow:hidden}
+  .meta-faixa h3,.meta-faixa p{margin:0;font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
+  .meta-faixa h3{flex:none}
+  .meta-faixa .meta-votos-barra{height:8px}
+  .meta-faixa button{padding:6px 12px;font-size:12px;border-radius:6px}
+  /* a faixa entra na altura da aba: municípios + mapa + cadastro ocupam o resto */
+  #painel-fiscais>.meta-faixa+.area-municipios{min-height:calc(100% - 61px)}
+}
+/* Mesmo espaço (16px) entre todas as seções da aba Fiscais, na vertical e na horizontal */
+#painel-fiscais .area-municipios,#painel-fiscais .coluna-central,#painel-fiscais .cadastro-e-meta,#painel-fiscais .secoes-abaixo-mapa{gap:16px}
+/* tela baixa (ex.: 1366×768): campos mais juntos pro formulário inteiro caber ao lado do mapa */
+@media(min-width:1000px) and (min-height:600px) and (max-height:800px){.cadastro-e-meta #cadastro:not([hidden]){gap:10px}}
+/* Buscar fiscais: barra com "N encontrados" e a forma de ver (js/eleicoes-busca-exportar.js) */
+.busca-global-barra{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 16px;margin-top:12px}
+.busca-global-barra #buscaGlobalStatus{margin:0}
+.busca-global-visao{display:flex;flex-wrap:wrap;gap:10px}
+.busca-global-visao label{display:flex;align-items:center;gap:6px;font-size:12px;color:#666}
+.busca-global-visao label[hidden]{display:none}
+.busca-global-visao select{padding:5px 8px;font-size:12.5px}
+/* cartões: N por linha (padrão 6) na tela larga */
+@media(min-width:1000px){.cartoes-fiscais{grid-template-columns:repeat(var(--por-linha,6),minmax(0,1fr))}}
+/* lista: um fiscal por linha, nome e ações à esquerda, dados ao lado */
+.cartoes-fiscais.modo-lista{grid-template-columns:minmax(0,1fr);gap:0;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}
+.cartoes-fiscais.modo-lista li.cadastro-compacto{display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);align-items:center;gap:12px;border:0;border-bottom:1px solid #eef1f5;border-radius:0;padding:6px 12px}
+.cartoes-fiscais.modo-lista li.cadastro-compacto:last-child{border-bottom:0}
+.cartoes-fiscais.modo-lista li.cadastro-compacto:nth-child(even){background:#fafbfd}
+.cartoes-fiscais.modo-lista .cadastro-info-compacta{margin:0}
+@media(max-width:700px){.cartoes-fiscais.modo-lista li.cadastro-compacto{grid-template-columns:minmax(0,1fr);gap:2px}}
+.busca-global-paginas{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px;font-size:13px;color:#42536e}
+.busca-global-paginas[hidden]{display:none}
+.busca-global-paginas button{padding:4px 12px;border:1px solid #cbd8e9;border-radius:6px;background:#fff;color:#153e75;font-weight:600}
+.busca-global-paginas button:disabled{opacity:.4;cursor:default}
+/* PDF da busca de fiscais (js/eleicoes-busca-exportar.js): só a tabela montada pra impressão */
+#buscaGlobalImpressao{display:none}
+@media print{
+  body.imprimindo-busca{height:auto;display:block;background:#fff}
+  body.imprimindo-busca>*:not(#buscaGlobalImpressao){display:none!important}
+  body.imprimindo-busca #buscaGlobalImpressao{display:block;font:10px/1.35 'Segoe UI',Arial,sans-serif;color:#000}
+  #buscaGlobalImpressao h1{margin:0 0 2px;font-size:16px;color:#153e75}
+  #buscaGlobalImpressao p{margin:0 0 10px;font-size:10px;color:#444}
+  #buscaGlobalImpressao table{width:100%;border-collapse:collapse;table-layout:fixed}
+  #buscaGlobalImpressao th,#buscaGlobalImpressao td{padding:3px 5px;border-bottom:1px solid #ccc;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:break-word}
+  #buscaGlobalImpressao th{background:#eef3fb;font-size:9.5px}
+  #buscaGlobalImpressao thead{display:table-header-group}
+  #buscaGlobalImpressao tr{break-inside:avoid}
+  #buscaGlobalImpressao th:nth-child(1){width:19%}#buscaGlobalImpressao th:nth-child(2){width:12%}
+  #buscaGlobalImpressao th:nth-child(3){width:11%}#buscaGlobalImpressao th:nth-child(4){width:10%}
+  #buscaGlobalImpressao th:nth-child(5){width:11%}#buscaGlobalImpressao th:nth-child(6){width:5%}
+  #buscaGlobalImpressao th:nth-child(7){width:6%}#buscaGlobalImpressao th:nth-child(8){width:26%}
+}

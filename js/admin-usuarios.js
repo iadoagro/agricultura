@@ -18,7 +18,7 @@
   // pessoa abre as páginas liberadas pra ela. Fiscais é sempre liberado
   // (auth.SEMPRE_LIBERADAS), então aparece marcado e travado.
   var PAGINAS = [['eleicoes', 'Fiscais'], ['portarias', 'Portarias'], ['organograma', 'Organograma'],
-    ['chamados', 'Chamados'], ['dashboards', 'Dashboards'], ['contatos', 'Contatos']];
+    ['chamados', 'Chamados'], ['dashboards', 'Painéis'], ['contatos', 'Contatos']];
   var aberto = null;            // id da pessoa com os acessos abertos
   var rascunhos = new Map();    // id → páginas marcadas ainda não salvas
 

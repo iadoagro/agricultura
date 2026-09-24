@@ -6,12 +6,12 @@
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026092203">
-<link rel="stylesheet" href="../css/logs.css?v=2026092302">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026092401">
+<link rel="stylesheet" href="../css/logs.css?v=2026092306">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092402">
+<link rel="stylesheet" href="../css/nav.css?v=2026092404">
 </head>
 <body>
 <header><h1>SISTEMA</h1><p>Registro de eventos</p></header>
@@ -38,6 +38,8 @@
         <option value="pessoa_acao">Pessoa → ação</option>
         <option value="pagina">Página</option>
         <option value="pessoa_pagina">Pessoa → página</option>
+        <option value="pessoa_aparelho">Pessoa → aparelho</option>
+        <option value="aparelho">Aparelho</option>
         <option value="modulo">Módulo</option>
       </select></label>
       <label>Pessoa<select id="logsPessoa"><option value="">Todas</option></select></label>
@@ -61,6 +63,7 @@
           <option value="filtro">Filtro / opção</option>
           <option value="enviar">Enviou formulário</option>
           <option value="erro">Erro na página</option>
+          <option value="localizacao">Localização (permissão)</option>
         </optgroup>
         <optgroup label="Acesso e cadastros">
           <option value="login">Login</option>
@@ -80,11 +83,36 @@
       <label>Página<select id="logsPagina"><option value="">Todas</option></select></label>
       <label>De<input id="logsDesde" type="date"></label>
       <label>Até<input id="logsAte" type="date"></label>
-      <label id="logsBuscaRotulo">Buscar<input id="logsBusca" type="search" placeholder="Login, e-mail, IP ou texto do evento"></label>
+      <label id="logsBuscaRotulo">Buscar<input id="logsBusca" type="search" placeholder="Login, IP, aparelho, cidade ou texto"></label>
       <button type="button" class="logs-limpar" id="logsLimpar">Limpar filtros</button>
     </div>
 
+    <section class="logs-alertas" id="logsAlertas" aria-labelledby="logsAlertasTitulo" hidden>
+      <div class="logs-alertas-topo">
+        <h3 id="logsAlertasTitulo">Alertas de segurança</h3>
+        <span class="logs-alertas-num" id="logsAlertasNum"></span>
+        <div class="logs-alertas-acoes">
+          <label><input type="checkbox" id="logsAlertasVistos"> Mostrar os já vistos</label>
+          <button type="button" class="logs-alerta-visto" id="logsAlertasTodos">Marcar todos como vistos</button>
+        </div>
+      </div>
+      <ul class="logs-alertas-lista" id="logsAlertasLista"></ul>
+    </section>
+
     <section class="logs-kpis" id="logsKpis" aria-label="Resumo do período"></section>
+
+    <section class="logs-mapa" id="logsMapaSecao" aria-labelledby="logsMapaTitulo" hidden>
+      <div class="logs-mapa-topo">
+        <h3 id="logsMapaTitulo">Mapa dos acessos</h3>
+        <span class="logs-mapa-resumo" id="logsMapaResumo"></span>
+        <button type="button" class="logs-alerta-visto" id="logsMapaBotao" aria-expanded="false" aria-controls="logsMapaCorpo">Mostrar mapa</button>
+      </div>
+      <div id="logsMapaCorpo" hidden>
+        <div class="logs-mapa-area" id="logsMapa" role="region" aria-label="Mapa com a posição aproximada dos acessos"></div>
+        <p class="logs-dica">Posição aproximada pelo IP (nível de cidade). No 4G costuma aparecer a cidade da central da operadora, não onde a pessoa está.
+          <span class="logs-mapa-legenda"><i class="ac"></i>Acre <i class="fora"></i>Fora do Acre <i class="proxy"></i>VPN / proxy / servidor <i class="conhecido"></i>Local conhecido <i class="posicao"></i>Posição do aparelho</span></p>
+      </div>
+    </section>
 
     <p class="admin-msg" id="logsMsg" role="status"></p>
 
@@ -101,13 +129,27 @@
     </div>
   </div>
 </main>
+<dialog class="logs-dialogo" id="dialogoIp" aria-labelledby="dialogoIpTitulo">
+  <form method="dialog">
+    <h3 id="dialogoIpTitulo">Nome deste local</h3>
+    <p id="dialogoIpInfo"></p>
+    <label>Nome<input id="dialogoIpNome" maxlength="80" placeholder="Ex.: SEAGRI – Sede, Escritório Local de Xapuri"></label>
+    <small>Use para a internet fixa de um escritório. Os logs, os alertas e o mapa passam a mostrar este nome.</small>
+    <div>
+      <!-- Salvar vem primeiro: é o botão que o Enter aciona (a ordem na tela é invertida no CSS) -->
+      <button type="submit" value="salvar" class="permissoes-salvar">Salvar</button>
+      <button type="submit" value="cancelar" class="logs-limpar" formnovalidate>Cancelar</button>
+      <button type="submit" value="remover" id="dialogoIpRemover" class="logs-limpar">Remover nome</button>
+    </div>
+  </form>
+</dialog>
 <script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/ambiente-cliente.js?v=2026092301"></script>
-<script src="../js/admin-auth.js?v=2026092405"></script>
+<script src="../js/ambiente-cliente.js?v=2026092302"></script>
+<script src="../js/admin-auth.js?v=2026092409"></script>
 <script src="../js/admin-gate.js?v=2026092203"></script>
-<script src="../js/rastreio.js?v=2026092302"></script>
-<script src="../js/nav.js?v=2026092402"></script>
-<script src="../js/logs.js?v=2026092303"></script>
+<script src="../js/rastreio.js?v=2026092303"></script>
+<script src="../js/nav.js?v=2026092405"></script>
+<script src="../js/logs.js?v=2026092307"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

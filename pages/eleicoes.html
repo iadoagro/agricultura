@@ -6,24 +6,23 @@
   <title>SISTEMA</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/ambiente-cliente.js?v=2026092301"></script>
-  <script src="../js/admin-auth.js?v=2026092405"></script>
+  <script src="../js/ambiente-cliente.js?v=2026092302"></script>
+  <script src="../js/admin-auth.js?v=2026092409"></script>
   <script src="../js/admin-gate.js?v=2026092203"></script>
-  <script src="../js/rastreio.js?v=2026092302"></script>
-  <script src="../js/nav.js?v=2026092402"></script>
+  <script src="../js/rastreio.js?v=2026092303"></script>
+  <script src="../js/nav.js?v=2026092405"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092217">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026092414">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092402">
+<link rel="stylesheet" href="../css/nav.css?v=2026092404">
 </head>
 <body>
   <header><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
   <main class="eleicoes">
-    <div class="barra-acesso"><a class="voltar" href="cadastros-fiscais.html" id="linkBairros" hidden>Cadastro de bairros</a><button id="banco-abrir" type="button" hidden>Banco online</button></div>
-    <nav class="abas-eleicoes" role="tablist" aria-label="Seções de Eleições">
+        <nav class="abas-eleicoes" role="tablist" aria-label="Seções de Eleições">
       <button class="aba-el" data-aba="fiscais" type="button" role="tab" id="aba-fiscais" aria-controls="painel-fiscais" aria-selected="false" tabindex="-1">Fiscais</button>
       <button class="aba-el" data-aba="resultados" type="button" role="tab" id="aba-resultados" aria-controls="painel-resultados" aria-selected="false" tabindex="-1">Resultados</button>
       <button class="aba-el" data-aba="relatorio" type="button" role="tab" id="aba-relatorio" aria-controls="painel-relatorio" aria-selected="false" tabindex="-1">Relatório</button>
@@ -99,34 +98,14 @@
     </div>
 
     <div class="aba-conteudo" data-aba="fiscais" role="tabpanel" id="painel-fiscais" aria-labelledby="aba-fiscais" tabindex="0">
-    <div class="area-municipios">
-    <nav class="municipios-lateral" aria-label="Municípios do Acre"><h2>Municípios</h2><div id="municipios-lista"></div></nav>
-    <div class="coluna-central">
-      <aside id="painel" aria-labelledby="painel-titulo">
-    <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
-    <form id="cadastro">
-      <h3 id="cadastro-titulo">Cadastro de fiscais</h3>
-      <div class="campo"><label for="formMunicipio">Município</label><select id="formMunicipio" name="formMunicipio" required><option value="">Escolha um município</option></select></div>
-      <div class="campo"><label for="nome">Nome</label><input id="nome" name="nome" autocomplete="name" enterkeyhint="next" autocapitalize="words" maxlength="160" required></div>
-      <div class="campo"><label for="telefone">Telefone</label><input id="telefone" name="telefone" type="tel" inputmode="tel" enterkeyhint="next" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required></div>
-      <div class="campo"><label for="regional">Regional</label>
-      <select id="regional" name="regional" required>
-        <option value="">Selecione a regional</option>
-        <option>Alto Acre</option><option>Baixo Acre</option><option>Purus</option><option>Tarauacá/Envira</option><option>Juruá</option>
-      </select></div>
-      <div class="campo"><label for="bairro">Bairro</label><input id="bairro" name="bairro" maxlength="120" enterkeyhint="next" autocapitalize="words"></div>
-      <div class="campo"><label for="zona">Zona eleitoral</label><select id="zona" name="zona" required><option value="">Selecione a zona</option></select></div>
-      <div class="campo"><label for="secao">Seção eleitoral</label><select id="secao" name="secao" required disabled><option value="">Selecione a zona primeiro</option></select></div>
-      <div class="campo campo-acoes"><button class="salvar" type="submit">Salvar cadastro</button>
-      <button class="cancelar-edicao" type="button" id="cancelarEdicao" hidden>Cancelar edição</button></div>
-      <p id="mensagem" role="status"></p>
-    </form>
-  </aside>
-      <section id="metaVotos" class="meta-votos" aria-labelledby="metaVotosTitulo">
+      <section id="metaVotos" class="meta-votos meta-faixa" aria-labelledby="metaVotosTitulo">
         <div class="meta-votos-texto"><h3 id="metaVotosTitulo">Meta 2026: fiscal em toda seção que teve voto em 2022</h3><p id="metaVotosResumo" role="status">Carregando…</p></div>
         <div class="meta-votos-barra" aria-hidden="true"><span id="metaVotosProgresso"></span></div>
         <button id="metaVotosVer" type="button">Ver seções que faltam</button>
       </section>
+    <div class="area-municipios">
+    <nav class="municipios-lateral" aria-label="Municípios do Acre"><h2>Municípios</h2><div id="municipios-lista"></div></nav>
+    <div class="coluna-central">
     <section class="mapa-card" aria-labelledby="mapa-titulo">
       <div class="mapa-topo"><div><h2 id="mapa-titulo">Municípios do Acre</h2><p>Clique em um município para abrir os cadastros.</p></div>
         <label>Selecionar município<select id="municipio"><option value="">Escolha um município</option></select></label>
@@ -158,14 +137,36 @@
           <div id="mapaBairros" class="mapa-bairros-satelite" role="img" aria-label="Mapa de satélite dos bairros de Rio Branco, colorido pela cobertura de fiscais"></div>
         </div>
       </section>
-      <section id="listaCadastrosSecao" class="lista-cadastros" aria-labelledby="lista-titulo" hidden>
+      <div class="mapa-rodape"><span id="municipio-hover">22 municípios · Acre</span><a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" target="_blank" rel="noopener">Malha municipal: IBGE</a></div>
+    </section>
+      <div class="cadastro-e-meta">
+      <aside id="painel" aria-labelledby="painel-titulo">
+    <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
+    <form id="cadastro">
+      <h3 id="cadastro-titulo">Cadastro de fiscais</h3>
+      <div class="campo"><label for="formMunicipio">Município <span class="campo-obrigatorio" aria-hidden="true">*</span></label><select id="formMunicipio" name="formMunicipio" required><option value="">Escolha um município</option></select></div>
+      <div class="campo"><label for="nome">Nome <span class="campo-obrigatorio" aria-hidden="true">*</span></label><input id="nome" name="nome" autocomplete="name" enterkeyhint="next" autocapitalize="words" maxlength="160" required></div>
+      <div class="campo"><label for="telefone">Telefone <span class="campo-obrigatorio" aria-hidden="true">*</span></label><input id="telefone" name="telefone" type="tel" inputmode="tel" enterkeyhint="next" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required></div>
+      <div class="campo"><label for="regional">Regional <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
+      <select id="regional" name="regional" required>
+        <option value="">Selecione a regional</option>
+        <option>Alto Acre</option><option>Baixo Acre</option><option>Purus</option><option>Tarauacá/Envira</option><option>Juruá</option>
+      </select></div>
+      <div class="campo"><label for="bairro">Bairro <span class="campo-opcional">(opcional)</span></label><input id="bairro" name="bairro" maxlength="120" enterkeyhint="next" autocapitalize="words"></div>
+      <div class="campo"><label for="zona">Zona eleitoral <span class="campo-obrigatorio" aria-hidden="true">*</span></label><select id="zona" name="zona" required><option value="">Selecione a zona</option></select></div>
+      <div class="campo"><label for="secao">Seção eleitoral <span class="campo-obrigatorio" aria-hidden="true">*</span></label><select id="secao" name="secao" required disabled><option value="">Selecione a zona primeiro</option></select></div>
+      <div class="campo campo-acoes"><button class="salvar" type="submit">Salvar cadastro</button>
+      <button class="cancelar-edicao" type="button" id="cancelarEdicao" hidden>Cancelar edição</button></div>
+      <p id="mensagem" role="status"></p>
+    </form>
+  </aside>
+      </div>
+      <section id="listaCadastrosSecao" class="mapa-card lista-cadastros" aria-labelledby="lista-titulo" hidden>
         <div class="lista-cadastros-topo"><h3 id="lista-titulo">Cadastros do município</h3><input id="buscaCadastros" class="busca-cadastros" type="search" placeholder="Buscar fiscal (nome, telefone, bairro, seção…)" aria-label="Buscar fiscal na lista" autocomplete="off"></div>
         <p id="destaqueFiscal" class="destaque-fiscal" role="status" hidden></p>
         <ul id="cadastros"></ul>
         <div id="paginacao" hidden><button id="anterior" type="button" aria-label="Página anterior">←</button><span id="pagina-atual" aria-live="polite"></span><button id="proximo" type="button" aria-label="Próxima página">→</button></div>
       </section>
-      <div class="mapa-rodape"><span id="municipio-hover">22 municípios · Acre</span><a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" target="_blank" rel="noopener">Malha municipal: IBGE</a></div>
-    </section>
     </div>
 
     </div>
@@ -186,16 +187,24 @@
           <ul id="cadastrosMapaLista" class="busca-global-lista"></ul>
         </section>
         <div id="buscaGlobalConteudo">
-          <div class="mapa-topo"><div><h2 id="busca-global-titulo">Buscar fiscais em todos os municípios</h2><p>Procure por nome ou telefone antes de cadastrar de novo, ou exporte a lista filtrada para uso em campo.</p></div></div>
+          <div class="mapa-topo"><div><h2 id="busca-global-titulo">Buscar fiscais em todos os municípios</h2><p>Procure por nome ou telefone antes de cadastrar de novo, ou exporte a lista filtrada em PDF para uso em campo.</p></div></div>
           <div class="busca-global-filtros">
             <label>Nome ou telefone<input id="buscaGlobalTexto" type="search" placeholder="Buscar…"></label>
             <label>Regional<select id="buscaGlobalRegional"><option value="">Todas</option></select></label>
             <label>Município<select id="buscaGlobalMunicipio"><option value="">Todos</option></select></label>
             <label>Zona<select id="buscaGlobalZona"><option value="">Todas</option></select></label>
-            <button id="buscaGlobalExportar" type="button">Exportar CSV</button>
+            <button id="buscaGlobalExportar" type="button">Exportar PDF</button>
           </div>
-          <p id="buscaGlobalStatus" role="status"></p>
+          <div class="busca-global-barra">
+            <p id="buscaGlobalStatus" role="status"></p>
+            <div class="busca-global-visao">
+              <label>Visualização<select id="buscaGlobalVisao"><option value="cartoes">Cartões</option><option value="lista">Lista</option></select></label>
+              <label id="buscaGlobalPorLinhaRotulo">Por linha<select id="buscaGlobalPorLinha"><option>3</option><option>4</option><option>5</option><option selected>6</option><option>8</option></select></label>
+              <label>Mostrar<select id="buscaGlobalPorVez"><option value="12">12 por vez</option><option value="24">24 por vez</option><option value="48">48 por vez</option><option value="96">96 por vez</option><option value="0" selected>Todos</option></select></label>
+            </div>
+          </div>
           <ul id="buscaGlobalLista" class="cartoes-fiscais"></ul>
+          <div class="busca-global-paginas" id="buscaGlobalPaginas" hidden><button type="button" id="buscaGlobalAnterior" aria-label="Página anterior">←</button><span id="buscaGlobalPagina" aria-live="polite"></span><button type="button" id="buscaGlobalProxima" aria-label="Próxima página">→</button></div>
         </div>
       </section>
     </div>
@@ -313,20 +322,20 @@
   <script src="../js/mapa-bairros-municipios.js?v=2026091501"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/dados-votacao-schafer.js?v=2026091401"></script>
-  <script src="../js/regionais-municipios.js?v=2026091411"></script>
+  <script src="../js/regionais-municipios.js?v=2026092401"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026092404"></script>
-  <script src="../js/eleicoes-cobertura.js?v=2026091412"></script>
-  <script src="../js/mapa-bairros-leaflet.js?v=2026092201"></script>
+  <script src="../js/banco-eleicoes.js?v=2026092406"></script>
+  <script src="../js/eleicoes-cobertura.js?v=2026092401"></script>
+  <script src="../js/mapa-bairros-leaflet.js?v=2026092402"></script>
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
-<script src="../js/eleicoes.js?v=2026092217"></script>
+<script src="../js/eleicoes.js?v=2026092409"></script>
   <script src="../js/eleicoes-resultados.js?v=2026092201"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
-  <script src="../js/eleicoes-fiscais-mapa.js?v=2026092201"></script>
+  <script src="../js/eleicoes-fiscais-mapa.js?v=2026092404"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026092203"></script>
-  <script src="../js/eleicoes-busca-exportar.js?v=2026092201"></script>
+  <script src="../js/eleicoes-busca-exportar.js?v=2026092402"></script>
   <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
 <script src="../js/eleicoes-abas.js?v=2026092201"></script>
   <script src="../js/select-busca.js?v=2026091401"></script>

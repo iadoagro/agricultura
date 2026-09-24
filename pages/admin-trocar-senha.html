@@ -6,34 +6,35 @@
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/ambiente-cliente.js?v=2026092301"></script>
-<script src="../js/admin-auth.js?v=2026092405"></script>
+<script src="../js/ambiente-cliente.js?v=2026092302"></script>
+<script src="../js/senha-regras.js?v=2026092402"></script>
+<script src="../js/admin-auth.js?v=2026092409"></script>
 <script src="../js/admin-gate.js?v=2026092203"></script>
-<script src="../js/rastreio.js?v=2026092302"></script>
-<script src="../js/nav.js?v=2026092402"></script>
+<script src="../js/rastreio.js?v=2026092303"></script>
+<script src="../js/nav.js?v=2026092405"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026092203">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026092401">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092402">
+<link rel="stylesheet" href="../css/nav.css?v=2026092404">
 </head>
 <body>
-<header><h1>SISTEMA</h1><p>Trocar senha</p></header>
+<header><h1>SISTEMA</h1><p id="trocaSubtitulo">Trocar senha</p></header>
 <main class="admin-auth">
   <div class="admin-card">
     <form id="formTrocar">
-      <p class="admin-desc">Sua conta foi cadastrada com uma senha temporária. Escolha uma nova senha para continuar.</p>
-      <label for="senha1">Nova senha</label>
-      <input id="senha1" type="password" autocomplete="new-password" minlength="6" required>
-      <label for="senha2">Confirmar nova senha</label>
-      <input id="senha2" type="password" autocomplete="new-password" minlength="6" required>
-      <button class="admin-submit" type="submit">Trocar senha</button>
+      <p class="admin-desc" id="trocaTexto">Sua conta foi cadastrada com uma senha temporária. Escolha uma nova senha para continuar.</p>
+      <label for="senha1" id="rotuloSenha1">Nova senha</label>
+      <input id="senha1" type="password" autocomplete="new-password" required>
+      <label for="senha2" id="rotuloSenha2">Confirmar nova senha</label>
+      <input id="senha2" type="password" autocomplete="new-password" required>
+      <button class="admin-submit" type="submit" id="trocaBotao">Trocar senha</button>
     </form>
     <p class="admin-msg" id="adminMsg" role="status"></p>
   </div>
 </main>
-<script src="../js/admin-trocar-senha.js?v=2026091401"></script>
+<script src="../js/admin-trocar-senha.js?v=2026092402"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

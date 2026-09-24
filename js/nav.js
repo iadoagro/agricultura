@@ -7,9 +7,10 @@
      - Menu lateral fixo (.sb): todas as páginas agrupadas por módulo, só as
        que a pessoa pode abrir (mesma regra de admin-gate.js / admin-home.js),
        com busca (Ctrl+K), quem está logado e Sair. No computador fica sempre
-       à esquerda e pode ser recolhido numa faixa só de ícones (a escolha fica
-       guardada); no celular vira uma gaveta aberta pelo ☰.
-     - Barra do topo (.snav): o ☰ e a trilha Início › Dashboards › Mecanização,
+       à esquerda e o ☰ da barra do topo o recolhe numa faixa só de ícones (a
+       escolha fica guardada); no celular vira uma gaveta aberta pelo mesmo ☰.
+       É o único botão pra isso (antes havia outro dentro do menu, repetido).
+     - Barra do topo (.snav): o ☰ e a trilha Início › Painéis › DEAGRO,
        em que cada nível é um link — "voltar um nível" é o item anterior.
    Tudo o que a navegação sabe sobre o sistema está em MAPA: página nova entra
    ali (com "pai" pra trilha) e aparece no menu e na trilha.
@@ -28,11 +29,12 @@
     'index.html':              { nome: 'Início', grupo: null, chave: null },
     'eleicoes.html':           { nome: 'Fiscais', grupo: 'Fiscais', chave: 'eleicoes', pai: 'index.html' },
     'cadastros-fiscais.html':  { nome: 'Bairros dos fiscais', grupo: 'Fiscais', admin: true, pai: 'eleicoes.html' },
-    'dashboards.html':         { nome: 'Todos os painéis', grupo: 'Dashboards', chave: 'dashboards', pai: 'index.html', trilha: 'Dashboards' },
-    'dashboard.html':          { nome: 'Mecanização', grupo: 'Dashboards', chave: 'dashboards', pai: 'dashboards.html' },
-    'lancamento-editar.html':  { nome: 'Editar lançamento', grupo: 'Dashboards', chave: 'dashboards', pai: 'dashboard.html', paiHash: '#lancamento', menu: false },
-    'deagro-secoes.html':      { nome: 'DEAGRO', grupo: 'Dashboards', chave: 'dashboards', pai: 'dashboards.html' },
-    'deagro.html':             { nome: 'Painel DEAGRO', grupo: 'Dashboards', chave: 'dashboards', pai: 'deagro-secoes.html', menu: false, marca: 'deagro-secoes.html' },
+    // Painéis: um link só no menu, direto pro painel de Mecanização; o DEAGRO
+    // abre pelo botão no topo desse painel (e aparece na trilha).
+    'dashboard.html':          { nome: 'Painéis', grupo: 'Painéis', chave: 'dashboards', pai: 'index.html' },
+    'lancamento-editar.html':  { nome: 'Editar lançamento', grupo: 'Painéis', chave: 'dashboards', pai: 'dashboard.html', paiHash: '#lancamento', menu: false, marca: 'dashboard.html' },
+    'deagro-secoes.html':      { nome: 'DEAGRO', grupo: 'Painéis', chave: 'dashboards', pai: 'dashboard.html', menu: false, marca: 'dashboard.html' },
+    'deagro.html':             { nome: 'Painel DEAGRO', grupo: 'Painéis', chave: 'dashboards', pai: 'deagro-secoes.html', menu: false, marca: 'dashboard.html' },
     'chamados.html':           { nome: 'Fila de chamados', grupo: 'Chamados', chave: 'chamados', pai: 'index.html' },
     'cadastros-chamados.html': { nome: 'Cadastros auxiliares', grupo: 'Chamados', chave: 'chamados', pai: 'chamados.html' },
     'abrir-chamado.html':      { nome: 'Abrir chamado', grupo: 'Chamados', chave: null, pai: 'chamados.html' },
@@ -43,17 +45,18 @@
     'logs.html':               { nome: 'Logs', grupo: 'Administração', admin: true, pai: 'index.html' },
     'admin-trocar-senha.html': { nome: 'Trocar senha', grupo: null, menu: false }
   };
-  var GRUPOS = ['Fiscais', 'Dashboards', 'Chamados', 'Documentos', 'Administração'];
+  var GRUPOS = ['Fiscais', 'Painéis', 'Chamados', 'Documentos', 'Administração'];
+  // Grupo com um item só que vira link solto no menu (como o Início), sem título de grupo.
+  var GRUPOS_SOLTOS = { 'Painéis': true };
   var ICONES = {
     'Início': '<path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     'Fiscais': '<path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7z"/><path d="M22 19H2"/>',
-    'Dashboards': '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+    'Painéis': '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
     'Chamados': '<path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/>',
     'Documentos': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
     'Administração': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
     'busca': '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
     'menu': '<path d="M4 6h16M4 12h16M4 18h16"/>',
-    'recolher': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>',
     'sair': '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
     'fechar': '<path d="M18 6 6 18M6 6l12 12"/>'
   };
@@ -158,7 +161,6 @@
         if (alvo) alvo.scrollIntoView({ block: 'nearest' });
         return;
       }
-      if (ev.target.closest('.sb-recolher')) { definirMini(!raiz.classList.contains('sb-mini')); return; }
       if (ev.target.closest('.sb-fechar')) { fecharGaveta(true); return; }
       if (ev.target.closest('.sb-sair')) sair();
     });
@@ -169,7 +171,6 @@
     var html =
       '<div class="sb-topo">' +
         '<a class="sb-marca" href="index.html" title="Início"><span class="sb-logo" aria-hidden="true">S</span><span class="sb-marca-txt">SISTEMA</span></a>' +
-        '<button type="button" class="sb-recolher" title="Recolher o menu" aria-label="Recolher o menu">' + icone('recolher') + '</button>' +
         '<button type="button" class="sb-fechar" title="Fechar o menu" aria-label="Fechar o menu">' + icone('fechar') + '</button>' +
       '</div>' +
       '<label class="sb-busca">' + icone('busca') +
@@ -180,6 +181,13 @@
     GRUPOS.forEach(function (g) {
       var itens = Object.keys(MAPA).filter(function (a) { return MAPA[a].grupo === g && MAPA[a].menu !== false && pode(a); });
       if (!itens.length) return;
+      if (GRUPOS_SOLTOS[g] && itens.length === 1) {
+        var arqSolto = itens[0], acesoSolto = arqSolto === marcada;
+        html += '<a class="sb-inicio sb-solto' + (acesoSolto ? ' atual' : '') + '" href="' + esc(arqSolto) + '"' + (acesoSolto ? ' aria-current="page"' : '') +
+          ' data-busca="' + esc(semAcento(MAPA[arqSolto].nome + ' mecanizacao deagro dashboards')) + '" title="' + esc(MAPA[arqSolto].nome) + '">' +
+          icone(g) + '<span>' + esc(MAPA[arqSolto].nome) + '</span></a>';
+        return;
+      }
       var aceso = atual.grupo === g;
       html += '<section class="sb-grupo' + (aceso ? ' atual' : '') + '" data-grupo="' + esc(g) + '">' +
         '<h3><button type="button" class="sb-grupo-ico" data-grupo="' + esc(g) + '" title="' + esc(g) + '" tabindex="-1">' + icone(g) + '</button><span>' + esc(g) + '</span></h3>' +

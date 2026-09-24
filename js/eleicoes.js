@@ -88,10 +88,9 @@
     corContorno: '#ffe066',
     obterDica: htmlDicaBairro
   }) : null;
-  // Na tela grande, formulário (em cima) + mapa têm que caber na altura
-  // visível da coluna central: o mapa fica com o espaço que sobra (mínimo
-  // 320px). A lista de cadastros, abaixo do mapa, aparece ao rolar. No
-  // celular a coluna não rola sozinha, então vale a altura do CSS.
+  // Na tela grande o mapa ocupa toda a altura visível da coluna central
+  // (mínimo 240px), com cadastro + meta numa coluna à direita; a lista vem ao rolar.
+  // No celular a coluna não rola sozinha, então vale a altura do CSS.
   const telaGrande = window.matchMedia('(min-width:1000px) and (min-height:600px)');
   // Rola até um elemento. Na tela grande só o painel da aba rola (sem mexer
   // na janela, que deslocaria o cabeçalho); no celular, a página.
@@ -113,27 +112,40 @@
     const svgEstado = document.getElementById('mapa');
     if (!rolagem || !telaGrande.matches || !rolagem.clientHeight) {
       if (viewport) viewport.style.height = '';
-      if (svgEstado) svgEstado.style.maxHeight = '';
+      if (svgEstado) { svgEstado.style.maxHeight = ''; svgEstado.style.height = ''; }
       return;
     }
     const topoRolagem = rolagem.getBoundingClientRect().top - rolagem.scrollTop;
-    const sobra = el => rolagem.clientHeight - (el.getBoundingClientRect().top - topoRolagem) - 24;
+    // O mapa vai até o fim da tela; só o que ainda está dentro do cartão
+    // (legenda, rodapé) fica visível junto. Cadastro e meta ficam ao lado.
+    const cartao = document.querySelector('.coluna-central > .mapa-card');
+    const abaixo = el => cartao ? Math.max(0, cartao.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom) : 0;
+    const sobra = el => rolagem.clientHeight - (el.getBoundingClientRect().top - topoRolagem) - abaixo(el) - 12;
     const secaoBairros = document.getElementById('mapaBairrosSecao');
     if (viewport && secaoBairros && !secaoBairros.hidden) {
-      viewport.style.height = Math.max(320, sobra(viewport)) + 'px';
+      viewport.style.height = Math.max(240, sobra(viewport)) + 'px';
       if (mapaBairros) mapaBairros.invalidar();
     }
     const areaEstado = document.getElementById('mapaEstadoArea');
     if (svgEstado && areaEstado && !areaEstado.hidden) {
-      const legenda = areaEstado.querySelector('.cobertura-legenda');
-      svgEstado.style.maxHeight = Math.max(260, sobra(svgEstado) - (legenda ? legenda.offsetHeight + 6 : 0)) + 'px';
+      // a legenda e o rodapé (entre o mapa e o fim do cartão) já entram em abaixo()
+      // altura fixa (não só máxima): o mapa do estado cresce até o fim da tela
+      const h = Math.max(220, sobra(svgEstado)) + 'px';
+      svgEstado.style.height = h; svgEstado.style.maxHeight = h;
+      enquadrarSvgEstado();
     }
   }
   let ajusteMapaTimer = null;
   const agendarAjusteMapa = () => { clearTimeout(ajusteMapaTimer); ajusteMapaTimer = setTimeout(ajustarAlturaMapa, 60); };
   window.addEventListener('resize', agendarAjusteMapa);
   // O formulário muda de altura (mensagem, dica do bairro, quebra de linha).
-  if (window.ResizeObserver && painel) new ResizeObserver(agendarAjusteMapa).observe(painel);
+  if (window.ResizeObserver && painel) {
+    const observador = new ResizeObserver(agendarAjusteMapa);
+    observador.observe(painel);
+    // a área da aba muda de tamanho ao abrir a aba Fiscais (antes escondida) e com a janela
+    const areaAba = document.getElementById('painel-fiscais');
+    if (areaAba) observador.observe(areaAba);
+  }
   function renderizarMapaBairros() {
     agendarAjusteMapa();
     const secaoEl = document.getElementById('mapaBairrosSecao');
@@ -435,27 +447,37 @@
   }
   // Meta 2026: toda seção que teve voto para o candidato em 2022 (aba
   // Resultados, window.DADOS_VOTACAO_SCHAFER) tem que ter fiscal. Mostra
-  // quantas dessas já têm — do Acre inteiro ou do município aberto.
+  // quantas dessas já têm e quanto falta (em % também) — do Acre inteiro ou
+  // do município aberto; no município, o peso dele no que falta na regional
+  // e no Acre (window.CoberturaFiscais.meta).
   function atualizarMeta() {
     const resumo = document.getElementById('metaVotosResumo');
     const barra = document.getElementById('metaVotosProgresso');
     const votos = window.DADOS_VOTACAO_SCHAFER;
     if (!resumo || !votos || !window.CoberturaFiscais) return;
-    let comFiscal;
-    try { comFiscal = window.CoberturaFiscais.calcular().comFiscal; }
+    let m;
+    try { m = window.CoberturaFiscais.meta(window.CoberturaFiscais.calcular().comFiscal); }
     catch (e) { resumo.textContent = e.message; return; }
-    const alvo = votos.porSecao.filter(r => !selecionado || r.municipio === selecionado);
-    const cobertas = alvo.filter(r => comFiscal.has(r.municipio + '|' + r.zona + '|' + r.secao)).length;
-    const faltam = alvo.length - cobertas;
-    const pct = alvo.length ? cobertas / alvo.length * 100 : 0;
+    const pct = window.CoberturaFiscais.pct;
+    const regional = selecionado && window.REGIONAIS_MUNICIPIOS ? window.REGIONAIS_MUNICIPIOS[selecionado] : '';
+    const aqui = selecionado ? (m.porMun.get(selecionado) || { alvo: 0, faltam: 0 }) : m.total;
+    const faltam = aqui.faltam, cobertas = aqui.alvo - aqui.faltam;
     const onde = selecionado ? (nomes.get(selecionado) || 'Município') : 'Acre';
     const num = n => n.toLocaleString('pt-BR');
-    resumo.textContent = !alvo.length
-      ? onde + ': nenhuma seção teve voto em ' + votos.ano + ' — sem meta aqui.'
-      : onde + ': ' + num(cobertas) + ' de ' + num(alvo.length) + ' seções com voto em ' + votos.ano + ' já têm fiscal (' +
-        pct.toFixed(1).replace('.', ',') + '%) · ' + (faltam ? 'faltam ' + num(faltam) : 'meta cumprida!');
-    if (barra) barra.style.width = pct.toFixed(1) + '%';
-    document.getElementById('metaVotos').classList.toggle('cumprida', Boolean(alvo.length) && !faltam);
+    let texto;
+    if (!aqui.alvo) texto = onde + ': nenhuma seção teve voto em ' + votos.ano + ' — sem meta aqui.';
+    else {
+      texto = onde + ': ' + num(cobertas) + ' de ' + num(aqui.alvo) + ' seções com voto em ' + votos.ano + ' têm fiscal · ' +
+        (faltam ? 'faltam ' + num(faltam) + ' (' + pct(faltam, aqui.alvo) + ')' : 'meta cumprida!');
+      if (selecionado && faltam) {
+        const reg = regional && m.porReg.get(regional);
+        texto += ' · ' + (reg ? pct(faltam, reg.faltam) + ' do que falta na regional ' + regional + ' e ' : '') +
+          pct(faltam, m.total.faltam) + ' do que falta no Acre';
+      }
+    }
+    resumo.textContent = texto;
+    if (barra) barra.style.width = (aqui.alvo ? cobertas / aqui.alvo * 100 : 0).toFixed(1) + '%';
+    document.getElementById('metaVotos').classList.toggle('cumprida', Boolean(aqui.alvo) && !faltam);
     const ver = document.getElementById('metaVotosVer');
     if (ver) ver.hidden = !faltam;
   }
@@ -675,6 +697,10 @@
   }
   seletor.onchange = () => abrir(seletor.value);
   formMunicipio.onchange = () => abrir(formMunicipio.value);
+  // Todos os campos menos o Bairro são obrigatórios (required no HTML): o
+  // navegador não deixa salvar e aponta o primeiro vazio; a classe .tentou
+  // pinta de vermelho todos os que faltam (css/eleicoes.css).
+  form.addEventListener('invalid', () => form.classList.add('tentou'), true);
   form.addEventListener('submit', async e => {
     e.preventDefault();
     if (!selecionado) { formMunicipio.focus(); mensagem.textContent = 'Selecione um município.'; mensagem.className = 'erro'; return; }
@@ -703,10 +729,10 @@
       if (editandoId) {
         await window.BANCO_ELEICOES.editar(editandoId, registro);
         encerrarEdicao(); atualizarConsulta('secao');
-        mensagem.className = ''; mensagem.textContent = 'Cadastro atualizado.';
+        form.classList.remove('tentou'); mensagem.className = ''; mensagem.textContent = 'Cadastro atualizado.';
       } else {
         await window.BANCO_ELEICOES.salvar(registro);
-        form.reset(); formMunicipio.value = selecionado; atualizarConsulta('secao'); mensagem.className = ''; mensagem.textContent = window.BANCO_ELEICOES.online ? 'Cadastro salvo no banco online.' : 'Cadastro salvo neste navegador.';
+        form.reset(); form.classList.remove('tentou'); formMunicipio.value = selecionado; atualizarConsulta('secao'); mensagem.className = ''; mensagem.textContent = window.BANCO_ELEICOES.online ? 'Cadastro salvo.' : 'Cadastro salvo neste navegador.';
         document.getElementById('nome').focus();
       }
     } catch (e) { mensagem.className = 'erro'; mensagem.textContent = e.message; }
@@ -714,11 +740,6 @@
   });
   window.addEventListener('banco-atualizado', () => listar());
   window.addEventListener('bairros-atualizado', () => { if (selecionado) atualizarCampoBairro(); });
-  // Tela de cadastro de bairros é só do administrador.
-  const linkBairros = document.getElementById('linkBairros');
-  const mostrarLinkBairros = () => { if (linkBairros) linkBairros.hidden = !(window.ADMIN_AUTH && window.ADMIN_AUTH.papel() === 'responsavel'); };
-  window.addEventListener('admin-auth-atualizado', mostrarLinkBairros);
-  mostrarLinkBairros();
   if (window.BAIRROS_FISCAIS && window.ADMIN_AUTH && (!window.BAIRROS_FISCAIS.online || window.ADMIN_AUTH.sessaoAtual())) {
     window.BAIRROS_FISCAIS.carregar().catch(() => {});
   }
@@ -729,6 +750,16 @@
   window.CARTAO_FISCAL = r => construirCartaoCadastro(r, true, true);
   atualizarMeta();
   const ns = 'http://www.w3.org/2000/svg';
+  // O viewBox se ajusta ao que foi desenhado (municípios + nomes): o desenho
+  // ocupa 95% da área do mapa, com 2,5% de respiro em cada lado. Chamado de
+  // novo por js/eleicoes-fiscais-mapa.js quando entra a linha "falta X%".
+  function enquadrarSvgEstado() {
+    let b;
+    try { b = mapa.getBBox(); } catch (e) { return; }   // mapa escondido (outra aba)
+    if (!b || !b.width || !b.height) return;
+    const w = b.width / 0.95, h = b.height / 0.95;
+    mapa.setAttribute('viewBox', [b.x - (w - b.width) / 2, b.y - (h - b.height) / 2, w, h].map(n => n.toFixed(1)).join(' '));
+  }
   // O mapa acompanha a página e funciona também quando aberta como arquivo local.
   Promise.resolve().then(() => {
     if (!window.MAPA_ACRE) throw new Error('Mapa indisponível');
@@ -786,6 +817,8 @@
       mapa.append(texto);
     });
     document.getElementById('mapa-status').hidden = true;
+    window.ENQUADRAR_MAPA_FISCAIS = enquadrarSvgEstado;
+    enquadrarSvgEstado();
     window.dispatchEvent(new Event('municipios-carregados'));   // nomes nos cartões da busca
   }).catch(() => { document.getElementById('mapa-status').textContent = 'Não foi possível carregar o mapa. Recarregue a página para tentar novamente.'; });
 })();

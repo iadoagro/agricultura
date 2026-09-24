@@ -6,7 +6,7 @@
 <title>Entrar | Sistema</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026092203">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026092402">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -19,6 +19,22 @@
       <p class="admin-desc" id="statusTexto"></p>
       <button class="admin-submit" type="button" id="statusSair">Sair</button>
     </div>
+    <div id="painelPin" hidden>
+      <span class="login-eyebrow">ACESSO MAIS RÁPIDO</span>
+      <h2 class="login-title">Quer cadastrar um PIN?</h2>
+      <p class="admin-desc">Com um PIN de 6 números você entra mais rápido, principalmente no celular. O PIN passa a ser a sua senha de acesso: a senha atual deixa de valer.</p>
+      <button class="admin-submit" type="button" id="pinSim">Cadastrar PIN</button>
+      <button class="admin-submit admin-submit-sec" type="button" id="pinAgoraNao">Agora não</button>
+      <label class="login-pin-nunca"><input type="checkbox" id="pinNunca"> Não perguntar de novo</label>
+    </div>
+    <div id="painelBiometria" hidden>
+      <span class="login-eyebrow">ENTRAR SEM DIGITAR SENHA</span>
+      <h2 class="login-title">Usar a biometria deste aparelho?</h2>
+      <p class="admin-desc">Nos próximos acessos, você entra com a digital, o rosto ou o desbloqueio do aparelho, sem digitar senha. A sua digital ou rosto não sai do aparelho. A senha ou o PIN continuam valendo.</p>
+      <button class="admin-submit" type="button" id="bioSim">Usar biometria</button>
+      <button class="admin-submit admin-submit-sec" type="button" id="bioAgoraNao">Agora não</button>
+      <label class="login-pin-nunca"><input type="checkbox" id="bioNunca"> Não perguntar de novo</label>
+    </div>
     <div id="painelFormularios">
       <form id="formEntrar">
         <span class="login-eyebrow">ACESSO AO SISTEMA</span>
@@ -27,8 +43,9 @@
         <label for="entEmail">E-mail ou usuário</label>
         <input id="entEmail" placeholder="Seu e-mail ou usuário" autocapitalize="none" spellcheck="false" type="text" autocomplete="username" required>
         <label for="entSenha">Senha</label>
-        <div class="login-password"><input id="entSenha" placeholder="Digite sua senha" type="password" autocomplete="current-password" required><button type="button" id="mostrarSenha" aria-controls="entSenha" aria-pressed="false">Mostrar</button></div>
+        <input id="entSenha" placeholder="Digite sua senha" type="password" autocomplete="current-password" required>
         <button class="admin-submit" type="submit">Entrar</button>
+        <button class="admin-submit admin-submit-sec login-biometria" type="button" id="entrarBiometria" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg><span>Entrar com biometria</span></button>
         <p class="admin-troca">Ainda não tem conta? <a href="#" id="linkParaCadastro">Cadastre-se</a></p>
       </form>
       <form id="formCadastrar" hidden>
@@ -40,7 +57,7 @@
         <label for="cadLogin">Login (gerado automaticamente)</label>
         <input id="cadLogin" type="text" disabled>
         <label for="cadSenha">Senha</label>
-        <input id="cadSenha" type="password" autocomplete="new-password" minlength="6" required>
+        <input id="cadSenha" type="password" autocomplete="new-password" required>
         <button class="admin-submit" type="submit">Cadastrar</button>
         <p class="admin-troca">Já tem conta? <a href="#" id="linkParaEntrar">Entrar</a></p>
       </form>
@@ -49,15 +66,17 @@
   </div>
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/ambiente-cliente.js?v=2026092301"></script>
-<script src="../js/admin-auth.js?v=2026092405"></script>
+<script src="../js/ambiente-cliente.js?v=2026092302"></script>
+<script src="../js/senha-regras.js?v=2026092402"></script>
+<script src="../js/admin-auth.js?v=2026092409"></script>
 <script src="../js/shader-login.js?v=2026091901"></script>
 <script>if(typeof montarShaderBackground==="function"){try{
   var _shaderLogin=montarShaderBackground(document.getElementById("loginShader"),{colors:["#dbeafe","#2563eb","#1e3a8a","#60a5fa"],speed:0.28,distortion:0.8,swirl:0.2});
   /* Roda pra sempre numa GPU (só para com prefers-reduced-motion ou aba escondida) — limita bem a resolução interna pra pesar menos em computador fraco, sem mudar o tamanho na tela (o shader só reamostra). */
   if(_shaderLogin&&_shaderLogin.setMaxPixelCount)_shaderLogin.setMaxPixelCount(650000);
 }catch(e){}}</script>
-<script src="../js/admin-login.js?v=2026091950"></script>
+<script src="../js/biometria.js?v=2026092401"></script>
+<script src="../js/admin-login.js?v=2026092405"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

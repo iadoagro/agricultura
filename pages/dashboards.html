@@ -2,58 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SISTEMA</title>
-<link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<meta property="og:title" content="Dashboards">
-<meta property="og:description" content="Pain&eacute;is de acompanhamento &mdash; mecaniza&ccedil;&atilde;o, a&ccedil;udagem e DEAGRO.">
-<meta property="og:type" content="website">
-<script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/ambiente-cliente.js?v=2026092301"></script>
-<script src="../js/admin-auth.js?v=2026092405"></script>
-<script src="../js/admin-gate.js?v=2026092203"></script>
-<script src="../js/rastreio.js?v=2026092302"></script>
-<script src="../js/nav.js?v=2026092402"></script>
-<link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/index.css?v=2026091901">
-<link rel="stylesheet" href="../css/dashboards.css?v=2026091501">
-<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
-<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092007">
-<link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092402">
+<!-- A antiga página "Todos os painéis" foi removida: os Dashboards abrem
+     direto no painel de Mecanização, que tem o link pro painel do DEAGRO.
+     Fica só este redirecionamento, pra links e favoritos antigos. -->
+<meta http-equiv="refresh" content="0; url=dashboard.html">
+<script>location.replace('dashboard.html' + location.hash);</script>
 </head>
-<body>
-
-<header>
-  <h1>SISTEMA</h1>
-  <p>Pain&eacute;is de acompanhamento</p>
-</header>
-
-<div class="container">
-  <div class="cards cards-paineis">
-    <a href="dashboard.html" class="card-link">
-      <div class="card">
-        <span class="card-icon">&#128668;</span>
-        <h2>Painel da Mecaniza&ccedil;&atilde;o</h2>
-        <p>Vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem: hectares mecanizados, horas de m&aacute;quina, tanques e a&ccedil;udes, por munic&iacute;pio, cultura e escrit&oacute;rio local.</p>
-        <span class="badge">Abrir painel</span>
-      </div>
-    </a>
-    <a href="deagro-secoes.html" class="card-link">
-      <div class="card">
-        <span class="card-icon">&#127806;</span>
-        <h2>Painel do DEAGRO</h2>
-        <p>Departamento de Agroneg&oacute;cio: agricultura, aquicultura e pesca, central de incuba&ccedil;&atilde;o, pecu&aacute;ria e capacita&ccedil;&otilde;es.</p>
-        <span class="badge">Abrir painel</span>
-      </div>
-    </a>
-  </div>
-</div>
-
-<footer>P&aacute;gina de apoio interno</footer>
-<script src="../js/tilt-card.js?v=2026091901"></script>
-<script src="../js/motion-ui.js?v=2026091904"></script>
-<script src="../js/motion-extras.js?v=2026092001"></script>
-<script src="../js/fx-ui.js?v=2026092102" defer></script>
-</body>
+<body><p><a href="dashboard.html">Abrir o painel de Mecanização</a></p></body>
 </html>

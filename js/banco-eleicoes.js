@@ -197,8 +197,12 @@
       ? 'Banco online: os cadastros são compartilhados entre as contas autorizadas. Use Atualizar para buscar mudanças de outros computadores.'
       : 'Os cadastros são salvos somente neste navegador. O banco online ainda não foi configurado.';
   }
-  document.getElementById('banco-abrir').hidden = !online;
-  document.getElementById('banco-abrir').onclick = () => { status.textContent = ''; exibir(); dialogo.showModal(); };
+  // O botão "Banco online" saiu da página de Fiscais; o diálogo só abre se ele existir.
+  const abrirBanco = document.getElementById('banco-abrir');
+  if (abrirBanco) {
+    abrirBanco.hidden = !online;
+    abrirBanco.onclick = () => { status.textContent = ''; exibir(); dialogo.showModal(); };
+  }
   document.getElementById('banco-fechar').onclick = () => dialogo.close();
   async function acao(botao, tarefa) {
     botao.disabled = true; status.textContent = 'Aguarde…';

@@ -64,6 +64,52 @@ const mensagem = (corpo: Record<string, unknown>, padrao: string) =>
   typeof corpo.msg === 'string' ? corpo.msg : typeof corpo.message === 'string' ? corpo.message : padrao;
 const jaExiste = (corpo: Record<string, unknown>) => /already/i.test(mensagem(corpo, ''));
 
+/* Regras de senha — as MESMAS de js/senha-regras.js (mudou lá, muda aqui).
+   Aceita senha de 8+ caracteres com maiúscula, minúscula, número e caractere
+   especial, ou PIN de exatamente 6 números sem os fáceis de adivinhar.
+   Devolve null se a senha serve, ou o motivo. */
+const PINS_COMUNS = ['102030', '112233', '121314', '131313', '147258', '159753', '951753', '258369', '369258',
+  '147369', '963852', '741852', '852963', '123321', '321123', '654456', '100200', '010203', '101010', '202020',
+  '200000', '696969', '171717', '242424', '123654', '789456', '456789', '159357', '753951', '142536', '124578'];
+function sequencia(s: string, n: number): boolean {
+  for (let i = 0; i + n <= s.length; i++) {
+    let sobe = true, desce = true;
+    for (let j = i + 1; j < i + n; j++) {
+      if (+s[j] !== +s[j - 1] + 1) sobe = false;
+      if (+s[j] !== +s[j - 1] - 1) desce = false;
+    }
+    if (sobe || desce) return true;
+  }
+  return false;
+}
+/* acesso_pin (database/acesso-pin.sql): a senha da conta é um PIN? O login
+   usa isso pra não oferecer "cadastrar PIN" a quem já tem. */
+async function marcarUsaPin(id: string, senha: string): Promise<void> {
+  if (!id) return;
+  await chamarSupabase('POST', '/rest/v1/acesso_pin?on_conflict=usuario_id',
+    { usuario_id: id, usa_pin: /^\d{6}$/.test(senha), atualizado_em: new Date().toISOString() },
+    { Prefer: 'resolution=merge-duplicates,return=minimal' });
+}
+
+function motivoSenhaFraca(senha: string): string | null {
+  if (/^\d+$/.test(senha)) {
+    if (senha.length !== 6) return 'O PIN precisa ter exatamente 6 números.';
+    if (new Set(senha.split('')).size < 4) return 'O PIN precisa ter pelo menos 4 números diferentes.';
+    if (/(\d)\1{2}/.test(senha)) return 'O PIN não pode ter o mesmo número 3 vezes seguidas.';
+    if (sequencia(senha, 4)) return 'O PIN não pode ter sequência de 4 números (ex.: 1234, 9876).';
+    if (senha.slice(0, 2).repeat(3) === senha || senha.slice(0, 3).repeat(2) === senha) return 'O PIN não pode ser um padrão repetido.';
+    if (PINS_COMUNS.includes(senha)) return 'Esse PIN é comum demais; escolha outro.';
+    return null;
+  }
+  if (senha.length < 8) return 'A senha precisa ter pelo menos 8 caracteres (ou ser um PIN de 6 números).';
+  if (!/[A-ZÀ-Ý]/.test(senha)) return 'A senha precisa ter uma letra maiúscula.';
+  if (!/[a-zß-ÿ]/.test(senha)) return 'A senha precisa ter uma letra minúscula.';
+  if (!/\d/.test(senha)) return 'A senha precisa ter um número.';
+  if (!/[^A-Za-zÀ-ÿ0-9\s]/.test(senha)) return 'A senha precisa ter um caractere especial.';
+  if (/\s/.test(senha)) return 'A senha não pode ter espaços.';
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return responder(405, { ok: false, erro: 'Método não permitido.' });
@@ -79,9 +125,13 @@ Deno.serve(async (req) => {
     const email = String(entrada.email ?? '');
     const senha = String(entrada.senha ?? '');
     if (!/^[a-z0-9-]+\.[a-z0-9-]+@sistema\.local$/.test(email)) return responder(400, { ok: false, erro: 'Login inválido.' });
-    if (senha.length < 6) return responder(400, { ok: false, erro: 'A senha precisa ter pelo menos 6 caracteres.' });
+    const fraca = motivoSenhaFraca(senha);
+    if (fraca) return responder(400, { ok: false, erro: fraca });
     const [status, corpo] = await chamarSupabase('POST', '/auth/v1/admin/users', { email, password: senha, email_confirm: true });
-    if (status >= 200 && status < 300) return responder(200, { ok: true, id: corpo.id ?? null });
+    if (status >= 200 && status < 300) {
+      await marcarUsaPin(String(corpo.id ?? ''), senha);
+      return responder(200, { ok: true, id: corpo.id ?? null });
+    }
     return responder(502, { ok: false, erro: jaExiste(corpo) ? 'Já existe uma conta com esse login.' : mensagem(corpo, 'O Supabase não concluiu o cadastro.') });
   }
 
@@ -91,6 +141,22 @@ Deno.serve(async (req) => {
   // Confirma, direto no Supabase, quem é o dono desse token.
   const ru = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: SERVICE_ROLE, Authorization: 'Bearer ' + m[1] } });
   const usuario = ru.ok ? await ru.json().catch(() => null) : null;
+
+  // Troca da própria senha (qualquer conta logada): passa por aqui pra
+  // regra de senha valer no servidor, e não só na tela.
+  if (acao === 'trocar_propria_senha') {
+    const idProprio = String(usuario?.id ?? '');
+    if (!/^[0-9a-f-]{36}$/i.test(idProprio)) return responder(401, { ok: false, erro: 'Entre novamente para continuar.' });
+    const senha = String(entrada.senha ?? '');
+    const fraca = motivoSenhaFraca(senha);
+    if (fraca) return responder(400, { ok: false, erro: fraca });
+    const [status, corpo] = await chamarSupabase('PUT', '/auth/v1/admin/users/' + idProprio, { password: senha });
+    if (status < 200 || status >= 300) return responder(502, { ok: false, erro: mensagem(corpo, 'O Supabase não concluiu a troca da senha.') });
+    await chamarSupabase('PATCH', '/rest/v1/admin_solicitacoes?id=eq.' + idProprio, { deve_trocar_senha: false }, { Prefer: 'return=minimal' });
+    await marcarUsaPin(idProprio, senha);
+    return responder(200, { ok: true });
+  }
+
   if (!usuario || String(usuario.email ?? '').toLowerCase() !== RESPONSAVEL_EMAIL) {
     return responder(403, { ok: false, erro: 'Esta conta não tem autorização.' });
   }
@@ -139,6 +205,7 @@ Deno.serve(async (req) => {
     const [status, corpo] = await chamarSupabase('PUT', '/auth/v1/admin/users/' + id, { password: SENHA_PADRAO });
     if (status >= 200 && status < 300) {
       await chamarSupabase('PATCH', '/rest/v1/admin_solicitacoes?id=eq.' + id, { deve_trocar_senha: true }, { Prefer: 'return=minimal' });
+      await marcarUsaPin(id, '');   // a senha padrão é temporária, não é o PIN da pessoa
       return responder(200, { ok: true });
     }
     return responder(502, { ok: false, erro: mensagem(corpo, 'O Supabase não concluiu a redefinição da senha.') });
