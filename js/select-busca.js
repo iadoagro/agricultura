@@ -17,6 +17,11 @@
   'use strict';
   let aberto = null; // { select, painel }
 
+  // "egrecio" acha "Egrécio"; "placido" acha "Plácido de Castro"
+  function semAcento(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
   function fechar() {
     if (!aberto) return;
     aberto.painel.remove();
@@ -57,7 +62,9 @@
     lista.className = 'select-busca-lista';
     lista.setAttribute('role', 'listbox');
     painel.append(campo, lista);
-    document.body.append(painel);
+    // Dentro de um <dialog> aberto (modal), o painel precisa ficar DENTRO
+    // dele: solto no body ficaria atrás da camada do modal, sem clique.
+    (select.closest('dialog[open]') || document.body).append(painel);
 
     function escolher(op) {
       if (select.value !== op.value) {
@@ -68,12 +75,12 @@
       select.focus();
     }
     function renderizar(filtro) {
-      const termo = (filtro || '').toLowerCase().trim();
+      const termo = semAcento(filtro).trim();
       lista.replaceChildren();
       let alguma = false;
       [...select.options].forEach(op => {
         const texto = op.textContent;
-        if (termo && !texto.toLowerCase().includes(termo)) return;
+        if (termo && !semAcento(texto).includes(termo)) return;
         alguma = true;
         const li = document.createElement('li');
         li.textContent = texto || ' ';

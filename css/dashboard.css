@@ -782,3 +782,11 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
   .mapa-mec-wrap{grid-template-columns:minmax(0,1fr)}
   .mapa-mec-lateral{position:static;max-height:none}
 }
+
+/* Painel de busca dos <select> (js/select-busca.js) com as cores do tema
+   do painel — o padrão de css/base.css é branco fixo. */
+.select-busca-painel{background:var(--superficie);border-color:var(--linha-t);color:var(--tinta)}
+.select-busca-campo{background:var(--superficie);color:var(--tinta);border-bottom-color:var(--linha-t)}
+.select-busca-campo:focus,.select-busca-opcao:hover,.select-busca-opcao:focus{background:var(--acento-suave)}
+.select-busca-opcao.selecionada{background:var(--acento-fundo);color:#fff}
+.select-busca-vazio{color:var(--tinta3)}

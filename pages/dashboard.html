@@ -10,8 +10,8 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026092401">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026092501">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026092505">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026092504">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
 <script src="../js/admin-auth.js?v=2026092410"></script>
@@ -834,11 +834,22 @@
               <p class="sub">Vistorias já digitadas nesta sessão de administração.</p>
             </div>
             <div class="painel-acoes">
+              <button class="btn" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lançou e ligar ao login do sistema">Pessoas</button>
               <button class="btn btn-verde" id="lancNovoBtn" type="button">+ Novo lançamento</button>
             </div>
           </div>
+          <form id="lancFiltros" class="lanc-filtros" role="search" onsubmit="return false">
+            <label class="lanc-filtro-busca">Buscar<input type="search" name="f_busca" placeholder="Nome do benefici&aacute;rio ou CPF" autocomplete="off"></label>
+            <label class="lanc-filtro-pessoa">Lan&ccedil;ado por<select name="f_pessoa" id="lancFiltroPessoa"><option value="">Meus lan&ccedil;amentos</option><option value="todos">Todas as pessoas</option></select></label>
+            <label>Ano<select name="f_ano" id="lancFiltroAno"></select></label>
+            <label>Servi&ccedil;o<select name="f_tipo_servico"><option value="">Todos</option><option>Mecaniza&ccedil;&atilde;o</option><option>A&ccedil;udagem</option></select></label>
+            <label>Munic&iacute;pio<select name="f_municipio" id="lancFiltroMunicipio"></select></label>
+            <label>Escrit&oacute;rio<select name="f_escritorio" id="lancFiltroEscritorio"></select></label>
+            <button type="button" class="btn" id="lancFiltrosLimpar">Limpar filtros</button>
+          </form>
           <div id="lancListaAviso"></div>
           <div id="lancRecentes"></div>
+          <nav class="lanc-paginacao" id="lancPaginacao" aria-label="Pagina&ccedil;&atilde;o dos lan&ccedil;amentos"></nav>
         </section>
 
         <dialog class="lanc-dialogo" id="lancMotivoDialogo" aria-labelledby="lancMotivoTitulo">
@@ -854,6 +865,30 @@
               <button class="btn btn-verde" type="submit" id="lancMotivoConfirmar">Enviar solicita&ccedil;&atilde;o</button>
             </div>
           </form>
+        </dialog>
+
+        <!-- Só para root@root.com (js/lancamento-mecanizacao.js, abrirPessoas). -->
+        <dialog class="lanc-dialogo lanc-dialogo-largo" id="lancPessoasDialogo" aria-labelledby="lancPessoasTitulo">
+          <div class="lanc-dialogo-conteudo">
+            <h3 id="lancPessoasTitulo">Pessoas que lan&ccedil;aram</h3>
+            <p>D&ecirc; o nome de quem usa cada e-mail (ex.: <i>antoniopintodelima90</i> &rarr; <b>Antonio Pinto de Lima</b>) &mdash; o nome aparece exatamente como for digitado. E-mails repetidos ou parecidos ficam lado a lado: marque todos e aplique o mesmo nome de uma vez. Clique no t&eacute;cnico mais frequente para usar o nome dele. Ligando o e-mail a um login do sistema, a pessoa passa a ver esses lan&ccedil;amentos em &ldquo;Meus lan&ccedil;amentos&rdquo;.</p>
+            <div class="lanc-pessoas-topo">
+              <input type="search" id="lancPessoasBusca" class="lanc-pessoas-busca" placeholder="Buscar por e-mail, nome ou t&eacute;cnico" autocomplete="off">
+              <label class="lanc-pessoas-check"><input type="checkbox" id="lancPessoasSemNome"> S&oacute; os sem nome</label>
+            </div>
+            <div class="lanc-pessoas-lote">
+              <b id="lancPessoasQtd">0 selecionados</b>
+              <input type="text" id="lancPessoasLoteNome" list="lancPessoasNomes" maxlength="120" placeholder="Nome para os selecionados" autocomplete="off">
+              <select id="lancPessoasLoteUsuario" aria-label="Login do sistema para os selecionados"></select>
+              <button class="btn btn-verde" type="button" id="lancPessoasLoteAplicar" disabled>Aplicar aos selecionados</button>
+            </div>
+            <datalist id="lancPessoasNomes"></datalist>
+            <div id="lancPessoasAviso"></div>
+            <div id="lancPessoasCorpo" class="lanc-pessoas-corpo"></div>
+            <div class="lanc-dialogo-acoes">
+              <button class="btn" type="button" id="lancPessoasFechar">Fechar</button>
+            </div>
+          </div>
         </dialog>
 
         <dialog class="lanc-dialogo lanc-dialogo-largo" id="lancDiffDialogo" aria-labelledby="lancDiffTitulo">
@@ -1057,8 +1092,10 @@
 <script src="../js/importar.js?v=2026081307"></script>
 <script src="../js/mapa-acre.js?v=2026091402"></script>
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
-<script src="../js/lancamento-campos.js?v=2026092404"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026092501"></script>
+<script src="../js/data-br.js?v=2026092504"></script>
+<script src="../js/select-busca.js?v=2026092505" defer></script>
+<script src="../js/lancamento-campos.js?v=2026092504"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026092505"></script>
 <script src="../js/dashboard.js?v=2026092401"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>

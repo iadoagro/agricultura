@@ -27,14 +27,17 @@
     el(alvoId).innerHTML = html ? '<p class="aviso ' + classe + '">' + html + '</p>' : '';
   }
 
-  /* Nome legível a partir do e-mail de quem lançou — mesma ideia de
-     normAlimentador() em js/importar.js ("lucaspaiva.agro2011@ac.gov.br" →
-     "Lucaspaiva.Agro2011"), pra bater com os nomes já usados nos relatórios
-     de "Inserções por pessoa" da base migrada. */
+  /* Nome de exibição de quem lançou. O nome definido pelo responsável na
+     tela "Pessoas" (mecanizacao_lancadores) manda; sem ele, um palpite a
+     partir do e-mail: "rosilene.cavalcante293@…" → "Rosilene Cavalcante". */
+  var NOMES = {};   // e-mail → nome definido
+  function nomeSugerido(email) {
+    var usuario = String(email || '').split('@')[0].replace(/\d+/g, ' ').replace(/[._-]+/g, ' ').trim();
+    return usuario.replace(/\S+/g, function (p) { return p.charAt(0).toUpperCase() + p.slice(1); }) || String(email || '');
+  }
   function nomeDeEmail(email) {
     if (!email) return '—';
-    var usuario = String(email).split('@')[0];
-    return usuario.replace(/(^|[._-])([a-zà-ú])/g, function (_, sep, letra) { return sep + letra.toUpperCase(); });
+    return NOMES[String(email).toLowerCase()] || nomeSugerido(email);
   }
 
   /** Sessão do login do site (admin-auth.js) — é ela que o servidor confirma
@@ -72,6 +75,8 @@
 
     var fd = new FormData(form);
     fd.set('acao', 'salvar');
+    // campos de data estão em dd/mm/aaaa (js/data-br.js); o banco guarda ISO
+    ['data_vistoria', 'data_nascimento'].forEach(function (c) { fd.set(c, window.DATA_BR.brParaIso(form.elements[c].value)); });
     // escritorio_local fica "disabled" fora de Rio Branco (travado no valor
     // que o município já decidiu) — campo desabilitado não entra no
     // FormData sozinho, por isso vai explícito aqui.
@@ -238,6 +243,7 @@
     if (v === null || v === undefined || v === '') return '—';
     if (v === true) return 'Sim';
     if (v === false) return 'Não';
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return dataBr(v);   // datas sempre dd/mm/aaaa
     if (Array.isArray(v)) {
       if (!v.length) return '—';
       return v.map(function (item) {
@@ -288,6 +294,7 @@
           (decisao === 'aprovar' ? 'Aprovou' : 'Recusou') + ' a ' + oque + ' do lançamento de mecanização de "' + nome + '"',
           { solicitado_por: sol.solicitado_por_email, motivo: sol.motivo });
         aviso('lancSolicitacoesAviso', 'ok', 'Solicitação ' + (decisao === 'aprovar' ? 'aprovada' : 'recusada') + '.');
+        carregarSolicitacoes();
         carregarRecentes();
       }, function (e) { if (e !== null) throw e; })
       .catch(function () { aviso('lancSolicitacoesAviso', 'erro', 'Sem conexão com o servidor.'); });
@@ -305,7 +312,7 @@
         el('lancSolicitacoes').innerHTML = '<div class="tabela-scroll"><table class="lanc-tabela"><thead><tr>' +
           '<th>Pedido em</th><th>Tipo</th><th>Beneficiário</th><th>Solicitado por</th><th>Motivo</th><th>Ações</th>' +
           '</tr></thead><tbody>' + lista.map(function (s, i) {
-            return '<tr><td>' + esc(new Date(s.criado_em).toLocaleString('pt-BR')) + '</td>' +
+            return '<tr><td>' + esc(window.DATA_BR.dataHoraBr(s.criado_em)) + '</td>' +
               '<td><span class="lanc-selo ' + (s.tipo === 'excluir' ? 'lanc-selo-excluir' : 'lanc-selo-editar') + '">' + (s.tipo === 'excluir' ? 'Exclusão' : 'Edição') + '</span></td>' +
               '<td>' + esc(s.nome_beneficiario || '—') + '</td>' +
               '<td>' + esc(nomeDeEmail(s.solicitado_por_email)) + '</td>' +
@@ -328,6 +335,283 @@
       .catch(function () { /* painel de apoio: falha aqui não impede o resto */ });
   }
 
+  /* ------------------------------------------------- filtros e paginação */
+  // A lista inclui as fichas importadas da planilha (milhares de linhas):
+  // o servidor filtra e devolve uma página por vez, com o total.
+  var POR_PAGINA = 20;
+  var paginaAtual = 1, totalLinhas = 0, pedidoLista = 0, filtrosProntos = false;
+  var CAMPOS_FILTRO = ['f_busca', 'f_pessoa', 'f_ano', 'f_tipo_servico', 'f_municipio', 'f_escritorio'];
+  var lancadores = [], meusEmails = [], usuariosSistema = [];
+
+  /* Pessoas que já lançaram (e-mail → nome) — alimenta o filtro "Lançado
+     por", os nomes da tabela e, para o responsável, a tela "Pessoas". */
+  function carregarLancadores() {
+    return enviarAcao({ acao: 'lancadores' })
+      .then(function (res) {
+        if (!res.corpo.ok) return;
+        lancadores = res.corpo.lancadores || [];
+        meusEmails = res.corpo.meus_emails || meusEmails;
+        usuariosSistema = res.corpo.usuarios || [];
+        NOMES = {};
+        lancadores.forEach(function (l) { if (l.nome) NOMES[l.email] = l.nome; });
+        montarFiltroPessoa();
+      }, function () {})
+      .catch(function () { /* sem a lista, o filtro fica só com "Meus" e "Todas" */ });
+  }
+
+  /* Opções do "Lançado por": vazio = os meus (padrão), "todos", e uma
+     opção por pessoa — e-mails com o mesmo nome viram uma opção só. As
+     pessoas vêm de quem lançou mais recentemente pra quem lançou há mais
+     tempo (o campo tem busca — js/select-busca.js). */
+  function montarFiltroPessoa() {
+    var sel = el('lancFiltroPessoa'), atual = sel.value;
+    var porNome = {};
+    lancadores.forEach(function (l) {
+      var nome = nomeDeEmail(l.email);
+      var p = porNome[nome] = porNome[nome] || { emails: [], total: 0, ultimo: '' };
+      p.emails.push(l.email);
+      p.total += l.total || 0;
+      if ((l.ultimo || '') > p.ultimo) p.ultimo = l.ultimo;
+    });
+    sel.innerHTML = '<option value="">Meus lançamentos</option><option value="todos">Todas as pessoas</option>' +
+      Object.keys(porNome).sort(function (a, b) {
+        var ua = new Date(porNome[a].ultimo || 0).getTime(), ub = new Date(porNome[b].ultimo || 0).getTime();
+        return ub - ua || a.localeCompare(b, 'pt-BR');
+      }).map(function (nome) {
+        return '<option value="' + esc(porNome[nome].emails.join(',')) + '">' + esc(nome) + ' (' + porNome[nome].total.toLocaleString('pt-BR') + ')</option>';
+      }).join('');
+    sel.value = atual;
+    if (sel.value !== atual) sel.value = '';
+  }
+
+  /* ------------------------------------------ "Pessoas" (só responsável) */
+  /* Cada e-mail que já lançou, com o nome de exibição e o login do sistema
+     ligado — ligar um e-mail da planilha ao login faz a pessoa ver essas
+     fichas em "Meus lançamentos" (e poder pedir edição/exclusão delas). */
+  var pessoasMarcadas = {};   // e-mail → true (seleção pra dar o mesmo nome a vários)
+
+  // Chave pra deixar lado a lado os e-mails parecidos ("Silvadenoronhagenildo",
+  // "Siilvadenoronhagenildo"…): o nome exibido, só letras, sem acento.
+  function chaveParecida(email) {
+    return nomeDeEmail(email).normalize('NFD').replace(/[^a-zA-Z]/g, '').toLowerCase();
+  }
+
+  function opcoesUsuario(atual, comManter) {
+    return (comManter ? '<option value="__manter__">(manter o login)</option>' : '') +
+      '<option value="">— nenhum —</option>' + usuariosSistema.slice().sort().map(function (u) {
+        return '<option value="' + esc(u) + '"' + (u === atual ? ' selected' : '') + '>' + esc(u.replace(/@sistema\.local$/, '')) + '</option>';
+      }).join('');
+  }
+
+  function desenharPessoas() {
+    var termo = el('lancPessoasBusca').value.trim().toLowerCase();
+    var soSemNome = el('lancPessoasSemNome').checked;
+    var linhas = lancadores.filter(function (l) {
+      if (soSemNome && l.nome) return false;
+      return !termo || l.email.indexOf(termo) >= 0 || nomeDeEmail(l.email).toLowerCase().indexOf(termo) >= 0 ||
+        String(l.tecnico || '').toLowerCase().indexOf(termo) >= 0;
+    }).sort(function (a, b) { return chaveParecida(a.email).localeCompare(chaveParecida(b.email)) || a.email.localeCompare(b.email); });
+
+    // nomes já digitados (e técnicos) viram sugestão — escolher um deles junta
+    // o e-mail na mesma pessoa, escrito exatamente igual
+    var nomes = {};
+    lancadores.forEach(function (l) { if (l.nome) nomes[l.nome] = 1; if (l.tecnico) nomes[l.tecnico] = 1; });
+    el('lancPessoasNomes').innerHTML = Object.keys(nomes).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); })
+      .map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
+    el('lancPessoasLoteUsuario').innerHTML = opcoesUsuario('__manter__', true);
+
+    el('lancPessoasCorpo').innerHTML = !linhas.length ? '<p class="nota">Nenhuma pessoa encontrada.</p>' :
+      '<div class="tabela-scroll"><table class="lanc-tabela lanc-pessoas"><thead><tr>' +
+      '<th><input type="checkbox" id="lancPessoasTodos" title="Marcar todos da lista" aria-label="Marcar todos da lista"></th>' +
+      '<th>E-mail usado no lançamento</th><th class="num">Qtd.</th><th>Técnico mais frequente</th><th>Nome de exibição</th><th>Login do sistema</th><th></th>' +
+      '</tr></thead><tbody>' + linhas.map(function (l) {
+        var marcado = !!pessoasMarcadas[l.email];
+        return '<tr data-email="' + esc(l.email) + '"' + (marcado ? ' class="lanc-pessoa-marcada"' : '') + '>' +
+          '<td><input type="checkbox" class="lanc-pessoa-marca" aria-label="Selecionar ' + esc(l.email) + '"' + (marcado ? ' checked' : '') + '></td>' +
+          '<td class="lanc-pessoa-email">' + esc(l.email) + '</td>' +
+          '<td class="num">' + (l.total || 0).toLocaleString('pt-BR') + '</td>' +
+          '<td>' + (l.tecnico ? '<button type="button" class="lanc-pessoa-tecnico" title="Usar este nome">' + esc(l.tecnico) + '</button>' : '—') + '</td>' +
+          '<td><input type="text" class="lanc-pessoa-nome" list="lancPessoasNomes" maxlength="120" value="' + esc(l.nome || '') + '" placeholder="' + esc(nomeSugerido(l.email)) + '"></td>' +
+          '<td><select class="lanc-pessoa-usuario">' + opcoesUsuario(l.usuario_email || '') + '</select></td>' +
+          '<td>' + botaoIcone('lanc-btn-aprovar lanc-pessoa-salvar', ICONES.aprovar, 'Salvar') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    atualizarContagemMarcadas();
+  }
+
+  function atualizarContagemMarcadas() {
+    var n = Object.keys(pessoasMarcadas).length;
+    el('lancPessoasQtd').textContent = n === 1 ? '1 selecionado' : n + ' selecionados';
+    el('lancPessoasLoteAplicar').disabled = !n;
+  }
+
+  /** Grava nome/login de um e-mail; usuario === undefined mantém o login atual.
+      O nome vai exatamente como foi digitado (só sem espaços nas pontas). */
+  function gravarLancador(email, nome, usuario) {
+    var atual = lancadores.filter(function (l) { return l.email === email; })[0] || {};
+    if (usuario === undefined) usuario = atual.usuario_email || '';
+    return enviarAcao({ acao: 'salvar_lancador', email: email, nome: nome, usuario_email: usuario })
+      .then(function (res) {
+        if (!res.corpo.ok) throw new Error(res.corpo.erro || 'Não foi possível salvar.');
+        atual.nome = nome || null; atual.usuario_email = usuario || null;
+        if (nome) NOMES[email] = nome; else delete NOMES[email];
+        window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'mecanizacao', 'Definiu o nome de "' + email + '" como "' + (nome || nomeSugerido(email)) + '"', { usuario_email: usuario });
+      });
+  }
+
+  function depoisDeSalvarPessoas(msg) {
+    aviso('lancPessoasAviso', 'ok', msg);
+    montarFiltroPessoa();
+    desenharPessoas();
+    carregarRecentes();
+  }
+
+  function salvarPessoa(tr) {
+    var email = tr.getAttribute('data-email');
+    var nome = tr.querySelector('.lanc-pessoa-nome').value.trim();
+    var usuario = tr.querySelector('.lanc-pessoa-usuario').value;
+    aviso('lancPessoasAviso', 'carregando', 'Salvando…');
+    gravarLancador(email, nome, usuario)
+      .then(function () {
+        depoisDeSalvarPessoas('Salvo: <b>' + esc(email) + '</b> → ' + esc(nome || nomeSugerido(email)) + (usuario ? ' (login ' + esc(usuario) + ')' : '') + '.');
+      })
+      .catch(function (e) { aviso('lancPessoasAviso', 'erro', esc(e && e.message ? e.message : 'Sem conexão com o servidor.')); });
+  }
+
+  /** Mesmo nome (e, se escolhido, mesmo login) para todos os marcados. */
+  function aplicarAosMarcados() {
+    var emails = Object.keys(pessoasMarcadas);
+    var nome = el('lancPessoasLoteNome').value.trim();
+    var usuarioSel = el('lancPessoasLoteUsuario').value;
+    var usuario = usuarioSel === '__manter__' ? undefined : usuarioSel;
+    if (!emails.length) return;
+    if (!nome) { aviso('lancPessoasAviso', 'erro', 'Digite o nome para os selecionados.'); el('lancPessoasLoteNome').focus(); return; }
+    aviso('lancPessoasAviso', 'carregando', 'Salvando ' + emails.length + ' e-mail(s)…');
+    el('lancPessoasLoteAplicar').disabled = true;
+    var feitos = 0;
+    emails.reduce(function (p, email) {
+      return p.then(function () { return gravarLancador(email, nome, usuario).then(function () { feitos++; }); });
+    }, Promise.resolve())
+      .then(function () {
+        pessoasMarcadas = {};
+        el('lancPessoasLoteNome').value = '';
+        depoisDeSalvarPessoas(feitos + ' e-mail(s) agora aparecem como <b>' + esc(nome) + '</b>.');
+      })
+      .catch(function (e) {
+        aviso('lancPessoasAviso', 'erro', feitos + ' salvo(s); parou com erro: ' + esc(e && e.message ? e.message : 'sem conexão com o servidor.'));
+        atualizarContagemMarcadas();
+      });
+  }
+
+  function abrirPessoas() {
+    aviso('lancPessoasAviso', '', '');
+    el('lancPessoasBusca').value = '';
+    pessoasMarcadas = {};
+    desenharPessoas();
+    el('lancPessoasDialogo').showModal();
+    carregarLancadores().then(desenharPessoas);   // atualiza contagens
+  }
+
+  function marcarPessoa(caixa, marcado) {
+    var tr = caixa.closest('tr'), email = tr.getAttribute('data-email');
+    caixa.checked = marcado;
+    tr.classList.toggle('lanc-pessoa-marcada', marcado);
+    if (marcado) pessoasMarcadas[email] = true; else delete pessoasMarcadas[email];
+  }
+
+  function ligarPessoas() {
+    el('lancPessoasBtn').addEventListener('click', abrirPessoas);
+    el('lancPessoasFechar').addEventListener('click', function () { el('lancPessoasDialogo').close(); });
+    el('lancPessoasBusca').addEventListener('input', desenharPessoas);
+    el('lancPessoasSemNome').addEventListener('change', desenharPessoas);
+    el('lancPessoasLoteAplicar').addEventListener('click', aplicarAosMarcados);
+    el('lancPessoasLoteNome').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); aplicarAosMarcados(); } });
+    var corpo = el('lancPessoasCorpo');
+    corpo.addEventListener('click', function (e) {
+      var b = e.target.closest('.lanc-pessoa-salvar');
+      if (b) { salvarPessoa(b.closest('tr')); return; }
+      var t = e.target.closest('.lanc-pessoa-tecnico');
+      if (t) {
+        var campo = t.closest('tr').querySelector('.lanc-pessoa-nome');
+        campo.value = t.textContent;
+        campo.focus();
+      }
+    });
+    corpo.addEventListener('change', function (e) {
+      if (e.target.id === 'lancPessoasTodos') {
+        Array.prototype.forEach.call(corpo.querySelectorAll('.lanc-pessoa-marca'), function (c) { marcarPessoa(c, e.target.checked); });
+        atualizarContagemMarcadas();
+      } else if (e.target.classList.contains('lanc-pessoa-marca')) {
+        marcarPessoa(e.target, e.target.checked);
+        atualizarContagemMarcadas();
+      }
+    });
+    corpo.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target.classList.contains('lanc-pessoa-nome')) { e.preventDefault(); salvarPessoa(e.target.closest('tr')); }
+    });
+  }
+
+  function montarFiltros(municipios) {
+    var anoSel = el('lancFiltroAno');
+    if (!filtrosProntos) {
+      var esteAno = new Date().getFullYear();
+      var anos = [];
+      for (var a = esteAno; a >= 2023; a--) anos.push(a);
+      // padrão: todos os anos, do mais recente pro mais antigo (a ordem vem do servidor)
+      anoSel.innerHTML = '<option value="">Todos os anos</option>' + anos.map(function (a) { return '<option>' + a + '</option>'; }).join('');
+      var espera;
+      el('lancFiltros').addEventListener('input', function (e) {
+        clearTimeout(espera);
+        // texto livre espera a pessoa parar de digitar; selects aplicam na hora
+        espera = setTimeout(function () { paginaAtual = 1; carregarRecentes(); }, e.target.tagName === 'INPUT' ? 400 : 0);
+      });
+      el('lancFiltrosLimpar').addEventListener('click', function () {
+        el('lancFiltros').reset();
+        paginaAtual = 1;
+        carregarRecentes();
+      });
+      el('lancPaginacao').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-pagina]');
+        if (!b || b.disabled) return;
+        paginaAtual = +b.getAttribute('data-pagina');
+        carregarRecentes();
+        el('lancFiltros').scrollIntoView({ block: 'nearest' });
+      });
+      filtrosProntos = true;
+    }
+    var munSel = el('lancFiltroMunicipio'), escSel = el('lancFiltroEscritorio');
+    var munAtual = munSel.value, escAtual = escSel.value;
+    munSel.innerHTML = '<option value="">Todos os municípios</option>' +
+      municipios.map(function (m) { return '<option>' + esc(m) + '</option>'; }).join('');
+    var escritorios = municipios.map(function (m) { return 'Escritório Local de ' + m; })
+      .concat('Escritório Local da Transacreana').sort();
+    escSel.innerHTML = '<option value="">Todos os escritórios</option>' +
+      escritorios.map(function (e) { return '<option value="' + esc(e) + '">' + esc(e.replace(/^Escritório Local d[aeo] /, '')) + '</option>'; }).join('');
+    munSel.value = munAtual; escSel.value = escAtual;
+  }
+
+  function paginacaoHtml() {
+    var paginas = Math.max(1, Math.ceil(totalLinhas / POR_PAGINA));
+    if (totalLinhas <= POR_PAGINA) return '';
+    var ini = (paginaAtual - 1) * POR_PAGINA + 1, fim = Math.min(totalLinhas, paginaAtual * POR_PAGINA);
+    function bt(p, rotulo, titulo, atual) {
+      return '<button type="button" class="btn' + (atual ? ' lanc-pag-atual' : '') + '" data-pagina="' + p + '"' +
+        (p < 1 || p > paginas || atual ? ' disabled' : '') + ' title="' + titulo + '"' + (atual ? ' aria-current="page"' : '') + '>' + rotulo + '</button>';
+    }
+    // até 5 números em volta da página atual
+    var de = Math.max(1, Math.min(paginaAtual - 2, paginas - 4)), ate = Math.min(paginas, de + 4);
+    var nums = '';
+    for (var p = de; p <= ate; p++) nums += bt(p, p, 'Página ' + p, p === paginaAtual);
+    return '<span class="lanc-pag-info">' + ini.toLocaleString('pt-BR') + '–' + fim.toLocaleString('pt-BR') + ' de ' + totalLinhas.toLocaleString('pt-BR') + '</span>' +
+      '<span class="lanc-pag-botoes">' +
+      bt(1, '«', 'Primeira página') + bt(paginaAtual - 1, '‹', 'Página anterior') + nums +
+      bt(paginaAtual + 1, '›', 'Próxima página') + bt(paginas, '»', 'Última página') + '</span>';
+  }
+
+  function dataBr(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : '—';
+  }
+
   function carregarRecentes() {
     el('lancRecentes').innerHTML = '<p class="nota">Carregando…</p>';
     var sessao = sessaoSite();
@@ -338,19 +622,35 @@
     var fd = new FormData();
     fd.append('acao', 'listar');
     fd.append('token', sessao.access_token);
-    fd.append('limite', '15');
+    fd.append('limite', String(POR_PAGINA));
+    fd.append('pagina', String(paginaAtual));
+    var filtros = el('lancFiltros').elements;
+    CAMPOS_FILTRO.forEach(function (c) { if (filtros[c] && filtros[c].value) fd.append(c, filtros[c].value); });
+    var meuPedido = ++pedidoLista;   // resposta de um filtro antigo não sobrescreve a do atual
     window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
+        if (meuPedido !== pedidoLista) return;
         if (res.status === 401) { el('lancRecentes').innerHTML = '<p class="nota">Sua sessão do site expirou. Recarregue a página e entre de novo.</p>'; return; }
         if (!res.corpo.ok) { el('lancRecentes').innerHTML = '<p class="nota">Não foi possível carregar os lançamentos.</p>'; return; }
         var linhas = res.corpo.lancamentos || [];
         var pendencias = res.corpo.pendencias || {};
-        ehResponsavel = !!res.corpo.vendo_de_todos;   // só root@root.com vê "vendo_de_todos"
-        carregarSolicitacoes();
-        var nota = ehResponsavel
-          ? '<p class="nota">Mostrando os lançamentos de todo mundo (conta root@root.com).</p>'
-          : '<p class="nota">Mostrando só os seus lançamentos.</p>';
-        if (!linhas.length) { el('lancRecentes').innerHTML = nota + '<p class="nota">Nenhum lançamento ainda.</p>'; return; }
+        totalLinhas = +res.corpo.total || linhas.length;
+        if (!linhas.length && totalLinhas && paginaAtual > 1) {
+          paginaAtual = Math.ceil(totalLinhas / POR_PAGINA);   // página além do fim: vai pra última
+          carregarRecentes();
+          return;
+        }
+        el('lancPaginacao').innerHTML = paginacaoHtml();
+        var eraResponsavel = ehResponsavel;
+        ehResponsavel = !!res.corpo.vendo_de_todos;   // só root@root.com
+        meusEmails = res.corpo.meus_emails || meusEmails;
+        el('lancPessoasBtn').hidden = !ehResponsavel;
+        if (!eraResponsavel) carregarSolicitacoes();   // primeira carga; depois, só quando resolve um pedido
+        var pessoaSel = el('lancFiltroPessoa');
+        var nota = '<p class="nota">' + (pessoaSel.value === ''
+          ? 'Mostrando só os seus lançamentos. Para ver os de outras pessoas, use o filtro “Lançado por”.'
+          : 'Mostrando lançamentos de: <b>' + esc(pessoaSel.value === 'todos' ? 'todas as pessoas' : pessoaSel.options[pessoaSel.selectedIndex].text.replace(/ \([\d.]+\)$/, '')) + '</b>.') + '</p>';
+        if (!linhas.length) { el('lancRecentes').innerHTML = nota + '<p class="nota">Nenhum lançamento encontrado com esses filtros.</p>'; return; }
         el('lancRecentes').innerHTML = nota + '<div class="tabela-scroll"><table class="lanc-tabela"><thead><tr>' +
           '<th>Salvo em</th><th>Lançado por</th><th>Serviço</th><th>Beneficiário</th><th>Município</th><th>Escritório</th>' +
           '<th>Vistoria</th><th class="num">ha</th><th class="num">h</th><th class="num">Açudes</th><th>Ações</th>' +
@@ -364,20 +664,24 @@
             // Com pedido pendente, quem não é o responsável não pede de novo
             // (o servidor também barra) — só visualiza.
             var travado = pend && !ehResponsavel ? ' disabled' : '';
-            return '<tr><td>' + esc(new Date(r.criado_em).toLocaleString('pt-BR')) + '</td>' +
-              '<td>' + esc(nomeDeEmail(r.criado_por_email)) + '</td>' +
+            // Lançamento de outra pessoa: só visualizar (o servidor também barra).
+            var meu = ehResponsavel || meusEmails.indexOf(String(r.criado_por_email || '').toLowerCase()) >= 0;
+            return '<tr><td>' + esc(window.DATA_BR.dataHoraBr(r.criado_em)) + '</td>' +
+              '<td title="' + esc(r.criado_por_email || '') + '">' + esc(nomeDeEmail(r.criado_por_email)) + '</td>' +
               '<td>' + esc(r.tipo_servico || '—') + '</td><td>' + esc(r.nome_beneficiario) + selo + '</td>' +
               '<td>' + esc(r.municipio || '—') + '</td><td>' + esc(r.escritorio_local || '—') + '</td>' +
-              '<td>' + esc(r.data_vistoria || '—') + '</td>' +
+              '<td>' + esc(dataBr(r.data_vistoria)) + '</td>' +
               '<td class="num">' + esc(r.area_total_ha || '') + '</td>' +
               '<td class="num">' + esc(r.horas_maquina || '') + '</td>' +
               '<td class="num">' + esc(r.quantidade_acudes || '') + '</td>' +
               '<td class="lanc-tabela-acoes">' +
                 '<a class="btn lanc-btn-icone" href="lancamento-editar.html?modo=ver&id=' + encodeURIComponent(r.id) + '" title="Ver lançamento" aria-label="Ver lançamento">' + ICONES.ver + '</a>' +
-                botaoIcone('lanc-editar', ICONES.editar + (ehResponsavel ? '' : ICONES.cadeado),
-                  ehResponsavel ? 'Editar' : (pend ? 'Aguardando aprovação' : 'Editar (precisa de aprovação)'), dataAttrs + travado) +
-                botaoIcone('btn-excluir lanc-excluir' + (ehResponsavel ? '' : ' lanc-bloqueado'), ICONES.excluir + (ehResponsavel ? '' : ICONES.cadeado),
-                  ehResponsavel ? 'Excluir' : (pend ? 'Aguardando aprovação' : 'Solicitar exclusão'), dataAttrs + travado) +
+                (meu
+                  ? botaoIcone('lanc-editar', ICONES.editar + (ehResponsavel ? '' : ICONES.cadeado),
+                      ehResponsavel ? 'Editar' : (pend ? 'Aguardando aprovação' : 'Editar (precisa de aprovação)'), dataAttrs + travado) +
+                    botaoIcone('btn-excluir lanc-excluir' + (ehResponsavel ? '' : ' lanc-bloqueado'), ICONES.excluir + (ehResponsavel ? '' : ICONES.cadeado),
+                      ehResponsavel ? 'Excluir' : (pend ? 'Aguardando aprovação' : 'Solicitar exclusão'), dataAttrs + travado)
+                  : '') +
               '</td></tr>';
           }).join('') + '</tbody></table></div>';
         Array.prototype.forEach.call(el('lancRecentes').querySelectorAll('.lanc-excluir'), function (b) {
@@ -406,6 +710,7 @@
     el('lancLimpar').addEventListener('click', function () { limparFormulario(false); aviso('lancSalvarStatus', '', ''); });
     el('lancVoltarLista').addEventListener('click', mostrarLista);
     el('lancDiffFechar').addEventListener('click', function () { el('lancDiffDialogo').close(); });
+    ligarPessoas();
     el('lancNovoBtn').addEventListener('click', function () {
       aviso('lancListaAviso', '', '');
       limparFormulario(true);
@@ -418,13 +723,15 @@
     var primeiraVez = !iniciado;
     if (primeiraVez) { montar(); iniciado = true; }
     ajuda.montarMunicipios(municipios);
+    montarFiltros(municipios);
     ajuda.sincronizarEscritorioPorMunicipio();
     // Reabertura (dashboard.js chama isto de novo sempre que a aba precisa
     // redesenhar, inclusive depois do "resize" que o teclado do celular
     // dispara ao focar um campo) não deve arrancar quem está no meio de um
     // lançamento de volta para a lista — só a primeira abertura da aba faz
     // isso, e só ela.
-    if (primeiraVez) mostrarLista();
+    // nomes das pessoas antes da primeira lista, pra tabela já sair com eles
+    if (primeiraVez) carregarLancadores().then(mostrarLista);
   }
 
   window.LANCAMENTO_MECANIZACAO = { abrir: abrir };

@@ -49,6 +49,8 @@
     linha.innerHTML =
       '<select class="lc-cultura">' + '<option value="">Cultura…</option>' +
       CULTURAS_FICHA.map(function (c) { return '<option' + (c === valores.cultura ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') +
+      // fichas importadas da planilha podem ter culturas fora da lista
+      (valores.cultura && CULTURAS_FICHA.indexOf(valores.cultura) < 0 ? '<option selected>' + esc(valores.cultura) + '</option>' : '') +
       '</select>' +
       '<input class="lc-area" type="number" step="0.01" min="0" placeholder="Área (ha)" value="' + esc(valores.area_ha || '') + '">' +
       '<select class="lc-sistema"><option value="">Sistema…</option>' +
@@ -115,6 +117,9 @@
       página só tem um <form id="lancForm">). Funções que dependem de campos
       do form ficam fechadas sobre ele em vez de recebê-lo em todo lugar. */
   function criar(form) {
+    // campos de data em dd/mm/aaaa em qualquer navegador (js/data-br.js)
+    if (window.DATA_BR) window.DATA_BR.aplicarTodos(form);
+
     function montarMunicipios(municipios) {
       var sel = form.elements['municipio'];
       var atual = sel.value;
@@ -164,8 +169,7 @@
     function marcarHorarioInsercao() {
       var campo = el('lancHorarioInsercao');
       if (!campo) return;
-      var agora = new Date();
-      campo.value = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      campo.value = window.DATA_BR.dataHoraBr(new Date());
     }
 
     function culturasAtuais() {

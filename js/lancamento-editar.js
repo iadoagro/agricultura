@@ -62,7 +62,7 @@
       pedido de aprovação, com motivo obrigatório (vindo do pop-up da lista,
       em sessionStorage, mas editável aqui) — e se já houver um pedido
       pendente para este lançamento, só dá pra ver. */
-  function prepararModo(ehResponsavel, pendente) {
+  function prepararModo(ehResponsavel, pendente, podeEditar) {
     var descPendente = pendente
       ? 'Este lançamento tem uma solicitação de <b>' + (pendente.tipo === 'excluir' ? 'exclusão' : 'edição') +
         '</b> aguardando aprovação' + (pendente.motivo ? ' (motivo: ' + esc(pendente.motivo) + ')' : '') + '.'
@@ -75,6 +75,12 @@
       return;
     }
     if (ehResponsavel) return;
+    if (!podeEditar) {
+      el('lancEditarTitulo').textContent = 'Visualizando lançamento';
+      somenteLeitura();
+      aviso('lancEditarAviso', 'erro', 'Este lançamento é de outra pessoa — você só pode visualizar.');
+      return;
+    }
     if (pendente) {
       el('lancEditarTitulo').textContent = 'Visualizando lançamento';
       somenteLeitura();
@@ -91,7 +97,10 @@
 
   function preencherFormulario(dados) {
     CAMPOS_DIRETOS.forEach(function (campo) {
-      if (form.elements[campo]) form.elements[campo].value = dados[campo] != null ? dados[campo] : '';
+      if (!form.elements[campo]) return;
+      var v = dados[campo] != null ? dados[campo] : '';
+      // datas vêm ISO do banco; o campo mostra dd/mm/aaaa (js/data-br.js)
+      form.elements[campo].value = campo.indexOf('data_') === 0 ? window.DATA_BR.isoParaBr(v) : v;
     });
 
     if (dados.tipo_servico) form.elements['tipo_servico'].value = dados.tipo_servico;
@@ -127,6 +136,8 @@
 
     var fd = new FormData(form);
     fd.set('acao', 'editar');
+    // campos de data estão em dd/mm/aaaa (js/data-br.js); o banco guarda ISO
+    ['data_vistoria', 'data_nascimento'].forEach(function (c) { fd.set(c, window.DATA_BR.brParaIso(form.elements[c].value)); });
     fd.set('id', id);
     fd.set('escritorio_local', form.elements['escritorio_local'].value);
     fd.set('culturas', JSON.stringify(ajuda.culturasAtuais()));
@@ -189,10 +200,16 @@
         }
         registroOriginal = res.corpo.lancamento;
         el('lancEditarContexto').textContent = 'Ficha de ' + registroOriginal.nome_beneficiario +
-          ' — salva em ' + new Date(registroOriginal.criado_em).toLocaleString('pt-BR') + '.';
+          ' — salva em ' + window.DATA_BR.dataHoraBr(registroOriginal.criado_em) + '.';
+        if (/^https?:\/\//.test(registroOriginal.formulario_url || '')) {
+          var a = document.createElement('a');
+          a.href = registroOriginal.formulario_url; a.target = '_blank'; a.rel = 'noopener';
+          a.textContent = ' Abrir formulário digitalizado ↗';
+          el('lancEditarContexto').appendChild(a);
+        }
         preencherFormulario(registroOriginal);
         form.hidden = false;
-        prepararModo(!!res.corpo.eh_responsavel, res.corpo.pendente);
+        prepararModo(!!res.corpo.eh_responsavel, res.corpo.pendente, res.corpo.pode_editar !== false);
       })
       .catch(function () {
         el('lancEditarContexto').textContent = 'Não foi possível abrir a edição.';

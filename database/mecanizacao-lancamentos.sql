@@ -89,6 +89,16 @@ do $$ begin
   end if;
 end $$;
 
+-- Fichas importadas da planilha do Google Forms (tools/importar_planilha_lancamentos.py):
+-- origem = 'planilha', link do formulário digitalizado no Drive e uma chave
+-- que deixa a importação ser executada de novo sem duplicar linhas.
+alter table public.mecanizacao_lancamentos add column if not exists origem text not null default 'sistema';
+alter table public.mecanizacao_lancamentos add column if not exists formulario_url text;
+alter table public.mecanizacao_lancamentos add column if not exists chave_importacao text;
+create unique index if not exists mecanizacao_lancamentos_chave_importacao
+  on public.mecanizacao_lancamentos (chave_importacao);
+create index if not exists mecanizacao_lancamentos_criado_por on public.mecanizacao_lancamentos (criado_por_email);
+
 create index if not exists mecanizacao_lancamentos_data_vistoria on public.mecanizacao_lancamentos (data_vistoria);
 create index if not exists mecanizacao_lancamentos_municipio on public.mecanizacao_lancamentos (municipio);
 create index if not exists mecanizacao_lancamentos_escritorio on public.mecanizacao_lancamentos (escritorio_local);

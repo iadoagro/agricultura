@@ -96,8 +96,11 @@
     if (modulo.value) f.modulo = modulo.value;
     if (acao.value) f.acao = acao.value;
     if (pagina.value) f.pagina = pagina.value;
-    if (desde.value) f.desde = new Date(desde.value + 'T00:00:00').toISOString();
-    if (ate.value) f.ate = new Date(ate.value + 'T23:59:59.999').toISOString();
+    // campos em dd/mm/aaaa (js/data-br.js)
+    var desdeIso = window.DATA_BR ? window.DATA_BR.brParaIso(desde.value) : desde.value;
+    var ateIso = window.DATA_BR ? window.DATA_BR.brParaIso(ate.value) : ate.value;
+    if (desdeIso) f.desde = new Date(desdeIso + 'T00:00:00').toISOString();
+    if (ateIso) f.ate = new Date(ateIso + 'T23:59:59.999').toISOString();
     return f;
   }
 
