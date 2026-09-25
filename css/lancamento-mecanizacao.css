@@ -161,7 +161,7 @@
 /* Tela "Pessoas" (só responsável) */
 .lanc-dialogo-largo .lanc-dialogo-conteudo{max-height:calc(85dvh - 2px);box-sizing:border-box}
 #lancPessoasDialogo{width:min(1000px,calc(100vw - 32px))}
-#lancPessoasDialogo .lanc-dialogo-conteudo{grid-template-rows:auto auto auto auto auto minmax(0,1fr) auto}
+#lancPessoasDialogo .lanc-dialogo-conteudo{grid-template-rows:auto auto auto auto auto auto minmax(0,1fr) auto}
 .lanc-pessoas-topo{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
 .lanc-pessoas-topo .lanc-pessoas-busca{flex:1 1 260px;width:auto}
 .lanc-pessoas-check{display:flex!important;align-items:center;gap:6px;font-weight:600;font-size:13px;white-space:nowrap}
@@ -170,6 +170,11 @@
 .lanc-pessoas-lote input,.lanc-pessoas-lote select{flex:1 1 180px;padding:7px 9px;border:1.5px solid var(--linha-t);border-radius:8px;
   font:inherit;font-size:13px;color:var(--tinta);background:var(--superficie);box-sizing:border-box}
 .lanc-pessoas tr.lanc-pessoa-marcada td{background:var(--acento-suave)}
+.lanc-pessoas-resumo{font-size:12px;color:var(--tinta3);margin-left:auto}
+.lanc-pessoa-email summary{cursor:pointer;font-weight:600;color:var(--acento-fundo)}
+.lanc-pessoa-emails{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:3px}
+.lanc-pessoa-emails li{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.lanc-pessoa-desagrupar{border:0;background:none;color:var(--tag-acu-tx);cursor:pointer;font-size:15px;line-height:1;padding:0 4px}
 .lanc-pessoa-tecnico{border:0;background:none;padding:0;font:inherit;font-size:12.5px;color:var(--acento-fundo);cursor:pointer;text-align:left}
 .lanc-pessoa-tecnico:hover{text-decoration:underline}
 .lanc-pessoas input[type=checkbox]{width:16px;height:16px;min-width:0;accent-color:var(--acento-fundo)}
@@ -196,3 +201,18 @@
   .lanc-cultura-linha{grid-template-columns:1fr 1fr;grid-template-areas:"cult cult" "area sist" "rem rem"}
   .lanc-dae-linha{grid-template-columns:1fr}
 }
+.lanc-pessoa-municipio{white-space:nowrap;font-size:12.5px}
+.lanc-pessoa-mais{display:inline-block;padding:0 6px;border-radius:999px;background:var(--superficie2);color:var(--tinta3);font-size:11px;font-weight:700;cursor:help}
+.lanc-pessoas-ordem{display:flex!important;align-items:center;gap:6px;font-weight:600;font-size:13px;white-space:nowrap}
+.lanc-pessoas-ordem select{padding:6px 8px;border:1.5px solid var(--linha-t);border-radius:8px;font:inherit;font-size:13px;font-weight:500;color:var(--tinta);background:var(--superficie)}
+.lanc-pessoa-municipio{white-space:nowrap}
+.lanc-pessoas select.lanc-pessoa-municipio-sel{min-width:150px;width:auto;max-width:190px}
+
+/* Progresso da conferência (tela "Pessoas") e contador no botão */
+.lanc-progresso:empty{display:none}
+.lanc-progresso-texto{font-size:13.5px;color:var(--tinta2);margin-bottom:6px}
+.lanc-progresso-texto b{color:var(--tinta);font-size:15px}
+.lanc-progresso-texto span{color:var(--tinta3);font-size:12px}
+.lanc-progresso-barra{height:8px;border-radius:999px;background:var(--superficie2);overflow:hidden}
+.lanc-progresso-barra span{display:block;height:100%;border-radius:inherit;background:var(--acento-fundo);transition:width .4s var(--mo-out,cubic-bezier(.22,1,.36,1))}
+.lanc-btn-contador{display:inline-block;min-width:18px;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--tag-acu-bg);color:var(--tag-acu-tx);font-size:11px;font-weight:700;line-height:1.5;text-align:center}

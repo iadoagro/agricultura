@@ -342,7 +342,7 @@ async function tratar(fd: FormData): Promise<never> {
   if (acao === 'lancadores') {
     const email = await exigirSessao(fd);
     const [status, corpo] = await chamarSupabase('GET',
-      '/rest/v1/mecanizacao_lancadores_resumo?select=email,total,ultimo,nome,usuario_email,tecnico&order=email.asc');
+      '/rest/v1/mecanizacao_lancadores_resumo?select=email,total,ultimo,nome,usuario_email,tecnico,municipio,municipios,municipio_definido&order=email.asc');
     if (status < 200 || status >= 300) {
       responder(502, { ok: false, erro: 'Não foi possível carregar as pessoas. Confira se database/mecanizacao-lancadores.sql já foi executado.' });
     }
@@ -364,15 +364,31 @@ async function tratar(fd: FormData): Promise<never> {
     if (!alvo) responder(400, { ok: false, erro: 'Informe o e-mail.' });
     const nome = String(fd.get('nome') ?? '').trim();
     const usuario = String(fd.get('usuario_email') ?? '').trim().toLowerCase();
-    const [status, corpo] = await chamarSupabase('POST', '/rest/v1/mecanizacao_lancadores?on_conflict=email', {
+    const registro: Record<string, unknown> = {
       email: alvo,
       nome: nome ? nome.slice(0, 120) : null,
       usuario_email: usuario || null,
       atualizado_em: new Date().toISOString(),
       atualizado_por: email,
-    }, { Prefer: 'resolution=merge-duplicates,return=minimal' });
-    if (status >= 200 && status < 300) responder(200, { ok: true });
-    responder(502, { ok: false, erro: mensagem(corpo, 'Não foi possível salvar.') });
+    };
+    // município só muda quando vem no pedido (vazio = volta ao automático)
+    if (fd.has('municipio')) {
+      const municipio = String(fd.get('municipio') ?? '').trim();
+      registro.municipio = municipio ? municipio.slice(0, 80) : null;
+    }
+    const [status, corpo] = await chamarSupabase('POST', '/rest/v1/mecanizacao_lancadores?on_conflict=email', registro,
+      { Prefer: 'resolution=merge-duplicates,return=minimal' });
+    if (status < 200 || status >= 300) responder(502, { ok: false, erro: mensagem(corpo, 'Não foi possível salvar.') });
+    // Município definido vale também para TODAS as fichas desse e-mail
+    // (vazio desfaz) — mecanizacao_definir_municipio no banco.
+    let fichas: number | null = null;
+    if ('municipio' in registro) {
+      const [stM, corpoM] = await chamarSupabase('POST', '/rest/v1/rpc/mecanizacao_definir_municipio',
+        { p_email: alvo, p_municipio: registro.municipio });
+      if (stM < 200 || stM >= 300) responder(502, { ok: false, erro: 'O nome foi salvo, mas não foi possível mudar o município das fichas.' });
+      fichas = typeof corpoM === 'number' ? corpoM : null;
+    }
+    responder(200, { ok: true, fichas_alteradas: fichas });
   }
 
   if (acao === 'resolver') {

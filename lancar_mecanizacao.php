@@ -552,7 +552,7 @@ if ($acao === 'lancadores') {
     }
     [$status, $corpo] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'GET',
-        '/rest/v1/mecanizacao_lancadores_resumo?select=email,total,ultimo,nome,usuario_email,tecnico&order=email.asc'
+        '/rest/v1/mecanizacao_lancadores_resumo?select=email,total,ultimo,nome,usuario_email,tecnico,municipio,municipios,municipio_definido&order=email.asc'
     );
     if ($status < 200 || $status >= 300) {
         responder(502, ['ok' => false, 'erro' => 'Não foi possível carregar as pessoas. Confira se database/mecanizacao-lancadores.sql já foi executado.']);
@@ -582,21 +582,41 @@ if ($acao === 'salvar_lancador') {
     }
     $nome = trim((string) ($_POST['nome'] ?? ''));
     $usuario = strtolower(trim((string) ($_POST['usuario_email'] ?? '')));
+    $registro = [
+        'email' => $email,
+        'nome' => $nome === '' ? null : mb_substr($nome, 0, 120),
+        'usuario_email' => $usuario === '' ? null : $usuario,
+        'atualizado_em' => gmdate('c'),
+        'atualizado_por' => $emailConfirmado,
+    ];
+    // município só muda quando vem no pedido (vazio = volta ao automático)
+    if (array_key_exists('municipio', $_POST)) {
+        $municipio = trim((string) $_POST['municipio']);
+        $registro['municipio'] = $municipio === '' ? null : mb_substr($municipio, 0, 80);
+    }
     [$status, $corpo] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'POST', '/rest/v1/mecanizacao_lancadores?on_conflict=email',
-        [
-            'email' => $email,
-            'nome' => $nome === '' ? null : mb_substr($nome, 0, 120),
-            'usuario_email' => $usuario === '' ? null : $usuario,
-            'atualizado_em' => gmdate('c'),
-            'atualizado_por' => $emailConfirmado,
-        ],
+        $registro,
         ['Prefer: resolution=merge-duplicates,return=minimal']
     );
-    if ($status >= 200 && $status < 300) {
-        responder(200, ['ok' => true]);
+    if ($status < 200 || $status >= 300) {
+        responder(502, ['ok' => false, 'erro' => (string) ($corpo['message'] ?? 'Não foi possível salvar.')]);
     }
-    responder(502, ['ok' => false, 'erro' => (string) ($corpo['message'] ?? 'Não foi possível salvar.')]);
+    // Município definido vale também para TODAS as fichas desse e-mail
+    // (vazio desfaz, devolvendo o município original de cada ficha) —
+    // mecanizacao_definir_municipio em database/mecanizacao-lancadores.sql.
+    $fichas = null;
+    if (array_key_exists('municipio', $registro)) {
+        [$stM, $corpoM] = chamarSupabase(
+            $supabaseUrl, $serviceRole, 'POST', '/rest/v1/rpc/mecanizacao_definir_municipio',
+            ['p_email' => $email, 'p_municipio' => $registro['municipio']]
+        );
+        if ($stM < 200 || $stM >= 300) {
+            responder(502, ['ok' => false, 'erro' => 'O nome foi salvo, mas não foi possível mudar o município das fichas.']);
+        }
+        $fichas = is_numeric($corpoM['_bruto'] ?? null) ? (int) $corpoM['_bruto'] : (is_int($corpoM) ? $corpoM : null);
+    }
+    responder(200, ['ok' => true, 'fichas_alteradas' => $fichas]);
 }
 
 /* ============================================================= resolver === */

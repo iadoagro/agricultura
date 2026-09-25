@@ -355,6 +355,7 @@
         NOMES = {};
         lancadores.forEach(function (l) { if (l.nome) NOMES[l.email] = l.nome; });
         montarFiltroPessoa();
+        if (usuariosSistema.length) atualizarProgresso();   // só o responsável recebe "usuarios"
       }, function () {})
       .catch(function () { /* sem a lista, o filtro fica só com "Meus" e "Todas" */ });
   }
@@ -403,14 +404,89 @@
       }).join('');
   }
 
+  /* Linhas da tela: cada e-mail sem nome é uma linha; os e-mails que já
+     receberam o MESMO nome viram uma linha só (a pessoa) — assim, conforme
+     os iguais vão sendo agrupados, as repetições somem da lista. */
+  function listaMunicipios(texto) {
+    return String(texto || '').split(', ').filter(Boolean);
+  }
+
+  var MUNICIPIOS_LISTA = [];   // os 22 municípios (montarFiltros)
+
+  /* Município da pessoa: um select pra o responsável alterar. "Automático"
+     = o que mais aparece nas fichas; escolhido = gravado em
+     mecanizacao_lancadores.municipio. O "+N" lista onde mais ela lançou. */
+  function municipioHtml(it) {
+    var outros = it.municipios.filter(function (m) { return m !== (it.municipioDefinido || it.municipio); });
+    var lista = MUNICIPIOS_LISTA.slice();
+    if (it.municipioDefinido && lista.indexOf(it.municipioDefinido) < 0) lista.push(it.municipioDefinido);
+    return '<select class="lanc-pessoa-municipio-sel" aria-label="Município">' +
+      '<option value="">' + esc(it.municipio ? 'Automático (' + it.municipio + ')' : 'Automático') + '</option>' +
+      lista.map(function (m) { return '<option' + (m === it.municipioDefinido ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') +
+      '</select>' +
+      (outros.length ? ' <span class="lanc-pessoa-mais" title="Lançou em: ' + esc(it.municipios.slice().sort().join(', ')) + '">+' + outros.length + '</span>' : '');
+  }
+
+  function opcoesMunicipioLote() {
+    return '<option value="__manter__">(manter o município)</option><option value="">Automático</option>' +
+      MUNICIPIOS_LISTA.map(function (m) { return '<option>' + esc(m) + '</option>'; }).join('');
+  }
+
+  /* Ordens da tela "Pessoas" (select "Ordenar por"). */
+  function porTexto(campo) {
+    return function (a, b) { return String(campo(a) || '￿').localeCompare(String(campo(b) || '￿'), 'pt-BR') || a.emails[0].localeCompare(b.emails[0]); };
+  }
+  var ORDENS_PESSOAS = {
+    // parecidos lado a lado ("Egrecio"/"Egracio"…) — bom pra agrupar
+    parecidos: function (a, b) { return a.chave.localeCompare(b.chave) || a.emails[0].localeCompare(b.emails[0]); },
+    recente: function (a, b) { return new Date(b.ultimo || 0) - new Date(a.ultimo || 0) || a.emails[0].localeCompare(b.emails[0]); },
+    antigo: function (a, b) { return new Date(a.ultimo || 0) - new Date(b.ultimo || 0) || a.emails[0].localeCompare(b.emails[0]); },
+    mais: function (a, b) { return b.total - a.total || a.emails[0].localeCompare(b.emails[0]); },
+    menos: function (a, b) { return a.total - b.total || a.emails[0].localeCompare(b.emails[0]); },
+    email: function (a, b) { return a.emails[0].localeCompare(b.emails[0]); },
+    nome: porTexto(function (it) { return it.nome || nomeSugerido(it.emails[0]); }),
+    municipio: porTexto(function (it) { return it.municipioDefinido || it.municipio; }),
+    tecnico: porTexto(function (it) { return it.tecnico; })
+  };
+
+  function pessoasAgrupadas() {
+    var porNome = {}, itens = [];
+    lancadores.forEach(function (l) {
+      if (!l.nome) {
+        itens.push({ nome: '', emails: [l.email], total: l.total || 0, tecnico: l.tecnico || '', usuario: l.usuario_email || '', chave: chaveParecida(l.email),
+          municipio: l.municipio || '', maiorTotal: l.total || 0, municipios: listaMunicipios(l.municipios), ultimo: l.ultimo || '',
+          municipioDefinido: l.municipio_definido || '' });
+        return;
+      }
+      var g = porNome[l.nome];
+      if (!g) {
+        g = porNome[l.nome] = { nome: l.nome, emails: [], total: 0, tecnico: l.tecnico || '', usuario: l.usuario_email || '', chave: chaveParecida(l.email),
+          municipio: '', maiorTotal: -1, municipios: [], ultimo: '', municipioDefinido: '' };
+        itens.push(g);
+      }
+      g.emails.push(l.email);
+      g.total += l.total || 0;
+      if (!g.tecnico && l.tecnico) g.tecnico = l.tecnico;
+      // município principal do grupo = o do e-mail com mais lançamentos
+      if (new Date(l.ultimo || 0) > new Date(g.ultimo || 0)) g.ultimo = l.ultimo;
+      if ((l.total || 0) > g.maiorTotal && l.municipio) { g.maiorTotal = l.total || 0; g.municipio = l.municipio; }
+      listaMunicipios(l.municipios).forEach(function (m) { if (g.municipios.indexOf(m) < 0) g.municipios.push(m); });
+      if ((l.usuario_email || '') !== g.usuario) g.usuario = g.usuario || l.usuario_email || '';
+      if (!g.municipioDefinido && l.municipio_definido) g.municipioDefinido = l.municipio_definido;
+    });
+    return itens;
+  }
+
   function desenharPessoas() {
     var termo = el('lancPessoasBusca').value.trim().toLowerCase();
-    var soSemNome = el('lancPessoasSemNome').checked;
-    var linhas = lancadores.filter(function (l) {
-      if (soSemNome && l.nome) return false;
-      return !termo || l.email.indexOf(termo) >= 0 || nomeDeEmail(l.email).toLowerCase().indexOf(termo) >= 0 ||
-        String(l.tecnico || '').toLowerCase().indexOf(termo) >= 0;
-    }).sort(function (a, b) { return chaveParecida(a.email).localeCompare(chaveParecida(b.email)) || a.email.localeCompare(b.email); });
+    // já agrupados (com nome) somem da lista; "Mostrar já agrupados" traz de volta pra editar
+    var mostrarAgrupados = el('lancPessoasAgrupados').checked;
+    var linhas = pessoasAgrupadas().filter(function (it) {
+      if (!mostrarAgrupados && it.nome) return false;
+      return !termo || it.nome.toLowerCase().indexOf(termo) >= 0 || it.tecnico.toLowerCase().indexOf(termo) >= 0 ||
+        (it.municipios.join(' ') + ' ' + it.municipioDefinido).toLowerCase().indexOf(termo) >= 0 ||
+        it.emails.some(function (e) { return e.indexOf(termo) >= 0 || nomeDeEmail(e).toLowerCase().indexOf(termo) >= 0; });
+    }).sort(ORDENS_PESSOAS[el('lancPessoasOrdem').value] || ORDENS_PESSOAS.parecidos);
 
     // nomes já digitados (e técnicos) viram sugestão — escolher um deles junta
     // o e-mail na mesma pessoa, escrito exatamente igual
@@ -419,42 +495,104 @@
     el('lancPessoasNomes').innerHTML = Object.keys(nomes).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); })
       .map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
     el('lancPessoasLoteUsuario').innerHTML = opcoesUsuario('__manter__', true);
+    el('lancPessoasLoteMunicipio').innerHTML = opcoesMunicipioLote();
 
-    el('lancPessoasCorpo').innerHTML = !linhas.length ? '<p class="nota">Nenhuma pessoa encontrada.</p>' :
+    el('lancPessoasCorpo').innerHTML = !linhas.length
+      ? '<p class="nota">' + (!mostrarAgrupados && !termo && lancadores.length ? 'Todos os e-mails já foram agrupados. Marque “Mostrar já agrupados” para revisar.' : 'Nenhuma pessoa encontrada.') + '</p>' :
       '<div class="tabela-scroll"><table class="lanc-tabela lanc-pessoas"><thead><tr>' +
       '<th><input type="checkbox" id="lancPessoasTodos" title="Marcar todos da lista" aria-label="Marcar todos da lista"></th>' +
-      '<th>E-mail usado no lançamento</th><th class="num">Qtd.</th><th>Técnico mais frequente</th><th>Nome de exibição</th><th>Login do sistema</th><th></th>' +
-      '</tr></thead><tbody>' + linhas.map(function (l) {
-        var marcado = !!pessoasMarcadas[l.email];
-        return '<tr data-email="' + esc(l.email) + '"' + (marcado ? ' class="lanc-pessoa-marcada"' : '') + '>' +
-          '<td><input type="checkbox" class="lanc-pessoa-marca" aria-label="Selecionar ' + esc(l.email) + '"' + (marcado ? ' checked' : '') + '></td>' +
-          '<td class="lanc-pessoa-email">' + esc(l.email) + '</td>' +
-          '<td class="num">' + (l.total || 0).toLocaleString('pt-BR') + '</td>' +
-          '<td>' + (l.tecnico ? '<button type="button" class="lanc-pessoa-tecnico" title="Usar este nome">' + esc(l.tecnico) + '</button>' : '—') + '</td>' +
-          '<td><input type="text" class="lanc-pessoa-nome" list="lancPessoasNomes" maxlength="120" value="' + esc(l.nome || '') + '" placeholder="' + esc(nomeSugerido(l.email)) + '"></td>' +
-          '<td><select class="lanc-pessoa-usuario">' + opcoesUsuario(l.usuario_email || '') + '</select></td>' +
+      '<th>E-mail usado no lançamento</th><th class="num">Qtd.</th><th>Município</th><th>Técnico mais frequente</th><th>Nome de exibição</th><th>Login do sistema</th><th></th>' +
+      '</tr></thead><tbody>' + linhas.map(function (it) {
+        var marcado = it.emails.every(function (e) { return pessoasMarcadas[e]; });
+        var emailsHtml = it.emails.length === 1
+          ? esc(it.emails[0])
+          : '<details><summary>' + it.emails.length + ' e-mails agrupados</summary><ul class="lanc-pessoa-emails">' +
+              it.emails.map(function (e) {
+                return '<li>' + esc(e) + ' <button type="button" class="lanc-pessoa-desagrupar" data-email="' + esc(e) + '" title="Tirar este e-mail do grupo">&times;</button></li>';
+              }).join('') + '</ul></details>';
+        return '<tr data-emails="' + esc(it.emails.join(',')) + '" data-municipio="' + esc(it.municipioDefinido) + '"' + (marcado ? ' class="lanc-pessoa-marcada"' : '') + (it.nome ? ' data-agrupado="1"' : '') + '>' +
+          '<td><input type="checkbox" class="lanc-pessoa-marca" aria-label="Selecionar ' + esc(it.nome || it.emails[0]) + '"' + (marcado ? ' checked' : '') + '></td>' +
+          '<td class="lanc-pessoa-email">' + emailsHtml + '</td>' +
+          '<td class="num">' + it.total.toLocaleString('pt-BR') + '</td>' +
+          '<td class="lanc-pessoa-municipio">' + municipioHtml(it) + '</td>' +
+          '<td>' + (it.tecnico ? '<button type="button" class="lanc-pessoa-tecnico" title="Usar este nome">' + esc(it.tecnico) + '</button>' : '—') + '</td>' +
+          '<td><input type="text" class="lanc-pessoa-nome" list="lancPessoasNomes" maxlength="120" value="' + esc(it.nome) + '" placeholder="' + esc(nomeSugerido(it.emails[0])) + '"></td>' +
+          '<td><select class="lanc-pessoa-usuario">' + opcoesUsuario(it.usuario) + '</select></td>' +
           '<td>' + botaoIcone('lanc-btn-aprovar lanc-pessoa-salvar', ICONES.aprovar, 'Salvar') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
+    var grupos = pessoasAgrupadas().filter(function (it) { return it.nome; }).length;
+    el('lancPessoasResumo').textContent = grupos + ' pessoa(s) já agrupada(s)' + (mostrarAgrupados ? '' : ' (ocultas)');
+    atualizarProgresso();
     atualizarContagemMarcadas();
+  }
+
+  /* Progresso da conferência: um e-mail está conferido quando tem nome. */
+  function atualizarProgresso() {
+    var total = lancadores.length;
+    var feitos = lancadores.filter(function (l) { return l.nome; }).length;
+    var faltam = total - feitos;
+    var pct = total ? Math.round(feitos * 100 / total) : 0;
+    el('lancPessoasProgresso').innerHTML = !total ? '' :
+      '<div class="lanc-progresso-texto">' + (faltam
+        ? 'Faltam <b>' + faltam.toLocaleString('pt-BR') + '</b> de ' + total.toLocaleString('pt-BR') + ' e-mails para terminar de conferir'
+        : '<b>Conferência terminada</b> — todos os ' + total.toLocaleString('pt-BR') + ' e-mails têm nome') +
+      ' <span>(' + pct + '% conferido)</span></div>' +
+      '<div class="lanc-progresso-barra" role="progressbar" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + feitos + '"><span style="width:' + pct + '%"></span></div>';
+    var btn = el('lancPessoasBtn');
+    btn.textContent = 'Pessoas';
+    if (faltam) {
+      var s = document.createElement('span');
+      s.className = 'lanc-btn-contador';
+      s.textContent = faltam;
+      s.title = faltam + ' e-mail(s) ainda sem nome';
+      btn.appendChild(s);
+    }
+  }
+
+  function emailsDaLinha(tr) {
+    return tr.getAttribute('data-emails').split(',');
   }
 
   function atualizarContagemMarcadas() {
     var n = Object.keys(pessoasMarcadas).length;
-    el('lancPessoasQtd').textContent = n === 1 ? '1 selecionado' : n + ' selecionados';
+    el('lancPessoasQtd').textContent = n === 1 ? '1 e-mail selecionado' : n + ' e-mails selecionados';
     el('lancPessoasLoteAplicar').disabled = !n;
   }
 
-  /** Grava nome/login de um e-mail; usuario === undefined mantém o login atual.
+  /** Grava o mesmo nome/login/município em vários e-mails, um de cada vez.
+      Resolve com { feitos, fichas } — fichas = lançamentos que mudaram de município. */
+  function gravarVarios(emails, nome, usuario, municipio) {
+    var feitos = 0, fichas = 0;
+    return emails.reduce(function (p, email) {
+      return p.then(function () {
+        return gravarLancador(email, nome, usuario, municipio).then(function (n) { feitos++; fichas += n || 0; });
+      });
+    }, Promise.resolve()).then(function () { return { feitos: feitos, fichas: fichas }; }, function (e) { e.feitos = feitos; throw e; });
+  }
+
+  function textoFichas(municipio, fichas) {
+    if (municipio === undefined || !fichas) return '';
+    return ' ' + fichas.toLocaleString('pt-BR') + ' ficha(s) ' + (municipio ? 'agora com o município <b>' + esc(municipio) + '</b>' : 'voltaram ao município original') + '.';
+  }
+
+  /** Grava nome/login/município de um e-mail; usuario ou municipio ===
+      undefined mantém o que já estava (municipio '' = volta ao automático).
       O nome vai exatamente como foi digitado (só sem espaços nas pontas). */
-  function gravarLancador(email, nome, usuario) {
+  function gravarLancador(email, nome, usuario, municipio) {
     var atual = lancadores.filter(function (l) { return l.email === email; })[0] || {};
     if (usuario === undefined) usuario = atual.usuario_email || '';
-    return enviarAcao({ acao: 'salvar_lancador', email: email, nome: nome, usuario_email: usuario })
+    var campos = { acao: 'salvar_lancador', email: email, nome: nome, usuario_email: usuario };
+    if (municipio !== undefined) campos.municipio = municipio;
+    return enviarAcao(campos)
       .then(function (res) {
         if (!res.corpo.ok) throw new Error(res.corpo.erro || 'Não foi possível salvar.');
         atual.nome = nome || null; atual.usuario_email = usuario || null;
+        if (municipio !== undefined) atual.municipio_definido = municipio || null;
         if (nome) NOMES[email] = nome; else delete NOMES[email];
-        window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'mecanizacao', 'Definiu o nome de "' + email + '" como "' + (nome || nomeSugerido(email)) + '"', { usuario_email: usuario });
+        window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'mecanizacao', 'Definiu o nome de "' + email + '" como "' + (nome || nomeSugerido(email)) + '"' +
+          (municipio !== undefined ? ' e o município como "' + (municipio || 'automático') + '"' : ''),
+          { usuario_email: usuario, municipio: municipio, fichas_alteradas: res.corpo.fichas_alteradas });
+        return res.corpo.fichas_alteradas || 0;
       });
   }
 
@@ -463,43 +601,69 @@
     montarFiltroPessoa();
     desenharPessoas();
     carregarRecentes();
+    // contagens/municípios das fichas podem ter mudado: recarrega do banco
+    carregarLancadores().then(desenharPessoas);
   }
 
+  function erroAoSalvar(e) {
+    aviso('lancPessoasAviso', 'erro', (e && e.feitos ? e.feitos + ' salvo(s); parou com erro: ' : '') +
+      esc(e && e.message ? e.message : 'Sem conexão com o servidor.'));
+    atualizarContagemMarcadas();
+  }
+
+  /** Linha salva: vale para todos os e-mails dela (uma pessoa agrupada
+      renomeada continua sendo uma pessoa só). */
   function salvarPessoa(tr) {
-    var email = tr.getAttribute('data-email');
+    var emails = emailsDaLinha(tr);
     var nome = tr.querySelector('.lanc-pessoa-nome').value.trim();
     var usuario = tr.querySelector('.lanc-pessoa-usuario').value;
+    // município só vai quando mudou: trocar o das fichas mexe em todas elas
+    var municipio = tr.querySelector('.lanc-pessoa-municipio-sel').value;
+    if (municipio === tr.getAttribute('data-municipio')) municipio = undefined;
+    if (municipio !== undefined && !confirm(municipio
+      ? 'Mudar o município de TODAS as fichas desta pessoa para "' + municipio + '"? O município antigo de cada ficha fica guardado — voltar para "Automático" desfaz.'
+      : 'Voltar ao "Automático"? As fichas desta pessoa recebem de volta o município que tinham antes.')) return;
     aviso('lancPessoasAviso', 'carregando', 'Salvando…');
-    gravarLancador(email, nome, usuario)
-      .then(function () {
-        depoisDeSalvarPessoas('Salvo: <b>' + esc(email) + '</b> → ' + esc(nome || nomeSugerido(email)) + (usuario ? ' (login ' + esc(usuario) + ')' : '') + '.');
+    gravarVarios(emails, nome, usuario, municipio)
+      .then(function (r) {
+        emails.forEach(function (e) { delete pessoasMarcadas[e]; });
+        depoisDeSalvarPessoas('Salvo: ' + (emails.length > 1 ? emails.length + ' e-mails' : '<b>' + esc(emails[0]) + '</b>') + ' → ' +
+          esc(nome || nomeSugerido(emails[0])) + (usuario ? ' (login ' + esc(usuario) + ')' : '') + '.' + textoFichas(municipio, r.fichas));
       })
-      .catch(function (e) { aviso('lancPessoasAviso', 'erro', esc(e && e.message ? e.message : 'Sem conexão com o servidor.')); });
+      .catch(erroAoSalvar);
   }
 
-  /** Mesmo nome (e, se escolhido, mesmo login) para todos os marcados. */
+  /** Mesmo nome (e, se escolhido, mesmo login) para todos os marcados —
+      eles viram uma linha só na lista. */
   function aplicarAosMarcados() {
     var emails = Object.keys(pessoasMarcadas);
     var nome = el('lancPessoasLoteNome').value.trim();
     var usuarioSel = el('lancPessoasLoteUsuario').value;
     var usuario = usuarioSel === '__manter__' ? undefined : usuarioSel;
+    var municipioSel = el('lancPessoasLoteMunicipio').value;
+    var municipio = municipioSel === '__manter__' ? undefined : municipioSel;
     if (!emails.length) return;
     if (!nome) { aviso('lancPessoasAviso', 'erro', 'Digite o nome para os selecionados.'); el('lancPessoasLoteNome').focus(); return; }
+    if (municipio !== undefined && !confirm(municipio
+      ? 'Mudar o município de TODAS as fichas desses ' + emails.length + ' e-mail(s) para "' + municipio + '"? O município antigo de cada ficha fica guardado.'
+      : 'Voltar ao "Automático"? As fichas desses e-mails recebem de volta o município que tinham antes.')) return;
     aviso('lancPessoasAviso', 'carregando', 'Salvando ' + emails.length + ' e-mail(s)…');
     el('lancPessoasLoteAplicar').disabled = true;
-    var feitos = 0;
-    emails.reduce(function (p, email) {
-      return p.then(function () { return gravarLancador(email, nome, usuario).then(function () { feitos++; }); });
-    }, Promise.resolve())
-      .then(function () {
+    gravarVarios(emails, nome, usuario, municipio)
+      .then(function (r) {
         pessoasMarcadas = {};
         el('lancPessoasLoteNome').value = '';
-        depoisDeSalvarPessoas(feitos + ' e-mail(s) agora aparecem como <b>' + esc(nome) + '</b>.');
+        depoisDeSalvarPessoas(r.feitos + ' e-mail(s) agrupados como <b>' + esc(nome) + '</b>.' + textoFichas(municipio, r.fichas));
       })
-      .catch(function (e) {
-        aviso('lancPessoasAviso', 'erro', feitos + ' salvo(s); parou com erro: ' + esc(e && e.message ? e.message : 'sem conexão com o servidor.'));
-        atualizarContagemMarcadas();
-      });
+      .catch(erroAoSalvar);
+  }
+
+  /** Tira um e-mail de um grupo (apaga o nome dele — volta a ser linha própria). */
+  function desagrupar(email) {
+    aviso('lancPessoasAviso', 'carregando', 'Salvando…');
+    gravarLancador(email, '', undefined)
+      .then(function () { depoisDeSalvarPessoas('<b>' + esc(email) + '</b> saiu do grupo e voltou a aparecer sozinho na lista.'); })
+      .catch(erroAoSalvar);
   }
 
   function abrirPessoas() {
@@ -512,23 +676,28 @@
   }
 
   function marcarPessoa(caixa, marcado) {
-    var tr = caixa.closest('tr'), email = tr.getAttribute('data-email');
+    var tr = caixa.closest('tr');
     caixa.checked = marcado;
     tr.classList.toggle('lanc-pessoa-marcada', marcado);
-    if (marcado) pessoasMarcadas[email] = true; else delete pessoasMarcadas[email];
+    emailsDaLinha(tr).forEach(function (email) {
+      if (marcado) pessoasMarcadas[email] = true; else delete pessoasMarcadas[email];
+    });
   }
 
   function ligarPessoas() {
     el('lancPessoasBtn').addEventListener('click', abrirPessoas);
     el('lancPessoasFechar').addEventListener('click', function () { el('lancPessoasDialogo').close(); });
     el('lancPessoasBusca').addEventListener('input', desenharPessoas);
-    el('lancPessoasSemNome').addEventListener('change', desenharPessoas);
+    el('lancPessoasAgrupados').addEventListener('change', desenharPessoas);
+    el('lancPessoasOrdem').addEventListener('change', desenharPessoas);
     el('lancPessoasLoteAplicar').addEventListener('click', aplicarAosMarcados);
     el('lancPessoasLoteNome').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); aplicarAosMarcados(); } });
     var corpo = el('lancPessoasCorpo');
     corpo.addEventListener('click', function (e) {
       var b = e.target.closest('.lanc-pessoa-salvar');
       if (b) { salvarPessoa(b.closest('tr')); return; }
+      var d = e.target.closest('.lanc-pessoa-desagrupar');
+      if (d) { desagrupar(d.getAttribute('data-email')); return; }
       var t = e.target.closest('.lanc-pessoa-tecnico');
       if (t) {
         var campo = t.closest('tr').querySelector('.lanc-pessoa-nome');
@@ -588,6 +757,7 @@
       });
       filtrosProntos = true;
     }
+    MUNICIPIOS_LISTA = municipios.slice();
     var munSel = el('lancFiltroMunicipio'), escSel = el('lancFiltroEscritorio');
     var munAtual = munSel.value, escAtual = escSel.value;
     munSel.innerHTML = '<option value="">Todos os municípios</option>' +
