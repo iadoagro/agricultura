@@ -550,6 +550,14 @@
     });
   }
 
+  /** "Lançado por" ao abrir (e ao limpar os filtros): o responsável vê todo
+      mundo de cara; os demais, só os próprios lançamentos. */
+  function pessoaPadrao() {
+    var sessao = sessaoSite();
+    var email = sessao && sessao.user && sessao.user.email;
+    return String(email || '').toLowerCase() === 'root@root.com' ? 'todos' : '';
+  }
+
   function montarFiltros(municipios) {
     var anoSel = el('lancFiltroAno');
     if (!filtrosProntos) {
@@ -558,6 +566,7 @@
       for (var a = esteAno; a >= 2023; a--) anos.push(a);
       // padrão: todos os anos, do mais recente pro mais antigo (a ordem vem do servidor)
       anoSel.innerHTML = '<option value="">Todos os anos</option>' + anos.map(function (a) { return '<option>' + a + '</option>'; }).join('');
+      el('lancFiltroPessoa').value = pessoaPadrao();
       var espera;
       el('lancFiltros').addEventListener('input', function (e) {
         clearTimeout(espera);
@@ -566,6 +575,7 @@
       });
       el('lancFiltrosLimpar').addEventListener('click', function () {
         el('lancFiltros').reset();
+        el('lancFiltroPessoa').value = pessoaPadrao();
         paginaAtual = 1;
         carregarRecentes();
       });
