@@ -10,7 +10,7 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/dashboard.css?v=2026091501">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026091601">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026092501">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
 <script src="../js/admin-auth.js?v=2026092410"></script>
@@ -47,7 +47,7 @@
 
     <section class="painel largo">
       <div class="painel-cab"><div class="painel-cab-tit">
-        <h2>Editando lan&ccedil;amento</h2>
+        <h2 id="lancEditarTitulo">Editando lan&ccedil;amento</h2>
         <p class="sub" id="lancEditarContexto">Carregando&hellip;</p>
       </div></div>
       <div id="lancEditarAviso"></div>
@@ -187,10 +187,22 @@
         </div>
       </section>
 
+      <!-- Só para quem não é o responsável: a edição vira um pedido que
+           aguarda aprovação, e o motivo é obrigatório (lancamento-editar.js). -->
+      <section class="painel duplo" id="lancMotivoSec" hidden>
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Motivo da altera&ccedil;&atilde;o</h2>
+          <p class="sub">As altera&ccedil;&otilde;es ficam pendentes at&eacute; a conta respons&aacute;vel aprovar.</p>
+        </div></div>
+        <div class="lanc-campos">
+          <label class="lanc-larga">Motivo<span class="lanc-obrig">*</span><textarea name="motivo" id="lancMotivoEdicao" rows="3" maxlength="1000"></textarea></label>
+        </div>
+      </section>
+
       <div id="lancSalvarStatus"></div>
       <div class="upload-acoes">
         <button class="btn btn-verde" id="lancSalvar" type="submit">Salvar altera&ccedil;&otilde;es</button>
-        <a class="btn" href="dashboard.html#lancamento">&larr; Voltar sem salvar</a>
+        <a class="btn" id="lancVoltar" href="dashboard.html#lancamento">&larr; Voltar sem salvar</a>
       </div>
     </form>
 
@@ -200,7 +212,7 @@
 <footer>P&aacute;gina de apoio interno</footer>
 
 <script src="../js/lancamento-campos.js?v=2026092404"></script>
-<script src="../js/lancamento-editar.js?v=2026092301"></script>
+<script src="../js/lancamento-editar.js?v=2026092501"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/dashboard.css?v=2026092401">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026091512">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026092501">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
 <script src="../js/admin-auth.js?v=2026092410"></script>
@@ -814,6 +814,19 @@
            só aparece por cima ao clicar em "Novo lançamento" — sem navegar
            para outra página/aba. -->
       <div id="lancListaView">
+        <!-- Só para root@root.com: pedidos de exclusão/edição que os demais
+             usuários abriram e aguardam aprovação (js/lancamento-mecanizacao.js). -->
+        <section class="painel largo lanc-solicitacoes" id="lancSolicitacoesSec" hidden>
+          <div class="painel-cab">
+            <div class="painel-cab-tit">
+              <h2>Solicitações pendentes <span class="lanc-selo lanc-selo-editar" id="lancSolicitacoesQtd">0</span></h2>
+              <p class="sub">Pedidos de exclusão e edição aguardando sua aprovação.</p>
+            </div>
+          </div>
+          <div id="lancSolicitacoesAviso"></div>
+          <div id="lancSolicitacoes"></div>
+        </section>
+
         <section class="painel largo">
           <div class="painel-cab">
             <div class="painel-cab-tit">
@@ -827,6 +840,31 @@
           <div id="lancListaAviso"></div>
           <div id="lancRecentes"></div>
         </section>
+
+        <dialog class="lanc-dialogo" id="lancMotivoDialogo" aria-labelledby="lancMotivoTitulo">
+          <form id="lancMotivoForm" method="dialog">
+            <h3 id="lancMotivoTitulo">Solicitar exclus&atilde;o</h3>
+            <p id="lancMotivoDescricao"></p>
+            <label>Motivo<span class="lanc-obrig">*</span>
+              <textarea id="lancMotivoTexto" rows="4" maxlength="1000" placeholder="Explique por que o lan&ccedil;amento precisa ser alterado/exclu&iacute;do"></textarea>
+            </label>
+            <p class="lanc-erro" id="lancMotivoErro" hidden>Informe o motivo.</p>
+            <div class="lanc-dialogo-acoes">
+              <button class="btn" type="button" id="lancMotivoCancelar">Cancelar</button>
+              <button class="btn btn-verde" type="submit" id="lancMotivoConfirmar">Enviar solicita&ccedil;&atilde;o</button>
+            </div>
+          </form>
+        </dialog>
+
+        <dialog class="lanc-dialogo lanc-dialogo-largo" id="lancDiffDialogo" aria-labelledby="lancDiffTitulo">
+          <div class="lanc-dialogo-conteudo">
+            <h3 id="lancDiffTitulo">Altera&ccedil;&otilde;es propostas</h3>
+            <div id="lancDiffCorpo"></div>
+            <div class="lanc-dialogo-acoes">
+              <button class="btn" type="button" id="lancDiffFechar">Fechar</button>
+            </div>
+          </div>
+        </dialog>
       </div>
 
       <div id="lancFormView" hidden>
@@ -1020,7 +1058,7 @@
 <script src="../js/mapa-acre.js?v=2026091402"></script>
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
 <script src="../js/lancamento-campos.js?v=2026092404"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026092301"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026092501"></script>
 <script src="../js/dashboard.js?v=2026092401"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>

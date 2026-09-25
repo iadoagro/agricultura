@@ -45,6 +45,49 @@
   }
 
   var form = el('lancForm'), ajuda, id = idDaUrl(), registroOriginal = null;
+  // "?modo=ver": o botão de visualizar da lista abre esta mesma página, com
+  // o formulário todo travado e sem salvar.
+  var modoVer = /[?&]modo=ver(&|$)/.test(location.search);
+  var chaveMotivo = 'lanc_motivo_' + id;
+
+  function somenteLeitura() {
+    Array.prototype.forEach.call(form.elements, function (campo) { campo.disabled = true; });
+    form.classList.add('lanc-somente-leitura');
+    el('lancSalvar').hidden = true;
+    el('lancMotivoSec').hidden = true;
+    el('lancVoltar').innerHTML = '&larr; Voltar';
+  }
+
+  /** Responsável (root@root.com) edita direto. Os demais: a edição vira um
+      pedido de aprovação, com motivo obrigatório (vindo do pop-up da lista,
+      em sessionStorage, mas editável aqui) — e se já houver um pedido
+      pendente para este lançamento, só dá pra ver. */
+  function prepararModo(ehResponsavel, pendente) {
+    var descPendente = pendente
+      ? 'Este lançamento tem uma solicitação de <b>' + (pendente.tipo === 'excluir' ? 'exclusão' : 'edição') +
+        '</b> aguardando aprovação' + (pendente.motivo ? ' (motivo: ' + esc(pendente.motivo) + ')' : '') + '.'
+      : '';
+    if (modoVer) {
+      el('lancEditarTitulo').textContent = 'Visualizando lançamento';
+      document.title = 'Ver lançamento';
+      somenteLeitura();
+      if (pendente) aviso('lancEditarAviso', 'carregando', descPendente);
+      return;
+    }
+    if (ehResponsavel) return;
+    if (pendente) {
+      el('lancEditarTitulo').textContent = 'Visualizando lançamento';
+      somenteLeitura();
+      aviso('lancEditarAviso', 'erro', descPendente + ' Não é possível pedir outra alteração até ela ser resolvida.');
+      return;
+    }
+    var campoMotivo = el('lancMotivoEdicao');
+    el('lancMotivoSec').hidden = false;
+    campoMotivo.required = true;
+    try { campoMotivo.value = sessionStorage.getItem(chaveMotivo) || ''; } catch (e) { /* modo privado */ }
+    el('lancSalvar').textContent = 'Enviar para aprovação';
+    aviso('lancEditarAviso', 'carregando', 'As alterações que você salvar aqui ficam <b>pendentes</b> até a conta responsável aprovar.');
+  }
 
   function preencherFormulario(dados) {
     CAMPOS_DIRETOS.forEach(function (campo) {
@@ -104,6 +147,14 @@
         botao.disabled = false;
         if (!res.corpo.ok) { aviso('lancSalvarStatus', 'erro', esc(res.corpo.erro || 'Não foi possível salvar.')); return; }
         var nome = form.elements['nome_beneficiario'].value;
+        if (res.corpo.pendente) {
+          try { sessionStorage.removeItem(chaveMotivo); } catch (e) { /* modo privado */ }
+          window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('solicitar', 'mecanizacao', 'Solicitou a edição do lançamento de mecanização de "' + nome + '"', { motivo: el('lancMotivoEdicao').value });
+          botao.disabled = true;
+          aviso('lancSalvarStatus', 'ok', 'Alterações enviadas para aprovação. Voltando para a lista…');
+          setTimeout(function () { location.href = 'dashboard.html#lancamento'; }, 1400);
+          return;
+        }
         window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'mecanizacao', 'Editou o lançamento de mecanização de "' + nome + '"');
         aviso('lancSalvarStatus', 'ok', 'Alterações salvas. Voltando para a lista…');
         setTimeout(function () { location.href = 'dashboard.html#lancamento'; }, 900);
@@ -141,6 +192,7 @@
           ' — salva em ' + new Date(registroOriginal.criado_em).toLocaleString('pt-BR') + '.';
         preencherFormulario(registroOriginal);
         form.hidden = false;
+        prepararModo(!!res.corpo.eh_responsavel, res.corpo.pendente);
       })
       .catch(function () {
         el('lancEditarContexto').textContent = 'Não foi possível abrir a edição.';

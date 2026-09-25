@@ -105,6 +105,42 @@
 .btn-excluir{background:transparent;border-color:var(--tag-acu-bg);color:var(--tag-acu-tx)}
 .btn-excluir:hover:not(:disabled){background:var(--tag-acu-bg)}
 
+/* Ações da lista em ícone (ver / editar / excluir). O cadeado pequeno no
+   canto marca o que, para quem não é o responsável, vira pedido de aprovação. */
+.lanc-btn-icone{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0}
+.lanc-btn-icone svg{width:17px;height:17px}
+.lanc-btn-icone .lanc-icone-cadeado{position:absolute;right:-4px;bottom:-4px;width:13px;height:13px;padding:1.5px;
+  border-radius:50%;background:var(--superficie);color:var(--tinta3);box-shadow:0 0 0 1px var(--linha-t)}
+.lanc-bloqueado{opacity:.6}
+.lanc-bloqueado:hover:not(:disabled){opacity:1}
+.lanc-btn-aprovar{color:var(--acento-fundo);border-color:var(--acento-suave)}
+.lanc-btn-aprovar:hover{background:var(--acento-suave)}
+
+.lanc-selo{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;vertical-align:middle}
+.lanc-selo-excluir{background:var(--tag-acu-bg);color:var(--tag-acu-tx)}
+.lanc-selo-editar{background:var(--acento-suave);color:var(--acento-fundo)}
+.lanc-motivo{max-width:320px;white-space:pre-wrap;overflow-wrap:anywhere}
+.lanc-diff-antes{color:var(--tinta3);text-decoration:line-through}
+.lanc-diff-depois{font-weight:600}
+
+.lanc-dialogo{width:min(460px,calc(100vw - 32px));margin:auto;padding:0;border:1px solid var(--anel);border-radius:14px;
+  background:var(--superficie);color:var(--tinta);box-shadow:0 18px 48px rgba(0,0,0,.25)}
+.lanc-dialogo-largo{width:min(760px,calc(100vw - 32px));max-height:85dvh}
+.lanc-dialogo::backdrop{background:rgba(15,30,20,.45)}
+.lanc-dialogo form,.lanc-dialogo-conteudo{display:grid;gap:12px;padding:20px 22px}
+.lanc-dialogo h3{margin:0;font-size:17px}
+.lanc-dialogo p{margin:0;font-size:13.5px;color:var(--tinta2);line-height:1.5}
+.lanc-dialogo label{display:block;font-size:14px;font-weight:600;color:var(--tinta2)}
+.lanc-dialogo textarea{display:block;width:100%;margin-top:6px;padding:9px 10px;border:1.5px solid var(--linha-t);border-radius:8px;
+  font:inherit;font-size:14px;color:var(--tinta);background:var(--superficie);box-sizing:border-box;resize:vertical}
+.lanc-dialogo textarea:focus{outline:none;border-color:var(--acento-fundo);box-shadow:0 0 0 3px var(--acento-suave)}
+.lanc-dialogo-acoes{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+
+/* Página de edição aberta em modo "ver" ou com pedido já pendente. */
+.lanc-form.lanc-somente-leitura .lanc-campos input:disabled,
+.lanc-form.lanc-somente-leitura .lanc-campos select:disabled,
+.lanc-form.lanc-somente-leitura .lanc-campos textarea:disabled{color:var(--tinta);cursor:default}
+
 .lanc-tabela{width:100%;border-collapse:collapse;font-size:12.5px}
 .lanc-tabela th,.lanc-tabela td{padding:8px 10px;border-bottom:1px solid var(--anel);text-align:left}
 .lanc-tabela th{color:var(--tinta3);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}

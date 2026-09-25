@@ -152,6 +152,39 @@ async function buscarLancamento(id: string, select = '*'): Promise<Record<string
   return corpo[0] as Record<string, unknown>;
 }
 
+const TABELA_SOLICITACOES = '/rest/v1/mecanizacao_solicitacoes';
+
+/** Motivo obrigatório dos pedidos de exclusão/edição. */
+function lerMotivo(fd: FormData): string {
+  const motivo = String(fd.get('motivo') ?? '').trim();
+  if (motivo === '') responder(400, { ok: false, erro: 'Informe o motivo da solicitação.' });
+  return motivo.slice(0, 1000);
+}
+
+async function solicitacaoPendente(lancamentoId: string): Promise<Record<string, unknown> | null> {
+  const [status, corpo] = await chamarSupabase('GET',
+    `${TABELA_SOLICITACOES}?select=id,tipo,motivo,solicitado_por_email,criado_em&status=eq.pendente&lancamento_id=eq.${encodeURIComponent(lancamentoId)}`);
+  return status >= 200 && status < 300 && Array.isArray(corpo) && corpo.length ? corpo[0] as Record<string, unknown> : null;
+}
+
+/** Grava um pedido de exclusão/edição pendente e encerra a requisição —
+    mesma regra de criarSolicitacao() em lancar_mecanizacao.php. */
+async function criarSolicitacao(
+  lancamento: Record<string, unknown>, tipo: string, motivo: string, email: string, dados: unknown,
+): Promise<never> {
+  if (await solicitacaoPendente(String(lancamento.id))) {
+    responder(409, { ok: false, erro: 'Este lançamento já tem uma solicitação aguardando aprovação.' });
+  }
+  const [status, corpo] = await chamarSupabase('POST', TABELA_SOLICITACOES, {
+    lancamento_id: lancamento.id,
+    nome_beneficiario: lancamento.nome_beneficiario ?? null,
+    tipo, motivo, dados,
+    solicitado_por_email: email,
+  }, { Prefer: 'return=minimal' });
+  if (status >= 200 && status < 300) responder(200, { ok: true, pendente: true });
+  responder(502, { ok: false, erro: mensagem(corpo, 'Não foi possível registrar a solicitação.') });
+}
+
 function exigirId(fd: FormData, msg: string): string {
   const id = String(fd.get('id') ?? '');
   if (id === '') responder(400, { ok: false, erro: msg });
@@ -177,7 +210,20 @@ async function tratar(fd: FormData): Promise<never> {
       `${TABELA}?select=id,criado_em,criado_por_email,tipo_servico,nome_beneficiario,` +
       'municipio,escritorio_local,data_vistoria,area_total_ha,horas_maquina,quantidade_acudes' +
       `${filtro}&order=criado_em.desc&limit=${limite}`);
-    if (status >= 200 && status < 300) responder(200, { ok: true, lancamentos: corpo, vendo_de_todos: email === RESPONSAVEL_EMAIL });
+    if (status >= 200 && status < 300) {
+      // Pedidos pendentes das linhas listadas (lancamento_id → tipo); sem a
+      // tabela de pedidos, a lista sai sem isso.
+      const pendencias: Record<string, unknown> = {};
+      const ids = (Array.isArray(corpo) ? corpo : []).map((l) => String((l as Record<string, unknown>).id ?? '')).filter(Boolean);
+      if (ids.length) {
+        const [stPend, pend] = await chamarSupabase('GET',
+          `${TABELA_SOLICITACOES}?select=lancamento_id,tipo&status=eq.pendente&lancamento_id=in.(${ids.map(encodeURIComponent).join(',')})`);
+        if (stPend >= 200 && stPend < 300 && Array.isArray(pend)) {
+          for (const p of pend as Record<string, unknown>[]) if (p.lancamento_id) pendencias[String(p.lancamento_id)] = p.tipo;
+        }
+      }
+      responder(200, { ok: true, lancamentos: corpo, pendencias, vendo_de_todos: email === RESPONSAVEL_EMAIL });
+    }
     responder(502, { ok: false, erro: 'Não foi possível carregar os lançamentos recentes.' });
   }
 
@@ -186,16 +232,22 @@ async function tratar(fd: FormData): Promise<never> {
     const id = exigirId(fd, 'Informe o lançamento a abrir.');
     const linha = await buscarLancamento(id);
     if (!podeAcessar(email, linha.criado_por_email)) responder(403, { ok: false, erro: 'Você só pode abrir os lançamentos que você mesmo fez.' });
-    responder(200, { ok: true, lancamento: linha });
+    responder(200, {
+      ok: true, lancamento: linha,
+      eh_responsavel: email === RESPONSAVEL_EMAIL,
+      pendente: await solicitacaoPendente(id),
+    });
   }
 
   if (acao === 'editar') {
     const email = await exigirSessao(fd);
     const id = exigirId(fd, 'Informe o lançamento a editar.');
-    const atual = await buscarLancamento(id, 'criado_por_email');
+    const atual = await buscarLancamento(id, 'id,criado_por_email,nome_beneficiario');
     if (!podeAcessar(email, atual.criado_por_email)) responder(403, { ok: false, erro: 'Você só pode editar os lançamentos que você mesmo fez.' });
     // Edição não troca quem lançou originalmente.
     const registro = lerRegistro(fd, String(atual.criado_por_email ?? ''));
+    // Quem não é o responsável não grava direto: vira pedido pendente.
+    if (email !== RESPONSAVEL_EMAIL) await criarSolicitacao(atual, 'editar', lerMotivo(fd), email, registro);
     const [status, corpo] = await chamarSupabase('PATCH', `${TABELA}?id=eq.${encodeURIComponent(id)}`, registro, { Prefer: 'return=representation' });
     if (status >= 200 && status < 300) responder(200, { ok: true, registro: Array.isArray(corpo) ? corpo[0] ?? registro : registro });
     responder(502, { ok: false, erro: mensagem(corpo, 'O banco não aceitou a edição.') });
@@ -203,11 +255,55 @@ async function tratar(fd: FormData): Promise<never> {
 
   if (acao === 'excluir') {
     const email = await exigirSessao(fd);
-    if (email !== RESPONSAVEL_EMAIL) responder(403, { ok: false, erro: 'Só a conta responsável pode excluir lançamentos.' });
     const id = exigirId(fd, 'Informe o lançamento a excluir.');
+    // Só a conta responsável exclui direto — os demais abrem um pedido.
+    if (email !== RESPONSAVEL_EMAIL) {
+      const atual = await buscarLancamento(id, 'id,criado_por_email,nome_beneficiario');
+      if (!podeAcessar(email, atual.criado_por_email)) responder(403, { ok: false, erro: 'Você só pode solicitar a exclusão dos lançamentos que você mesmo fez.' });
+      await criarSolicitacao(atual, 'excluir', lerMotivo(fd), email, null);
+    }
     const [status] = await chamarSupabase('DELETE', `${TABELA}?id=eq.${encodeURIComponent(id)}`);
     if (status >= 200 && status < 300) responder(200, { ok: true });
     responder(502, { ok: false, erro: 'Não foi possível excluir.' });
+  }
+
+  if (acao === 'solicitacoes') {
+    const email = await exigirSessao(fd);
+    if (email !== RESPONSAVEL_EMAIL) responder(403, { ok: false, erro: 'Só a conta responsável vê as solicitações.' });
+    // lancamento:... embute o registro atual, pra comparar com o proposto.
+    const [status, corpo] = await chamarSupabase('GET',
+      `${TABELA_SOLICITACOES}?select=*,lancamento:mecanizacao_lancamentos(*)&status=eq.pendente&order=criado_em.asc`);
+    if (status >= 200 && status < 300) responder(200, { ok: true, solicitacoes: corpo });
+    responder(502, { ok: false, erro: 'Não foi possível carregar as solicitações. Confira se database/mecanizacao-solicitacoes.sql já foi executado.' });
+  }
+
+  if (acao === 'resolver') {
+    const email = await exigirSessao(fd);
+    if (email !== RESPONSAVEL_EMAIL) responder(403, { ok: false, erro: 'Só a conta responsável aprova solicitações.' });
+    const id = String(fd.get('id') ?? '');
+    const decisao = String(fd.get('decisao') ?? '');
+    if (id === '' || !['aprovar', 'recusar'].includes(decisao)) responder(400, { ok: false, erro: 'Solicitação ou decisão inválida.' });
+    const [status, corpo] = await chamarSupabase('GET',
+      `${TABELA_SOLICITACOES}?select=*&status=eq.pendente&id=eq.${encodeURIComponent(id)}`);
+    if (status < 200 || status >= 300 || !Array.isArray(corpo) || !corpo.length) {
+      responder(404, { ok: false, erro: 'Solicitação não encontrada ou já resolvida.' });
+    }
+    const sol = corpo[0] as Record<string, unknown>;
+    // Aprovar aplica o pedido no lançamento; recusar só marca o pedido.
+    if (decisao === 'aprovar' && sol.lancamento_id) {
+      const alvo = `${TABELA}?id=eq.${encodeURIComponent(String(sol.lancamento_id))}`;
+      const [st] = sol.tipo === 'excluir'
+        ? await chamarSupabase('DELETE', alvo)
+        : await chamarSupabase('PATCH', alvo, sol.dados, { Prefer: 'return=minimal' });
+      if (st < 200 || st >= 300) responder(502, { ok: false, erro: 'Não foi possível aplicar a solicitação no lançamento.' });
+    }
+    const [st] = await chamarSupabase('PATCH', `${TABELA_SOLICITACOES}?id=eq.${encodeURIComponent(id)}`, {
+      status: decisao === 'aprovar' ? 'aprovada' : 'recusada',
+      resolvido_por_email: email,
+      resolvido_em: new Date().toISOString(),
+    }, { Prefer: 'return=minimal' });
+    if (st >= 200 && st < 300) responder(200, { ok: true });
+    responder(502, { ok: false, erro: 'Não foi possível registrar a decisão.' });
   }
 
   responder(400, { ok: false, erro: 'Ação desconhecida.' });
