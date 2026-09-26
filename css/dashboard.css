@@ -834,11 +834,9 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
 .link-publico-linha .btn{flex:none;padding:7px 12px;font-size:12px}
 @media(max-width:1400px){.link-publico{grid-column:1 / -1}}
 
-/* Versão pública (?publico=1): só as abas de números agregados. Sem cadastro de
-   beneficiários, registros linha a linha, lançamento, administração e sem os
+/* Versão pública (?publico=1): abas de números e a de Beneficiário. Sem registros linha a linha, lançamento, administração e sem os
    atalhos para outras áreas do sistema. */
 html.modo-publico .aba[data-aba="registros"],
-html.modo-publico .aba[data-aba="beneficiario"],
 html.modo-publico .aba[data-aba="lancamento"],
 html.modo-publico .aba-mais,
 html.modo-publico #adminBtn,

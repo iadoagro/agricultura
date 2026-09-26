@@ -3234,9 +3234,9 @@
     return { aba: (i < 0 ? bruto : bruto.slice(0, i)) || '', filtros: filtros };
   }
 
-  /* Versão pública: estas abas não existem (registros e nomes de produtores,
+  /* Versão pública: estas abas não existem (registros linha a linha,
      lançamento e administração). */
-  var ABAS_FORA_DO_PUBLICO = ['registros', 'beneficiario', 'lancamento', 'ins-pessoa', 'ins-dia', 'ins-mes', 'ins-cultura', 'admin'];
+  var ABAS_FORA_DO_PUBLICO = ['registros', 'lancamento', 'ins-pessoa', 'ins-dia', 'ins-mes', 'ins-cultura', 'admin'];
   function abaValida(nome) {
     if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) return false;
     return botoes.some(function (b) { return b.getAttribute('data-aba') === nome && !b.hidden; });
