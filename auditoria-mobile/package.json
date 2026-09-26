@@ -1,0 +1,11 @@
+{
+  "name": "auditoria-mobile",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Auditoria de responsividade mobile (Playwright)",
+  "scripts": {
+    "auditar": "node auditar.js",
+    "instalar-navegadores": "playwright install chromium webkit"
+  },
+  "devDependencies": { "playwright": "^1.50.0" }
+}
