@@ -267,7 +267,7 @@
   /* Na tela cheia (sem rolagem) as listas mostram só os itens que cabem inteiros:
      o resto some em vez de aparecer cortado pela metade. */
   function cortarExcesso() {
-    document.querySelectorAll('.home-lista, .home-atalhos').forEach(function (caixa) {
+    document.querySelectorAll('.home-lista, .home-atalhos, .home-pend').forEach(function (caixa) {
       Array.prototype.forEach.call(caixa.children, function (x) { x.classList.remove('home-cortado'); });
       if (!window.matchMedia('(min-width:1100px) and (min-height:680px)').matches) return;
       var limite = caixa.getBoundingClientRect().bottom;

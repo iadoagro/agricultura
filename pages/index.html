@@ -15,7 +15,7 @@
 <meta property="og:description" content="Portal interno — organograma, portarias, chamados e contatos.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/index.css?v=2026092549">
+<link rel="stylesheet" href="../css/index.css?v=2026092552">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092515">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -33,12 +33,6 @@
 
   <div class="home-grade">
     <div class="home-col">
-      <!-- Atalhos: as a&ccedil;&otilde;es que mais se repetem -->
-      <section class="pd-cartao home-cartao" id="blocoAtalhos" hidden aria-labelledby="tituloAtalhos">
-        <h2 id="tituloAtalhos">Atalhos</h2>
-        <div class="home-atalhos" id="homeAtalhos"></div>
-      </section>
-
       <!-- &Uacute;ltimos lan&ccedil;amentos -->
       <section class="pd-cartao home-cartao" id="blocoLanc" hidden aria-labelledby="tituloLanc">
         <h2 id="tituloLanc">&Uacute;ltimos lan&ccedil;amentos</h2>
@@ -46,11 +40,10 @@
         <a class="home-mais" href="dashboard.html#lancamento">Ver todos &rarr;</a>
       </section>
 
-      <!-- Atividade recente (s&oacute; a conta respons&aacute;vel) -->
-      <section class="pd-cartao home-cartao" id="blocoEventos" hidden aria-labelledby="tituloEventos">
-        <h2 id="tituloEventos">Atividade recente</h2>
-        <ul class="home-lista" id="homeEventos"><li class="home-carregando">Carregando&hellip;</li></ul>
-        <a class="home-mais" href="logs.html">Ver todos os eventos &rarr;</a>
+      <!-- Atalhos: as a&ccedil;&otilde;es que mais se repetem -->
+      <section class="pd-cartao home-cartao" id="blocoAtalhos" hidden aria-labelledby="tituloAtalhos">
+        <h2 id="tituloAtalhos">Atalhos</h2>
+        <div class="home-atalhos" id="homeAtalhos"></div>
       </section>
     </div>
 
@@ -69,6 +62,13 @@
         <div class="home-kpis" id="homeKpis"><p class="home-carregando">Carregando&hellip;</p></div>
         <a class="home-mais" href="dashboard.html">Abrir o painel de Mecaniza&ccedil;&atilde;o &rarr;</a>
       </section>
+
+      <!-- Atividade recente (s&oacute; a conta respons&aacute;vel) -->
+      <section class="pd-cartao home-cartao" id="blocoEventos" hidden aria-labelledby="tituloEventos">
+        <h2 id="tituloEventos">Atividade recente</h2>
+        <ul class="home-lista" id="homeEventos"><li class="home-carregando">Carregando&hellip;</li></ul>
+        <a class="home-mais" href="logs.html">Ver todos os eventos &rarr;</a>
+      </section>
     </div>
   </div>
 </main>
@@ -76,7 +76,7 @@
 
 <script src="../js/chamados-dados.js?v=2026091930"></script>
 <script src="../js/lancamento-campos.js?v=2026092517"></script>
-<script src="../js/admin-home.js?v=2026092548"></script>
+<script src="../js/admin-home.js?v=2026092552"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>
