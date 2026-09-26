@@ -1,0 +1,12 @@
+/* Janela de escolha do select no celular (js/select-app.js). */
+.sa-fundo{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(15,23,42,.55)}
+.sa-janela{margin:0;padding:0;list-style:none;width:100%;max-width:420px;max-height:70vh;max-height:70dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#2a2b30;color:#e8eaf0;border-radius:28px;box-shadow:0 24px 60px -12px rgba(0,0,0,.6)}
+.sa-janela li{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:26px 24px;font-size:20px;font-weight:300;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sa-janela li+li{border-top:1px solid rgba(255,255,255,.1)}
+.sa-janela li:active{background:rgba(255,255,255,.07)}
+.sa-janela li.sa-desab{opacity:.4}
+.sa-janela li span{min-width:0;overflow-wrap:anywhere}
+.sa-radio{flex:none;width:26px;height:26px;box-sizing:border-box;border:2.5px solid #d5d8e0;border-radius:50%;position:relative}
+.sa-atual .sa-radio{border-color:#a9b8ff}
+.sa-atual .sa-radio::after{content:"";position:absolute;inset:4px;border-radius:50%;background:#a9b8ff}
+@media(min-width:769px){.sa-fundo{display:none}}

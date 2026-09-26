@@ -418,7 +418,7 @@
       cabecalho.onkeydown = e => { if (e.target === cabecalho && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); destacarFiscal(r); } };
       const zonaSecao = document.createElement('span');
       zonaSecao.className = 'cadastro-info-compacta';
-      zonaSecao.textContent = 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—') + (r.bairro ? ' · ' + r.bairro : '');
+      zonaSecao.textContent = (r.bairro ? r.bairro + ' · ' : '') + 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—');
       // Na busca em todos os municípios, mostra de qual é o fiscal.
       if (mostrarMunicipio) {
         const mun = document.createElement('span');
@@ -429,13 +429,16 @@
       li.append(cabecalho, zonaSecao);
       return li;
     }
-    const titulos = {regional:'Regional', bairro:'Bairro', secao:'Seção eleitoral', zona:'Zona eleitoral'};
-    ['nome', 'regional', 'bairro', 'secao', 'zona'].forEach(k => {
-      const item = document.createElement(k === 'nome' ? 'strong' : 'span');
-      item.textContent = (titulos[k] ? titulos[k] + ': ' : '') + (r[k] || 'Não informado');
+    const nome = document.createElement('strong');
+    nome.textContent = r.nome || 'Não informado';
+    li.append(nome, criarTelefoneWhatsApp(r));
+    const titulos = {municipio:'Município', regional:'Regional', bairro:'Bairro', zona:'Zona eleitoral', secao:'Seção eleitoral'};
+    ['municipio', 'regional', 'bairro', 'zona', 'secao'].forEach(k => {
+      const item = document.createElement('span');
+      const valor = k === 'municipio' ? (nomes.get(r.municipio) || r.municipio) : r[k];
+      item.textContent = titulos[k] + ': ' + (valor || 'Não informado');
       li.append(item);
     });
-    li.append(criarTelefoneWhatsApp(r));
     if (r._criadoEm) {
       const auditoria = document.createElement('span');
       auditoria.className = 'cadastro-auditoria';
@@ -619,49 +622,26 @@
     });
     return [...dasSecoes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
-  // Campo "Bairro": texto livre com sugestões (<datalist>) dos bairros do
-  // município — dá pra escolher da lista ou digitar um novo. Ao salvar,
-  // BAIRROS_FISCAIS.garantir() troca o digitado pelo nome do banco se ele
-  // já existe (sem diferenciar maiúsculas/acentos/espaços) ou o cadastra.
+  // Campo "Bairro": lista (<select>) com os bairros cadastrados do município
+  // (cadastro auxiliar de Bairros). Opcional; se o fiscal já tem um bairro que
+  // não está mais na lista, ele continua aparecendo como opção.
   const campoBairro = form.elements.bairro;
-  const sugestoesBairro = document.createElement('datalist');
-  sugestoesBairro.id = 'bairrosSugestoes';
-  campoBairro.setAttribute('list', sugestoesBairro.id);
-  campoBairro.setAttribute('autocomplete', 'off');
-  campoBairro.placeholder = 'Escolha da lista ou digite um novo';
-  const dicaBairro = document.createElement('small');
-  dicaBairro.className = 'bairro-dica';
-  dicaBairro.setAttribute('aria-live', 'polite');
-  campoBairro.after(sugestoesBairro, dicaBairro);
+  function montarOpcoesBairro(bairros, atual) {
+    const lista = bairros.slice();
+    if (atual && !lista.includes(atual)) lista.push(atual);
+    campoBairro.replaceChildren(new Option(lista.length ? 'Selecione o bairro' : 'Nenhum bairro cadastrado', ''), ...lista.map(b => new Option(b)));
+    campoBairro.value = atual || '';
+  }
   function atualizarCampoBairro() {
-    const bairros = bairrosDoMunicipio() || [];
-    sugestoesBairro.replaceChildren(...bairros.map(b => new Option(b)));
-    atualizarDicaBairro();
+    montarOpcoesBairro(bairrosDoMunicipio() || [], campoBairro.value);
   }
-  function atualizarDicaBairro() {
-    const aux = window.BAIRROS_FISCAIS, valor = campoBairro.value.trim();
-    if (!valor || !aux || !aux.carregado() || !/\p{L}/u.test(valor)) { dicaBairro.textContent = ''; return; }
-    const achado = aux.encontrar(selecionado, valor);
-    dicaBairro.textContent = !achado ? 'Bairro novo: será incluído no cadastro de bairros ao salvar.'
-      : achado.nome !== valor ? 'Já cadastrado como "' + achado.nome + '" — será usado o nome do cadastro.'
-      : !achado.ativo ? 'Bairro cadastrado, mas desativado.' : '';
-  }
-  function definirBairro(valor) { campoBairro.value = valor; atualizarDicaBairro(); }
-  campoBairro.addEventListener('input', atualizarDicaBairro);
+  function definirBairro(valor) { montarOpcoesBairro(bairrosDoMunicipio() || [], valor); }
   // form.reset() também apagava a Regional, que fica travada no valor do
   // município — o cadastro seguinte falhava em "Preencha todos os campos".
   form.addEventListener('reset', () => setTimeout(() => {
     const regional = window.REGIONAIS_MUNICIPIOS && window.REGIONAIS_MUNICIPIOS[selecionado];
     if (regional) form.elements.regional.value = regional;
-    atualizarDicaBairro();
   }));
-  // Ao sair do campo, já troca pelo nome do banco se o bairro existe.
-  campoBairro.addEventListener('change', () => {
-    const aux = window.BAIRROS_FISCAIS;
-    const achado = aux && aux.carregado() && aux.encontrar(selecionado, campoBairro.value);
-    if (achado) campoBairro.value = achado.nome;
-    atualizarDicaBairro();
-  });
   function abrir(id) {
     if (!nomes.has(id)) return;
     encerrarEdicao();

@@ -289,8 +289,6 @@ body{overflow-x:clip}
 
   /* Fiscais: o select + o mapa já escolhem o município; a lista rolável repetia isso */
   .municipios-lateral{display:none}
-  /* o município já está no título do painel e sincronizado — não pergunta de novo */
-  #cadastro label[for="formMunicipio"],#formMunicipio{display:none}
   /* Salvar sempre ao alcance do polegar */
   #cadastro .salvar{
     position:sticky;bottom:10px;z-index:6;min-height:50px;font-size:16px;

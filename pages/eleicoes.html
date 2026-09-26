@@ -15,9 +15,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="../css/eleicoes.css?v=2026092415">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
-<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092515">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092601">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
 <link rel="stylesheet" href="../css/nav.css?v=2026092556">
+<link rel="stylesheet" href="../css/select-app.css?v=2026092603">
+<script src="../js/select-app.js?v=2026092603" defer></script>
 <link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
 <script src="../js/modal-ui.js?v=2026092527"></script>
 <link rel="stylesheet" href="../css/padrao.css?v=2026092541">
@@ -147,15 +149,15 @@
     <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
     <form id="cadastro">
       <h3 id="cadastro-titulo">Cadastro de fiscais</h3>
-      <div class="campo"><label for="formMunicipio">Município <span class="campo-obrigatorio" aria-hidden="true">*</span></label><select id="formMunicipio" name="formMunicipio" required><option value="">Escolha um município</option></select></div>
       <div class="campo"><label for="nome">Nome <span class="campo-obrigatorio" aria-hidden="true">*</span></label><input id="nome" name="nome" autocomplete="name" enterkeyhint="next" autocapitalize="words" maxlength="160" required></div>
       <div class="campo"><label for="telefone">Telefone <span class="campo-obrigatorio" aria-hidden="true">*</span></label><input id="telefone" name="telefone" type="tel" inputmode="tel" enterkeyhint="next" autocomplete="tel" placeholder="(68) 99999-9999" maxlength="22" required></div>
+      <div class="campo"><label for="formMunicipio">Município <span class="campo-obrigatorio" aria-hidden="true">*</span></label><select id="formMunicipio" name="formMunicipio" required><option value="">Escolha um município</option></select></div>
       <div class="campo"><label for="regional">Regional <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
       <select id="regional" name="regional" required>
         <option value="">Selecione a regional</option>
         <option>Alto Acre</option><option>Baixo Acre</option><option>Purus</option><option>Tarauacá/Envira</option><option>Juruá</option>
       </select></div>
-      <div class="campo"><label for="bairro">Bairro <span class="campo-opcional">(opcional)</span></label><input id="bairro" name="bairro" maxlength="120" enterkeyhint="next" autocapitalize="words"></div>
+      <div class="campo"><label for="bairro">Bairro <span class="campo-opcional">(opcional)</span></label><select id="bairro" name="bairro"><option value="">Selecione o município primeiro</option></select></div>
       <div class="campo"><label for="zona">Zona eleitoral <span class="campo-obrigatorio" aria-hidden="true">*</span></label><select id="zona" name="zona" required><option value="">Selecione a zona</option></select></div>
       <div class="campo"><label for="secao">Seção eleitoral <span class="campo-obrigatorio" aria-hidden="true">*</span></label><select id="secao" name="secao" required disabled><option value="">Selecione a zona primeiro</option></select></div>
       <div class="campo campo-acoes"><button class="salvar" type="submit">Salvar cadastro</button>
@@ -333,7 +335,7 @@
   <script src="../js/mapa-bairros-leaflet.js?v=2026092402"></script>
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
-<script src="../js/eleicoes.js?v=2026092527"></script>
+<script src="../js/eleicoes.js?v=2026092602"></script>
   <script src="../js/eleicoes-resultados.js?v=2026092201"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026092404"></script>
@@ -341,7 +343,7 @@
   <script src="../js/eleicoes-busca-exportar.js?v=2026092402"></script>
   <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
 <script src="../js/eleicoes-abas.js?v=2026092201"></script>
-  <script src="../js/select-busca.js?v=2026091401"></script>
+  <script src="../js/select-busca.js?v=2026092604"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

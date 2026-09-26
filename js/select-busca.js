@@ -16,6 +16,8 @@
 (function () {
   'use strict';
   let aberto = null; // { select, painel }
+  // No celular quem abre a lista é js/select-app.js (janela central de escolha).
+  const celular = window.matchMedia('(max-width:768px)');
 
   // "egrecio" acha "Egrécio"; "placido" acha "Plácido de Castro"
   function semAcento(s) {
@@ -124,11 +126,13 @@
     if (select.dataset.buscaAplicada) return;
     select.dataset.buscaAplicada = '1';
     select.addEventListener('mousedown', e => {
+      if (celular.matches) return;
       e.preventDefault();
       select.focus();
       abrir(select);
     });
     select.addEventListener('keydown', e => {
+      if (celular.matches) return;
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         abrir(select);
