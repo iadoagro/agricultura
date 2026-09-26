@@ -15,7 +15,7 @@
 <meta property="og:description" content="Portal interno — organograma, portarias, chamados e contatos.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/index.css?v=2026092552">
+<link rel="stylesheet" href="../css/index.css?v=2026092553">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092515">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -40,6 +40,14 @@
         <a class="home-mais" href="dashboard.html#lancamento">Ver todos &rarr;</a>
       </section>
 
+      <!-- Resumo do ano (base da Mecaniza&ccedil;&atilde;o) -->
+      <section class="pd-cartao home-cartao" id="blocoResumo" hidden aria-labelledby="tituloResumo">
+        <h2 id="tituloResumo">Resumo de <span id="homeAno"></span></h2>
+        <p class="pd-dica">Mecaniza&ccedil;&atilde;o e a&ccedil;udagem &mdash; varia&ccedil;&atilde;o contra o ano anterior.</p>
+        <div class="home-kpis" id="homeKpis"><p class="home-carregando">Carregando&hellip;</p></div>
+        <a class="home-mais" href="dashboard.html">Abrir o painel de Mecaniza&ccedil;&atilde;o &rarr;</a>
+      </section>
+
       <!-- Atalhos: as a&ccedil;&otilde;es que mais se repetem -->
       <section class="pd-cartao home-cartao" id="blocoAtalhos" hidden aria-labelledby="tituloAtalhos">
         <h2 id="tituloAtalhos">Atalhos</h2>
@@ -53,14 +61,6 @@
         <h2 id="tituloPend">Precisa de voc&ecirc;</h2>
         <p class="pd-dica">O que est&aacute; esperando uma a&ccedil;&atilde;o sua.</p>
         <div class="home-pend" id="homePend"><p class="home-carregando">Carregando&hellip;</p></div>
-      </section>
-
-      <!-- Resumo do ano (base da Mecaniza&ccedil;&atilde;o) -->
-      <section class="pd-cartao home-cartao" id="blocoResumo" hidden aria-labelledby="tituloResumo">
-        <h2 id="tituloResumo">Resumo de <span id="homeAno"></span></h2>
-        <p class="pd-dica">Mecaniza&ccedil;&atilde;o e a&ccedil;udagem &mdash; varia&ccedil;&atilde;o contra o ano anterior.</p>
-        <div class="home-kpis" id="homeKpis"><p class="home-carregando">Carregando&hellip;</p></div>
-        <a class="home-mais" href="dashboard.html">Abrir o painel de Mecaniza&ccedil;&atilde;o &rarr;</a>
       </section>
 
       <!-- Atividade recente (s&oacute; a conta respons&aacute;vel) -->
