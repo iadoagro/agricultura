@@ -15,7 +15,7 @@
 <meta property="og:description" content="Portal interno — organograma, portarias, chamados e contatos.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/index.css?v=2026092548">
+<link rel="stylesheet" href="../css/index.css?v=2026092549">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092515">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -32,23 +32,6 @@
   </section>
 
   <div class="home-grade">
-    <div class="home-col">
-      <!-- Precisa de você: contadores que levam direto à tela certa -->
-      <section class="pd-cartao home-cartao" id="blocoPendencias" hidden aria-labelledby="tituloPend">
-        <h2 id="tituloPend">Precisa de voc&ecirc;</h2>
-        <p class="pd-dica">O que est&aacute; esperando uma a&ccedil;&atilde;o sua.</p>
-        <div class="home-pend" id="homePend"><p class="home-carregando">Carregando&hellip;</p></div>
-      </section>
-
-      <!-- Resumo do ano (base da Mecaniza&ccedil;&atilde;o) -->
-      <section class="pd-cartao home-cartao" id="blocoResumo" hidden aria-labelledby="tituloResumo">
-        <h2 id="tituloResumo">Resumo de <span id="homeAno"></span></h2>
-        <p class="pd-dica">Mecaniza&ccedil;&atilde;o e a&ccedil;udagem &mdash; varia&ccedil;&atilde;o contra o ano anterior.</p>
-        <div class="home-kpis" id="homeKpis"><p class="home-carregando">Carregando&hellip;</p></div>
-        <a class="home-mais" href="dashboard.html">Abrir o painel de Mecaniza&ccedil;&atilde;o &rarr;</a>
-      </section>
-    </div>
-
     <div class="home-col">
       <!-- Atalhos: as a&ccedil;&otilde;es que mais se repetem -->
       <section class="pd-cartao home-cartao" id="blocoAtalhos" hidden aria-labelledby="tituloAtalhos">
@@ -68,6 +51,23 @@
         <h2 id="tituloEventos">Atividade recente</h2>
         <ul class="home-lista" id="homeEventos"><li class="home-carregando">Carregando&hellip;</li></ul>
         <a class="home-mais" href="logs.html">Ver todos os eventos &rarr;</a>
+      </section>
+    </div>
+
+    <div class="home-col">
+      <!-- Precisa de você: contadores que levam direto à tela certa -->
+      <section class="pd-cartao home-cartao" id="blocoPendencias" hidden aria-labelledby="tituloPend">
+        <h2 id="tituloPend">Precisa de voc&ecirc;</h2>
+        <p class="pd-dica">O que est&aacute; esperando uma a&ccedil;&atilde;o sua.</p>
+        <div class="home-pend" id="homePend"><p class="home-carregando">Carregando&hellip;</p></div>
+      </section>
+
+      <!-- Resumo do ano (base da Mecaniza&ccedil;&atilde;o) -->
+      <section class="pd-cartao home-cartao" id="blocoResumo" hidden aria-labelledby="tituloResumo">
+        <h2 id="tituloResumo">Resumo de <span id="homeAno"></span></h2>
+        <p class="pd-dica">Mecaniza&ccedil;&atilde;o e a&ccedil;udagem &mdash; varia&ccedil;&atilde;o contra o ano anterior.</p>
+        <div class="home-kpis" id="homeKpis"><p class="home-carregando">Carregando&hellip;</p></div>
+        <a class="home-mais" href="dashboard.html">Abrir o painel de Mecaniza&ccedil;&atilde;o &rarr;</a>
       </section>
     </div>
   </div>
