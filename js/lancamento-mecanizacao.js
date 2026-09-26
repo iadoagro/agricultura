@@ -194,7 +194,11 @@
       e o pedido fica pendente. */
   function excluir(id, nome) {
     var motivoPronto = ehResponsavel
-      ? Promise.resolve(confirm('Excluir o lançamento de "' + nome + '"? Não tem como desfazer.') ? '' : null)
+      ? window.Modal.confirmar({
+          titulo: 'Excluir lançamento',
+          mensagem: 'Excluir o lançamento de "' + nome + '"? Não tem como desfazer.',
+          confirmar: 'Excluir', perigo: true
+        }).then(function (ok) { return ok ? '' : null; })
       : pedirMotivo('excluir', nome);
     motivoPronto.then(function (motivo) {
       if (motivo === null) return;
@@ -284,7 +288,15 @@
     var pergunta = decisao === 'aprovar'
       ? (sol.tipo === 'excluir' ? 'Aprovar e EXCLUIR o lançamento de "' + nome + '"? Não tem como desfazer.' : 'Aprovar e aplicar as alterações no lançamento de "' + nome + '"?')
       : 'Recusar a solicitação para o lançamento de "' + nome + '"?';
-    if (!confirm(pergunta)) return;
+    window.Modal.confirmar({
+      titulo: decisao === 'aprovar' ? 'Aprovar solicitação' : 'Recusar solicitação',
+      mensagem: pergunta,
+      confirmar: decisao === 'aprovar' ? 'Aprovar' : 'Recusar',
+      perigo: decisao !== 'aprovar' || sol.tipo === 'excluir'
+    }).then(function (ok) { if (ok) executarResolucao(sol, decisao); });
+  }
+
+  function executarResolucao(sol, decisao) {
     aviso('lancSolicitacoesAviso', 'carregando', 'Registrando decisão…');
     enviarAcao({ acao: 'resolver', id: sol.id, decisao: decisao })
       .then(function (res) {
@@ -339,6 +351,21 @@
   // A lista inclui as fichas importadas da planilha (milhares de linhas):
   // o servidor filtra e devolve uma página por vez, com o total.
   var POR_PAGINA = 20;
+  /* Em tela larga (filtros ao lado da lista) a página tem exatamente as linhas que
+     cabem entre o topo da lista e o rodapé da tela: sem rolagem, com paginação. A
+     altura de uma linha é medida na primeira tabela desenhada; até lá vale 45px. */
+  var alturaLinha = 45;
+  function porPaginaQueCabe() {
+    if (!window.matchMedia('(min-width:1500px)').matches) return 20;
+    var caixa = el('lancRecentes');
+    if (!caixa || !caixa.offsetParent) return POR_PAGINA;
+    var topo = caixa.getBoundingClientRect().top + window.scrollY;
+    // 34 = cabeçalho da tabela; 60 = paginação; 52 = respiro do cartão e da base da página;
+    // mais o rodapé do site, que também entra na altura da página
+    var rodape = document.querySelector('footer');
+    var sobra = window.innerHeight - topo - 34 - 60 - 52 - (rodape ? rodape.offsetHeight : 0);
+    return Math.max(5, Math.min(100, Math.floor(sobra / alturaLinha)));
+  }
   var paginaAtual = 1, totalLinhas = 0, pedidoLista = 0, filtrosProntos = false;
   var CAMPOS_FILTRO = ['f_busca', 'f_pessoa', 'f_ano', 'f_tipo_servico', 'f_municipio', 'f_escritorio'];
   var lancadores = [], meusEmails = [], usuariosSistema = [];
@@ -620,17 +647,24 @@
     // município só vai quando mudou: trocar o das fichas mexe em todas elas
     var municipio = tr.querySelector('.lanc-pessoa-municipio-sel').value;
     if (municipio === tr.getAttribute('data-municipio')) municipio = undefined;
-    if (municipio !== undefined && !confirm(municipio
+    (municipio !== undefined ? window.Modal.confirmar({
+      titulo: 'Mudar município das fichas',
+      mensagem: municipio
       ? 'Mudar o município de TODAS as fichas desta pessoa para "' + municipio + '"? O município antigo de cada ficha fica guardado — voltar para "Automático" desfaz.'
-      : 'Voltar ao "Automático"? As fichas desta pessoa recebem de volta o município que tinham antes.')) return;
-    aviso('lancPessoasAviso', 'carregando', 'Salvando…');
-    gravarVarios(emails, nome, usuario, municipio)
-      .then(function (r) {
-        emails.forEach(function (e) { delete pessoasMarcadas[e]; });
-        depoisDeSalvarPessoas('Salvo: ' + (emails.length > 1 ? emails.length + ' e-mails' : '<b>' + esc(emails[0]) + '</b>') + ' → ' +
-          esc(nome || nomeSugerido(emails[0])) + (usuario ? ' (login ' + esc(usuario) + ')' : '') + '.' + textoFichas(municipio, r.fichas));
-      })
-      .catch(erroAoSalvar);
+      : 'Voltar ao "Automático"? As fichas desta pessoa recebem de volta o município que tinham antes.',
+      confirmar: 'Confirmar'
+    }) : Promise.resolve(true)).then(function (ok) {
+      if (!ok) return;
+      aviso('lancPessoasAviso', 'carregando', 'Salvando…');
+      gravarVarios(emails, nome, usuario, municipio)
+        .then(function (r) {
+          emails.forEach(function (e) { delete pessoasMarcadas[e]; });
+          depoisDeSalvarPessoas('Salvo: ' + (emails.length > 1 ? emails.length + ' e-mails' : '<b>' + esc(emails[0]) + '</b>') + ' → ' +
+            esc(nome || nomeSugerido(emails[0])) + (usuario ? ' (login ' + esc(usuario) + ')' : '') + '.' + textoFichas(municipio, r.fichas));
+        })
+        .catch(erroAoSalvar);
+    });
+
   }
 
   /** Mesmo nome (e, se escolhido, mesmo login) para todos os marcados —
@@ -644,18 +678,25 @@
     var municipio = municipioSel === '__manter__' ? undefined : municipioSel;
     if (!emails.length) return;
     if (!nome) { aviso('lancPessoasAviso', 'erro', 'Digite o nome para os selecionados.'); el('lancPessoasLoteNome').focus(); return; }
-    if (municipio !== undefined && !confirm(municipio
+    (municipio !== undefined ? window.Modal.confirmar({
+      titulo: 'Mudar município das fichas',
+      mensagem: municipio
       ? 'Mudar o município de TODAS as fichas desses ' + emails.length + ' e-mail(s) para "' + municipio + '"? O município antigo de cada ficha fica guardado.'
-      : 'Voltar ao "Automático"? As fichas desses e-mails recebem de volta o município que tinham antes.')) return;
-    aviso('lancPessoasAviso', 'carregando', 'Salvando ' + emails.length + ' e-mail(s)…');
-    el('lancPessoasLoteAplicar').disabled = true;
-    gravarVarios(emails, nome, usuario, municipio)
-      .then(function (r) {
-        pessoasMarcadas = {};
-        el('lancPessoasLoteNome').value = '';
-        depoisDeSalvarPessoas(r.feitos + ' e-mail(s) agrupados como <b>' + esc(nome) + '</b>.' + textoFichas(municipio, r.fichas));
-      })
-      .catch(erroAoSalvar);
+      : 'Voltar ao "Automático"? As fichas desses e-mails recebem de volta o município que tinham antes.',
+      confirmar: 'Confirmar'
+    }) : Promise.resolve(true)).then(function (ok) {
+      if (!ok) return;
+      aviso('lancPessoasAviso', 'carregando', 'Salvando ' + emails.length + ' e-mail(s)…');
+      el('lancPessoasLoteAplicar').disabled = true;
+      gravarVarios(emails, nome, usuario, municipio)
+        .then(function (r) {
+          pessoasMarcadas = {};
+          el('lancPessoasLoteNome').value = '';
+          depoisDeSalvarPessoas(r.feitos + ' e-mail(s) agrupados como <b>' + esc(nome) + '</b>.' + textoFichas(municipio, r.fichas));
+        })
+        .catch(erroAoSalvar);
+    });
+
   }
 
   /** Tira um e-mail de um grupo (apaga o nome dele — volta a ser linha própria). */
@@ -793,6 +834,12 @@
   }
 
   function carregarRecentes() {
+    var cabem = porPaginaQueCabe();
+    if (cabem !== POR_PAGINA) {   // mudou o tamanho da página: mantém o primeiro item à vista
+      var primeiro = (paginaAtual - 1) * POR_PAGINA;
+      POR_PAGINA = cabem;
+      paginaAtual = Math.floor(primeiro / POR_PAGINA) + 1;
+    }
     el('lancRecentes').innerHTML = '<p class="nota">Carregando…</p>';
     var sessao = sessaoSite();
     if (!sessao || !sessao.access_token) {
@@ -826,10 +873,8 @@
         meusEmails = res.corpo.meus_emails || meusEmails;
         el('lancPessoasBtn').hidden = !ehResponsavel;
         if (!eraResponsavel) carregarSolicitacoes();   // primeira carga; depois, só quando resolve um pedido
-        var pessoaSel = el('lancFiltroPessoa');
-        var nota = '<p class="nota">' + (pessoaSel.value === ''
-          ? 'Mostrando só os seus lançamentos. Para ver os de outras pessoas, use o filtro “Lançado por”.'
-          : 'Mostrando lançamentos de: <b>' + esc(pessoaSel.value === 'todos' ? 'todas as pessoas' : pessoaSel.options[pessoaSel.selectedIndex].text.replace(/ \([\d.]+\)$/, '')) + '</b>.') + '</p>';
+        // sem a frase "Mostrando lançamentos de…": o filtro "Lançado por" já diz de quem é a lista
+        var nota = '';
         if (!linhas.length) { el('lancRecentes').innerHTML = nota + '<p class="nota">Nenhum lançamento encontrado com esses filtros.</p>'; return; }
         el('lancRecentes').innerHTML = nota + '<div class="tabela-scroll"><table class="lanc-tabela"><thead><tr>' +
           '<th>Salvo em</th><th>Lançado por</th><th>Serviço</th><th>Beneficiário</th><th>Município</th><th>Escritório</th>' +
@@ -870,6 +915,12 @@
         Array.prototype.forEach.call(el('lancRecentes').querySelectorAll('.lanc-editar'), function (b) {
           b.addEventListener('click', function () { editar(b.getAttribute('data-id'), b.getAttribute('data-nome')); });
         });
+        // altura real da linha (o estimado pode errar): se mudar quantas cabem, refaz uma vez
+        var trMedida = el('lancRecentes').querySelector('tbody tr');
+        if (trMedida) {
+          var h = trMedida.getBoundingClientRect().height;
+          if (h > 20 && Math.abs(h - alturaLinha) > 1) { alturaLinha = h; if (porPaginaQueCabe() !== POR_PAGINA) carregarRecentes(); }
+        }
       })
       .catch(function () { /* lista de conferência: falha aqui não impede o resto da aba */ });
   }
@@ -891,6 +942,14 @@
     el('lancVoltarLista').addEventListener('click', mostrarLista);
     el('lancDiffFechar').addEventListener('click', function () { el('lancDiffDialogo').close(); });
     ligarPessoas();
+    var esperaRedimensionar;
+    window.addEventListener('resize', function () {
+      clearTimeout(esperaRedimensionar);
+      esperaRedimensionar = setTimeout(function () {
+        var lista = el('lancRecentes');
+        if (lista && lista.offsetParent && porPaginaQueCabe() !== POR_PAGINA) carregarRecentes();
+      }, 300);
+    });
     el('lancNovoBtn').addEventListener('click', function () {
       aviso('lancListaAviso', '', '');
       limparFormulario(true);

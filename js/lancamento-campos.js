@@ -25,14 +25,19 @@
   var MAX_DAES = 10;
   // Mesmos nomes de js/importar.js (tabelas MAQUINAS/IMPLEMENTOS), só que
   // aqui são opções de marcar, não palavras-chave de reconhecimento.
+  // Só o que já foi usado nas fichas do banco, do mais para o menos frequente
+  // (contagem de mecanizacao_lancamentos em 25/09/2026).
   var MAQUINAS_OPCOES = [
-    'Escavadeira hidráulica', 'Pá carregadeira', 'Trator de esteira', 'Trator de pneu',
-    'Trator agrícola', 'Retroescavadeira', 'New Holland', 'Massey Ferguson',
-    'John Deere', 'Solis 90'
+    'Trator agrícola', 'Escavadeira hidráulica', 'Trator de pneu', 'Trator de esteira',
+    'John Deere', 'Pá carregadeira', 'Massey Ferguson', 'New Holland',
+    'Retroescavadeira', 'Solis 90'
   ];
+  // Piscicultura e Tanque / açude não são implementos: são tipos de serviço
+  // associados à Açudagem, não a máquinas de Mecanização (por isso saíram
+  // daqui).
   var IMPLEMENTOS_OPCOES = [
-    'Grade aradora', 'Grade niveladora', 'Plantadeira', 'Colheitadeira', 'Pulverizador',
-    'Jogadora de calcário', 'Destoca', 'Roçadeira', 'Piscicultura', 'Tanque / açude'
+    'Grade aradora', 'Grade niveladora', 'Destoca', 'Plantadeira', 'Colheitadeira',
+    'Pulverizador', 'Jogadora de calcário', 'Roçadeira'
   ];
 
   function el(id) { return document.getElementById(id); }
@@ -219,6 +224,15 @@
       var v = form.elements['tipo_servico'].value;   // RadioNodeList: '' quando nenhum marcado
       el('lancSecMecanizacao').hidden = v !== 'Mecanização';
       el('lancSecAcudagem').hidden = v !== 'Açudagem';
+      // Tipo de implemento só faz sentido em Mecanização (Açudagem não usa
+      // implemento de máquina). Some tanto por padrão quanto fora dela, e
+      // desmarca o que estava marcado pra não ir escondido no envio.
+      var fsImpl = el('lancFieldsetImplementos');
+      if (fsImpl) {
+        var mostrarImpl = v === 'Mecanização';
+        fsImpl.hidden = !mostrarImpl;
+        if (!mostrarImpl) marcarCaixas(el('lancImplementos'), []);
+      }
       // destaque visual do botão marcado: feito por classe (não por CSS
       // :has(), que não reagiu de forma confiável nos navegadores testados)
       Array.prototype.forEach.call(form.querySelectorAll('.lanc-radio-grande'), function (lbl) {

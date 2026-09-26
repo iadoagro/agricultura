@@ -1,0 +1,51 @@
+/* Janela de confirmação centralizada (js/modal-ui.js). Independe dos tokens de
+   cada página: as cores vêm daqui, com a versão escura em html[data-tema="escuro"]. */
+.mdl-fundo{
+  --mdl-superficie:#fff;--mdl-texto:#1b2a41;--mdl-suave:#5a6b85;--mdl-borda:#e3e9f3;
+  --mdl-btn-fundo:#eef2f9;--mdl-btn-hover:#e2e9f5;--mdl-btn-texto:#2a3d5c;
+  --mdl-acento:#2563eb;--mdl-acento-hover:#1d4fd0;
+  --mdl-perigo:#dc2626;--mdl-perigo-hover:#b91c1c;--mdl-perigo-fundo:#fdecec;--mdl-acento-fundo:#e8effd;
+  position:fixed;inset:0;z-index:100000;display:grid;place-items:center;padding:20px;
+  background:rgba(15,23,42,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  font-family:"Segoe UI",Roboto,Arial,sans-serif;animation:mdl-fundo .18s ease-out
+}
+html[data-tema="escuro"] .mdl-fundo{
+  --mdl-superficie:#182338;--mdl-texto:#eaf0fb;--mdl-suave:#9fb0cc;--mdl-borda:#2b3a58;
+  --mdl-btn-fundo:#243352;--mdl-btn-hover:#2d3f63;--mdl-btn-texto:#dbe5f7;
+  --mdl-perigo-fundo:#3a1f27;--mdl-acento-fundo:#1d2f57;background:rgba(0,0,0,.62)
+}
+.mdl-fundo *{box-sizing:border-box}
+.mdl-caixa{
+  width:min(420px,100%);padding:28px 26px 22px;text-align:center;
+  background:var(--mdl-superficie);color:var(--mdl-texto);border:1px solid var(--mdl-borda);border-radius:18px;
+  box-shadow:0 24px 60px rgba(15,23,42,.35),0 2px 6px rgba(15,23,42,.12);
+  animation:mdl-caixa .22s cubic-bezier(.22,1,.36,1)
+}
+.mdl-icone{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 14px;border-radius:50%;
+  background:var(--mdl-acento-fundo);color:var(--mdl-acento)}
+.mdl-perigo .mdl-icone{background:var(--mdl-perigo-fundo);color:var(--mdl-perigo)}
+.mdl-icone svg{width:26px;height:26px}
+.mdl-titulo{margin:0 0 8px;font-size:19px;font-weight:700;line-height:1.25}
+.mdl-texto{margin:0;font-size:14.5px;line-height:1.55;color:var(--mdl-suave);white-space:pre-line;overflow-wrap:anywhere}
+.mdl-acoes{display:flex;gap:10px;margin-top:22px}
+.mdl-btn{flex:1;min-height:42px;padding:0 16px;border:1px solid transparent;border-radius:11px;
+  font:600 14.5px/1 inherit;font-family:inherit;cursor:pointer;
+  transition:background .15s,box-shadow .15s,transform .1s}
+.mdl-btn:active{transform:scale(.97)}
+.mdl-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.35)}
+.mdl-cancelar{background:var(--mdl-btn-fundo);color:var(--mdl-btn-texto)}
+.mdl-cancelar:hover{background:var(--mdl-btn-hover)}
+.mdl-ok{background:var(--mdl-acento);color:#fff}
+.mdl-ok:hover{background:var(--mdl-acento-hover)}
+.mdl-perigo .mdl-ok{background:var(--mdl-perigo)}
+.mdl-perigo .mdl-ok:hover{background:var(--mdl-perigo-hover)}
+.mdl-perigo .mdl-btn:focus-visible{box-shadow:0 0 0 3px rgba(220,38,38,.35)}
+.mdl-saindo{animation:mdl-fundo-sai .16s ease-in forwards}
+.mdl-saindo .mdl-caixa{animation:mdl-caixa-sai .16s ease-in forwards}
+html.mdl-aberto{overflow:hidden}
+@keyframes mdl-fundo{from{opacity:0}to{opacity:1}}
+@keyframes mdl-fundo-sai{to{opacity:0}}
+@keyframes mdl-caixa{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes mdl-caixa-sai{to{opacity:0;transform:translateY(8px) scale(.97)}}
+@media(max-width:420px){.mdl-acoes{flex-direction:column-reverse}}
+@media(prefers-reduced-motion:reduce){.mdl-fundo,.mdl-caixa,.mdl-saindo,.mdl-saindo .mdl-caixa{animation-duration:.01s}}

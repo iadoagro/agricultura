@@ -98,6 +98,32 @@ body.deagro-sem-abas .abas{display:none}
 .aba:hover{color:var(--acento);background:var(--superficie2)}
 .aba.ativa{color:var(--acento);border-bottom-color:var(--acento)}
 .aba.ativa svg{opacity:1}
+/* as abas dividem a largura toda; sem espaço, a barra rola na horizontal */
+.abas-pista>.aba,.abas-pista>.aba-mais{flex:1 0 auto}
+.aba-mais{display:flex}
+.aba-mais-btn{flex:1;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  position:relative;padding:9px 18px 7px;background:none;border:none;border-bottom:3px solid transparent;
+  font-family:inherit;font-size:12.5px;font-weight:600;color:var(--tinta3);cursor:pointer;white-space:nowrap;
+  transition:color .3s var(--mo-out,ease),background .3s var(--mo-out,ease)}
+.aba-mais-btn:hover,.aba-mais-btn[aria-expanded="true"]{color:var(--acento);background:var(--superficie2)}
+.aba-mais-btn.ativa{color:var(--acento);border-bottom-color:var(--acento)}
+.aba-mais-btn svg{width:18px;height:18px;opacity:.85}
+.aba-mais-btn .aba-mais-seta{position:absolute;right:4px;top:11px;width:12px;height:12px;transition:rotate .2s}
+.aba-mais-btn[aria-expanded="true"] .aba-mais-seta{rotate:180deg}
+.aba-mais-menu{position:fixed;z-index:950;min-width:220px;padding:6px;background:var(--superficie);
+  border:1px solid var(--linha-t);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.aba-mais-menu[hidden]{display:none}
+.aba-mais-menu .aba{flex-direction:row;justify-content:flex-start;gap:10px;width:100%;padding:9px 12px;
+  border:none;border-radius:8px;font-size:13px}
+.aba-mais-menu .aba:hover{background:var(--superficie2)}
+.aba-mais-menu .aba.ativa{background:var(--superficie2);color:var(--acento)}
+
+@media(min-width:901px){
+  /* O cabeçalho azul sai: tema e usuário foram para o rodapé do menu, o painel do
+     DEAGRO para logo abaixo de "Painéis" e o Admin aparece sozinho para root@root.com.
+     O conteúdo sobe e o primeiro bloco da Visão geral ocupa até o fim da tela. */
+  html.sb-on:not(.sb-mini) .cab-painel .header-acoes{display:none}
+}
 
 /* sem teto de largura: o painel ocupa a tela inteira, seja ela qual for. Havia
    um max-width de 1920px que centralizava o conteúdo e deixava faixas vazias
@@ -523,19 +549,27 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
   .kpi-val{font-size:24px}
 }
 
-/* tablet em retrato — filtros voltam para faixa horizontal no topo */
-@media(max-width:1024px){
+/* Filtros: a coluna lateral só cabe com a tela larga. O menu lateral do site
+   (248px) já come parte da largura, então abaixo de 1400px a coluna some e os
+   filtros viram uma faixa no topo, recolhida atrás do botão "Filtros"
+   (js/mobile-ui.js + css/ui-upgrade.css). */
+@media(max-width:1400px){
+  /* os botões do cabeçalho (absolutos à direita) cobriam o título quando o
+     conteúdo fica estreito: passam a uma linha própria abaixo dele */
+  .header-acoes{position:static;transform:none;margin-top:9px;flex-wrap:wrap;justify-content:center}
   .wrap{padding:16px 14px 32px;display:block}
   /* height:auto é obrigatório: o calc(100vh) do layout de coluna sobrava
-     (celular em pé) ou cortava os campos (celular deitado) na faixa horizontal */
+     (celular em pé) ou cortava os campos (celular deitado) na faixa */
   .filtros{position:static;height:auto;max-height:none;overflow-y:visible;
-    flex-direction:row;flex-wrap:wrap;align-items:flex-end;
-    gap:12px;flex:none;width:auto;margin-bottom:16px}
-  .filtros .filtros-acoes{margin-top:0}
-  .filtro{flex:1 1 150px;min-width:128px;max-width:260px}
-  .filtros-acoes{flex:0 0 auto;width:auto}
-  .filtros-acoes .btn{flex:none}
-  .filtro-resumo{flex:1 1 100%;width:auto}
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+    align-items:end;gap:12px;flex:none;width:auto;margin-bottom:16px}
+  .filtros .filtros-acoes{margin-top:0;width:auto}
+  .filtro{min-width:0;max-width:none}
+  .filtro-resumo{grid-column:1 / -1}
+}
+
+/* tablet em retrato */
+@media(max-width:1024px){
   .aba-conteudo[data-aba="escritorio"] .painel-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .painel.largo .barras{grid-template-columns:minmax(72px,26%) minmax(40px,1fr) auto}
   .abas-pista{justify-content:flex-start}
@@ -790,3 +824,34 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
 .select-busca-campo:focus,.select-busca-opcao:hover,.select-busca-opcao:focus{background:var(--acento-suave)}
 .select-busca-opcao.selecionada{background:var(--acento-fundo);color:#fff}
 .select-busca-vazio{color:var(--tinta3)}
+
+/* Link público (canto dos filtros): o mesmo painel, sem login. */
+.link-publico{flex:none;width:100%;margin-top:6px;padding-top:12px;border-top:1px solid var(--linha-t);display:flex;flex-direction:column;gap:6px}
+.link-publico p{margin:0;font-size:11.5px;line-height:1.4;color:var(--tinta3)}
+.link-publico-linha{display:flex;gap:6px}
+.link-publico-linha input{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--linha-t);border-radius:8px;
+  background:var(--superficie2);color:var(--tinta);font:inherit;font-size:12px;text-overflow:ellipsis}
+.link-publico-linha .btn{flex:none;padding:7px 12px;font-size:12px}
+@media(max-width:1400px){.link-publico{grid-column:1 / -1}}
+
+/* Versão pública (?publico=1): só as abas de números agregados. Sem cadastro de
+   beneficiários, registros linha a linha, lançamento, administração e sem os
+   atalhos para outras áreas do sistema. */
+html.modo-publico .aba[data-aba="registros"],
+html.modo-publico .aba[data-aba="beneficiario"],
+html.modo-publico .aba[data-aba="lancamento"],
+html.modo-publico .aba-mais,
+html.modo-publico #adminBtn,
+html.modo-publico .link-deagro,
+html.modo-publico .link-publico{display:none!important}
+
+/* item de ação dentro de "Mostrar mais" (ex.: Pessoas, dos lançamentos) */
+.aba-mais-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:0;border-radius:8px;background:none;
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--tinta3);text-align:left;cursor:pointer}
+.aba-mais-item[hidden]{display:none}
+.aba-mais-item:hover{background:var(--superficie2);color:var(--acento)}
+.aba-mais-item .lanc-btn-contador{margin-left:auto}
+/* lista de lançamentos: sem título, "+ Novo relatório" à esquerda */
+.lanc-cab{justify-content:flex-start}
+.lanc-cab .painel-acoes{margin-right:auto}
+.lanc-listagem > .lanc-cab{margin-bottom:18px}

@@ -149,3 +149,24 @@ body.ch-fila-pagina{min-height:100vh;background:var(--ch-fundo,#f4f7fb);color:va
 .ch-tabela tr.editando input:focus,.ch-tabela tr.editando select:focus{border-color:var(--ch-azul);box-shadow:0 0 0 3px rgba(37,99,235,.16)}
 .ch-cat-tag{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ch-suave)}
 @media(max-width:1000px){.ch-aux-grade{grid-template-columns:1fr}}
+
+/* Fila: filtros num cartão à esquerda e a lista à direita — o mesmo desenho de
+   Cadastros auxiliares. Com pouco espaço volta a barra de filtros no topo. */
+@media(min-width:1300px){
+  .ch-fila:has(> .ch-barra){display:grid;grid-template-columns:300px minmax(0,1fr);column-gap:22px;align-items:start}
+  .ch-fila:has(> .ch-barra) > .ch-faixa-demo{grid-column:1 / -1;grid-row:1}
+  .ch-fila:has(> .ch-barra) > .ch-kpis{grid-column:1 / -1;grid-row:2}
+  .ch-fila:has(> .ch-barra) > .ch-barra{grid-column:1;grid-row:3 / span 2;position:sticky;top:12px;
+    flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:12px;margin:0;padding:18px 16px}
+  .ch-fila:has(> .ch-barra) > .ch-barra::before{content:"Filtros";font-size:17px;font-weight:700;color:var(--ch-texto,#0f172a)}
+  .ch-fila:has(> .ch-barra) > .ch-status-fila{grid-column:2;grid-row:3}
+  .ch-fila:has(> .ch-barra) > #area{grid-column:2;grid-row:4}
+  .ch-fila:has(> .ch-barra) .ch-busca-fila{flex:none;width:100%;min-width:0}
+  .ch-fila:has(> .ch-barra) .ch-barra select{width:100%;max-width:none;flex:none}
+  .ch-fila:has(> .ch-barra) .ch-barra .ch-seg{display:flex}
+  .ch-fila:has(> .ch-barra) .ch-barra .ch-seg button{flex:1}
+  .ch-fila:has(> .ch-barra) .ch-barra .ch-btn{width:100%;justify-content:center;text-align:center}
+}
+
+/* Cadastro de fiscais tem um tipo só (Bairros): a aba com o contador não serve pra nada */
+.ch-abas-aux:has(> :only-child){display:none}

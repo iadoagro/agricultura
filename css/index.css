@@ -48,3 +48,92 @@ footer{padding:20px 32px;font-size:12px;color:#999;text-align:center;border-top:
 .card:hover .card-icone{scale:1.09;rotate:-4deg}
 @media(max-width:768px){.card-icone{width:52px;height:52px;border-radius:15px;margin-bottom:12px}.card-icone svg{width:25px;height:25px}}
 .tilt-glare{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .38s var(--mo-out,cubic-bezier(.22,1,.36,1));mix-blend-mode:soft-light}
+
+/* ------------------------------------------------- central do dia (js/admin-home.js) */
+.home{flex:1;width:100%;box-sizing:border-box;padding:22px clamp(14px,2.4vw,44px) 48px}
+.home-saudacao{margin:0 0 18px}
+.home-saudacao h2{margin:0;font-size:24px;font-weight:800;color:#0b1f3f}
+.home-saudacao p{margin:4px 0 0;font-size:14px;color:#64748b}
+.home-grade{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+.home-col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.home-cartao[hidden]{display:none}
+.home-cartao h2{margin:0 0 4px}
+.home-carregando{margin:0;padding:10px 0;font-size:13px;color:#64748b;list-style:none}
+.home-mais{display:inline-block;margin-top:14px;font-size:13px;font-weight:700;color:#1d4ed8;text-decoration:none}
+.home-mais:hover{text-decoration:underline}
+
+/* Precisa de você */
+.home-pend{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:14px}
+.home-pend-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;text-decoration:none;color:#0f172a;
+  transition:border-color .2s,box-shadow .2s,transform .2s}
+.home-pend-item:hover{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(37,99,235,.12);transform:translateY(-1px)}
+.home-pend-item b{font-size:26px;font-weight:800;line-height:1;min-width:34px;color:#1d4ed8;font-variant-numeric:tabular-nums}
+.home-pend-item span{font-size:13px;line-height:1.35;color:#475569;font-weight:600}
+.home-pend-item.aviso b{color:#b45309}
+.home-pend-item.aviso:not(.zero){background:#fffbeb;border-color:#fde68a}
+.home-pend-item.perigo b{color:#b91c1c}
+.home-pend-item.perigo:not(.zero){background:#fef2f2;border-color:#fecaca}
+.home-pend-item.zero b{color:#94a3b8}
+
+/* Resumo do ano */
+.home-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.home-kpi{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:12px;background:#fff}
+.home-kpi span{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#64748b}
+.home-kpi b{font-size:24px;font-weight:800;color:#0b1f3f;font-variant-numeric:tabular-nums}
+.home-kpi b em{margin-left:4px;font-size:13px;font-style:normal;font-weight:600;color:#64748b}
+.home-kpi small{font-size:11.5px;font-weight:700}
+.home-kpi small.sobe{color:#15803d}
+.home-kpi small.desce{color:#b91c1c}
+
+/* Atalhos */
+.home-atalhos{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:12px}
+.home-atalho{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#0f172a;
+  font-size:13.5px;font-weight:600;text-decoration:none;transition:background .2s,border-color .2s}
+.home-atalho:hover{background:#f8fafc;border-color:#94a3b8}
+.home-atalho svg{width:18px;height:18px;flex:none;color:#2563eb}
+.home-atalho.principal{grid-column:1 / -1;justify-content:center;border-color:#1d4ed8;color:#fff;
+  background:linear-gradient(180deg,#2f6df0,#1f57d6);box-shadow:0 6px 16px -8px rgba(37,99,235,.9)}
+.home-atalho.principal svg{color:#fff}
+.home-atalho.principal:hover{background:linear-gradient(180deg,#3b78f5,#2560e6)}
+
+/* Listas (lançamentos e eventos) */
+.home-lista{list-style:none;margin:12px 0 0;padding:0}
+.home-lista li a{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;padding:10px 4px;border-bottom:1px solid #e2e8f0;text-decoration:none;color:#0f172a}
+.home-lista li:last-child a{border-bottom:0}
+.home-lista li a:hover{background:#f8fafc}
+.home-lista b{font-size:14px;font-weight:700;overflow-wrap:anywhere}
+.home-lista span{font-size:12.5px;color:#475569}
+.home-lista small{font-size:11.5px;color:#64748b}
+
+@media(max-width:1000px){.home-grade{grid-template-columns:1fr}}
+@media(max-width:600px){.home{padding:16px 12px 32px}.home-saudacao h2{font-size:20px}.home-pend{grid-template-columns:1fr}}
+
+/* Tela grande: a página inicial cabe inteira na tela, sem rolagem. Os cartões dividem
+   a altura que sobra (linhas de mesma altura) e o que não couber numa lista fica
+   escondido — o "Ver todos" de cada cartão leva ao resto. Em tela pequena ou baixa
+   volta o fluxo normal, com rolagem. */
+@media(min-width:1100px) and (min-height:680px){
+  html body{height:100dvh;overflow:hidden}
+  .home{min-height:0;display:flex;flex-direction:column;padding-bottom:22px}
+  .home-saudacao{margin-bottom:14px}
+  .home-grade{flex:1;min-height:0;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto minmax(0,1fr);grid-auto-flow:dense;align-items:stretch}
+  .home-col{display:contents}
+  .home-cartao{min-height:0;overflow:hidden;display:flex;flex-direction:column}
+  #blocoPendencias{grid-column:span 2}
+  .home-pend,.home-kpis,.home-atalhos{overflow:hidden;min-height:0}
+  .home-pend{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+  .home-lista{flex:1;min-height:0;overflow:hidden}
+  .home-cortado{display:none!important}
+  .home-mais{margin-top:auto;padding-top:8px}
+  /* compacta para caber: sem a linha de dica e com espaçamentos menores */
+  .home-cartao{padding:16px 18px}
+  .home-cartao .pd-dica{display:none}
+  .home-pend,.home-kpis,.home-atalhos{margin-top:10px;gap:8px}
+  .home-pend-item{padding:8px 12px}
+  .home-pend-item b{font-size:22px}
+  .home-kpi{padding:8px 12px}
+  .home-kpi b{font-size:20px}
+  .home-atalho{padding:7px 10px;font-size:13px}
+  .home-lista{margin-top:8px}
+  .home-lista li a{padding:7px 4px}
+}

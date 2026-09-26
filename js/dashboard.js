@@ -3234,7 +3234,11 @@
     return { aba: (i < 0 ? bruto : bruto.slice(0, i)) || '', filtros: filtros };
   }
 
+  /* Versão pública: estas abas não existem (registros e nomes de produtores,
+     lançamento e administração). */
+  var ABAS_FORA_DO_PUBLICO = ['registros', 'beneficiario', 'lancamento', 'ins-pessoa', 'ins-dia', 'ins-mes', 'ins-cultura', 'admin'];
   function abaValida(nome) {
+    if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) return false;
     return botoes.some(function (b) { return b.getAttribute('data-aba') === nome && !b.hidden; });
   }
 
@@ -3284,6 +3288,8 @@
   var botoes = [];
   function abrirAba(nome, opc) {
     opc = opc || {};
+    // um cartão de "Ver detalhes" pode apontar para uma aba que o público não tem
+    if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) nome = 'geral';
     abaAtiva = nome;
     botoes.forEach(function (b) {
       var ativa = b.getAttribute('data-aba') === nome;
@@ -3297,6 +3303,10 @@
     document.querySelectorAll('.aba-conteudo').forEach(function (c) {
       c.classList.toggle('ativa', c.getAttribute('data-aba') === nome);
     });
+    // aba escolhida dentro de "Mostrar mais": o botão do menu fica aceso
+    var maisBtn = el('abaMaisBtn');
+    if (maisBtn) maisBtn.classList.toggle('ativa', !!document.querySelector('#abaMaisMenu .aba.ativa'));
+    fecharMais();
     // "Lançamento" é um formulário de cadastro, não um relatório: os filtros
     // da lateral (que recortam os gráficos) não fazem sentido nela e só
     // tomavam espaço da tela.
@@ -3308,10 +3318,44 @@
     window.scrollTo(0, 0);
   }
 
+  /* "Mostrar mais": menu em posição fixa (a barra rola na horizontal e cortaria
+     um menu absoluto). Fecha ao escolher uma aba, ao clicar fora e com Esc. */
+  function fecharMais() {
+    var menu = el('abaMaisMenu'), btn = el('abaMaisBtn');
+    if (!menu || menu.hidden) return;
+    menu.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  function ligarMais() {
+    var menu = el('abaMaisMenu'), btn = el('abaMaisBtn');
+    if (!menu || !btn) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (!menu.hidden) { fecharMais(); return; }
+      var r = btn.getBoundingClientRect();
+      menu.hidden = false;
+      menu.style.top = Math.round(r.bottom + 4) + 'px';
+      // alinhado à direita do botão quando não couber para o lado direito
+      var esq = Math.min(r.left, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, Math.round(esq)) + 'px';
+      btn.setAttribute('aria-expanded', 'true');
+    });
+    // "Pessoas" abre uma janela que mora na aba de lançamentos: a aba precisa estar
+    // aberta antes (captura: roda antes do clique do próprio botão)
+    menu.addEventListener('click', function (e) {
+      if (!e.target.closest('#lancPessoasBtn')) return;
+      if (abaAtiva !== 'lancamento') abrirAba('lancamento');
+      fecharMais();
+    }, true);
+    document.addEventListener('click', function (e) { if (!e.target.closest('#abaMais')) fecharMais(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { fecharMais(); btn.focus(); } });
+    window.addEventListener('resize', fecharMais);
+  }
+
   /** Setas, Home e End percorrem as abas, como manda o padrão de tablist. */
   function ligarTeclasAbas() {
     el('abas').addEventListener('keydown', function (e) {
-      var visiveis = botoes.filter(function (b) { return !b.hidden; });
+      var visiveis = botoes.filter(function (b) { return !b.hidden && b.offsetParent; });   // fora as do menu fechado
       var i = visiveis.indexOf(document.activeElement);
       if (i < 0) return;
       var alvo = e.key === 'ArrowRight' ? visiveis[(i + 1) % visiveis.length]
@@ -3326,7 +3370,16 @@
   }
 
   /* ============================== ADMIN: senha e carga de planilha ========= */
+  /* A conta responsável (root@root.com) entra como admin sozinha: as abas de
+     Admin aparecem no menu lateral sem clicar em nada. Publicar continua pedindo
+     a senha (ver publicar). Outras contas só chegam aqui pelo botão Admin do
+     cabeçalho (celular), que pede a senha. */
+  function ehResponsavelLogado() {
+    try { return !!(window.ADMIN_AUTH && ADMIN_AUTH.papel && ADMIN_AUTH.papel() === 'responsavel'); } catch (e) { return false; }
+  }
   function ehAdmin() {
+    if (window.MODO_PUBLICO) return false;
+    if (ehResponsavelLogado()) return true;
     try {
       var v = sessionStorage.getItem('seagri_admin');
       return v === '1' || v === 'local';
@@ -3719,6 +3772,32 @@
   ligarFiltros();
   ligarAdmin();
   aplicarAdmin();
+  (function ligarLinkPublico() {
+    var campo = el('linkPublicoUrl'), botao = el('linkPublicoCopiar');
+    if (!campo || !botao) return;
+    /* O link é o do site publicado (GitHub Pages), não o endereço de onde o painel
+       está aberto: em localhost ou num arquivo local ele não abriria para ninguém.
+       Em qualquer outro endereço o link acompanha o próprio site. */
+    var SITE_PUBLICADO = 'https://iadoagro.github.io/agricultura/pages/';
+    var url;
+    try {
+      var local = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname) || location.protocol === 'file:';
+      url = local ? SITE_PUBLICADO + 'mecanizacao-publico.html' : new URL('mecanizacao-publico.html', location.href).href;
+    } catch (e) { url = SITE_PUBLICADO + 'mecanizacao-publico.html'; }
+    campo.value = url;
+    campo.addEventListener('focus', function () { campo.select(); });
+    botao.addEventListener('click', function () {
+      function feito() { botao.textContent = 'Copiado!'; setTimeout(function () { botao.textContent = 'Copiar'; }, 1800); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(feito, function () { campo.select(); });
+      } else {
+        campo.select();
+        try { if (document.execCommand('copy')) feito(); } catch (e) { /* o texto fica selecionado */ }
+      }
+    });
+  })();
+  // o perfil da conta chega depois da página: reaplica quando ele muda
+  window.addEventListener('admin-auth-atualizado', aplicarAdmin);
   ligarOrdenacao();
   pintarCabecalhoOrdem();
   POR_PAG = +lerPref(CHAVE_POR_PAG, 25) || 25;
@@ -3818,6 +3897,7 @@
     if (TODOS.length) aplicarEstado(lerHash());
   });
   ligarTeclasAbas();
+  ligarMais();
 
   carregarDados().then(function (res) {
     if (!res.pacote || !res.pacote.registros) {

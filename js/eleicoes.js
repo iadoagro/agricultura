@@ -574,12 +574,18 @@
       mensagem.className = 'erro'; mensagem.textContent = 'Este cadastro salvo localmente é antigo demais e não pode ser excluído por aqui.';
       return;
     }
-    if (!window.confirm('Excluir o cadastro de ' + r.nome + '? Essa ação não poderá ser revertida.')) return;
-    mensagem.textContent = 'Excluindo…'; mensagem.className = '';
-    window.BANCO_ELEICOES.excluir(r._id).then(() => {
-      if (editandoId === r._id) encerrarEdicao();
-      mensagem.className = ''; mensagem.textContent = 'Cadastro excluído.';
-    }).catch(e => { mensagem.className = 'erro'; mensagem.textContent = e.message; });
+    window.Modal.confirmar({
+      titulo: 'Excluir cadastro',
+      mensagem: 'Excluir o cadastro de ' + r.nome + '? Essa ação não poderá ser revertida.',
+      confirmar: 'Excluir', perigo: true
+    }).then(function (ok) {
+      if (!ok) return;
+      mensagem.textContent = 'Excluindo…'; mensagem.className = '';
+      window.BANCO_ELEICOES.excluir(r._id).then(() => {
+        if (editandoId === r._id) encerrarEdicao();
+        mensagem.className = ''; mensagem.textContent = 'Cadastro excluído.';
+      }).catch(e => { mensagem.className = 'erro'; mensagem.textContent = e.message; });
+    });
   }
   function encerrarEdicao() {
     editandoId = null;

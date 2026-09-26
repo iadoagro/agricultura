@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var auth = window.ADMIN_AUTH;
+  if (window.MODO_PUBLICO) return;   // versão pública do painel: sem login
   if (!auth || !auth.online) return;
 
   var CHAVES_POR_ARQUIVO = {

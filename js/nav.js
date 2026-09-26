@@ -22,6 +22,7 @@
 (function () {
   'use strict';
   var auth = window.ADMIN_AUTH;
+  if (window.MODO_PUBLICO) return;   // versão pública do painel: sem menu, sem login
   if (!auth || !auth.online) return;
 
   /* chave: a mesma de admin-gate.js / Acessos (null = qualquer conta aprovada).
@@ -30,12 +31,13 @@
     'index.html':              { nome: 'Início', grupo: null, chave: null },
     'eleicoes.html':           { nome: 'Fiscais', grupo: 'Fiscais', chave: 'eleicoes', pai: 'index.html' },
     'cadastros-fiscais.html':  { nome: 'Bairros dos fiscais', grupo: 'Fiscais', admin: true, pai: 'eleicoes.html' },
-    // Painéis: um link só no menu, direto pro painel de Mecanização; o DEAGRO
-    // abre pelo botão no topo desse painel (e aparece na trilha).
-    'dashboard.html':          { nome: 'Painéis', grupo: 'Painéis', chave: 'dashboards', pai: 'index.html' },
+    // Painéis: dois itens no menu, Mecanização e DEAGRO.
+    'dashboard.html':          { nome: 'Mecanização', grupo: 'Painéis', chave: 'dashboards', pai: 'index.html' },
     'lancamento-editar.html':  { nome: 'Editar lançamento', grupo: 'Painéis', chave: 'dashboards', pai: 'dashboard.html', paiHash: '#lancamento', menu: false, marca: 'dashboard.html' },
-    'deagro-secoes.html':      { nome: 'DEAGRO', grupo: 'Painéis', chave: 'dashboards', pai: 'dashboard.html', menu: false, marca: 'dashboard.html' },
-    'deagro.html':             { nome: 'Painel DEAGRO', grupo: 'Painéis', chave: 'dashboards', pai: 'deagro-secoes.html', menu: false, marca: 'dashboard.html' },
+    // O DEAGRO abre direto na Visão geral (href): a página de seções fica só como
+    // endereço antigo. A barra de abas do próprio painel faz o papel dela.
+    'deagro-secoes.html':      { nome: 'DEAGRO', grupo: 'Painéis', chave: 'dashboards', pai: 'index.html', menu: false, marca: 'deagro.html' },
+    'deagro.html':             { nome: 'DEAGRO', grupo: 'Painéis', chave: 'dashboards', pai: 'index.html', href: 'deagro.html#geral' },
     'chamados.html':           { nome: 'Fila de chamados', grupo: 'Chamados', chave: 'chamados', pai: 'index.html' },
     'cadastros-chamados.html': { nome: 'Cadastros auxiliares', grupo: 'Chamados', chave: 'chamados', pai: 'chamados.html' },
     // o formulário é público (link compartilhado), mas no menu só pra quem tem Chamados:
@@ -50,7 +52,7 @@
   };
   var GRUPOS = ['Fiscais', 'Painéis', 'Chamados', 'Documentos', 'Administração'];
   // Grupo com um item só que vira link solto no menu (como o Início), sem título de grupo.
-  var GRUPOS_SOLTOS = { 'Painéis': true };
+  var GRUPOS_SOLTOS = {};
   var ICONES = {
     'Início': '<path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     'Fiscais': '<path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7z"/><path d="M22 19H2"/>',
@@ -61,7 +63,9 @@
     'busca': '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
     'menu': '<path d="M4 6h16M4 12h16M4 18h16"/>',
     'sair': '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
-    'fechar': '<path d="M18 6 6 18M6 6l12 12"/>'
+    'fechar': '<path d="M18 6 6 18M6 6l12 12"/>',
+    'lua': '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+    'sol': '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/>'
   };
   var CHAVE_MINI = 'seagri_nav_mini';
   var DOMINIO_USUARIO = '@sistema.local';
@@ -147,7 +151,7 @@
   /* ------------------------------------------------------------ menu lateral */
   function itemHtml(arq) {
     var p = MAPA[arq], aceso = arq === marcada;
-    return '<a class="sb-item' + (aceso ? ' atual' : '') + '" href="' + esc(arq) + '"' + (aceso ? ' aria-current="page"' : '') +
+    return '<a class="sb-item' + (aceso ? ' atual' : '') + '" href="' + esc(p.href || arq) + '"' + (aceso ? ' aria-current="page"' : '') +
       ' data-busca="' + esc(semAcento(p.nome + ' ' + (p.grupo || ''))) + '"><span>' + esc(p.nome) + '</span></a>';
   }
 
@@ -175,6 +179,14 @@
       }
       if (ev.target.closest('.sb-fechar')) { fecharGaveta(true); return; }
       if (ev.target.closest('.sb-sair')) sair();
+      if (ev.target.closest('.sb-tema')) {
+        var real = document.getElementById('temaBtn');
+        if (real) {
+          real.click();
+          var novo = lateral.querySelector('.sb-tema');
+          if (novo) novo.outerHTML = temaHtml();
+        }
+      }
     });
     preencherLateral();
   }
@@ -206,7 +218,7 @@
         itens.map(itemHtml).join('') + '</section>';
     });
     html += '<p class="sb-vazio" hidden>Nenhuma página encontrada.</p></nav>' +
-      '<div class="sb-rodape"><span class="sb-usuario"></span>' +
+      '<div class="sb-rodape"><span class="sb-usuario"></span>' + temaHtml() +
         '<button type="button" class="sb-sair" title="Sair">' + icone('sair') + '<span>Sair</span></button></div>';
     lateral.innerHTML = html;
     busca = lateral.querySelector('.sb-busca input');
@@ -218,6 +230,15 @@
       var margem = aceso.offsetTop - lista.offsetTop - lista.clientHeight + aceso.offsetHeight + 24;
       if (margem > 0) lista.scrollTop = margem;
     }
+  }
+
+  /* Tema claro/escuro ao lado do usuário. O botão de verdade fica na própria
+     página (#temaBtn, que sabe redesenhar os gráficos); este só o aciona. */
+  function temaHtml() {
+    if (!document.getElementById('temaBtn')) return '';
+    var escuro = raiz.getAttribute('data-tema') === 'escuro';
+    var rotulo = escuro ? 'Tema claro' : 'Tema escuro';
+    return '<button type="button" class="sb-tema" title="' + rotulo + '" aria-label="' + rotulo + '">' + icone(escuro ? 'sol' : 'lua') + '</button>';
   }
 
   function atualizarUsuario() {

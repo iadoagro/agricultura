@@ -66,8 +66,14 @@
     });
     var exc = el('button', { class: 'ch-btn pequeno perigo', type: 'button', text: 'Excluir' });
     exc.addEventListener('click', function () {
-      if (!window.confirm('Excluir o bairro "' + b.nome + '" (' + (nomes[b.municipio] || b.municipio) + ')?\n\nOs fiscais já cadastrados não mudam. Se só quer tirar da lista do formulário, use Desativar.\nObs.: se alguém cadastrar um fiscal com esse bairro de novo, ele volta sozinho para a lista.')) return;
-      B.excluir(b.id).then(function () { U.aviso('Excluído.'); }, function (e) { U.aviso(e.message, 'erro'); });
+      window.Modal.confirmar({
+        titulo: 'Excluir bairro',
+        mensagem: 'Excluir o bairro "' + b.nome + '" (' + (nomes[b.municipio] || b.municipio) + ')?\n\nOs fiscais já cadastrados não mudam. Se só quer tirar da lista do formulário, use Desativar.\nObs.: se alguém cadastrar um fiscal com esse bairro de novo, ele volta sozinho para a lista.',
+        confirmar: 'Excluir', perigo: true
+      }).then(function (ok) {
+        if (!ok) return;
+        B.excluir(b.id).then(function () { U.aviso('Excluído.'); }, function (e) { U.aviso(e.message, 'erro'); });
+      });
     });
     return el('tr', { class: b.ativo ? '' : 'inativo' }, [
       el('td', { class: 'nome', text: b.nome }),

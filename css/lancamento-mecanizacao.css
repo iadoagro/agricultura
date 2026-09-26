@@ -113,6 +113,12 @@
   border-radius:50%;background:var(--superficie);color:var(--tinta3);box-shadow:0 0 0 1px var(--linha-t)}
 .lanc-bloqueado{opacity:.6}
 .lanc-bloqueado:hover:not(:disabled){opacity:1}
+/* Travado (pedido pendente): já nasce com cara de bloqueado e não reage a
+   hover nem a clique — sem fundo de hover do .btn nem o "aperto" do motion-ui. */
+.lanc-btn-icone:disabled,
+.lanc-btn-icone:disabled:hover,
+.lanc-btn-icone:disabled:active{opacity:.38;filter:grayscale(1);cursor:not-allowed;scale:1;transform:none;
+  background:var(--superficie2);border-style:dashed;color:var(--tinta3);box-shadow:none}
 .lanc-btn-aprovar{color:var(--acento-fundo);border-color:var(--acento-suave)}
 .lanc-btn-aprovar:hover{background:var(--acento-suave)}
 
@@ -216,3 +222,39 @@
 .lanc-progresso-barra{height:8px;border-radius:999px;background:var(--superficie2);overflow:hidden}
 .lanc-progresso-barra span{display:block;height:100%;border-radius:inherit;background:var(--acento-fundo);transition:width .4s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .lanc-btn-contador{display:inline-block;min-width:18px;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--tag-acu-bg);color:var(--tag-acu-tx);font-size:11px;font-weight:700;line-height:1.5;text-align:center}
+
+/* Lista de lançamentos: filtros num cartão à esquerda e a tabela em outro cartão
+   à direita, cada um com a sua borda. A tabela tem onze colunas, então só cabe
+   ao lado dos filtros em tela larga. */
+@media(min-width:1500px){
+  .lanc-listagem{display:grid;grid-template-columns:290px minmax(0,1fr);column-gap:22px;align-items:start;
+    background:none;border:0;box-shadow:none;padding:0}
+  .lanc-listagem > .painel-cab{grid-column:1 / -1;padding:0 4px}
+  .lanc-listagem > .lanc-filtros{grid-column:1;grid-row:2;position:sticky;top:12px;margin:0;
+    flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:12px;padding:16px;
+    background:var(--superficie);border:1px solid var(--anel);border-radius:12px;box-shadow:var(--sombra-p)}
+  .lanc-listagem > .lanc-filtros::before{content:"Filtros";font-size:16px;font-weight:700;color:var(--tinta)}
+  .lanc-listagem > .lanc-filtros label,.lanc-listagem > .lanc-filtros .lanc-filtro-busca,.lanc-listagem > .lanc-filtros .lanc-filtro-pessoa{flex:none;width:100%}
+  .lanc-listagem > .lanc-filtros .btn{width:100%}
+  .lanc-listagem > .lanc-lista-cartao{grid-column:2;grid-row:2;min-width:0;padding:16px 18px;
+    background:var(--superficie);border:1px solid var(--anel);border-radius:12px;box-shadow:var(--sombra-p)}
+}
+
+/* ---- Padrão visual de cadastro (css/padrao.css) aplicado ao formulário de
+   lançamento: mesmos rótulos, campos, botão principal e cartões das demais
+   telas, mantendo as cores de tema (claro/escuro) deste painel. */
+.lanc-form .painel,.lanc-listagem.painel{border-radius:18px}
+.lanc-campos label{font-size:13px;font-weight:700}
+.lanc-campos label.lanc-check{font-weight:500}
+.lanc-campos input,.lanc-campos select,.lanc-campos textarea,.lanc-filtros input,.lanc-filtros select{
+  min-height:44px;padding:10px 12px;border-radius:10px;font-size:14px}
+.lanc-campos textarea{min-height:96px}
+.lanc-campos input:focus,.lanc-campos select:focus,.lanc-campos textarea:focus,.lanc-filtros input:focus,.lanc-filtros select:focus{
+  border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.16)}
+.lanc-caixas label{border-radius:10px;padding:9px 12px}
+.lanc-fieldset{border-radius:14px}
+.lanc-form .btn-verde,#lancNovoBtn,.lanc-dialogo .btn-verde{min-height:40px;border:1px solid #1d4ed8;border-radius:10px;color:#fff;
+  background:linear-gradient(180deg,#2f6df0,#1f57d6);box-shadow:0 6px 16px -8px rgba(37,99,235,.9)}
+.lanc-form .btn-verde:hover,#lancNovoBtn:hover,.lanc-dialogo .btn-verde:hover{background:linear-gradient(180deg,#3b78f5,#2560e6)}
+.lanc-form .btn,.lanc-dialogo .btn,.lanc-filtros .btn{border-radius:10px}
+.lanc-dialogo{border-radius:18px}

@@ -8,12 +8,15 @@
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/admin-auth.css?v=2026092401">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
-<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092401">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092515">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092405">
+<link rel="stylesheet" href="../css/nav.css?v=2026092538">
+<link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
+<script src="../js/modal-ui.js?v=2026092527"></script>
+<link rel="stylesheet" href="../css/padrao.css?v=2026092541">
 </head>
 <body>
-<header><h1>SISTEMA</h1><p>Usuários e acessos</p></header>
+<header class="cab-padrao"><h1>SISTEMA</h1><p>Usuários e acessos</p></header>
 <main class="permissoes-layout">
   <section class="permissoes-cabecalho">
     <div><span class="permissoes-sobretitulo">ADMINISTRAÇÃO</span><h2>Usuários</h2><p>Cadastre pessoas, aprove pedidos de acesso e ative, desative ou exclua contas. Clique na pessoa para ver e alterar as páginas que ela acessa.</p></div>
@@ -22,7 +25,7 @@
 
   <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável.</p>
 
-  <div id="painelUsuarios">
+  <div id="painelUsuarios" class="usuarios-grade">
     <form id="formNovo" class="permissoes-novo" autocomplete="off">
       <div class="permissoes-novo-tit">
         <strong>Cadastrar novo usuário</strong>
@@ -33,27 +36,29 @@
       <label><span>Login <em>(gerado automaticamente)</em></span><input id="novoLogin" type="text" disabled></label>
       <button class="permissoes-salvar permissoes-cadastrar" type="submit">Cadastrar usuário</button>
     </form>
+    <section class="usuarios-lista" aria-label="Usuários">
+      <div class="permissoes-filtros">
+        <label>Buscar usuário<input id="usuariosBusca" type="search" placeholder="Buscar por nome ou login…"></label>
+        <label>Situação<select id="usuariosSituacao"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="aprovado">Aprovados</option><option value="recusado">Recusados</option></select></label>
+      </div>
 
-    <div class="permissoes-filtros">
-      <label>Buscar usuário<input id="usuariosBusca" type="search" placeholder="Nome ou login"></label>
-      <label>Situação<select id="usuariosSituacao"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="aprovado">Aprovados</option><option value="recusado">Recusados</option></select></label>
-    </div>
+      <p class="admin-msg" id="adminMsg" role="status"></p>
 
-    <p class="admin-msg" id="adminMsg" role="status"></p>
+      <div class="permissoes-tabela usuarios-tabela">
+        <div class="permissoes-colunas"><span>USUÁRIO</span><span>SITUAÇÃO</span><span>AÇÕES</span></div>
+        <ul class="lista-solicitacoes" id="listaUsuarios"></ul>
+      </div>
+    </section>
 
-    <div class="permissoes-tabela usuarios-tabela">
-      <div class="permissoes-colunas"><span>USUÁRIO</span><span>SITUAÇÃO</span><span>AÇÕES</span></div>
-      <ul class="lista-solicitacoes" id="listaUsuarios"></ul>
-    </div>
   </div>
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
 <script src="../js/admin-auth.js?v=2026092410"></script>
-<script src="../js/admin-gate.js?v=2026092203"></script>
-<script src="../js/rastreio.js?v=2026092303"></script>
-<script src="../js/nav.js?v=2026092407"></script>
-<script src="../js/admin-usuarios.js?v=2026092401"></script>
+<script src="../js/admin-gate.js?v=2026092530"></script>
+<script src="../js/rastreio.js?v=2026092530"></script>
+<script src="../js/nav.js?v=2026092530"></script>
+<script src="../js/admin-usuarios.js?v=2026092527"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

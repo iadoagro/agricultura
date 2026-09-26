@@ -8,96 +8,75 @@
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
 <script src="../js/admin-auth.js?v=2026092410"></script>
-<script src="../js/admin-gate.js?v=2026092203"></script>
-<script src="../js/rastreio.js?v=2026092303"></script>
-<script src="../js/nav.js?v=2026092407"></script>
+<script src="../js/admin-gate.js?v=2026092530"></script>
+<script src="../js/rastreio.js?v=2026092530"></script>
+<script src="../js/nav.js?v=2026092530"></script>
 <meta property="og:title" content="SISTEMA">
 <meta property="og:description" content="Portal interno — organograma, portarias, chamados e contatos.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/index.css?v=2026091905">
+<link rel="stylesheet" href="../css/index.css?v=2026092548">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
-<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092401">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092515">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092405">
+<link rel="stylesheet" href="../css/nav.css?v=2026092538">
+<link rel="stylesheet" href="../css/padrao.css?v=2026092545">
 </head>
 <body>
-<header>
-  <h1>SISTEMA</h1>
-</header>
+<header class="cab-padrao"><h1>SISTEMA</h1><p>P&aacute;gina inicial</p></header>
 
-<div class="container">
-  <div class="cards">
-    <a href="admin-usuarios.html" class="card-link" id="cardUsuarios" hidden>
-      <div class="card">
-        <span class="card-icone admin" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-        <h2>Usuários</h2>
-        <p>Contas e acessos de cada pessoa</p>
-      </div>
-    </a>
-    <a href="eleicoes.html" class="card-link" data-chave="eleicoes">
-      <div class="card">
-        <span class="card-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7z"/><path d="M22 19H2"/></svg></span>
-        <h2>Fiscais</h2>
-        <p>Cadastros por município do Acre</p>
-      </div>
-    </a>
-    <a href="cadastros-fiscais.html" class="card-link" id="cardBairros" hidden>
-      <div class="card">
-        <span class="card-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
-        <h2>Bairros</h2>
-        <p>Cadastro de bairros dos fiscais</p>
-      </div>
-    </a>
-    <a href="logs.html" class="card-link" id="cardLogs" hidden>
-      <div class="card">
-        <span class="card-icone admin" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/><path d="M9 9h1"/></svg></span>
-        <h2>Logs</h2>
-        <p>Histórico de login, cadastro, edição e exclusão</p>
-      </div>
-    </a>
-    <a href="portarias.html" class="card-link" data-chave="portarias">
-      <div class="card">
-        <span class="card-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
-        <h2>Portarias</h2>
-        <p>Portarias de nomeação</p>
-      </div>
-    </a>
-    <a href="organograma.html" class="card-link" data-chave="organograma">
-      <div class="card">
-        <span class="card-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg></span>
-        <h2>Organograma</h2>
-        <p>Estrutura organizacional</p>
-      </div>
-    </a>
-    <a href="chamados.html" class="card-link" data-chave="chamados">
-      <div class="card">
-        <span class="card-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/></svg></span>
-        <h2>Chamados</h2>
-        <p>Fila de suporte de TI</p>
-      </div>
-    </a>
-    <a href="dashboard.html" class="card-link" data-chave="dashboards">
-      <div class="card">
-        <span class="card-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
-        <h2>Painéis</h2>
-        <p>Mecanização e DEAGRO</p>
-      </div>
-    </a>
-    <a href="contatos.html" class="card-link" data-chave="contatos">
-      <div class="card">
-        <span class="card-icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
-        <h2>Contatos</h2>
-        <p>Telefones dos servidores</p>
-      </div>
-    </a>
+<main class="home" id="home">
+  <section class="home-saudacao">
+    <h2 id="homeSaudacao">Bem-vindo</h2>
+    <p id="homeData"></p>
+  </section>
+
+  <div class="home-grade">
+    <div class="home-col">
+      <!-- Precisa de você: contadores que levam direto à tela certa -->
+      <section class="pd-cartao home-cartao" id="blocoPendencias" hidden aria-labelledby="tituloPend">
+        <h2 id="tituloPend">Precisa de voc&ecirc;</h2>
+        <p class="pd-dica">O que est&aacute; esperando uma a&ccedil;&atilde;o sua.</p>
+        <div class="home-pend" id="homePend"><p class="home-carregando">Carregando&hellip;</p></div>
+      </section>
+
+      <!-- Resumo do ano (base da Mecaniza&ccedil;&atilde;o) -->
+      <section class="pd-cartao home-cartao" id="blocoResumo" hidden aria-labelledby="tituloResumo">
+        <h2 id="tituloResumo">Resumo de <span id="homeAno"></span></h2>
+        <p class="pd-dica">Mecaniza&ccedil;&atilde;o e a&ccedil;udagem &mdash; varia&ccedil;&atilde;o contra o ano anterior.</p>
+        <div class="home-kpis" id="homeKpis"><p class="home-carregando">Carregando&hellip;</p></div>
+        <a class="home-mais" href="dashboard.html">Abrir o painel de Mecaniza&ccedil;&atilde;o &rarr;</a>
+      </section>
+    </div>
+
+    <div class="home-col">
+      <!-- Atalhos: as a&ccedil;&otilde;es que mais se repetem -->
+      <section class="pd-cartao home-cartao" id="blocoAtalhos" hidden aria-labelledby="tituloAtalhos">
+        <h2 id="tituloAtalhos">Atalhos</h2>
+        <div class="home-atalhos" id="homeAtalhos"></div>
+      </section>
+
+      <!-- &Uacute;ltimos lan&ccedil;amentos -->
+      <section class="pd-cartao home-cartao" id="blocoLanc" hidden aria-labelledby="tituloLanc">
+        <h2 id="tituloLanc">&Uacute;ltimos lan&ccedil;amentos</h2>
+        <ul class="home-lista" id="homeLanc"><li class="home-carregando">Carregando&hellip;</li></ul>
+        <a class="home-mais" href="dashboard.html#lancamento">Ver todos &rarr;</a>
+      </section>
+
+      <!-- Atividade recente (s&oacute; a conta respons&aacute;vel) -->
+      <section class="pd-cartao home-cartao" id="blocoEventos" hidden aria-labelledby="tituloEventos">
+        <h2 id="tituloEventos">Atividade recente</h2>
+        <ul class="home-lista" id="homeEventos"><li class="home-carregando">Carregando&hellip;</li></ul>
+        <a class="home-mais" href="logs.html">Ver todos os eventos &rarr;</a>
+      </section>
+    </div>
   </div>
-</div>
+</main>
 
-<footer>Página de apoio interno</footer>
 
-<script src="../js/admin-home.js?v=2026092402"></script>
-<script src="../js/tilt-card.js?v=2026091901"></script>
+<script src="../js/chamados-dados.js?v=2026091930"></script>
+<script src="../js/lancamento-campos.js?v=2026092517"></script>
+<script src="../js/admin-home.js?v=2026092548"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

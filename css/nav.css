@@ -76,8 +76,7 @@ html.sb-on.sb-mini>body{padding-left:var(--sb-mini)}
 .sb-inicio.atual,.sb-item.atual{background:var(--sb-ativo);color:var(--sb-ativo-texto);font-weight:600}
 .sb-inicio[hidden],.sb-item[hidden],.sb-grupo[hidden],.sb-vazio[hidden]{display:none}
 .sb-inicio span,.sb-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-item{padding-left:38px;font-size:13.5px}
-.sb-grupo{margin-top:12px}
+.sb-item{padding-left:38px;font-size:13.5px}.sb-grupo{margin-top:12px}
 /* link solto entre grupos (Painéis): mesmo espaço dos grupos, pra não parecer item do grupo de cima */
 .sb-solto{margin-top:12px}
 html.sb-mini .sb-solto{margin-top:6px}
@@ -92,6 +91,8 @@ html.sb-mini .sb-solto{margin-top:6px}
 .sb-login{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-sair{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;flex:none;border:1px solid var(--sb-borda);border-radius:8px;background:none;cursor:pointer;font-size:13px}
 .sb-sair:hover{background:rgba(220,60,60,.18);border-color:rgba(255,120,120,.35)}
+.sb-tema{display:inline-grid;place-items:center;width:32px;height:32px;flex:none;padding:0;border:1px solid var(--sb-borda);border-radius:8px;background:none;cursor:pointer}
+.sb-tema:hover{background:var(--sb-hover)}
 
 /* recolhido: faixa só de ícones (os ícones de grupo abrem o menu no grupo) */
 html.sb-mini .sb{width:var(--sb-mini)}
@@ -110,6 +111,7 @@ html.sb-mini .sb-grupo.atual .sb-grupo-ico{background:var(--sb-ativo);color:#fff
 html.sb-mini .sb-rodape{flex-direction:column;padding:10px 0}
 html.sb-mini .sb-usuario{flex:none}
 html.sb-mini .sb-sair{width:40px;padding:0;justify-content:center}
+html.sb-mini .sb-tema{width:40px}
 
 /* ------------------------------------------------------------ barra do topo */
 .snav{
@@ -180,4 +182,21 @@ html.sb-mini .sb-sair{width:40px;padding:0;justify-content:center}
   .snav-trilha li:nth-last-child(2){flex:0 1 auto;min-width:0}
   .snav-trilha li:nth-last-child(2) a{min-width:0}
   .snav-trilha li:nth-last-child(2) a span{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+
+/* ---------------------------------------------------- cabeçalho padrão
+   O mesmo em todas as telas com login: faixa azul, "SISTEMA" e, embaixo, o nome
+   da tela. Fica logo abaixo da trilha (Início › …). Seletor forte de propósito:
+   vence o header próprio que cada página tinha no seu CSS. */
+html body header.cab-padrao{
+  position:relative;display:block;flex:none;margin:0;padding:22px 20px;text-align:center;color:#fff;
+  background:linear-gradient(135deg,#153e75,#2563eb);box-shadow:none;border:0;border-radius:0}
+html body header.cab-padrao h1{margin:0 0 4px;font-size:22px;font-weight:700;line-height:1.25;letter-spacing:0;color:#fff;flex:none}
+html body header.cab-padrao p{margin:0;font-size:13px;font-weight:400;line-height:1.4;opacity:.9;color:#fff}
+html body header.cab-padrao .header-stats{opacity:.85;margin-left:6px;white-space:nowrap}
+html body header.cab-padrao .header-stats:not(:empty)::before{content:"· "}
+@media(max-width:600px){
+  html body header.cab-padrao{padding:16px 14px}
+  html body header.cab-padrao h1{font-size:19px}
+  html body header.cab-padrao p{font-size:12px}
 }

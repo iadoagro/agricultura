@@ -1616,6 +1616,10 @@
     document.querySelectorAll('.aba-conteudo').forEach(function (d) {
       d.classList.toggle('ativa', d.getAttribute('data-aba') === nome);
     });
+    // aba escolhida dentro de "Mostrar mais": o botão do menu fica aceso
+    var maisBtn = el('abaMaisBtn');
+    if (maisBtn) maisBtn.classList.toggle('ativa', !!document.querySelector('#abaMaisMenu .aba.ativa'));
+    fecharMais();
     // trocar de aba é navegação: entra no histórico. Mudança de filtro só
     // reescreve o endereço (gravarUrl(false)), senão o Voltar viraria um
     // desfazer de clique em clique
@@ -1629,6 +1633,32 @@
     // chamar só DESENHO deixaria o resumo em branco na primeira pintura
     atualizar();
   }
+
+  /* "Mostrar mais": menu em posição fixa (a barra rola na horizontal e cortaria
+     um menu absoluto). Fecha ao escolher uma aba, ao clicar fora e com Esc. */
+  function fecharMais() {
+    var menu = el('abaMaisMenu'), btn = el('abaMaisBtn');
+    if (!menu || menu.hidden) return;
+    menu.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  (function ligarMais() {
+    var menu = el('abaMaisMenu'), btn = el('abaMaisBtn');
+    if (!menu || !btn) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (!menu.hidden) { fecharMais(); return; }
+      var r = btn.getBoundingClientRect();
+      menu.hidden = false;
+      menu.style.top = Math.round(r.bottom + 4) + 'px';
+      var esq = Math.min(r.left, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, Math.round(esq)) + 'px';
+      btn.setAttribute('aria-expanded', 'true');
+    });
+    document.addEventListener('click', function (e) { if (!e.target.closest('#abaMais')) fecharMais(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { fecharMais(); btn.focus(); } });
+    window.addEventListener('resize', fecharMais);
+  })();
 
   document.getElementById('abas').addEventListener('click', function (e) {
     var b = e.target.closest('.aba');

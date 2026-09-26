@@ -322,9 +322,10 @@ body{overflow-x:clip}
   .topbar{padding:8px 10px}
 }
 
-/* Botão que recolhe os filtros dos painéis (só aparece no celular; ver js/mobile-ui.js) */
+/* Botão que recolhe os filtros dos painéis. Aparece quando a coluna lateral some
+   (até 1400px, já contando o menu lateral do site; ver js/mobile-ui.js) */
 .filtros-toggle{display:none}
-@media(max-width:768px){
+@media(max-width:1400px){
   .filtros-toggle{
     display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin:0 0 10px;padding:0 16px;
     border:1px solid var(--ui-soft-border);border-radius:12px;background:#fff;color:#1b375e;

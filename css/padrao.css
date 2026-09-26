@@ -1,0 +1,228 @@
+/* PADRÃO VISUAL — telas de cadastro e de listagem/cadastro
+   ------------------------------------------------------------------------
+   O desenho de referência é o de "Cadastros auxiliares" (chamados-comum.css e
+   chamados.css, classes ch-*). Este arquivo o transforma em regra para o
+   sistema todo e leva as telas que ainda tinham visual próprio para ele.
+
+   A regra (definida pelo responsável, a partir de "Cadastros auxiliares"):
+     • Tela COM cadastro: formulário "Novo …" num cartão à ESQUERDA; à DIREITA
+       o cartão da lista, com a busca (lupa), os filtros de situação em botões
+       segmentados (Todos / Ativos / Inativos) e a contagem EM CIMA da tabela.
+     • Tela SÓ de listagem: cartão "Filtros" à ESQUERDA e a lista à DIREITA.
+     Os dois cartões sempre com o mesmo acabamento.
+
+     Tela ............ fundo #f4f7fb, conteúdo até a borda (sem coluna centralizada)
+     Cartão .......... branco, borda #e2e8f0, raio 18, sombra suave, padding 20
+     Título do cartão  17px / 800 / #0b1f3f, com a dica embaixo (12,5px, cinza)
+     Campo ........... rótulo 13px / 700, controle de 44px, borda 1,5px, raio 10,
+                       foco azul com anel de 3px
+     Botão principal . azul em degradê; secundário branco com borda; perigo em
+                       vermelho só na borda; "pequeno" (32px) dentro das tabelas
+     Filtro em lista . busca com lupa + botões segmentados; contagem embaixo
+     Tabela .......... cabeçalho em caixa alta 11,5px, linha de 2px embaixo, linhas
+                       com hover, ações alinhadas à direita
+     Situação ........ pílula colorida (verde ativo, cinza inativo, âmbar
+                       pendente, vermelho recusado)
+     Largura ......... lado a lado só a partir de 1000px; abaixo, empilha
+
+   Classes prontas (pd-*) para telas novas; as telas antigas são levadas ao mesmo
+   desenho pelas regras "mapeadas" mais abaixo, sem mexer no JavaScript delas.
+   Carregar DEPOIS do CSS da própria página. */
+
+:root{
+  --pd-azul:#2563eb;--pd-azul-esc:#1d4ed8;--pd-azul-suave:#eff6ff;
+  --pd-fundo:#f4f7fb;--pd-cartao:#fff;--pd-linha:#e2e8f0;--pd-linha-forte:#cbd5e1;
+  --pd-texto:#0f172a;--pd-titulo:#0b1f3f;--pd-suave:#475569;--pd-mudo:#64748b;
+  --pd-perigo:#b91c1c;--pd-perigo-borda:#fecaca;--pd-perigo-fundo:#fef2f2;
+  --pd-sombra:0 1px 2px rgba(15,23,42,.05),0 8px 24px -12px rgba(15,23,42,.14);
+  --pd-foco:0 0 0 3px rgba(37,99,235,.16);
+}
+
+/* ============================================================ componentes */
+.pd-pagina{padding:22px clamp(14px,2.4vw,44px) 60px;color:var(--pd-texto)}
+.pd-grade{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:20px;align-items:start}
+.pd-grade.filtros{grid-template-columns:300px minmax(0,1fr)}
+@media(max-width:1000px){.pd-grade,.pd-grade.filtros{grid-template-columns:1fr}}
+
+.pd-cartao{background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra);padding:20px;min-width:0}
+.pd-cartao > h2,.pd-titulo{font-size:17px;font-weight:800;color:var(--pd-titulo);margin:0 0 4px}
+.pd-dica{font-size:12.5px;color:var(--pd-mudo);margin:0}
+.pd-form{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+.pd-lateral{position:sticky;top:12px}
+
+.pd-campo{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pd-campo > label,.pd-rotulo{font-size:13px;font-weight:700;color:#1e293b}
+.pd-campo > label small,.pd-rotulo small{font-weight:500;color:var(--pd-mudo)}
+.pd-campo input,.pd-campo select,.pd-campo textarea,.pd-input{width:100%;min-height:44px;padding:10px 12px;border:1.5px solid var(--pd-linha-forte);
+  border-radius:10px;background:#fff;color:var(--pd-texto);font:inherit;font-size:14px;outline:none;box-sizing:border-box}
+.pd-campo textarea{min-height:120px;resize:vertical;line-height:1.5}
+.pd-campo input:focus,.pd-campo select:focus,.pd-campo textarea:focus,.pd-input:focus{border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
+.pd-campo input:disabled,.pd-campo select:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
+
+.pd-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:9px 16px;border-radius:10px;
+  border:1px solid var(--pd-linha-forte);background:#fff;color:var(--pd-texto);font:600 14px/1 inherit;font-family:inherit;cursor:pointer;text-decoration:none}
+.pd-btn:hover{background:#f8fafc;border-color:#94a3b8}
+.pd-btn.primario{background:linear-gradient(180deg,#2f6df0,#1f57d6);border-color:var(--pd-azul-esc);color:#fff;box-shadow:0 6px 16px -8px rgba(37,99,235,.9)}
+.pd-btn.primario:hover{background:linear-gradient(180deg,#3b78f5,#2560e6)}
+.pd-btn.perigo{color:var(--pd-perigo);border-color:var(--pd-perigo-borda)}
+.pd-btn.perigo:hover{background:var(--pd-perigo-fundo)}
+.pd-btn.pequeno{min-height:32px;padding:6px 11px;font-size:13px;border-radius:8px}
+.pd-btn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+
+.pd-busca{position:relative}
+.pd-busca input{width:100%;min-height:42px;padding:9px 12px 9px 38px;border:1.5px solid var(--pd-linha-forte);border-radius:10px;font:inherit;font-size:14px;outline:none;background:#fff}
+.pd-busca input:focus{border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
+.pd-busca::before{content:"";position:absolute;left:12px;top:50%;width:17px;height:17px;translate:0 -50%;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") center/contain no-repeat}
+
+.pd-seg{display:inline-flex;padding:3px;border-radius:11px;background:#eef2f7;gap:2px}
+.pd-seg button{border:0;background:none;padding:6px 13px;border-radius:8px;font:600 13px/1.2 inherit;font-family:inherit;color:var(--pd-suave);cursor:pointer}
+.pd-seg button.on{background:#fff;color:var(--pd-azul-esc);box-shadow:0 1px 3px rgba(15,23,42,.14)}
+
+.pd-abas{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.pd-aba{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:1.5px solid var(--pd-linha-forte);border-radius:12px;background:#fff;
+  font:700 14px/1 inherit;font-family:inherit;color:var(--pd-suave);cursor:pointer}
+.pd-aba span{background:#e2e8f0;color:var(--pd-suave);font-size:12px;padding:2px 8px;border-radius:999px}
+.pd-aba:hover{border-color:#93c5fd}
+.pd-aba.on{border-color:var(--pd-azul);background:var(--pd-azul-suave);color:var(--pd-azul-esc);box-shadow:var(--pd-foco)}
+.pd-aba.on span{background:var(--pd-azul);color:#fff}
+
+.pd-tabela-rolagem{overflow-x:auto}
+.pd-tabela{width:100%;border-collapse:collapse;font-size:14px}
+.pd-tabela th{text-align:left;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--pd-mudo);padding:10px 12px;border-bottom:2px solid var(--pd-linha);white-space:nowrap}
+.pd-tabela td{padding:10px 12px;border-bottom:1px solid var(--pd-linha);vertical-align:middle}
+.pd-tabela td.nome{font-weight:700;color:var(--pd-texto)}
+.pd-tabela tbody tr:hover td{background:#f8fafc}
+.pd-tabela th.acoes,.pd-tabela td.acoes{text-align:right;white-space:nowrap}
+.pd-tabela td.acoes .pd-btn{margin-left:6px}
+
+.pd-pilula{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.5;
+  color:var(--c,#475569);background:var(--cb,#e2e8f0);white-space:nowrap}
+.pd-pilula::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c,#475569)}
+.pd-pilula.ativo{--c:#15803d;--cb:#dcfce7}.pd-pilula.pendente{--c:#b45309;--cb:#fef3c7}
+.pd-pilula.recusado{--c:#b91c1c;--cb:#fee2e2}.pd-pilula.inativo{--c:#475569;--cb:#e2e8f0}
+.pd-vazio{padding:36px 20px;text-align:center;color:var(--pd-mudo);font-size:14px}
+
+/* ============================================ telas antigas, levadas ao padrão */
+
+/* --- Usuários e Eventos (admin-auth.css: .permissoes-*) ------------------- */
+.permissoes-layout{width:100%;max-width:none;margin:0;padding:22px clamp(14px,2.4vw,44px) 60px;box-sizing:border-box;color:var(--pd-texto)}
+.permissoes-cabecalho{margin-bottom:18px}
+.permissoes-sobretitulo{color:var(--pd-azul-esc)}
+.permissoes-cabecalho h2{font-size:24px;font-weight:800;color:var(--pd-titulo)}
+.permissoes-cabecalho p{color:var(--pd-mudo)}
+.permissoes-contagem{color:var(--pd-azul-esc);background:var(--pd-azul-suave)}
+.permissoes-filtros label,.permissoes-novo label{color:#1e293b;font-size:13px;font-weight:700}
+.permissoes-filtros input,.permissoes-filtros select,.permissoes-novo input{min-height:44px;padding:10px 12px;border:1.5px solid var(--pd-linha-forte);border-radius:10px;
+  background:#fff;color:var(--pd-texto);font-size:14px;box-sizing:border-box}
+.permissoes-filtros input:focus,.permissoes-filtros select:focus,.permissoes-novo input:focus{outline:none;border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
+.permissoes-novo input:disabled{background:#f1f5f9;color:#94a3b8}
+.permissoes-tabela,.permissoes-novo{background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra)}
+.permissoes-colunas{background:transparent;color:var(--pd-mudo);font-size:11.5px;font-weight:800;letter-spacing:.05em;border-bottom:2px solid var(--pd-linha)}
+.permissoes-tabela .lista-solicitacoes li{border-bottom:1px solid var(--pd-linha)}
+.permissoes-tabela .lista-solicitacoes li:hover{background:#f8fafc}
+.permissoes-salvar{min-height:40px;border:1px solid var(--pd-azul-esc);border-radius:10px;padding:9px 16px;font-size:14px;
+  background:linear-gradient(180deg,#2f6df0,#1f57d6);box-shadow:0 6px 16px -8px rgba(37,99,235,.9)}
+.permissoes-salvar:hover{background:linear-gradient(180deg,#3b78f5,#2560e6)}
+.permissoes-salvar:disabled{background:#e2e8f0;border-color:#cbd5e1;color:#94a3b8;box-shadow:none}
+
+/* Usuários: formulário à esquerda, lista à direita */
+.usuarios-grade{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:20px;align-items:start}
+.usuarios-grade > .permissoes-novo{grid-template-columns:1fr;gap:14px;padding:20px;margin:0;position:sticky;top:12px}
+.usuarios-grade .permissoes-novo-tit strong{font-size:17px;font-weight:800;color:var(--pd-titulo)}
+.usuarios-grade .permissoes-novo-tit span{font-size:12.5px;color:var(--pd-mudo)}
+.usuarios-grade .permissoes-cadastrar{width:100%}
+.usuarios-lista{background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra);padding:20px;min-width:0}
+.usuarios-lista .permissoes-filtros{margin-bottom:12px}
+.usuarios-lista .permissoes-tabela{border:0;box-shadow:none;border-radius:0;background:none;overflow:visible}
+.usuarios-lista .usuarios-tabela .permissoes-colunas,.usuarios-lista .usuarios-tabela .lista-solicitacoes li{
+  grid-template-columns:minmax(150px,1.2fr) minmax(110px,.7fr) minmax(240px,2fr);gap:14px}
+.usuarios-lista .permissoes-colunas,.usuarios-lista .usuarios-tabela .lista-solicitacoes li{padding-left:6px;padding-right:6px}
+@media(max-width:1000px){.usuarios-grade{grid-template-columns:1fr}.usuarios-grade > .permissoes-novo{position:static}}
+
+/* Eventos: filtros e lista em cartões separados, com o mesmo acabamento */
+.logs-aba-num{background:#e2e8f0;color:var(--pd-suave)}
+.logs-aba.ativa{color:var(--pd-azul-esc);border-bottom-color:var(--pd-azul)}
+.logs-aba.ativa .logs-aba-num{background:var(--pd-azul);color:#fff}
+.logs-limpar{min-height:40px;border:1px solid var(--pd-linha-forte);border-radius:10px;color:var(--pd-texto)}
+.logs-limpar:hover{background:#f8fafc;border-color:#94a3b8}
+.logs-kpi{border-radius:14px;border-color:var(--pd-linha);box-shadow:var(--pd-sombra)}
+@media(min-width:1500px){
+  #painelLogs > .logs-filtros{border-radius:18px;padding:20px}
+  #painelLogs > .logs-filtros::before{color:var(--pd-titulo);font-weight:800}
+}
+
+/* --- Contatos ------------------------------------------------------------- */
+@media(min-width:1000px){
+  .contatos-grade{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start;padding:22px clamp(14px,2.4vw,44px) 60px}
+  .contatos-grade > .controles{position:sticky;top:12px;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:14px;
+    padding:20px;background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra)}
+  .contatos-grade > .controles::before{content:"Filtros";font-size:17px;font-weight:800;color:var(--pd-titulo)}
+  .contatos-grade > .controles .busca{flex:none;width:100%;min-width:0;min-height:42px;border-radius:10px;box-sizing:border-box}
+  .contatos-grade > .controles .filtros{flex-direction:column;flex-wrap:nowrap}
+  .contatos-grade > .controles .filtro-btn{width:100%;text-align:left;border-radius:10px;padding:9px 12px}
+  .contatos-grade > main{padding:20px;background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra);min-width:0}
+  .contatos-grade .cards-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+}
+.busca:focus,.input-tel:focus{border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
+
+/* --- Portarias ------------------------------------------------------------ */
+.portarias-grade{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start;padding:22px clamp(14px,2.4vw,44px) 40px}
+.portarias-grade > .portarias-filtros{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px;padding:20px;
+  background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra)}
+.portarias-grade > .portarias-filtros::before{content:"Filtros";font-size:17px;font-weight:800;color:var(--pd-titulo)}
+.portarias-grade .search-box{margin:0}
+.portarias-grade .search-box label{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:6px}
+.portarias-grade .search-box input{max-width:none;min-height:44px;padding:10px 12px;border:1.5px solid var(--pd-linha-forte);border-radius:10px;box-sizing:border-box;outline:none}
+.portarias-grade .search-box input:focus{border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
+.portarias-grade .view-controls{flex-direction:column;margin:0}
+.portarias-grade .view-btn{width:100%;text-align:left;border:1.5px solid var(--pd-linha-forte);border-radius:10px;color:var(--pd-suave);padding:9px 12px}
+.portarias-grade .view-btn.active{border-color:var(--pd-azul);background:var(--pd-azul-suave);color:var(--pd-azul-esc)}
+.portarias-grade > .portarias-lista{min-width:0;padding:20px;background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra)}
+@media(max-width:1000px){.portarias-grade{grid-template-columns:1fr}.portarias-grade > .portarias-filtros{position:static}}
+
+/* --- Fiscais (eleicoes.html): formulário e listas --------------------------- */
+#painel-fiscais #cadastro .campo label,#cadastro .campo label{font-size:13px;font-weight:700;color:#1e293b}
+#cadastro input,#cadastro select{min-height:44px;padding:10px 12px;border:1.5px solid var(--pd-linha-forte);border-radius:10px;font-size:14px;box-sizing:border-box;outline:none}
+#cadastro input:focus,#cadastro select:focus{border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
+#cadastro .salvar{min-height:40px;border:1px solid var(--pd-azul-esc);border-radius:10px;background:linear-gradient(180deg,#2f6df0,#1f57d6);color:#fff;
+  font:600 14px/1 inherit;font-family:inherit;cursor:pointer;box-shadow:0 6px 16px -8px rgba(37,99,235,.9)}
+#cadastro .salvar:hover{background:linear-gradient(180deg,#3b78f5,#2560e6)}
+#cadastro .cancelar-edicao{min-height:40px;border:1px solid var(--pd-linha-forte);border-radius:10px;background:#fff;color:var(--pd-texto);font:600 14px/1 inherit;font-family:inherit;cursor:pointer}
+#painel-fiscais #painel,#painel-fiscais .mapa-card,#painel-fiscais .lista-cadastros{border-radius:18px;border-color:var(--pd-linha);box-shadow:var(--pd-sombra)}
+.busca-cadastros,.busca-global-filtros input,.busca-global-filtros select{min-height:42px;border:1.5px solid var(--pd-linha-forte);border-radius:10px}
+.busca-cadastros:focus,.busca-global-filtros input:focus,.busca-global-filtros select:focus{outline:none;border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
+
+/* o atributo hidden precisa continuar valendo nos contêineres que viram grade */
+.usuarios-grade[hidden],#painelLogs[hidden],#painelUsuarios[hidden]{display:none!important}
+
+/* Situação e ações das listas de usuários/solicitações: pílula e botões pequenos do padrão */
+.sol-status{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.5}
+.sol-status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.sol-status.pendente{background:#fef3c7;color:#b45309}
+.sol-status.aprovado,.sol-status.ativo{background:#dcfce7;color:#15803d}
+.sol-status.recusado{background:#fee2e2;color:#b91c1c}
+.sol-status.inativo{background:#e2e8f0;color:#475569}
+.sol-acoes button{min-height:32px;padding:6px 11px;border:1px solid var(--pd-linha-forte);border-radius:8px;background:#fff;color:var(--pd-texto);font:600 13px/1 inherit;font-family:inherit}
+.sol-acoes button:hover{background:#f8fafc;border-color:#94a3b8}
+.sol-acoes .aprovar{background:var(--pd-azul-suave);border-color:#93c5fd;color:var(--pd-azul-esc)}
+.sol-acoes .aprovar:hover{background:#dbeafe}
+.sol-acoes .excluir,.sol-acoes .recusar{color:var(--pd-perigo);border-color:var(--pd-perigo-borda)}
+.sol-acoes .excluir:hover,.sol-acoes .recusar:hover{background:var(--pd-perigo-fundo)}
+.sol-acoes .desativar,.sol-acoes .ativar,.sol-acoes .redefinir,.sol-acoes .editar{background:#fff;border:1px solid var(--pd-linha-forte);color:var(--pd-texto)}
+.sol-acoes .desativar:hover,.sol-acoes .ativar:hover,.sol-acoes .redefinir:hover,.sol-acoes .editar:hover{background:#f8fafc;border-color:#94a3b8}
+.sol-acoes .recusar,.sol-acoes .excluir{background:#fff;border:1px solid var(--pd-perigo-borda);color:var(--pd-perigo)}
+.sol-acoes .recusar:hover,.sol-acoes .excluir:hover{background:var(--pd-perigo-fundo)}
+.sol-acoes .aprovar{background:var(--pd-azul-suave);border:1px solid #93c5fd;color:var(--pd-azul-esc)}
+.contatos-grade .filtro-btn[data-grupo].ativo,.contatos-grade .filtro-btn.ativo{background:var(--pd-azul-suave);border-color:var(--pd-azul);color:var(--pd-azul-esc);box-shadow:var(--pd-foco)}
+.contatos-grade .filtro-btn{border-color:var(--pd-linha-forte);color:var(--pd-suave);font-weight:600}
+
+/* Usuários: filtros da lista no desenho de Cadastros auxiliares (busca com lupa,
+   sem rótulo em cima, situação ao lado) */
+.usuarios-lista .permissoes-filtros{gap:10px;align-items:center}
+.usuarios-lista .permissoes-filtros label{font-size:0;gap:0}
+.usuarios-lista .permissoes-filtros label:first-child{flex:1 1 280px}
+.usuarios-lista .permissoes-filtros input,.usuarios-lista .permissoes-filtros select{font-size:14px;min-width:0;min-height:42px}
+.usuarios-lista .permissoes-filtros input{width:100%;padding-left:38px;
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") 12px center/17px no-repeat}
+.usuarios-lista .permissoes-filtros select{min-width:180px}

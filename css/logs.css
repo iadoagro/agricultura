@@ -118,3 +118,18 @@
 .logs-alerta-visto:hover{background:#f2f6fc}
 #logsMais[hidden]{display:none}
 @media(max-width:900px){.logs-mapa-area{height:320px}.logs-alertas-lista li{grid-template-columns:auto 1fr;gap:6px 10px}.logs-alertas-lista .logs-desc{grid-column:1/-1}.logs-alertas-acoes{margin-left:0}.logs-tabela .permissoes-colunas,.logs-grupos .permissoes-colunas{display:none}.logs-tabela .lista-solicitacoes li{grid-template-columns:1fr;gap:6px}.logs-grupos .lista-solicitacoes li{grid-template-columns:1fr 1fr 1fr;gap:6px 12px}.logs-grupos .logs-grupo-nome{grid-column:1/-1}}
+
+/* Eventos: filtros num cartão à esquerda e a lista à direita (mesmo desenho de
+   Cadastros auxiliares). Abaixo de 1500px a tabela larga não cabe ao lado dos
+   filtros, então eles voltam para o topo. */
+@media(min-width:1500px){
+  #painelLogs{display:grid;grid-template-columns:300px minmax(0,1fr);column-gap:22px;align-items:start}
+  #painelLogs > *{grid-column:2;min-width:0}
+  #painelLogs > .logs-filtros{grid-column:1;grid-row:1 / span 12;position:sticky;top:12px;
+    flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:14px;margin:0;padding:18px 16px;
+    background:#fff;border:1px solid #dfe7f2;border-radius:16px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px -12px rgba(15,23,42,.14)}
+  #painelLogs > .logs-filtros::before{content:"Filtros";font-size:17px;font-weight:700;color:#172b4d}
+  .logs-filtros label{width:100%}
+  .logs-filtros input,.logs-filtros select{width:100%;min-width:0}
+  .logs-filtros .logs-limpar{width:100%}
+}

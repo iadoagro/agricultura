@@ -20,6 +20,7 @@
   'use strict';
   var cfg = window.BANCO_CONFIG || {};
   var auth = window.ADMIN_AUTH;
+  if (window.MODO_PUBLICO) return;   // versão pública: nada é gravado no registro de auditoria
   if (!auth || !auth.online || !cfg.url || !cfg.chavePublica) return;
 
   var NOMES = {

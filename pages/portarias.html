@@ -11,23 +11,23 @@
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
 <script src="../js/admin-auth.js?v=2026092410"></script>
-<script src="../js/admin-gate.js?v=2026092203"></script>
-<script src="../js/rastreio.js?v=2026092303"></script>
-<script src="../js/nav.js?v=2026092407"></script>
+<script src="../js/admin-gate.js?v=2026092530"></script>
+<script src="../js/rastreio.js?v=2026092530"></script>
+<script src="../js/nav.js?v=2026092530"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/portarias.css?v=2026091501">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
-<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092401">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092515">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092405">
+<link rel="stylesheet" href="../css/nav.css?v=2026092538">
+<link rel="stylesheet" href="../css/padrao.css?v=2026092541">
 </head>
 <body>
-<header>
-  <h1>SISTEMA</h1>
-</header>
+<header class="cab-padrao"><h1>SISTEMA</h1><p>Portarias</p></header>
 
 
-<div class="container">
+<div class="container portarias-grade">
+  <aside class="portarias-filtros" aria-label="Filtros">
   <div class="search-box">
     <label for="searchInput">Pesquisa</label>
     <input id="searchInput" type="text" placeholder="Buscar por nome da pessoa, cargo ou número de portaria...">
@@ -38,6 +38,9 @@
     <button class="view-btn active" id="listViewBtn" title="Visualização em lista">☰ Visualização em lista</button>
   </div>
 
+  </aside>
+
+  <section class="portarias-lista" aria-label="Portarias">
   <div class="list-header" id="listHeader">
     <div class="list-header-item list-header-nome">Nome</div>
     <div class="list-header-item list-header-cargo">Função</div>
@@ -46,6 +49,7 @@
   </div>
 
   <div class="setores" id="setoresContainer"></div>
+  </section>
 </div>
 
 <footer>

@@ -130,8 +130,14 @@
     else if (acao === 'ativar') tarefa = function () { return auth.definirAtivo(id, true).then(function () { return 'Usuário reativado.'; }); };
     else if (acao === 'desativar') tarefa = function () { return auth.definirAtivo(id, false).then(function () { return 'Usuário desativado.'; }); };
     else if (acao === 'redefinir') {
-      if (!window.confirm('Redefinir a senha de ' + mostrarLogin(email) + ' para ' + auth.SENHA_PADRAO + '? A pessoa vai ser obrigada a trocá-la no próximo acesso.')) return;
-      tarefa = function () { return auth.redefinirSenhaPadrao(id).then(function () { return 'Senha de ' + mostrarLogin(email) + ' redefinida para ' + auth.SENHA_PADRAO + '. Ela vai ser obrigada a trocar no próximo acesso.'; }); };
+      return window.Modal.confirmar({
+        titulo: 'Redefinir senha',
+        mensagem: 'Redefinir a senha de ' + mostrarLogin(email) + ' para ' + auth.SENHA_PADRAO + '? A pessoa vai ser obrigada a trocá-la no próximo acesso.',
+        confirmar: 'Redefinir'
+      }).then(function (ok) {
+        if (!ok) return;
+        rodar(function () { return auth.redefinirSenhaPadrao(id).then(function () { return 'Senha de ' + mostrarLogin(email) + ' redefinida para ' + auth.SENHA_PADRAO + '. Ela vai ser obrigada a trocar no próximo acesso.'; }); });
+      });
     } else if (acao === 'editar') {
       var atual = mostrarLogin(email);
       var novo = window.prompt('Novo login (nome.sobrenome) ou e-mail para ' + atual + ':', atual);
@@ -140,15 +146,25 @@
       var novoEmail = novo.indexOf('@') !== -1 ? novo : novo.toLowerCase() + DOMINIO_USUARIO;
       tarefa = function () { return auth.editarEmail(id, novoEmail).then(function () { return 'Login/e-mail atualizado.'; }); };
     } else if (acao === 'excluir') {
-      if (!window.confirm('Excluir a conta de ' + mostrarLogin(email) + ' de vez? Essa ação não pode ser desfeita.')) return;
-      tarefa = function () { return auth.excluirUsuario(id).then(function () { return 'Usuário excluído.'; }); };
+      return window.Modal.confirmar({
+        titulo: 'Excluir conta',
+        mensagem: 'Excluir a conta de ' + mostrarLogin(email) + ' de vez? Essa ação não pode ser desfeita.',
+        confirmar: 'Excluir', perigo: true
+      }).then(function (ok) {
+        if (!ok) return;
+        rodar(function () { return auth.excluirUsuario(id).then(function () { return 'Usuário excluído.'; }); });
+      });
     } else return;
 
-    bloco.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
-    msg.textContent = 'Aguarde…'; msg.className = 'admin-msg';
-    tarefa()
-      .then(function (texto) { msg.textContent = texto; auth.registrarEvento(acao, 'usuarios', texto + ' (' + mostrarLogin(email) + ')'); carregar(); })
-      .catch(function (e) { msg.textContent = e.message; msg.className = 'admin-msg erro'; bloco.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); });
+    rodar(tarefa);
+
+    function rodar(tarefa) {
+      bloco.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+      msg.textContent = 'Aguarde…'; msg.className = 'admin-msg';
+      tarefa()
+        .then(function (texto) { msg.textContent = texto; auth.registrarEvento(acao, 'usuarios', texto + ' (' + mostrarLogin(email) + ')'); carregar(); })
+        .catch(function (e) { msg.textContent = e.message; msg.className = 'admin-msg erro'; bloco.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); });
+    }
   }
 
   formNovo.addEventListener('submit', function (e) {

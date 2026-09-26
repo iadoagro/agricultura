@@ -922,3 +922,17 @@ body {
 .filter-panel .detail-kind-badge { background: var(--verde); }
 .filter-panel .detail-title { font-size: 13px; }
 #filterContent { padding: 4px 0 16px; }
+
+/* Barra de ferramentas separada do cabeçalho padrão (faixa azul "SISTEMA ·
+   Organograma"): barra branca própria, com busca à esquerda e os botões em grupos. */
+.topbar{height:auto;min-height:60px;padding:10px 20px;background:#fff;border-bottom:1px solid #e2e8f0;
+  box-shadow:0 2px 6px rgba(15,23,42,.05)}
+.toolbar{flex-wrap:wrap;gap:8px 10px}
+.toolbar .search-node-label{color:#1e293b}
+.toolbar .search-node-input{min-height:36px;border:1.5px solid #cbd5e1;border-radius:10px;padding:6px 12px}
+.toolbar .search-node-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.16)}
+.tool-button,.icon-button{min-height:36px;border:1px solid #cbd5e1;border-radius:10px;color:#0f172a;background:#fff}
+.tool-button{padding:0 14px;font-size:13px;font-weight:600}
+.icon-button{width:36px}
+.tool-button:hover,.icon-button:hover{background:#f8fafc;border-color:#94a3b8}
+.zoom-label{color:#475569;font-weight:600}

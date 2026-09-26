@@ -14,6 +14,7 @@
    de espremer quinze rótulos ilegíveis lado a lado. */
 .abas-pista{justify-content:flex-start}
 .aba{flex:1 0 auto;min-width:0;padding-left:10px;padding-right:10px;text-align:center}
+.aba-mais-menu .aba{flex:none;text-align:left}
 
 /* O gráfico cresce para ocupar o painel, mas nunca encolhe abaixo do próprio
    conteúdo: comprimido, o fim da lista de barras vazava por baixo da borda e
