@@ -148,9 +148,9 @@ html.sb-mini .sb-tema{width:40px}
 /* ------------------------------------------------ celular / tela estreita */
 .snav-sair-celular{display:none}
 @media(max-width:900px){
-  /* sem menu lateral no celular: navega pelo Início e pela trilha; Sair na barra */
-  .snav-menu,.sb,.sb-veu{display:none!important}
-  .snav-sair-celular{display:inline-flex}
+  /* celular: o menu vira uma gaveta que abre pelo ☰ da barra do topo (o Início
+     agora é uma central do dia, não mais uma grade de módulos) */
+  .snav-sair-celular{display:none}
   html.sb-on>body,html.sb-on.sb-mini>body{padding-left:0}
   .sb,html.sb-mini .sb{width:min(300px,86vw);transform:translateX(-102%);z-index:1100}
   html.sb-gaveta .sb{transform:none;box-shadow:12px 0 40px rgba(0,0,0,.35)}

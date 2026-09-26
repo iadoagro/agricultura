@@ -308,7 +308,7 @@
   function abrirGaveta() {
     raiz.classList.add('sb-gaveta');
     sincronizarBotao();
-    busca.focus();
+    // sem focar a busca: no celular isso abriria o teclado por cima do menu
   }
   function fecharGaveta(devolverFoco) {
     if (!raiz.classList.contains('sb-gaveta')) return;
