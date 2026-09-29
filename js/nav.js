@@ -41,7 +41,7 @@
     'chamados.html':           { nome: 'Fila de chamados', grupo: 'Chamados', chave: 'chamados', pai: 'index.html' },
     'cadastros-chamados.html': { nome: 'Cadastros auxiliares', grupo: 'Chamados', chave: 'chamados', pai: 'chamados.html' },
     // o formulário é público (link compartilhado), mas no menu só pra quem tem Chamados:
-    // por padrão as contas veem só Fiscais
+    // por padrão as contas não veem nenhuma página
     'abrir-chamado.html':      { nome: 'Abrir chamado', grupo: 'Chamados', chave: 'chamados', pai: 'chamados.html' },
     'portarias.html':          { nome: 'Portarias', grupo: 'Documentos', chave: 'portarias', pai: 'index.html' },
     'organograma.html':        { nome: 'Organograma', grupo: 'Documentos', chave: 'organograma', pai: 'index.html' },

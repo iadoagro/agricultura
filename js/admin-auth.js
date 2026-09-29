@@ -6,9 +6,9 @@
   'use strict';
   const cfg = window.BANCO_CONFIG || {};
   const RESPONSAVEL_EMAIL = 'root@root.com';
-  const PAGINAS_PADRAO = ['eleicoes'];   // conta nova: só Fiscais; o resto o responsável libera em Usuários
-  // Liberadas para toda conta aprovada e ativa, marcadas ou não em Acessos.
-  const SEMPRE_LIBERADAS = ['eleicoes'];
+  const PAGINAS_PADRAO = [];   // conta nova: nenhum acesso; o responsável libera em Usuários
+  // Nenhuma página é liberada automaticamente: só as marcadas em Acessos.
+  const SEMPRE_LIBERADAS = [];
   const SENHA_PADRAO = '123456';
   const DOMINIO_USUARIO = 'sistema.local';
   const online = Boolean(cfg.url || cfg.chavePublica);

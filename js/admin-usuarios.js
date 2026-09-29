@@ -15,8 +15,8 @@
   var DOMINIO_USUARIO = '@sistema.local';
   var linhas = [];
   // Acessos (antes numa tela à parte, admin-permissoes.html): clicar na
-  // pessoa abre as páginas liberadas pra ela. Fiscais é sempre liberado
-  // (auth.SEMPRE_LIBERADAS), então aparece marcado e travado.
+  // pessoa abre as páginas liberadas pra ela. Nenhuma página é liberada por padrão
+  // (só as marcadas aqui valem).
   var PAGINAS = [['eleicoes', 'Fiscais'], ['portarias', 'Portarias'], ['organograma', 'Organograma'],
     ['chamados', 'Chamados'], ['dashboards', 'Painéis'], ['contatos', 'Contatos']];
   var aberto = null;            // id da pessoa com os acessos abertos
