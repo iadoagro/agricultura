@@ -10,10 +10,11 @@
    window.SENHA_REGRAS:
      avaliar(senha, modo) → { ok, tipo: 'pin'|'normal', itens: [{texto, ok}], erro }
        modo 'pin' ou 'senha' força o tipo; sem modo, 6 números = PIN.
-     campos([input, …], { regras, modo }) → o campo de senha ganha o seletor
+     campos([input, …], { regras, modo, semPin }) → o campo de senha ganha o seletor
        Senha | PIN, o botão Mostrar e, no modo PIN, 6 quadrados que vão sendo
        preenchidos. regras: true mostra a lista de requisitos embaixo do
-       primeiro campo, marcando o que já foi cumprido. Vários campos (senha e
+       primeiro campo, marcando o que já foi cumprido. semPin: true tira o
+       seletor e deixa só a senha normal. Vários campos (senha e
        confirmação) dividem o mesmo seletor. Devolve { modo() }. */
 (function () {
   'use strict';
@@ -89,8 +90,10 @@
     if (!inputs.length) return null;
     inputs.forEach(function (i) { i.dataset.senhaCampo = '1'; });
     estilo();
-    var modo = op.modo === 'pin' || op.modo === 'senha' ? op.modo : (lerModo() === 'pin' ? 'pin' : 'senha');
+    var semPin = op.semPin === true;   // cadastro e 1º acesso: só senha normal, sem o seletor Senha | PIN
+    var modo = semPin ? 'senha' : (op.modo === 'pin' || op.modo === 'senha' ? op.modo : (lerModo() === 'pin' ? 'pin' : 'senha'));
     var mostrar = false;
+    var pinBloqueio = null;   // texto do motivo enquanto o PIN está bloqueado (login: conta sem PIN)
 
     // seletor Senha | PIN, antes do primeiro campo
     var seletor = document.createElement('div');
@@ -130,7 +133,7 @@
       botao.addEventListener('click', function () { mostrar = !mostrar; atualizar(); input.focus(); });
       return { input: input, campo: campo, caixas: caixas, botao: botao };
     });
-    montados[0].campo.insertAdjacentElement('beforebegin', seletor);
+    if (!semPin) montados[0].campo.insertAdjacentElement('beforebegin', seletor);
 
     var lista = null;
     if (op.regras) {
@@ -146,6 +149,10 @@
       var pin = modo === 'pin';
       seletor.querySelectorAll('button').forEach(function (b) {
         b.setAttribute('aria-pressed', String(b.getAttribute('data-modo') === modo));
+        if (b.getAttribute('data-modo') === 'pin') {
+          b.classList.toggle('bloqueado', Boolean(pinBloqueio));
+          b.disabled = Boolean(pinBloqueio);   // opaco e sem clique
+        }
       });
       montados.forEach(function (m) {
         var v = m.input.value;
@@ -180,6 +187,7 @@
     seletor.addEventListener('click', function (ev) {
       var b = ev.target.closest('button[data-modo]');
       if (!b || b.getAttribute('data-modo') === modo) return;
+      if (b.disabled) return;
       modo = b.getAttribute('data-modo');
       guardarModo(modo);
       montados.forEach(function (m) { m.input.value = ''; m.input.setCustomValidity(''); });
@@ -189,7 +197,21 @@
 
     inputs.forEach(function (i) { i.dataset.placeholder = i.placeholder || ''; });
     atualizar();
-    return { modo: function () { return modo; }, guardar: function () { guardarModo(modo); } };
+    return {
+      modo: function () { return modo; }, guardar: function () { guardarModo(modo); },
+      // bloqueia/libera o modo PIN (texto = motivo mostrado ao clicar); bloquear volta pra senha
+      bloquearPin: function (texto) {
+        pinBloqueio = texto || 'PIN indisponível.';
+        if (modo === 'pin') { modo = 'senha'; montados.forEach(function (m) { m.input.value = ''; }); }
+        atualizar();
+      },
+      liberarPin: function () {
+        var estava = Boolean(pinBloqueio);
+        pinBloqueio = null;
+        if (estava && modo === 'senha' && lerModo() === 'pin' && !inputs[0].value) modo = 'pin';   // volta ao modo usado da última vez
+        atualizar();
+      }
+    };
   }
 
   // compatibilidade: só a lista de requisitos, sem o seletor
@@ -203,6 +225,7 @@
     s.textContent =
       '.senha-modo{display:flex;gap:4px;margin:2px 0 8px;padding:3px;border:1px solid #dfe7f2;border-radius:10px;background:#f2f6fc}' +
       '.senha-modo button{flex:1;min-height:34px;border:0;border-radius:8px;background:none;color:#42536e;font:inherit;font-size:13px;font-weight:600;cursor:pointer}' +
+      '.senha-modo button.bloqueado{opacity:.55;cursor:default}' +
       '.senha-modo button[aria-pressed="true"]{background:#fff;color:#153e75;box-shadow:0 1px 3px rgba(23,43,77,.15)}' +
       '.senha-campo{display:flex;align-items:center;gap:8px}' +
       '.senha-area{position:relative;flex:1;min-width:0}' +

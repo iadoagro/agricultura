@@ -14,6 +14,7 @@
   var contagem = document.getElementById('usuariosContagem');
   var DOMINIO_USUARIO = '@sistema.local';
   var linhas = [];
+  var pinBloqueados = {};       // id → recusas: contas que recusaram o convite de PIN 5 vezes
   // Acessos (antes numa tela à parte, admin-permissoes.html): clicar na
   // pessoa abre as páginas liberadas pra ela. Nenhuma página é liberada por padrão
   // (só as marcadas aqui valem).
@@ -23,6 +24,9 @@
   var rascunhos = new Map();    // id → páginas marcadas ainda não salvas
 
   function atualizarPreviaLogin() { novoLogin.value = auth.previewLogin(novoNome.value, novoSobrenome.value); }
+  [novoNome, novoSobrenome].forEach(function (c) {   // só letras e espaço (sem hífen, número ou símbolo)
+    c.addEventListener('input', function () { var v = c.value.replace(/[^A-Za-zÀ-ÿ ]/g, ''); if (v !== c.value) c.value = v; });
+  });
   novoNome.addEventListener('input', atualizarPreviaLogin);
   novoSobrenome.addEventListener('input', atualizarPreviaLogin);
 
@@ -57,6 +61,7 @@
           ? '<button type="button" class="desativar" data-acao="desativar">Desativar</button>'
           : '<button type="button" class="ativar" data-acao="ativar">Reativar</button>');
       }
+      if (pinBloqueados[l.id] != null) botoes.push('<button type="button" class="redefinir" data-acao="reexibirpin" title="Volta a oferecer o cadastro de PIN no login">Reexibir PIN</button>');
       botoes.push('<button type="button" class="redefinir" data-acao="redefinir">Redefinir senha</button>');
       botoes.push('<button type="button" class="editar" data-acao="editar">Editar login/e-mail</button>');
       botoes.push('<button type="button" class="excluir" data-acao="excluir">Excluir</button>');
@@ -66,7 +71,8 @@
         '<div class="sol-info"><button type="button" class="sol-pessoa" aria-expanded="' + expandido + '" title="Ver e alterar os acessos">' +
         '<strong>' + escapar(mostrarLogin(l.email)) + '</strong><span>' + (expandido ? 'Ocultar acessos ▴' : 'Ver acessos ▾') + '</span></button></div>' +
         '<div class="sol-situacao"><span class="sol-status ' + escapar(l.status) + '">' + rotuloStatus(l.status) + '</span>' +
-        '<span class="sol-status ' + (ativo ? 'ativo' : 'inativo') + '">' + (ativo ? 'Ativo' : 'Desativado') + '</span></div>' +
+        '<span class="sol-status ' + (ativo ? 'ativo' : 'inativo') + '">' + (ativo ? 'Ativo' : 'Desativado') + '</span>' +
+        (pinBloqueados[l.id] != null ? '<span class="sol-status inativo" title="Recusou o convite para cadastrar PIN ' + pinBloqueados[l.id] + ' vezes; o convite não aparece mais para ela">Recusou o PIN ' + pinBloqueados[l.id] + 'x</span>' : '') + '</div>' +
         '<div class="sol-acoes" data-id="' + escapar(l.id) + '" data-email="' + escapar(l.email) + '">' + botoes.join('') + '</div>';
       li.querySelector('.sol-pessoa').addEventListener('click', function () { aberto = aberto === l.id ? null : l.id; render(); });
       if (expandido) li.appendChild(painelAcessos(l, li));
@@ -129,6 +135,7 @@
     else if (acao === 'recusar') tarefa = function () { return auth.decidir(id, false).then(function () { return 'Cadastro recusado.'; }); };
     else if (acao === 'ativar') tarefa = function () { return auth.definirAtivo(id, true).then(function () { return 'Usuário reativado.'; }); };
     else if (acao === 'desativar') tarefa = function () { return auth.definirAtivo(id, false).then(function () { return 'Usuário desativado.'; }); };
+    else if (acao === 'reexibirpin') tarefa = function () { return auth.pinReexibir(id).then(function () { return 'O convite de PIN volta a aparecer para ' + mostrarLogin(email) + '.'; }); };
     else if (acao === 'redefinir') {
       return window.Modal.confirmar({
         titulo: 'Redefinir senha',
@@ -185,7 +192,8 @@
   });
 
   function carregar() {
-    auth.listarSolicitacoes().then(function (dados) {
+    Promise.all([auth.listarSolicitacoes(), auth.listarPinBloqueados()]).then(function (r) {
+      var dados = r[0]; pinBloqueados = r[1];
       linhas = dados.filter(function (l) { return l.email.toLowerCase() !== auth.RESPONSAVEL_EMAIL; });
       render();
     }).catch(function (e) { msg.textContent = e.message; msg.className = 'admin-msg erro'; });

@@ -125,6 +125,7 @@ Deno.serve(async (req) => {
     const email = String(entrada.email ?? '');
     const senha = String(entrada.senha ?? '');
     if (!/^[a-z0-9-]+\.[a-z0-9-]+@sistema\.local$/.test(email)) return responder(400, { ok: false, erro: 'Login inválido.' });
+    if (/^\d+$/.test(senha)) return responder(400, { ok: false, erro: 'No cadastro use uma senha com letras, números e caractere especial. O PIN pode ser cadastrado depois, nos próximos acessos.' });
     const fraca = motivoSenhaFraca(senha);
     if (fraca) return responder(400, { ok: false, erro: fraca });
     const [status, corpo] = await chamarSupabase('POST', '/auth/v1/admin/users', { email, password: senha, email_confirm: true });

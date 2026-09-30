@@ -19,23 +19,35 @@
   // Contas cadastradas pelo responsável usam nome.sobrenome como login, sem
   // e-mail de verdade por trás — normaliza pra um endereço válido (mesmo
   // domínio sempre) só pra satisfazer o formato que o Supabase Auth exige.
-  function normalizarParte(s) {
-    return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  // Só letras (sem acento, sem hífen, sem número). Nome e sobrenome com várias
+  // palavras ("Silva Souza") viram uma lista de palavras: o login usa a primeira
+  // combinação livre (ver candidatosLogin).
+  function palavras(s) {
+    return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+      .split(/[^a-z]+/).filter(Boolean);
+  }
+  // nome.sobrenome na ordem: 1º nome com cada sobrenome, depois os outros nomes
+  function candidatosLogin(nome, sobrenome) {
+    const PARTICULAS = ['da', 'de', 'do', 'das', 'dos', 'e'];   // "da Silva" → silva
+    const sem = l => { const f = l.filter(w => PARTICULAS.indexOf(w) < 0); return f.length ? f : l; };
+    const ns = sem(palavras(nome)), ss = sem(palavras(sobrenome)), r = [];
+    ns.forEach(n => ss.forEach(s => r.push(n + '.' + s)));
+    return r;
   }
   function gerarLogin(nome, sobrenome) {
-    const n = normalizarParte(nome), s = normalizarParte(sobrenome);
-    if (!n || !s) throw new Error('Informe nome e sobrenome.');
-    return n + '.' + s;
+    const c = candidatosLogin(nome, sobrenome);
+    if (!c.length) throw new Error('Informe nome e sobrenome (só letras).');
+    return c[0];
   }
   // Pra pré-visualizar o login enquanto a pessoa digita, sem travar em campo
   // incompleto (ao contrário de gerarLogin, que exige nome e sobrenome).
   function previewLogin(nome, sobrenome) {
-    const n = normalizarParte(nome), s = normalizarParte(sobrenome);
-    return n && s ? n + '.' + s : (n || s || '');
+    const c = candidatosLogin(nome, sobrenome);
+    return c.length ? c[0] : (palavras(nome)[0] || palavras(sobrenome)[0] || '');
   }
   function normalizarEmailLogin(valor) {
     valor = (valor || '').trim();
+    if (valor.toLowerCase() === 'root') return RESPONSAVEL_EMAIL;   // o login só aceita letras: "root" entra como o responsável
     return valor.indexOf('@') !== -1 ? valor : valor.toLowerCase() + '@' + DOMINIO_USUARIO;
   }
 
@@ -279,18 +291,35 @@
     });
   }
 
-  /* Convite pra cadastrar PIN (database/acesso-pin.sql): { usaPin, naoPerguntar }
-     da conta logada; sem linha = ainda não respondeu. null se a tabela não existe. */
+  /* Convite pra cadastrar PIN (database/acesso-pin.sql): { usaPin, naoPerguntar,
+     entradas, recusas } da conta logada; null se a tabela não existe. O convite
+     só vem a partir da 2ª entrada e some na 5ª recusa (MAX_RECUSAS_PIN). */
+  const MAX_RECUSAS_PIN = 5;
   async function statusPin() {
     if (!sessao) return null;
     try {
-      const r = await requisicao('/rest/v1/acesso_pin?select=usa_pin,nao_perguntar&usuario_id=eq.' + encodeURIComponent(sessao.user.id));
-      const l = (r || [])[0];
-      return { usaPin: Boolean(l && l.usa_pin), naoPerguntar: Boolean(l && l.nao_perguntar) };
+      const r = await requisicao('/rest/v1/acesso_pin?select=usa_pin,nao_perguntar,entradas,recusas&usuario_id=eq.' + encodeURIComponent(sessao.user.id));
+      const l = (r || [])[0] || {};
+      return { usaPin: Boolean(l.usa_pin), naoPerguntar: Boolean(l.nao_perguntar), entradas: l.entradas || 0, recusas: l.recusas || 0 };
     } catch (e) { return null; }
   }
-  async function pinNaoPerguntar() {
-    await requisicao('/rest/v1/rpc/pin_nao_perguntar', { method: 'POST', body: '{}' });
+  // Tela de login (sem sessão): { tem_pin, motivo } da conta digitada (database/acesso-pin.sql, pin_situacao)
+  async function pinSituacao(login) {
+    return requisicao('/rest/v1/rpc/pin_situacao', { method: 'POST', body: JSON.stringify({ p_email: normalizarEmailLogin(login) }) }, false);
+  }
+  async function pinRegistrarEntrada() { await requisicao('/rest/v1/rpc/pin_registrar_entrada', { method: 'POST', body: '{}' }); }
+  async function pinRecusar() { return requisicao('/rest/v1/rpc/pin_recusar', { method: 'POST', body: '{}' }); }
+  // Root: contas que recusaram o convite 5 vezes → { [usuario_id]: recusas }
+  async function listarPinBloqueados() {
+    try {
+      const r = await requisicao('/rest/v1/acesso_pin?select=usuario_id,recusas&nao_perguntar=is.true');
+      const m = {};
+      (r || []).forEach(function (l) { m[l.usuario_id] = l.recusas; });
+      return m;
+    } catch (e) { return {}; }
+  }
+  async function pinReexibir(id) {
+    await requisicao('/rest/v1/rpc/pin_reexibir', { method: 'POST', body: JSON.stringify({ p_usuario: id }) });
   }
 
   async function buscarPerfil() {
@@ -424,9 +453,14 @@
 
   async function cadastrarConta(nome, sobrenome, senha) {
     exigirSenhaForte(senha);
-    const login = gerarLogin(nome, sobrenome);
-    const email = login + '@' + DOMINIO_USUARIO;
-    await chamarPHPPublico('autocadastro', { email, senha });
+    const candidatos = candidatosLogin(nome, sobrenome);
+    if (!candidatos.length) throw new Error('Informe nome e sobrenome (só letras).');
+    // Se o login já existe, tenta o próximo (outro sobrenome, depois outro nome).
+    let login = null;
+    for (let i = 0; i < candidatos.length && !login; i++) {
+      try { await chamarPHPPublico('autocadastro', { email: candidatos[i] + '@' + DOMINIO_USUARIO, senha }); login = candidatos[i]; }
+      catch (e) { if (!/já existe/i.test(e.message) || i === candidatos.length - 1) throw e; }
+    }
     await entrar(login, senha);
     registrarEvento('cadastro', 'usuarios', 'Solicitou acesso ao sistema (login ' + login + ')');
     return login;
@@ -475,7 +509,7 @@
     cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
     registrarEvento, listarEventos, resumirEventos, localizarIPs,
     listarAlertas, contarAlertasNaoVistos, marcarAlertasVistos,
-    listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinNaoPerguntar,
+    listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinSituacao, pinRegistrarEntrada, pinRecusar, listarPinBloqueados, pinReexibir, MAX_RECUSAS_PIN,
     sessaoAtual: () => sessao,
     garantirSessao, renovarSessao: renovar,
     papel: () => sessao ? sessao.papel : null,

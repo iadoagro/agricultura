@@ -105,6 +105,9 @@ if ($acao === 'autocadastro') {
     if (strlen($senha) < 6) {
         responder(400, ['ok' => false, 'erro' => 'A senha precisa ter pelo menos 6 caracteres.']);
     }
+    if (preg_match('/^\d+$/', $senha)) {
+        responder(400, ['ok' => false, 'erro' => 'No cadastro use uma senha com letras, números e caractere especial. O PIN pode ser cadastrado depois, nos próximos acessos.']);
+    }
     [$status, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'POST', '/auth/v1/admin/users', ['email' => $email, 'password' => $senha, 'email_confirm' => true]);
     if ($status >= 200 && $status < 300) {
         responder(200, ['ok' => true, 'id' => $corpo['id'] ?? null]);

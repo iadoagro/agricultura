@@ -13,13 +13,13 @@
   var obrigatoria = auth && auth.deveTrocarSenha && auth.deveTrocarSenha();
 
   var campo = R ? R.campos([document.getElementById('senha1'), document.getElementById('senha2')],
-    { regras: true, modo: pedidoPin ? 'pin' : (obrigatoria ? undefined : 'senha') }) : null;
+    { regras: true, semPin: obrigatoria && !pedidoPin, modo: pedidoPin ? 'pin' : 'senha' }) : null;
 
   function textos() {
     var pin = campo && campo.modo() === 'pin';
     document.getElementById('trocaSubtitulo').textContent = pin ? 'Cadastrar PIN' : 'Trocar senha';
     document.getElementById('trocaTexto').textContent = obrigatoria
-      ? 'Sua conta foi cadastrada com uma senha temporária. Escolha uma nova senha ou um PIN de 6 números para continuar.'
+      ? 'Sua conta foi cadastrada com uma senha temporária. Escolha uma nova senha para continuar. O PIN de 6 números pode ser cadastrado nos próximos acessos.'
       : pin ? 'Escolha um PIN de 6 números. Ele passa a ser a sua senha de acesso: a senha atual deixa de valer.'
         : 'Escolha a nova senha de acesso.';
     document.getElementById('rotuloSenha1').textContent = pin ? 'Novo PIN' : 'Nova senha';

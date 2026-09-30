@@ -25,15 +25,15 @@
       <p class="admin-desc">Com um PIN de 6 números você entra mais rápido, principalmente no celular. O PIN passa a ser a sua senha de acesso: a senha atual deixa de valer.</p>
       <button class="admin-submit" type="button" id="pinSim">Cadastrar PIN</button>
       <button class="admin-submit admin-submit-sec" type="button" id="pinAgoraNao">Agora não</button>
-      <label class="login-pin-nunca"><input type="checkbox" id="pinNunca"> Não perguntar de novo</label>
+      <p class="admin-desc" id="pinRestantes"></p>
     </div>
     <div id="painelFormularios">
       <form id="formEntrar">
         <span class="login-eyebrow">ACESSO AO SISTEMA</span>
         <h2 class="login-title">Boas-vindas</h2>
         <p class="admin-desc">Informe seus dados para entrar na sua conta.</p>
-        <label for="entEmail">E-mail ou usuário</label>
-        <input id="entEmail" placeholder="Seu e-mail ou usuário" autocapitalize="none" spellcheck="false" type="text" autocomplete="username" required>
+        <label for="entEmail">Usuário</label>
+        <input id="entEmail" placeholder="nome.sobrenome (só letras, sem e-mail)" maxlength="60" autocapitalize="none" spellcheck="false" type="text" autocomplete="username" required>
         <label for="entSenha">Senha</label>
         <input id="entSenha" placeholder="Digite sua senha" type="password" autocomplete="current-password" required>
         <button class="admin-submit" type="submit">Entrar</button>
@@ -58,15 +58,15 @@
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
-<script src="../js/senha-regras.js?v=2026092404"></script>
-<script src="../js/admin-auth.js?v=2026092901"></script>
+<script src="../js/senha-regras.js?v=2026092909"></script>
+<script src="../js/admin-auth.js?v=2026092908"></script>
 <script src="../js/shader-login.js?v=2026091901"></script>
 <script>if(typeof montarShaderBackground==="function"){try{
   var _shaderLogin=montarShaderBackground(document.getElementById("loginShader"),{colors:["#dbeafe","#2563eb","#1e3a8a","#60a5fa"],speed:0.28,distortion:0.8,swirl:0.2});
   /* Roda pra sempre numa GPU (só para com prefers-reduced-motion ou aba escondida) — limita bem a resolução interna pra pesar menos em computador fraco, sem mudar o tamanho na tela (o shader só reamostra). */
   if(_shaderLogin&&_shaderLogin.setMaxPixelCount)_shaderLogin.setMaxPixelCount(650000);
 }catch(e){}}</script>
-<script src="../js/admin-login.js?v=2026092406"></script>
+<script src="../js/admin-login.js?v=2026092909"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

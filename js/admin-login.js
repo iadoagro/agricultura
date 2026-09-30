@@ -18,7 +18,7 @@
   // abre no modo usado da última vez neste navegador.
   var R = window.SENHA_REGRAS;
   var campoEntrar = R ? R.campos([document.getElementById('entSenha')], { regras: false }) : null;
-  if (R) R.campos([document.getElementById('cadSenha')], { regras: true });
+  if (R) R.campos([document.getElementById('cadSenha')], { regras: true, semPin: true });
 
   function limparMsg() { msg.textContent = ''; msg.className = 'admin-msg'; }
   function mostrarErro(texto) { msg.textContent = texto; msg.className = 'admin-msg erro'; }
@@ -31,39 +31,29 @@
 
   function redirecionar() { location.href = auth.deveTrocarSenha() ? 'admin-trocar-senha.html' : 'index.html'; }
 
-  /* Convite depois do login, antes de ir pro Início: quem entrou com senha
-     normal e ainda não tem PIN é perguntado se quer cadastrar um. Volta em
-     todo login até a pessoa aceitar ou marcar "Não perguntar de novo" (marca
-     no banco, acesso_pin — vale em qualquer aparelho; neste navegador
-     também, caso o banco falhe). */
-  var ofertas = { pin: false };
+  /* Convite depois do login, antes de ir pro Início: o cadastro e o 1º acesso
+     são só com senha normal. A partir da 2ª entrada, quem usa senha normal e
+     ainda não tem PIN é perguntado se quer cadastrar um. Cada "Agora não" conta
+     uma recusa no banco (acesso_pin); na 5ª o convite para de aparecer até o
+     root reexibir em Usuários. */
+  var ofertas = { pin: false, restantes: 0 };
   var ofertaMostrada = false;
   // Durante o login por senha/PIN: o entrar() avisa "admin-auth-atualizado"
   // antes de sabermos se há convite a mostrar — sem esta trava, esse aviso
   // levava direto pro Início e o convite nunca aparecia.
   var decidindoOfertas = false;
   var painelPin = document.getElementById('painelPin');
-  function chaveNunca(tipo) {
-    var s = auth.sessaoAtual();
-    return 'seagri-' + tipo + '-nao:' + ((s && s.user && s.user.email) || '');
-  }
-  function naoPerguntarLocal(tipo) { try { return localStorage.getItem(chaveNunca(tipo)) === '1'; } catch (e) { return false; } }
   function mostrarPainel(painel, foco) {
     ofertaMostrada = true;
     [painelFormularios, painelStatus, painelPin].forEach(function (p) { p.hidden = p !== painel; });
     limparMsg();
     document.getElementById(foco).focus();
   }
-  function marcarNunca(tipo, caixa, rpc) {
-    if (!document.getElementById(caixa).checked) return Promise.resolve();
-    try { localStorage.setItem(chaveNunca(tipo), '1'); } catch (e) { /* modo privado */ }
-    return rpc().catch(function () { /* fica a marca deste navegador */ });
-  }
   document.getElementById('pinSim').addEventListener('click', function () {
-    marcarNunca('pin', 'pinNunca', auth.pinNaoPerguntar).then(function () { location.href = 'admin-trocar-senha.html?modo=pin'; });
+    location.href = 'admin-trocar-senha.html?modo=pin';
   });
   document.getElementById('pinAgoraNao').addEventListener('click', function () {
-    marcarNunca('pin', 'pinNunca', auth.pinNaoPerguntar).then(function () { location.href = 'index.html'; });
+    auth.pinRecusar().catch(function () { /* sem banco: só segue */ }).then(function () { location.href = 'index.html'; });
   });
 
   function avaliarSessao() {
@@ -72,13 +62,27 @@
     if (!auth.sessaoAtual()) { painelStatus.hidden = true; painelFormularios.hidden = false; return; }
     if (papel === 'responsavel' || papel === 'aprovado') {
       if (!auth.deveTrocarSenha()) {
-        if (ofertas.pin && !naoPerguntarLocal('pin')) { ofertas.pin = false; mostrarPainel(painelPin, 'pinSim'); return; }
+        if (ofertas.pin) {
+          ofertas.pin = false;
+          document.getElementById('pinRestantes').textContent = ofertas.restantes > 1
+            ? 'Você pode adiar mais ' + (ofertas.restantes - 1) + ' vez' + (ofertas.restantes - 1 === 1 ? '' : 'es') + ' antes de eu parar de perguntar.'
+            : 'Esta é a última vez que eu pergunto.';
+          mostrarPainel(painelPin, 'pinSim'); return;
+        }
       }
       redirecionar(); return;
     }
     painelFormularios.hidden = true;
     painelStatus.hidden = false;
-    if (papel === 'pendente') statusTexto.textContent = 'Seu cadastro ainda está aguardando aprovação do responsável.';
+    if (papel === 'pendente') {
+      var email = (auth.sessaoAtual().user.email || '');
+      var usuario = email.replace(/@sistema\.local$/i, '');
+      statusTexto.innerHTML = '<strong>Cadastro solicitado!</strong><br>Seu usuário é <strong></strong>.<br>' +
+        'Para entrar, digite esse usuário e a senha que você cadastrou na tela de login.<br>' +
+        'Seu cadastro está <strong>pendente de aprovação</strong> do responsável: você só consegue entrar depois que ele aprovar.';
+      statusTexto.querySelectorAll('strong')[1].textContent = usuario;
+      limparMsg();
+    }
     else if (papel === 'recusado') statusTexto.textContent = 'Seu cadastro foi recusado pelo responsável.';
     else statusTexto.textContent = 'Verificando seu cadastro…';
   }
@@ -96,7 +100,51 @@
   linkParaCadastro.addEventListener('click', function (e) { e.preventDefault(); mostrar('cadastrar'); });
   linkParaEntrar.addEventListener('click', function (e) { e.preventDefault(); mostrar('entrar'); });
 
+  // O usuário é só nome.sobrenome: aceita apenas letras (a-z, sem acento, minúsculas) e um único ponto.
+  // Vale para digitar e colar; números, "@" e qualquer símbolo são descartados na hora.
+  // Única exceção: o responsável entra com root@root.com, então o campo aceita esse texto exato (digitado aos poucos).
+  document.getElementById('entEmail').addEventListener('input', function () {
+    if (auth.RESPONSAVEL_EMAIL.indexOf(this.value.toLowerCase()) === 0) return;
+    var v = this.value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z.]/g, '');
+    var i = v.indexOf('.');
+    if (i !== -1) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, '');
+    if (v !== this.value) this.value = v;
+  });
+
+  // Ao digitar o usuário, confere no banco se a conta tem PIN: só então o modo PIN é liberado.
+  var MOTIVOS_PIN = {
+    vazio: 'Digite seu usuário primeiro: o PIN só fica disponível para quem já cadastrou um.',
+    poucos_acessos: 'Você ainda não pode usar PIN: precisa de pelo menos 2 acessos com senha. A partir do 2º acesso o sistema oferece cadastrar o PIN.',
+    recusou: 'Você recusou cadastrar o PIN 5 vezes e o convite foi desativado. Entre com a senha ou peça ao responsável para reexibir o PIN.',
+    sem_pin: 'Você ainda não cadastrou um PIN. Entre com a senha: o convite para cadastrar o PIN aparece no login.'
+  };
+  var entUsuario = document.getElementById('entEmail');
+  var seqPin = 0, timerPin = null;
+  function verificarPin() {
+    if (!campoEntrar) return;
+    var login = entUsuario.value.trim(), seq = ++seqPin;
+    if (!login) { campoEntrar.bloquearPin(MOTIVOS_PIN.vazio); return; }
+    auth.pinSituacao(login).then(function (r) {
+      if (seq !== seqPin) return;   // já digitou outra coisa
+      if (r && r.tem_pin) campoEntrar.liberarPin();
+      else campoEntrar.bloquearPin(MOTIVOS_PIN[(r && r.motivo)] || MOTIVOS_PIN.sem_pin);
+    }).catch(function () { if (seq === seqPin) campoEntrar.liberarPin(); });   // sem conexão: não trava; o login acusa se errar
+  }
+  entUsuario.addEventListener('input', function () {
+    if (campoEntrar) campoEntrar.bloquearPin(MOTIVOS_PIN.vazio);   // enquanto confere, PIN fica travado
+    clearTimeout(timerPin); timerPin = setTimeout(verificarPin, 400);
+  });
+  if (campoEntrar) campoEntrar.bloquearPin(MOTIVOS_PIN.vazio);
+
   function atualizarPreviaLogin() { cadLogin.value = auth.previewLogin(cadNome.value, cadSobrenome.value); }
+  // Nome e sobrenome: só letras e espaço (sem hífen, número ou símbolo). Com mais de um sobrenome, o
+  // login usa o primeiro; se já existir, o sistema tenta o próximo.
+  [cadNome, cadSobrenome].forEach(function (c) {
+    c.addEventListener('input', function () {
+      var v = c.value.replace(/[^A-Za-zÀ-ÿ ]/g, '');
+      if (v !== c.value) c.value = v;
+    });
+  });
   cadNome.addEventListener('input', atualizarPreviaLogin);
   cadSobrenome.addEventListener('input', atualizarPreviaLogin);
 
@@ -123,9 +171,13 @@
       .then(function () {
         if (campoEntrar) campoEntrar.guardar();   // próximo login abre no mesmo modo
         var entrouComPin = /^\d{6}$/.test(senha);
-        if (entrouComPin) return;
-        return auth.statusPin().then(function (st) {
-          ofertas.pin = !(st && (st.usaPin || st.naoPerguntar));
+        // conta a entrada no banco; o convite só vem a partir da 2ª
+        return auth.pinRegistrarEntrada().catch(function () {}).then(function () {
+          if (entrouComPin) return;
+          return auth.statusPin().then(function (st) {
+            ofertas.pin = Boolean(st) && !st.usaPin && !st.naoPerguntar && st.entradas >= 2 && st.recusas < auth.MAX_RECUSAS_PIN;
+            ofertas.restantes = st ? auth.MAX_RECUSAS_PIN - st.recusas : 0;
+          });
         });
       })
       .catch(function (err) { mostrarErro(err.message); })
