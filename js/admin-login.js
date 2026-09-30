@@ -20,6 +20,12 @@
   var campoEntrar = R ? R.campos([document.getElementById('entSenha')], { regras: false }) : null;
   if (R) R.campos([document.getElementById('cadSenha')], { regras: true, semPin: true });
 
+  // Não deixa colar (nem arrastar texto) nos campos de usuário e senha.
+  ['entEmail', 'entSenha', 'cadSenha'].forEach(function (id) {
+    var c = document.getElementById(id);
+    ['paste', 'drop'].forEach(function (ev) { c.addEventListener(ev, function (e) { e.preventDefault(); }); });
+  });
+
   function limparMsg() { msg.textContent = ''; msg.className = 'admin-msg'; }
   function mostrarErro(texto) { msg.textContent = texto; msg.className = 'admin-msg erro'; }
 
@@ -103,13 +109,38 @@
   // O usuário é só nome.sobrenome: aceita apenas letras (a-z, sem acento, minúsculas) e um único ponto.
   // Vale para digitar e colar; números, "@" e qualquer símbolo são descartados na hora.
   // Única exceção: o responsável entra com root@root.com, então o campo aceita esse texto exato (digitado aos poucos).
+  // Se aparece um "@", tudo dali em diante (o domínio: gmail.com, hotmail.com, ac.gov.br…) é cortado e o
+  // campo trava para novas letras até a pessoa apagar algo — assim não dá para "completar" um e-mail.
+  var ultimoUsuario = '', emailBarrado = false;
   document.getElementById('entEmail').addEventListener('input', function () {
-    if (auth.RESPONSAVEL_EMAIL.indexOf(this.value.toLowerCase()) === 0) return;
-    var v = this.value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z.]/g, '');
+    if (auth.RESPONSAVEL_EMAIL.indexOf(this.value.toLowerCase()) === 0) { ultimoUsuario = this.value; emailBarrado = false; return; }
+    var cru = this.value, arroba = cru.indexOf('@');
+    if (arroba !== -1) { cru = cru.slice(0, arroba); emailBarrado = true; }
+    var v = cru.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z.]/g, '');
     var i = v.indexOf('.');
     if (i !== -1) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, '');
-    if (v !== this.value) this.value = v;
+    if (emailBarrado) {
+      if (arroba === -1 && v.length < ultimoUsuario.length) emailBarrado = false;   // apagou: destrava
+      else if (arroba === -1) v = ultimoUsuario;                                     // tentou digitar o domínio
+      if (emailBarrado) dicaUsuario();
+    }
+    if (v !== this.value) { this.value = v; if (!emailBarrado) dicaUsuario(); }
+    ultimoUsuario = v;
   });
+  // Aviso discreto (some sozinho) quando algo é descartado do usuário, ex.: "@" de e-mail
+  var dicaEl = null, dicaTimer = null;
+  function dicaUsuario() {
+    if (!dicaEl) {
+      dicaEl = document.createElement('small');
+      dicaEl.setAttribute('role', 'status');
+      dicaEl.style.cssText = 'display:block;margin:8px 0 14px;line-height:1.35;font-size:12px;color:#6b7c93;transition:opacity .3s';
+      dicaEl.textContent = 'O usuário segue o padrão nome.sobrenome (só letras, sem @ ou e-mail).';
+      document.getElementById('entEmail').insertAdjacentElement('afterend', dicaEl);
+    }
+    dicaEl.style.opacity = '1';
+    clearTimeout(dicaTimer);
+    dicaTimer = setTimeout(function () { dicaEl.style.opacity = '0'; }, 4000);
+  }
 
   // Ao digitar o usuário, confere no banco se a conta tem PIN: só então o modo PIN é liberado.
   var MOTIVOS_PIN = {

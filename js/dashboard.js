@@ -1220,7 +1220,8 @@
       '<div class="ficha">' + fichaItem('Máquina', '') + fichaItem('Implemento', '') + '</div>' +
       '<h3 class="ben-sec">Histórico de atendimentos</h3>' +
       '<div class="tabela-scroll"><table class="dados"><thead><tr>' +
-      HIST_COLUNAS.map(function (c) { return '<th>' + G.esc(c) + '</th>'; }).join('') +
+      HIST_COLUNAS.filter(function (c) { return !(window.MODO_PUBLICO && c === 'Form.'); })   // versão pública: sem o link do formulário
+        .map(function (c) { return '<th>' + G.esc(c) + '</th>'; }).join('') +
       '</tr></thead><tbody><tr>' +
       HIST_COLUNAS.map(function () { return '<td>—</td>'; }).join('') +
       '</tr></tbody></table></div></div>';
@@ -1462,7 +1463,7 @@
           '<td class="num">' + (r.ac  ? G.num(r.ac)    : '—') + '</td>' +
           '<td>' + G.esc(r.rt || '—') + '</td>' +
           '<td class="fraco">' + G.esc(r.obs || '—') + '</td>' +
-          '<td>' + (r.form ? '<a href="' + G.esc(r.form) + '" target="_blank" rel="noopener">abrir</a>' : '—') + '</td>' +
+          (window.MODO_PUBLICO ? '' : '<td>' + (r.form ? '<a href="' + G.esc(r.form) + '" target="_blank" rel="noopener">abrir</a>' : '—') + '</td>') +
           '</tr>';
       }).join('') +
       '</tbody></table></div>';
