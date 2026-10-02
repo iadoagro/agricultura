@@ -665,3 +665,5 @@ dialog.cadastro-acoes-dialogo#fiscal-auditoria-dialogo{width:320px}
 #cadastradosImpressao tr[class*="cor-"]:not(.cad-grupo):nth-child(even) td{background:#f8faff}
 #cadastradosImpressao tr[class*="cor-"]:not(.cad-grupo) td:first-child{border-left:4px solid var(--cor-clara)}
 #cadastradosImpressao tr.cad-grupo td{background:var(--cor);color:#fff;font-weight:700;font-size:11px;padding:6px 8px;border:0}
+#painel-cadastrados .relatorio-tabela td:first-child,#painel-cadastrados .relatorio-tabela th:first-child{color:#153e75;font-weight:600;width:auto;text-align:left;white-space:nowrap}
+#painel-cadastrados .relatorio-tabela td:nth-child(2){white-space:nowrap}

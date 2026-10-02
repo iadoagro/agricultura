@@ -93,9 +93,9 @@
     });
     return Array.from(m.values()).sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
   }
-  var COLS = ['Nome', 'Telefone', 'Município', 'Bairro', 'Zona', 'Seção', 'Cadastrado por', 'Data e hora'];
+  var COLS = ['Cadastrado por', 'Data e hora', 'Nome', 'Telefone', 'Município', 'Bairro', 'Zona', 'Seção'];
   function linha(r) {
-    return [r.nome, r.telefone, nomesMun.get(r.municipio) || r.municipio, r.bairro, r.zona, r.secao, r._criadoPor || 'Sistema', fmt(r._criadoEm)];
+    return [r._criadoPor || 'Sistema', fmt(r._criadoEm), r.nome, r.telefone, nomesMun.get(r.municipio) || r.municipio, r.bairro, r.zona, r.secao];
   }
   function tituloGrupo(g) { return g.nome + ' — ' + g.itens.length + (g.itens.length === 1 ? ' fiscal' : ' fiscais'); }
   function preencher(corpoEl, regs, classeTitulo) {
