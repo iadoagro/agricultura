@@ -31,6 +31,7 @@
       <button class="aba-el" data-aba="fiscais" type="button" role="tab" id="aba-fiscais" aria-controls="painel-fiscais" aria-selected="false" tabindex="-1">Fiscais</button>
       <button class="aba-el" data-aba="resultados" type="button" role="tab" id="aba-resultados" aria-controls="painel-resultados" aria-selected="false" tabindex="-1">Resultados</button>
       <button class="aba-el" data-aba="relatorio" type="button" role="tab" id="aba-relatorio" aria-controls="painel-relatorio" aria-selected="false" tabindex="-1">Relatório</button>
+      <button class="aba-el" data-aba="cadastrados" type="button" role="tab" id="aba-cadastrados" aria-controls="painel-cadastrados" aria-selected="false" tabindex="-1">Cadastrados por</button>
     </nav>
 
     <div class="aba-conteudo" data-aba="resultados" role="tabpanel" id="painel-resultados" aria-labelledby="aba-resultados" tabindex="0">
@@ -303,7 +304,24 @@
         <div id="relProntos" class="relatorio-prontos"></div>
       </section>
     </div>
+    <div class="aba-conteudo" data-aba="cadastrados" role="tabpanel" id="painel-cadastrados" aria-labelledby="aba-cadastrados" tabindex="0">
+      <section class="mapa-card relatorio" aria-labelledby="cadpor-titulo">
+        <div class="mapa-topo"><div><h2 id="cadpor-titulo">Fiscais cadastrados por pessoa</h2><p>Veja os fiscais que você cadastrou (ou os de outra conta) e exporte em PDF.</p></div></div>
+        <div class="busca-global-filtros relatorio-filtros">
+          <label>Cadastrado por<select id="cadPorSelect"></select></label>
+          <label>Nome ou telefone<input id="cadPorBusca" type="search" placeholder="Buscar…"></label>
+        </div>
+        <div class="relatorio-acoes"><button id="cadPorPdf" type="button">Exportar PDF</button></div>
+        <p id="cadPorStatus" class="relatorio-status" role="status"></p>
+        <div class="tabela-scroll"><table class="relatorio-tabela"><thead><tr><th>Nome</th><th>Telefone</th><th>Município</th><th>Bairro</th><th>Zona</th><th>Seção</th><th>Cadastrado por</th><th>Data e hora</th></tr></thead><tbody id="cadPorCorpo"></tbody></table></div>
+      </section>
+    </div>
   </main>
+  <dialog id="fiscal-auditoria-dialogo" class="cadastro-acoes-dialogo" aria-labelledby="fiscal-auditoria-titulo">
+    <h3 id="fiscal-auditoria-titulo"></h3>
+    <div id="fiscal-auditoria-corpo" class="fiscal-auditoria-corpo"></div>
+    <button type="button" id="fiscal-auditoria-fechar">Fechar</button>
+  </dialog>
   <dialog id="cadastro-acoes-dialogo" class="cadastro-acoes-dialogo" aria-labelledby="cadastro-acoes-titulo">
     <h3 id="cadastro-acoes-titulo"></h3>
     <div id="cadastro-acoes-botoes"></div>
@@ -330,18 +348,19 @@
   <script src="../js/regionais-municipios.js?v=2026092401"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026092406"></script>
+  <script src="../js/banco-eleicoes.js?v=2026100201"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026092401"></script>
   <script src="../js/mapa-bairros-leaflet.js?v=2026092402"></script>
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
-<script src="../js/eleicoes.js?v=2026092602"></script>
+<script src="../js/eleicoes.js?v=2026100201"></script>
   <script src="../js/eleicoes-resultados.js?v=2026092201"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026092404"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026092203"></script>
   <script src="../js/eleicoes-busca-exportar.js?v=2026092402"></script>
   <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
+  <script src="../js/eleicoes-cadastrados.js?v=2026100201"></script>
 <script src="../js/eleicoes-abas.js?v=2026092201"></script>
   <script src="../js/select-busca.js?v=2026092604"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>

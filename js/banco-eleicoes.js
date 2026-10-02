@@ -97,7 +97,7 @@
     await requisicao('/rest/v1/eleicoes_cadastros?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates' }, body: JSON.stringify({ id, dados: registro }) });
     pendentes.delete(assinatura);
     cache.push({ ...registro, _id: id, _criadoPorId: sessao.user.id, _criadoPor: loginDoEmail(sessao.user.email) }); carregado = true; avisar();
-    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('criar', 'fiscais', 'Cadastrou o fiscal "' + (registro.nome || '') + '" (' + (registro.municipio || '') + ')');
+    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('criar', 'fiscais', 'Cadastrou o fiscal "' + (registro.nome || '') + '" (' + (registro.municipio || '') + ')', { fiscal_id: id });
   }
   async function editar(id, registro) {
     if (!online) {
@@ -114,7 +114,7 @@
     const idx = cache.findIndex(r => r._id === id);
     if (idx !== -1) cache[idx] = { ...registro, _id: id, _criadoEm: cache[idx]._criadoEm, _criadoPorId: cache[idx]._criadoPorId, _criadoPor: cache[idx]._criadoPor };
     avisar();
-    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'fiscais', 'Editou o fiscal "' + (registro.nome || '') + '" (' + (registro.municipio || '') + ')');
+    window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('editar', 'fiscais', 'Editou o fiscal "' + (registro.nome || '') + '" (' + (registro.municipio || '') + ')', { fiscal_id: id });
   }
   async function excluir(id) {
     if (!online) {
@@ -183,8 +183,19 @@
     }
     return await requisicao('/rest/v1/eleicoes_instantaneos?select=criado_em,secoes&order=criado_em.desc&limit=' + (limite || 20));
   }
+  /* Quem cadastrou e quando (data e hora), pelo cadastro + log do sistema
+     (função fiscal_log_cadastro, database/fiscais-log-cadastro.sql). */
+  async function logCadastro(id) {
+    const alvo = cache.find(r => r._id === id) || local().find(r => r._id === id);
+    if (!online) return { criadoEm: alvo && alvo._criadoEm, por: null, logEm: null, logPor: null };
+    const linhas = await requisicao('/rest/v1/rpc/fiscal_log_cadastro', { method: 'POST', body: JSON.stringify({ p_id: id }) });
+    const l = linhas && linhas[0];
+    if (!l) return null;
+    return { criadoEm: l.criado_em, por: l.criado_por_login, logEm: l.log_em, logPor: l.log_login };
+  }
   const banco = window.BANCO_ELEICOES = {
-    online, atualizar, importar, salvar, editar, excluir, snapshotCriar, snapshotUltimo, snapshotListar,
+    online, atualizar, logCadastro,
+    usuario: () => sessao && sessao.user ? { id: sessao.user.id, login: loginDoEmail(sessao.user.email) } : null, importar, salvar, editar, excluir, snapshotCriar, snapshotUltimo, snapshotListar,
     ler() { if (!online) return local(); if (!carregado) throw new Error('Carregando os cadastros do banco online…'); return cache; },
     conectado: () => Boolean(sessao && carregado)
   };

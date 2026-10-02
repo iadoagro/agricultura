@@ -414,8 +414,8 @@
       acoes.title = 'Editar ou excluir'; acoes.setAttribute('aria-label', 'Editar ou excluir o cadastro de ' + (r.nome || ''));
       acoes.onclick = e => { e.stopPropagation(); abrirPopupAcoes(r); };
       cabecalho.append(nome, criarWhatsAppCompacto(r), acoes);
-      cabecalho.onclick = () => destacarFiscal(r);
-      cabecalho.onkeydown = e => { if (e.target === cabecalho && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); destacarFiscal(r); } };
+      cabecalho.onclick = () => { destacarFiscal(r); window.AUDITORIA_FISCAL && window.AUDITORIA_FISCAL(r); };
+      cabecalho.onkeydown = e => { if (e.target === cabecalho && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); destacarFiscal(r); window.AUDITORIA_FISCAL && window.AUDITORIA_FISCAL(r); } };
       const zonaSecao = document.createElement('span');
       zonaSecao.className = 'cadastro-info-compacta';
       zonaSecao.textContent = (r.bairro ? r.bairro + ' · ' : '') + 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—');

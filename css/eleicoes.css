@@ -597,3 +597,23 @@ table.dados td.forte{font-weight:600;color:var(--tinta)}
   #buscaGlobalImpressao th:nth-child(5){width:11%}#buscaGlobalImpressao th:nth-child(6){width:5%}
   #buscaGlobalImpressao th:nth-child(7){width:6%}#buscaGlobalImpressao th:nth-child(8){width:26%}
 }
+
+/* Janela "quem cadastrou" e aba "Cadastrados por" (js/eleicoes-cadastrados.js) */
+.fiscal-auditoria-corpo{display:flex;flex-direction:column;gap:8px;font-size:13px;color:#42536e}
+.fiscal-auditoria-corpo div{display:flex;flex-direction:column}
+.fiscal-auditoria-corpo strong{color:#153e75;font-size:14px}
+#fiscal-auditoria-fechar{width:100%;margin-top:14px;background:#f0f2f4;border:1px solid #cbd0d8;border-radius:6px;padding:8px}
+dialog.cadastro-acoes-dialogo#fiscal-auditoria-dialogo{width:320px}
+#cadastradosImpressao{display:none}
+@media print{
+  body.imprimindo-cadastrados{height:auto;display:block;background:#fff}
+  body.imprimindo-cadastrados>*:not(#cadastradosImpressao){display:none!important}
+  body.imprimindo-cadastrados #cadastradosImpressao{display:block;font:10px/1.35 'Segoe UI',Arial,sans-serif;color:#000}
+  #cadastradosImpressao h1{margin:0 0 2px;font-size:16px;color:#153e75}
+  #cadastradosImpressao p{margin:0 0 10px;font-size:10px;color:#444}
+  #cadastradosImpressao table{width:100%;border-collapse:collapse;table-layout:fixed}
+  #cadastradosImpressao th,#cadastradosImpressao td{padding:3px 5px;border-bottom:1px solid #ccc;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:break-word}
+  #cadastradosImpressao th{background:#eef3fb;font-size:9.5px}
+  #cadastradosImpressao thead{display:table-header-group}
+  #cadastradosImpressao tr{break-inside:avoid}
+}
