@@ -9,6 +9,7 @@
   if (!banco) return;
   var nomesMun = new Map((window.MAPA_ACRE ? window.MAPA_ACRE.localidades : [])
     .map(function (m) { return [String(m.id), m.nome]; }));
+  var hora = function (d) { return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
   var fmt = function (iso) {
     if (!iso) return '';
     var d = new Date(iso);
@@ -139,11 +140,26 @@
       var d = document.createElement('div'), n = document.createElement('b'), t = document.createElement('span');
       n.textContent = p[0]; t.textContent = p[1]; d.append(n, t); numeros.append(d);
     });
+    // Texto resumo: quem cadastrou, quantos cada um e o período (primeiro e último cadastro)
+    var conta = new Map();
+    regs.forEach(function (r) { var n = r._criadoPor || 'Sistema'; conta.set(n, (conta.get(n) || 0) + 1); });
+    var pes = Array.from(conta.entries()).sort(function (a, b) { return b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR'); })
+      .map(function (e) { return e[0] + ' (' + e[1] + ')'; });
+    var lista = pes.length > 1 ? pes.slice(0, -1).join(', ') + ' e ' + pes[pes.length - 1] : pes[0];
+    var datas = regs.map(function (r) { return r._criadoEm && new Date(r._criadoEm); }).filter(function (d) { return d && !isNaN(d); })
+      .sort(function (a, b) { return a - b; });
+    var dia = function (d) { return d.toLocaleDateString('pt-BR'); };
+    var periodo = !datas.length ? '' : dia(datas[0]) === dia(datas[datas.length - 1])
+      ? ' no dia ' + dia(datas[0]) + ', entre ' + hora(datas[0]) + ' e ' + hora(datas[datas.length - 1])
+      : ' no período de ' + dia(datas[0]) + ' a ' + dia(datas[datas.length - 1]);
+    var resumo = document.createElement('p'); resumo.className = 'cad-resumo';
+    resumo.textContent = 'Este relatório reúne ' + regs.length + (regs.length === 1 ? ' fiscal cadastrado' : ' fiscais cadastrados') +
+      ' por ' + lista + periodo + '.' + (gs.length > 1 ? ' Os registros estão agrupados por quem fez o cadastro.' : '');
     var tab = document.createElement('table');
     var thead = tab.createTHead().insertRow();
     COLS.forEach(function (c) { var th = document.createElement('th'); th.textContent = c; thead.append(th); });
     preencher(tab.createTBody(), regs, 'cad-grupo');
-    folha.append(topo, numeros, tab);
+    folha.append(topo, numeros, resumo, tab);
     document.body.appendChild(folha);
     document.body.classList.add('imprimindo-cadastrados');
     var sair = function () {
