@@ -630,6 +630,6 @@ dialog.cadastro-acoes-dialogo#fiscal-auditoria-dialogo{width:320px}
 /* Sem o cabeçalho/rodapé do navegador (URL, nº da página) no PDF dos cadastrados */
 @media print{
   body.imprimindo-cadastrados{margin:0}
-  body.imprimindo-cadastrados #cadastradosImpressao{padding:12mm}
+  body.imprimindo-cadastrados #cadastradosImpressao{padding:12mm;page:cadastrados}
 }
-@page{margin:0}
+@page cadastrados{margin:0}
