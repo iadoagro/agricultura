@@ -15,33 +15,19 @@
     return isNaN(d) ? '' : d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
-  /* ---- janela do fiscal ---- */
-  var dlg = document.getElementById('fiscal-auditoria-dialogo');
-  var corpo = document.getElementById('fiscal-auditoria-corpo');
-  var titulo = document.getElementById('fiscal-auditoria-titulo');
-  if (dlg) document.getElementById('fiscal-auditoria-fechar').onclick = function () { dlg.close(); };
+  /* ---- quem cadastrou (no painel do fiscal) ---- */
+  var alvo = document.getElementById('fichaAuditoria');
   var seq = 0;
   window.AUDITORIA_FISCAL = function (r) {
-    if (!dlg || !r || !r._id) return;
+    if (!alvo || !r || !r._id) return;
     var meu = ++seq;
-    titulo.textContent = r.nome || 'Fiscal';
-    corpo.textContent = 'Buscando no log do sistema…';
-    if (!dlg.open) dlg.showModal();
+    alvo.textContent = 'Buscando quem cadastrou…';
     banco.logCadastro(r._id).then(function (l) {
       if (meu !== seq) return;
-      var linhas = [];
       var quando = l && (fmt(l.logEm) || fmt(l.criadoEm)) || fmt(r._criadoEm);
       var quem = l && (l.logPor || l.por) || r._criadoPor || 'Sistema';
-      linhas.push(['Cadastrado por', quem]);
-      linhas.push(['Data e hora', quando || 'Não registrado']);
-      linhas.push(['Fonte', l && l.logEm ? 'Log do sistema' : 'Registro do cadastro (sem evento no log)']);
-      corpo.replaceChildren.apply(corpo, linhas.map(function (p) {
-        var li = document.createElement('div');
-        var a = document.createElement('span'); a.textContent = p[0];
-        var b = document.createElement('strong'); b.textContent = p[1];
-        li.append(a, b); return li;
-      }));
-    }).catch(function (e) { if (meu === seq) corpo.textContent = e.message || 'Não foi possível consultar o log.'; });
+      alvo.textContent = 'Cadastrado por ' + quem + (quando ? ' em ' + quando : '') + (l && l.logEm ? ' (log do sistema)' : '');
+    }).catch(function (e) { if (meu === seq) alvo.textContent = e.message || 'Não foi possível consultar o log.'; });
   };
 
   /* ---- aba "Cadastrados por" ---- */

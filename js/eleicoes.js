@@ -345,7 +345,31 @@
   // mostra seção/local na faixa abaixo da busca.
   let destacadoId = null;
   const avisoDestaque = document.getElementById('destaqueFiscal');
+  // Painel à direita: com um fiscal em destaque mostra os dados dele no lugar
+  // do formulário (o mapa à esquerda mostra onde vota); "Editar" volta ao form.
+  const ficha = document.getElementById('fichaFiscal');
+  function mostrarFicha(r, local) {
+    if (!ficha) return;
+    const dl = document.getElementById('fichaCampos');
+    const linhas = [['Nome', r.nome], ['Telefone', r.telefone], ['Município', nomes.get(r.municipio) || r.municipio],
+      ['Regional', (window.REGIONAIS_MUNICIPIOS || {})[r.municipio] || r.regional], ['Bairro', r.bairro],
+      ['Zona eleitoral', r.zona], ['Seção eleitoral', r.secao], ['Local de votação', local ? local.nome : r.localVotacao]];
+    dl.replaceChildren(...linhas.flatMap(([k, v]) => {
+      const dt = document.createElement('dt'), dd = document.createElement('dd');
+      dt.textContent = k; dd.textContent = v || 'Não informado'; return [dt, dd];
+    }));
+    ficha.hidden = false; form.hidden = true;
+    ficha.dataset.id = String(r._id || '');
+    ficha._registro = r;
+    if (window.AUDITORIA_FISCAL) window.AUDITORIA_FISCAL(r);
+  }
+  function esconderFicha() { if (ficha) { ficha.hidden = true; form.hidden = false; } }
+  if (ficha) {
+    document.getElementById('fichaEditar').onclick = () => { const r = ficha._registro; esconderFicha(); if (r) iniciarEdicao(r); };
+    document.getElementById('fichaFechar').onclick = () => limparDestaqueFiscal();
+  }
   function limparDestaqueFiscal() {
+    esconderFicha();
     destacadoId = null;
     if (avisoDestaque) { avisoDestaque.hidden = true; avisoDestaque.textContent = ''; }
     if (mapaBairros && mapaBairros.limparDestaque) mapaBairros.limparDestaque();
@@ -368,6 +392,7 @@
     const noMapa = Boolean(mapaBairros && secaoMapa && !secaoMapa.hidden && coord && Number.isFinite(coord.lat) && Number.isFinite(coord.lon));
     let mesmaSecao = [];
     try { mesmaSecao = ler().filter(x => x.municipio === r.municipio && canonico(x.zona) === canonico(r.zona) && canonico(x.secao) === canonico(r.secao)); } catch (e) {}
+    mostrarFicha(r, local);
     const descricao = 'Seção ' + (r.secao || '—') + ' · Zona ' + (r.zona || '—') + (local ? ' — ' + local.nome : '');
     if (noMapa) {
       mapaBairros.destacar({ lat: coord.lat, lon: coord.lon, html:
@@ -414,8 +439,8 @@
       acoes.title = 'Editar ou excluir'; acoes.setAttribute('aria-label', 'Editar ou excluir o cadastro de ' + (r.nome || ''));
       acoes.onclick = e => { e.stopPropagation(); abrirPopupAcoes(r); };
       cabecalho.append(nome, criarWhatsAppCompacto(r), acoes);
-      cabecalho.onclick = () => { destacarFiscal(r); window.AUDITORIA_FISCAL && window.AUDITORIA_FISCAL(r); };
-      cabecalho.onkeydown = e => { if (e.target === cabecalho && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); destacarFiscal(r); window.AUDITORIA_FISCAL && window.AUDITORIA_FISCAL(r); } };
+      cabecalho.onclick = () => destacarFiscal(r);
+      cabecalho.onkeydown = e => { if (e.target === cabecalho && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); destacarFiscal(r); } };
       const zonaSecao = document.createElement('span');
       zonaSecao.className = 'cadastro-info-compacta';
       zonaSecao.textContent = (r.bairro ? r.bairro + ' · ' : '') + 'Zona ' + (r.zona || '—') + ' · Seção ' + (r.secao || '—');
@@ -551,6 +576,7 @@
       mensagem.className = 'erro'; mensagem.textContent = 'Este cadastro salvo localmente é antigo demais e não pode ser editado. Exclua e cadastre de novo.';
       return;
     }
+    esconderFicha();
     editandoId = r._id;
     form.elements.nome.value = r.nome || '';
     form.elements.telefone.value = r.telefone || '';

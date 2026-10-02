@@ -617,3 +617,13 @@ dialog.cadastro-acoes-dialogo#fiscal-auditoria-dialogo{width:320px}
   #cadastradosImpressao thead{display:table-header-group}
   #cadastradosImpressao tr{break-inside:avoid}
 }
+
+/* Painel "Dados do fiscal" (js/eleicoes.js) */
+.ficha-fiscal[hidden]{display:none}
+.ficha-fiscal h3{margin:0 0 12px;font-size:15px;color:#153e75}
+.ficha-fiscal dl{margin:0}
+.ficha-fiscal dt{font-weight:700;font-size:13px;color:#1a2b45;margin-top:12px}
+.ficha-fiscal dd{margin:4px 0 0;padding:10px 12px;border:1px solid #cbd0d8;border-radius:10px;background:#f7f9fc;font-size:14px;overflow-wrap:anywhere}
+.ficha-auditoria{margin:14px 0;font-size:12px;color:#6b7a90}
+.ficha-fiscal .campo-acoes{display:flex;flex-direction:column;gap:8px}
+#cadastro[hidden]{display:none!important}

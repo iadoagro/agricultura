@@ -148,6 +148,12 @@
       <div class="cadastro-e-meta">
       <aside id="painel" aria-labelledby="painel-titulo">
     <div class="painel-topo"><div><span class="rotulo">MUNICÍPIO</span><h2 id="painel-titulo">Selecione um município</h2></div></div>
+    <section id="fichaFiscal" class="ficha-fiscal" aria-label="Dados do fiscal" hidden>
+      <h3>Dados do fiscal</h3>
+      <dl id="fichaCampos"></dl>
+      <p id="fichaAuditoria" class="ficha-auditoria" role="status"></p>
+      <div class="campo-acoes"><button type="button" id="fichaEditar" class="salvar">Editar cadastro</button><button type="button" id="fichaFechar" class="cancelar-edicao">Fechar</button></div>
+    </section>
     <form id="cadastro">
       <h3 id="cadastro-titulo">Cadastro de fiscais</h3>
       <div class="campo"><label for="nome">Nome <span class="campo-obrigatorio" aria-hidden="true">*</span></label><input id="nome" name="nome" autocomplete="name" enterkeyhint="next" autocapitalize="words" maxlength="160" required></div>
@@ -317,11 +323,6 @@
       </section>
     </div>
   </main>
-  <dialog id="fiscal-auditoria-dialogo" class="cadastro-acoes-dialogo" aria-labelledby="fiscal-auditoria-titulo">
-    <h3 id="fiscal-auditoria-titulo"></h3>
-    <div id="fiscal-auditoria-corpo" class="fiscal-auditoria-corpo"></div>
-    <button type="button" id="fiscal-auditoria-fechar">Fechar</button>
-  </dialog>
   <dialog id="cadastro-acoes-dialogo" class="cadastro-acoes-dialogo" aria-labelledby="cadastro-acoes-titulo">
     <h3 id="cadastro-acoes-titulo"></h3>
     <div id="cadastro-acoes-botoes"></div>
@@ -348,19 +349,19 @@
   <script src="../js/regionais-municipios.js?v=2026092401"></script>
   <script src="../js/graficos.js?v=2026091411"></script>
   <script src="../js/banco-config.js?v=2026091406"></script>
-  <script src="../js/banco-eleicoes.js?v=2026100201"></script>
+  <script src="../js/banco-eleicoes.js?v=2026100202"></script>
   <script src="../js/eleicoes-cobertura.js?v=2026092401"></script>
   <script src="../js/mapa-bairros-leaflet.js?v=2026092402"></script>
   <script src="../js/fiscais-mapa-dados.js?v=2026091501"></script>
   <script src="../js/banco-bairros.js?v=2026092202"></script>
-<script src="../js/eleicoes.js?v=2026100201"></script>
+<script src="../js/eleicoes.js?v=2026100202"></script>
   <script src="../js/eleicoes-resultados.js?v=2026092201"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026092404"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026092203"></script>
   <script src="../js/eleicoes-busca-exportar.js?v=2026092402"></script>
   <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
-  <script src="../js/eleicoes-cadastrados.js?v=2026100201"></script>
+  <script src="../js/eleicoes-cadastrados.js?v=2026100202"></script>
 <script src="../js/eleicoes-abas.js?v=2026092201"></script>
   <script src="../js/select-busca.js?v=2026092604"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
