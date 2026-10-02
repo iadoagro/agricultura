@@ -1,6 +1,6 @@
 /* Fiscais: (1) janela "Cadastro do fiscal" — quem cadastrou e quando (data e
    hora), pelo log do sistema (window.AUDITORIA_FISCAL, chamada ao clicar num
-   fiscal em js/eleicoes.js); (2) aba "Cadastrados por": cada pessoa vê os
+   fiscal em js/eleicoes.js); (2) aba "Cadastrados": cada pessoa vê os
    fiscais que cadastrou (ou os de outra conta) e exporta em PDF (impressão do
    navegador → "Salvar como PDF"). Só lê window.BANCO_ELEICOES. */
 (function () {
@@ -30,59 +30,97 @@
     }).catch(function (e) { if (meu === seq) alvo.textContent = e.message || 'Não foi possível consultar o log.'; });
   };
 
-  /* ---- aba "Cadastrados por" ---- */
-  var sel = document.getElementById('cadPorSelect');
+  /* ---- aba "Cadastrados" ---- */
+  var btnSel = document.getElementById('cadPorBtn');
+  var menu = document.getElementById('cadPorMenu');
   var busca = document.getElementById('cadPorBusca');
   var status = document.getElementById('cadPorStatus');
   var tbody = document.getElementById('cadPorCorpo');
   var btnPdf = document.getElementById('cadPorPdf');
-  if (!sel || !tbody) return;
-  var TODOS = '__todos__';
+  if (!btnSel || !tbody) return;
+  var escolhidos = null;   // Set de chaves; null = ainda não definido (padrão: "Meus cadastros"); vazio = todos
 
   function todos() { try { return banco.ler(); } catch (e) { return null; } }
   function chaveDe(r) { return r._criadoPorId || '__sistema__'; }
-  function montarOpcoes() {
-    var regs = todos(); if (!regs) return;
-    var eu = banco.usuario(), anterior = sel.value;
+  function pessoas() {
+    var regs = todos(); if (!regs) return null;
     var por = new Map();
     regs.forEach(function (r) {
-      var k = chaveDe(r), o = por.get(k) || { nome: r._criadoPor || 'Sistema', n: 0 };
+      var k = chaveDe(r), o = por.get(k) || { chave: k, nome: r._criadoPor || 'Sistema', n: 0 };
       o.n++; por.set(k, o);
     });
-    var itens = Array.from(por.entries()).sort(function (a, b) { return a[1].nome.localeCompare(b[1].nome, 'pt-BR'); });
-    sel.replaceChildren(new Option('Todos (' + regs.length + ')', TODOS));
-    if (eu) sel.add(new Option('Meus cadastros (' + ((por.get(eu.id) || {}).n || 0) + ')', eu.id));
-    itens.forEach(function (it) { if (!eu || it[0] !== eu.id) sel.add(new Option(it[1].nome + ' (' + it[1].n + ')', it[0])); });
-    sel.value = Array.from(sel.options).some(function (o) { return o.value === anterior; }) ? anterior : (eu ? eu.id : TODOS);
+    return Array.from(por.values()).sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
   }
+  function montarMenu() {
+    var ps = pessoas(); if (!ps) return;
+    var eu = banco.usuario();
+    if (escolhidos === null) escolhidos = new Set(eu && ps.some(function (p) { return p.chave === eu.id; }) ? [eu.id] : []);
+    menu.replaceChildren();
+    var rotulo = function (texto, marcado, onChange) {
+      var l = document.createElement('label'), i = document.createElement('input');
+      i.type = 'checkbox'; i.checked = marcado; i.addEventListener('change', onChange);
+      l.append(i, document.createTextNode(texto)); menu.append(l); return i;
+    };
+    rotulo('Todos', escolhidos.size === 0, function () { escolhidos.clear(); atualizar(); });
+    ps.forEach(function (p) {
+      var meu = eu && p.chave === eu.id;
+      rotulo((meu ? 'Meus cadastros' : p.nome) + ' (' + p.n + ')', escolhidos.has(p.chave), function (e) {
+        if (e.target.checked) escolhidos.add(p.chave); else escolhidos.delete(p.chave);
+        atualizar();
+      });
+    });
+    var nomes = ps.filter(function (p) { return escolhidos.has(p.chave); }).map(function (p) { return eu && p.chave === eu.id ? 'Meus cadastros' : p.nome; });
+    btnSel.textContent = !nomes.length ? 'Todos' : nomes.length <= 2 ? nomes.join(', ') : nomes.length + ' pessoas';
+  }
+  function atualizar() { montarMenu(); renderizar(); }
   function filtrados() {
     var regs = todos(); if (!regs) return null;
     var t = busca.value.trim().toLowerCase(), td = t.replace(/\D/g, '');
     return regs.filter(function (r) {
-      if (sel.value !== TODOS && chaveDe(r) !== sel.value) return false;
+      if (escolhidos && escolhidos.size && !escolhidos.has(chaveDe(r))) return false;
       if (!t) return true;
       return (r.nome || '').toLowerCase().indexOf(t) !== -1 || (td && (r.telefone || '').replace(/\D/g, '').indexOf(td) !== -1);
     }).sort(function (a, b) { return String(b._criadoEm || '').localeCompare(String(a._criadoEm || '')); });
   }
-  var COLS = ['Nome', 'Telefone', 'Município', 'Bairro', 'Zona', 'Seção', 'Cadastrado por', 'Data e hora'];
+  // Mais de uma pessoa (ou "Todos"): agrupa por quem cadastrou, com um título por pessoa.
+  function agrupado() { return !escolhidos || escolhidos.size !== 1; }
+  function grupos(regs) {
+    if (!agrupado()) return [{ nome: null, itens: regs }];
+    var m = new Map();
+    regs.forEach(function (r) {
+      var k = chaveDe(r), g = m.get(k) || { nome: r._criadoPor || 'Sistema', itens: [] };
+      g.itens.push(r); m.set(k, g);
+    });
+    return Array.from(m.values()).sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+  }
+  var COLS = ['Nome', 'Telefone', 'Município', 'Bairro', 'Zona', 'Seção', 'Data e hora'];
   function linha(r) {
-    return [r.nome, r.telefone, nomesMun.get(r.municipio) || r.municipio, r.bairro, r.zona, r.secao, r._criadoPor || 'Sistema', fmt(r._criadoEm)];
+    return [r.nome, r.telefone, nomesMun.get(r.municipio) || r.municipio, r.bairro, r.zona, r.secao, fmt(r._criadoEm)];
+  }
+  function tituloGrupo(g) { return g.nome + ' — ' + g.itens.length + (g.itens.length === 1 ? ' fiscal' : ' fiscais'); }
+  function preencher(corpoEl, regs, classeTitulo) {
+    grupos(regs).forEach(function (g) {
+      if (g.nome !== null) {
+        var th = corpoEl.insertRow(); th.className = classeTitulo;
+        var c = th.insertCell(); c.colSpan = COLS.length; c.textContent = tituloGrupo(g);
+      }
+      g.itens.forEach(function (r) {
+        var tr = corpoEl.insertRow();
+        linha(r).forEach(function (v) { tr.insertCell().textContent = v == null ? '' : v; });
+      });
+    });
   }
   function renderizar() {
     var regs = filtrados();
     if (!regs) { status.textContent = 'Carregando os cadastros do banco online…'; return; }
     status.textContent = regs.length + (regs.length === 1 ? ' fiscal cadastrado.' : ' fiscais cadastrados.');
     btnPdf.disabled = !regs.length;
+    tbody.replaceChildren();
     if (!regs.length) {
-      var tr = document.createElement('tr'), td = document.createElement('td');
-      td.colSpan = COLS.length; td.textContent = 'Nenhum fiscal encontrado.'; tr.append(td);
-      tbody.replaceChildren(tr); return;
+      var td = tbody.insertRow().insertCell();
+      td.colSpan = COLS.length; td.textContent = 'Nenhum fiscal encontrado.'; return;
     }
-    tbody.replaceChildren.apply(tbody, regs.map(function (r) {
-      var tr = document.createElement('tr');
-      linha(r).forEach(function (v) { var td = document.createElement('td'); td.textContent = v == null ? '' : v; tr.append(td); });
-      return tr;
-    }));
+    preencher(tbody, regs, 'cad-grupo');
   }
   function exportarPDF() {
     var regs = filtrados();
@@ -91,17 +129,12 @@
     folha.id = 'cadastradosImpressao';
     var h = document.createElement('h1'); h.textContent = 'Fiscais cadastrados';
     var sub = document.createElement('p');
-    var quem = sel.options[sel.selectedIndex].text.replace(/\s*\(\d+\)$/, '');
-    sub.textContent = 'Cadastrados por: ' + quem + ' · ' + regs.length + (regs.length === 1 ? ' fiscal' : ' fiscais') +
+    sub.textContent = 'Cadastrados por: ' + btnSel.textContent + ' · ' + regs.length + (regs.length === 1 ? ' fiscal' : ' fiscais') +
       ' · gerado em ' + new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
     var tab = document.createElement('table');
     var thead = tab.createTHead().insertRow();
     COLS.forEach(function (c) { var th = document.createElement('th'); th.textContent = c; thead.append(th); });
-    var tb = tab.createTBody();
-    regs.forEach(function (r) {
-      var tr = tb.insertRow();
-      linha(r).forEach(function (v) { tr.insertCell().textContent = v == null ? '' : v; });
-    });
+    preencher(tab.createTBody(), regs, 'cad-grupo');
     folha.append(h, sub, tab);
     document.body.appendChild(folha);
     document.body.classList.add('imprimindo-cadastrados');
@@ -113,9 +146,15 @@
     window.addEventListener('afterprint', sair);
     window.print();
   }
-  sel.addEventListener('change', renderizar);
+  btnSel.addEventListener('click', function () {
+    menu.hidden = !menu.hidden;
+    btnSel.setAttribute('aria-expanded', String(!menu.hidden));
+  });
+  document.addEventListener('click', function (e) {
+    if (!menu.hidden && !e.target.closest('#cadPorCampo')) { menu.hidden = true; btnSel.setAttribute('aria-expanded', 'false'); }
+  });
   busca.addEventListener('input', renderizar);
   btnPdf.addEventListener('click', exportarPDF);
-  window.addEventListener('banco-atualizado', function () { montarOpcoes(); renderizar(); });
-  montarOpcoes(); renderizar();
+  window.addEventListener('banco-atualizado', atualizar);
+  atualizar();
 })();

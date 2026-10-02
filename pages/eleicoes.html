@@ -13,7 +13,7 @@
   <script src="../js/nav.js?v=2026092901"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="../css/eleicoes.css?v=2026100204">
+  <link rel="stylesheet" href="../css/eleicoes.css?v=2026100205">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092601">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -314,12 +314,16 @@
       <section class="mapa-card relatorio" aria-labelledby="cadpor-titulo">
         <div class="mapa-topo"><div><h2 id="cadpor-titulo">Fiscais cadastrados por pessoa</h2><p>Veja os fiscais que você cadastrou (ou os de outra conta) e exporte em PDF.</p></div></div>
         <div class="busca-global-filtros relatorio-filtros">
-          <label>Cadastrado por<select id="cadPorSelect"></select></label>
+          <div class="rel-multi" id="cadPorCampo">
+            <span class="rel-multi-rotulo">Cadastrado por</span>
+            <button type="button" id="cadPorBtn" class="rel-multi-btn" aria-haspopup="true" aria-expanded="false">Todos</button>
+            <div id="cadPorMenu" class="rel-multi-menu" hidden></div>
+          </div>
           <label>Nome ou telefone<input id="cadPorBusca" type="search" placeholder="Buscar…"></label>
         </div>
         <div class="relatorio-acoes"><button id="cadPorPdf" type="button">Exportar PDF</button></div>
         <p id="cadPorStatus" class="relatorio-status" role="status"></p>
-        <div class="tabela-scroll"><table class="relatorio-tabela"><thead><tr><th>Nome</th><th>Telefone</th><th>Município</th><th>Bairro</th><th>Zona</th><th>Seção</th><th>Cadastrado por</th><th>Data e hora</th></tr></thead><tbody id="cadPorCorpo"></tbody></table></div>
+        <div class="tabela-scroll"><table class="relatorio-tabela"><thead><tr><th>Nome</th><th>Telefone</th><th>Município</th><th>Bairro</th><th>Zona</th><th>Seção</th><th>Data e hora</th></tr></thead><tbody id="cadPorCorpo"></tbody></table></div>
       </section>
     </div>
   </main>
@@ -361,7 +365,7 @@
   <script src="../js/eleicoes-prioridades.js?v=2026092203"></script>
   <script src="../js/eleicoes-busca-exportar.js?v=2026092402"></script>
   <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
-  <script src="../js/eleicoes-cadastrados.js?v=2026100202"></script>
+  <script src="../js/eleicoes-cadastrados.js?v=2026100205"></script>
 <script src="../js/eleicoes-abas.js?v=2026092201"></script>
   <script src="../js/select-busca.js?v=2026092604"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>

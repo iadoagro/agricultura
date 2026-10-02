@@ -642,3 +642,6 @@ dialog.cadastro-acoes-dialogo#fiscal-auditoria-dialogo{width:320px}
   .cadastro-e-meta #cadastro input,.cadastro-e-meta #cadastro select{height:32px;padding:5px 9px;font-size:13px}
   .cadastro-e-meta>#painel{padding:10px 12px}
 }
+/* título de cada pessoa na aba Cadastrados (agrupado) */
+.relatorio-tabela tr.cad-grupo td{background:#e8eefa;color:#153e75;font-weight:700;border-top:2px solid #c5d3ee}
+#cadastradosImpressao tr.cad-grupo td{background:#e8eefa;color:#153e75;font-weight:700;border-top:1px solid #999}
