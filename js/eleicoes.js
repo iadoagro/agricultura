@@ -130,7 +130,11 @@
     if (svgEstado && areaEstado && !areaEstado.hidden) {
       // a legenda e o rodapé (entre o mapa e o fim do cartão) já entram em abaixo()
       // altura fixa (não só máxima): o mapa do estado cresce até o fim da tela
-      const h = Math.max(220, sobra(svgEstado)) + 'px';
+      // Solta o mapa, deixa o cartão esticar até a altura da linha (formulário ao
+      // lado) e dá ao mapa todo o espaço que sobra dentro dele.
+      svgEstado.style.height = '0px'; svgEstado.style.maxHeight = 'none';
+      const noCartao = svgEstado.getBoundingClientRect().height;   // flex:1 → ocupa o que sobra no cartão
+      const h = Math.max(220, noCartao) + 'px';
       svgEstado.style.height = h; svgEstado.style.maxHeight = h;
       enquadrarSvgEstado();
     }

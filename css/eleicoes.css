@@ -633,3 +633,12 @@ dialog.cadastro-acoes-dialogo#fiscal-auditoria-dialogo{width:320px}
   body.imprimindo-cadastrados #cadastradosImpressao{padding:12mm;page:cadastrados}
 }
 @page cadastrados{margin:0}
+/* Tela baixa: formulário com rótulo ao lado do campo, pra caber sem rolar a página
+   e o mapa do estado poder ocupar a altura toda do cartão */
+@media(min-width:1000px) and (min-height:600px) and (max-height:820px){
+  .cadastro-e-meta #cadastro:not([hidden]){gap:8px}
+  .cadastro-e-meta #cadastro .campo:not(.campo-acoes){display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:8px}
+  .cadastro-e-meta #cadastro .campo label{margin:0;font-size:12.5px}
+  .cadastro-e-meta #cadastro input,.cadastro-e-meta #cadastro select{height:32px;padding:5px 9px;font-size:13px}
+  .cadastro-e-meta>#painel{padding:10px 12px}
+}
