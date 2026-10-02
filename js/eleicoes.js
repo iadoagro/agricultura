@@ -134,7 +134,10 @@
       // lado) e dá ao mapa todo o espaço que sobra dentro dele.
       svgEstado.style.height = '0px'; svgEstado.style.maxHeight = 'none';
       const noCartao = svgEstado.getBoundingClientRect().height;   // flex:1 → ocupa o que sobra no cartão
-      const h = Math.max(220, noCartao) + 'px';
+      // nunca passa do fim da tela: a página não precisa rolar por causa do mapa
+      const legenda = areaEstado.querySelector('.cobertura-legenda');
+      const naTela = rolagem.clientHeight - (svgEstado.getBoundingClientRect().top - topoRolagem) - (legenda ? legenda.offsetHeight : 0) - 32;
+      const h = Math.max(220, Math.min(noCartao, naTela)) + 'px';
       svgEstado.style.height = h; svgEstado.style.maxHeight = h;
       enquadrarSvgEstado();
     }
