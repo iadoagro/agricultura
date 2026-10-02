@@ -99,13 +99,13 @@
   }
   function tituloGrupo(g) { return g.nome + ' — ' + g.itens.length + (g.itens.length === 1 ? ' fiscal' : ' fiscais'); }
   function preencher(corpoEl, regs, classeTitulo) {
-    grupos(regs).forEach(function (g) {
+    grupos(regs).forEach(function (g, i) {
       if (g.nome !== null) {
-        var th = corpoEl.insertRow(); th.className = classeTitulo;
+        var th = corpoEl.insertRow(); th.className = classeTitulo + ' cor-' + (i % 6);
         var c = th.insertCell(); c.colSpan = COLS.length; c.textContent = tituloGrupo(g);
       }
       g.itens.forEach(function (r) {
-        var tr = corpoEl.insertRow();
+        var tr = corpoEl.insertRow(); tr.className = 'cor-' + (i % 6);
         linha(r).forEach(function (v) { tr.insertCell().textContent = v == null ? '' : v; });
       });
     });
@@ -127,15 +127,23 @@
     if (!regs || !regs.length) { status.textContent = 'Nenhum fiscal para exportar.'; return; }
     var folha = document.createElement('section');
     folha.id = 'cadastradosImpressao';
+    var topo = document.createElement('header'); topo.className = 'cad-topo';
     var h = document.createElement('h1'); h.textContent = 'Fiscais cadastrados';
     var sub = document.createElement('p');
-    sub.textContent = 'Cadastrados por: ' + btnSel.textContent + ' · ' + regs.length + (regs.length === 1 ? ' fiscal' : ' fiscais') +
-      ' · gerado em ' + new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    sub.textContent = 'Cadastrados por: ' + btnSel.textContent + ' · gerado em ' + new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    topo.append(h, sub);
+    var gs = grupos(regs), numeros = document.createElement('div'); numeros.className = 'cad-numeros';
+    [[regs.length, regs.length === 1 ? 'fiscal' : 'fiscais'],
+     [new Set(regs.map(chaveDe)).size, new Set(regs.map(chaveDe)).size === 1 ? 'pessoa' : 'pessoas'],
+     [new Set(regs.map(function (r) { return r.municipio; })).size, 'município(s)']].forEach(function (p) {
+      var d = document.createElement('div'), n = document.createElement('b'), t = document.createElement('span');
+      n.textContent = p[0]; t.textContent = p[1]; d.append(n, t); numeros.append(d);
+    });
     var tab = document.createElement('table');
     var thead = tab.createTHead().insertRow();
     COLS.forEach(function (c) { var th = document.createElement('th'); th.textContent = c; thead.append(th); });
     preencher(tab.createTBody(), regs, 'cad-grupo');
-    folha.append(h, sub, tab);
+    folha.append(topo, numeros, tab);
     document.body.appendChild(folha);
     document.body.classList.add('imprimindo-cadastrados');
     var sair = function () {
