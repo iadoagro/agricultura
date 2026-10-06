@@ -10,11 +10,11 @@
   <script src="../js/admin-auth.js?v=2026092908"></script>
   <script src="../js/admin-gate.js?v=2026092530"></script>
   <script src="../js/rastreio.js?v=2026100701"></script>
-  <script src="../js/nav.js?v=2026100701"></script>
+  <script src="../js/nav.js?v=2026100902"></script>
   <link rel="stylesheet" href="../css/base.css?v=2026091502">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="../css/eleicoes.css?v=2026100209">
-  <link rel="stylesheet" href="../css/eleicao2026-tche.css?v=2026100702">
+  <link rel="stylesheet" href="../css/eleicao2026-tche.css?v=2026100903">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092601">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
 <script src="../js/modal-ui.js?v=2026092527"></script>
 <link rel="stylesheet" href="../css/padrao.css?v=2026092541">
-<link rel="stylesheet" href="../css/eleicoes-mobile.css?v=2026100703">
+<link rel="stylesheet" href="../css/eleicoes-mobile.css?v=2026100903">
 </head>
 <body>
   <header class="cab-padrao"><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
@@ -37,7 +37,12 @@
     </nav>
 
     <div class="aba-conteudo" data-aba="resultados" role="tabpanel" id="painel-resultados" aria-labelledby="aba-resultados" tabindex="0">
-      <nav class="anos-resultados" role="tablist" aria-label="Ano da eleição"><button type="button" role="tab" class="ano-res ativa" data-ano="2022" aria-selected="true">2022</button><button type="button" role="tab" class="ano-res" data-ano="2026" aria-selected="false">2026</button><button type="button" role="tab" class="ano-res" data-ano="comparar" aria-selected="false">2022 × 2026</button></nav>
+      <nav class="candidatos-resultados" role="tablist" aria-label="Candidato">
+        <button type="button" role="tab" class="cand-res ativa" data-cand="tche" aria-selected="true">Tchê<small>Deputado Estadual</small></button>
+        <button type="button" role="tab" class="cand-res" data-cand="felipe" aria-selected="false">Felipe Tchê<small>Vereador · Rio Branco</small></button>
+      </nav>
+      <div id="cand-tche" class="cand-painel" role="tabpanel">
+      <nav class="anos-resultados" role="tablist" aria-label="Ano da eleição"><button type="button" role="tab" class="ano-res" data-ano="2022" aria-selected="false">2022</button><button type="button" role="tab" class="ano-res ativa" data-ano="2026" aria-selected="true">2026</button><button type="button" role="tab" class="ano-res" data-ano="comparar" aria-selected="false">2022 × 2026</button></nav>
       <div id="resultados2022" hidden></div>
       <div id="resultados2026" hidden></div>
       <div id="resultadosComparar" hidden></div>
@@ -65,6 +70,10 @@
         <aside class="resultados-lateral" aria-label="Detalhe por município" id="resultadosDetalhe">
           <p class="resultados-dica">Clique num município no mapa para ver o detalhe por zona e seção.</p>
         </aside>
+      </div>
+      </div>
+      <div id="cand-felipe" class="cand-painel" role="tabpanel" hidden>
+        <div id="resultadosFelipe" hidden></div>
       </div>
     </div>
 
@@ -365,8 +374,9 @@
   <script src="../js/banco-bairros.js?v=2026092202"></script>
 <script src="../js/eleicoes.js?v=2026100204"></script>
   <script src="../js/dados-tche-2026.js?v=2026100601"></script>
-  <script src="../js/eleicao-painel.js?v=2026100703"></script>
-  <script src="../js/eleicoes-resultados.js?v=2026100502"></script>
+  <script src="../js/dados-felipe-2024.js?v=2026100801"></script>
+  <script src="../js/eleicao-painel.js?v=2026100903"></script>
+  <script src="../js/eleicoes-resultados.js?v=2026100902"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026092404"></script>
   <script src="../js/eleicoes-prioridades.js?v=2026092203"></script>

@@ -41,6 +41,7 @@
   }
   function irDireto() {
     if (!auth || !auth.liberado || !auth.liberado() || auth.deveTrocarSenha()) return false;
+    if (ehResponsavel()) return false;   // o responsável (root) vê tudo: nunca é levado direto a um módulo
     var lista = acessiveis();
     if (lista.length !== 1) return false;
     location.replace(lista[0].href);

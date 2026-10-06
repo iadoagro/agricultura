@@ -268,7 +268,7 @@
     mostrarResumoGeral();
   }
   botoesAno.forEach(function (b) { b.addEventListener('click', function () { trocarAno(b.dataset.ano); }); });
-  trocarAno('2022');
+  trocarAno('2026');   // abre em 2026 (a aba Tchê já é a padrão)
 
   function mostrarDetalhe(id) {
     mapa.destacar(id);

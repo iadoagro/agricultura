@@ -29,8 +29,7 @@
      admin: só o responsável. menu: false = só aparece na trilha, não no menu. */
   var MAPA = {
     'index.html':              { nome: 'Início', grupo: null, chave: null },
-    'eleicoes.html':           { nome: 'Eleições', grupo: 'Fiscais', chave: 'eleicoes', pai: 'index.html' },
-    'cadastros-fiscais.html':  { nome: 'Bairros dos fiscais', grupo: 'Fiscais', admin: true, pai: 'eleicoes.html' },
+    'eleicoes.html':           { nome: 'Eleições', grupo: 'Eleições', chave: 'eleicoes', pai: 'index.html', busca: 'fiscais resultados votos tche felipe' },
     // Painéis: dois itens no menu, Mecanização e DEAGRO.
     'dashboard.html':          { nome: 'Mecanização', grupo: 'Painéis', chave: 'dashboards', pai: 'index.html' },
     'lancamento-editar.html':  { nome: 'Editar lançamento', grupo: 'Painéis', chave: 'dashboards', pai: 'dashboard.html', paiHash: '#lancamento', menu: false, marca: 'dashboard.html' },
@@ -48,14 +47,15 @@
     'contatos.html':           { nome: 'Contatos', grupo: 'Documentos', chave: 'contatos', pai: 'index.html' },
     'admin-usuarios.html':     { nome: 'Usuários', grupo: 'Administração', admin: true, pai: 'index.html' },
     'logs.html':               { nome: 'Logs', grupo: 'Administração', admin: true, pai: 'index.html' },
+    'cadastros-fiscais.html':  { nome: 'Bairros dos fiscais', grupo: 'Administração', admin: true, pai: 'index.html', busca: 'bairros fiscais eleicoes' },
     'admin-trocar-senha.html': { nome: 'Trocar senha', grupo: null, menu: false }
   };
-  var GRUPOS = ['Fiscais', 'Painéis', 'Chamados', 'Documentos', 'Administração'];
+  var GRUPOS = ['Eleições', 'Painéis', 'Chamados', 'Documentos', 'Administração'];
   // Grupo com um item só que vira link solto no menu (como o Início), sem título de grupo.
-  var GRUPOS_SOLTOS = {};
+  var GRUPOS_SOLTOS = { 'Eleições': true };
   var ICONES = {
     'Início': '<path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
-    'Fiscais': '<path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7z"/><path d="M22 19H2"/>',
+    'Eleições': '<path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7z"/><path d="M22 19H2"/>',
     'Painéis': '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
     'Chamados': '<path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/>',
     'Documentos': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
@@ -76,9 +76,10 @@
   if (!atual) return;   // página fora do sistema com login (abrir chamado, login…)
   var restrita = arquivo === 'admin-trocar-senha.html';   // sem menu até trocar a senha
   var marcada = atual.marca || arquivo;   // página que fica acesa no menu
+  var semMenu = false;                    // sem menu lateral: troca de senha ou um módulo só (definido logo abaixo)
 
   // Espaço do menu reservado já no <head> (ver o comentário do topo).
-  if (!restrita) {
+  function reservarEspaco() {
     raiz.classList.add('sb-on');
     try { if (localStorage.getItem(CHAVE_MINI) === '1') raiz.classList.add('sb-mini'); } catch (e) { /* modo privado */ }
   }
@@ -107,6 +108,11 @@
   function modulosAcessiveis() {
     return Object.keys(MAPA).filter(function (a) { return MAPA[a].pai === 'index.html' && MAPA[a].menu !== false && pode(a); });
   }
+
+  // O responsável (root) vê tudo, sempre: nunca cai no modo "um módulo só".
+  function umModulo() { return (auth.papel && auth.papel()) !== 'responsavel' && modulosAcessiveis().length === 1; }
+  semMenu = restrita || umModulo();
+  if (!semMenu) reservarEspaco();
 
   function trilha() {
     var passos = [], arq = arquivo, guarda = 0;
@@ -137,10 +143,10 @@
         : '<a href="' + esc(href) + '">' + (i === 0 ? icone('Início', 'sb-ico snav-ico-inicio') : '') + '<span>' + esc(nome) + '</span></a>') + '</li>';
     }).join('');
     barra.innerHTML =
-      (restrita ? '' : '<button type="button" class="snav-menu" aria-controls="sbLateral" aria-expanded="true" title="Mostrar/recolher o menu">' + icone('menu') + '</button>') +
+      (semMenu ? '' : '<button type="button" class="snav-menu" aria-controls="sbLateral" aria-expanded="true" title="Mostrar/recolher o menu">' + icone('menu') + '</button>') +
       '<ol class="snav-trilha">' + trilhaHtml + '</ol>' +
-      // Sair na barra: sempre na troca de senha; no celular (sem menu lateral) também
-      '<button type="button" class="snav-sair' + (restrita ? '' : ' snav-sair-celular') + '">' + icone('sair') + '<span>Sair</span></button>';
+      // Sair na barra: sempre quando não há menu lateral (troca de senha, módulo único); no celular também
+      '<button type="button" class="snav-sair' + (semMenu ? '' : ' snav-sair-celular') + '">' + icone('sair') + '<span>Sair</span></button>';
     document.body.insertBefore(barra, document.body.firstChild);
     var bm = barra.querySelector('.snav-menu');
     if (bm) bm.addEventListener('click', alternarMenu);
@@ -152,7 +158,7 @@
   function itemHtml(arq) {
     var p = MAPA[arq], aceso = arq === marcada;
     return '<a class="sb-item' + (aceso ? ' atual' : '') + '" href="' + esc(p.href || arq) + '"' + (aceso ? ' aria-current="page"' : '') +
-      ' data-busca="' + esc(semAcento(p.nome + ' ' + (p.grupo || ''))) + '"><span>' + esc(p.nome) + '</span></a>';
+      ' data-busca="' + esc(semAcento(p.nome + ' ' + (p.grupo || '') + ' ' + (p.busca || ''))) + '"><span>' + esc(p.nome) + '</span></a>';
   }
 
   function montarLateral() {
@@ -208,7 +214,7 @@
       if (GRUPOS_SOLTOS[g] && itens.length === 1) {
         var arqSolto = itens[0], acesoSolto = arqSolto === marcada;
         html += '<a class="sb-inicio sb-solto' + (acesoSolto ? ' atual' : '') + '" href="' + esc(arqSolto) + '"' + (acesoSolto ? ' aria-current="page"' : '') +
-          ' data-busca="' + esc(semAcento(MAPA[arqSolto].nome + ' mecanizacao deagro dashboards')) + '" title="' + esc(MAPA[arqSolto].nome) + '">' +
+          ' data-busca="' + esc(semAcento(MAPA[arqSolto].nome + ' ' + (MAPA[arqSolto].busca || ''))) + '" title="' + esc(MAPA[arqSolto].nome) + '">' +
           icone(g) + '<span>' + esc(MAPA[arqSolto].nome) + '</span></a>';
         return;
       }
@@ -336,7 +342,7 @@
   }
 
   document.addEventListener('keydown', function (ev) {
-    if (restrita || !lateral) return;
+    if (semMenu || !lateral) return;
     if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === 'k' || ev.key === 'K')) {
       ev.preventDefault();
       if (celular()) abrirGaveta();
@@ -350,7 +356,7 @@
 
   /* ---------------------------------------------------------------- início */
   function iniciar() {
-    if (!restrita) montarLateral();
+    if (!semMenu) montarLateral();
     montarBarra();
     if (barra && lateral) document.body.insertBefore(barra, lateral.nextSibling.nextSibling);
     sincronizarBotao();
@@ -358,7 +364,18 @@
     // mediram antes da barra existir — o "resize" faz eles medirem de novo
     try { window.dispatchEvent(new Event('resize')); } catch (e) { /* navegador antigo */ }
   }
+  // As permissões podem chegar depois da página (conta carregada do banco): se passar a ter
+  // um módulo só (ou deixar de ter), monta/desmonta o menu lateral e a barra do topo.
+  function remontar() {
+    [barra, lateral, veu].forEach(function (el) { if (el && el.parentNode) el.parentNode.removeChild(el); });
+    barra = lateral = veu = busca = null;
+    raiz.classList.remove('sb-on', 'sb-mini', 'sb-gaveta');
+    if (!semMenu) reservarEspaco();
+    iniciar();
+  }
   window.addEventListener('admin-auth-atualizado', function () {
+    var novo = restrita || umModulo();
+    if (novo !== semMenu) { semMenu = novo; remontar(); return; }
     // redesenha pras permissões novas, mas não no meio de uma busca
     if (lateral && document.activeElement !== busca) preencherLateral();
     else atualizarUsuario();

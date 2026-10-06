@@ -55,6 +55,8 @@ dialog#banco-dialogo,dialog.cadastro-acoes-dialogo{max-width:calc(100vw - 24px)}
   .abas-eleicoes .aba-el{flex:1 1 auto;padding:12px 8px;min-height:48px;font-size:14px;text-align:center;white-space:nowrap}
 
   /* ---------- anos e subabas do painel ---------- */
+  .candidatos-resultados{gap:8px}
+  .cand-res{flex:1 1 140px;min-height:52px;padding:8px 14px}
   .anos-resultados{display:flex;gap:8px;flex-wrap:wrap}
   .anos-resultados .ano-res{min-height:44px;min-width:44px}
   .t26-abas{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px}
@@ -103,6 +105,8 @@ dialog#banco-dialogo,dialog.cadastro-acoes-dialogo{max-width:calc(100vw - 24px)}
   /* ---------- mapa do painel ---------- */
   .t26-gm{height:min(62dvh,480px);min-height:340px}
   .t26-gm.t26-cheia{height:100dvh!important;width:100vw!important}
+  .t26-modo-cheia .t26-gm.t26-cheia{right:0!important;bottom:auto!important;width:100vw!important;height:52dvh!important}
+  .t26-modo-cheia .t26-det{top:auto;left:0;right:0;width:auto;height:48dvh;box-shadow:0 -6px 20px rgba(0,0,0,.28);border-radius:14px 14px 0 0}
   .t26-ctlmapa{max-width:min(290px,calc(100vw - 90px));font-size:14px}
   .t26-ctlmapa label{font-size:14px;flex-direction:column;align-items:stretch;gap:4px}
   .t26-ctlmapa select{font:16px system-ui;max-width:none;min-height:44px}

@@ -43,6 +43,9 @@
 .t26-mig a{cursor:pointer;color:#2563eb;text-decoration:underline}
 .t26-gm{height:540px;border-radius:8px;overflow:hidden;background:#222;position:relative;z-index:0}
 .t26-gm.t26-cheia{position:fixed!important;inset:0;height:100vh!important;width:100vw!important;z-index:99999;border-radius:0}
+/* tela cheia com painel de detalhe: mapa à esquerda, detalhe à direita (no celular: mapa em cima, detalhe embaixo) */
+.t26-modo-cheia .t26-gm.t26-cheia{right:min(430px,38vw)!important;width:auto!important}
+.t26-modo-cheia .t26-det{position:fixed!important;top:0;right:0;bottom:0;width:min(430px,38vw);margin:0;border-radius:0;overflow:auto;z-index:100000;box-shadow:-6px 0 20px rgba(0,0,0,.28);padding:14px 16px;background:#fff}
 .t26-ctlmapa{background:#fff;color:#1b2333;padding:8px 10px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.4);font:12px system-ui,sans-serif;display:flex;flex-direction:column;gap:6px;max-width:220px}
 .t26-ctlmapa label{display:flex;justify-content:space-between;gap:8px;align-items:center}
 .t26-ctlmapa select{font:12px system-ui;max-width:125px}
@@ -98,3 +101,14 @@
 .t26-ri:hover{background:#eff6ff}.t26-ri small{color:#667085;flex-basis:100%;font-size:11.5px}
 .t26-rt{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;background:#eef2f9;color:#153e75;border-radius:4px;padding:1px 6px}
 .t26-rm{padding:7px 10px;font-size:12px;color:#667085}
+
+/* abas de candidato: Tchê (Dep. Estadual) e Felipe Tchê (Vereador) */
+.candidatos-resultados{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.cand-res{border:1px solid #cfd8e3;background:#fff;color:#153e75;border-radius:12px;padding:8px 18px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;line-height:1.25;text-align:left}
+.cand-res small{font-weight:500;font-size:12px;color:#667085}
+.cand-res:hover{background:#eef3fb}
+.cand-res.ativa{background:#153e75;border-color:#153e75;color:#fff}
+.cand-res.ativa small{color:#cfe0f7}
+.cand-painel[hidden]{display:none}
+#resultadosFelipe{margin:14px 0;color:var(--texto,#212121)}
+#resultadosFelipe[hidden]{display:none}

@@ -1,17 +1,23 @@
-/* Resultados do Deputado Estadual Tchê (José Luis Schafer, PDT 12123): painéis 2022, 2026 e comparativo 2022 × 2026.
-   Mesmo nível de informação do dashboard de boletins de urna: resumo, mapa com detalhamento (município → zona → bairro →
-   local → seção), tabelas por regional, município, zona, bairro, local de votação e seção. Dados: js/dados-tche-2026.js. */
+/* Resultados dos candidatos Tchê (Deputado Estadual José Luis Schafer, PDT 12123: painéis 2022, 2026 e comparativo 2022 × 2026)
+   e Felipe Tchê (Vereador de Rio Branco, PP 11123: painel 2024). Mesmo nível de informação do dashboard de boletins de urna:
+   resumo, mapa com detalhamento (município → zona → bairro → local → seção), tabelas por regional, município, zona, bairro,
+   local de votação e seção. Dados: js/dados-tche-2026.js e js/dados-felipe-2024.js. A fábrica abaixo monta um painel por candidato. */
 (function () {
   'use strict';
-  var D = window.TCHE_2026;
-  if (!D) return;
-  var MUN = D.municipios, MAPA = D.mapa, COORDS = D.coords, LOCAIS = D.locais, E = D.estado, E22 = D.estado22, C = D.cand, RK = D.rk || {};
+  function fabrica(D, modosIds) {
+  var MUN = D.municipios, MAPA = D.mapa || (window.TCHE_2026 && window.TCHE_2026.mapa), COORDS = D.coords, LOCAIS = D.locais, E = D.estado, E22 = D.estado22, C = D.cand, RK = D.rk || {};
   var SEC = D.secoes.map(function (a) { return { mun: a[0], zona: a[1], secao: a[2], local: a[3], apt: a[4], comp: a[5], q26: a[6], t: a[7], b: a[8], n: a[9], q22: a[10], lid: a[11] }; });
   var PAGE = 15, SEM_BAIRRO = '(sem bairro informado)';
   var RAMP = ['#ffffb2', '#fed976', '#feb24c', '#fd8d3c', '#f03b20', '#bd0026', '#6a0014'];
   var GANHO = ['#c6dbef', '#6baed6', '#08519c'], PERDA = ['#fdd0a2', '#fd8d3c', '#a63603'];
   var LV = { reg: 'Regional', mun: 'Município', zona: 'Zona', bairro: 'Bairro', local: 'Local de votação', sec: 'Seção' };
-  var ABAS = [['resumo', 'Resumo'], ['mapa', 'Mapa'], ['reg', 'Regional'], ['mun', 'Município'], ['zona', 'Zona'], ['bairro', 'Bairro'], ['local', 'Local de votação'], ['sec', 'Seção']];
+  // candidato de um município só (vereador): o "estado" dos textos passa a ser o município
+  var MUNC = C.municipio || '', ANO = C.ano || 2026;
+  var NOESTADO = MUNC ? 'em ' + MUNC : 'no estado', TODOESTADO = MUNC ? 'Todo o município' : 'Todo o estado', ACRE = MUNC || 'Acre';
+  var SEM_APTOS = !SEC.some(function (s) { return s.apt > 0; });
+  var ABAS = [['resumo', 'Resumo'], ['mapa', 'Mapa'], ['reg', 'Regional'], ['mun', 'Município'], ['zona', 'Zona'], ['bairro', 'Bairro'], ['local', 'Local de votação'], ['sec', 'Seção']]
+    .filter(function (a) { return !(MUNC && (a[0] === 'reg' || a[0] === 'mun')); });
+  var MUN0 = MUNC ? Object.keys(MUN)[0] : '', REG0 = MUNC ? (D.regional[MUN0] || '') : '';   // vereador: o recorte já nasce dentro do município
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fmt(n) { return Number(n).toLocaleString('pt-BR'); }
@@ -89,10 +95,10 @@
       var k, lab, ctx = '', f = null;
       if (lv === 'reg') { k = regionOf(s.mun); lab = 'Regional ' + k; f = { reg: k }; }
       else if (lv === 'mun') { k = s.mun; lab = esc(mn); ctx = 'Regional ' + esc(regionOf(s.mun)); f = { mun: s.mun }; }
-      else if (lv === 'zona') { k = s.mun + '|' + s.zona; lab = 'Zona ' + pad(s.zona, 4); ctx = esc(mn); f = { mun: s.mun, zona: s.zona }; }
-      else if (lv === 'bairro') { k = s.mun + '|' + br; lab = esc(bairroTxt(br)); ctx = esc(mn); f = { mun: s.mun, bairro: br }; }
-      else if (lv === 'local') { k = s.mun + '|' + s.zona + '|' + s.local; lab = li ? esc(li[0]) : 'Local ' + s.local; ctx = esc(mn) + ' · zona ' + pad(s.zona, 4) + (li && li[1] ? ' · ' + esc(cap(li[1])) : '') + (li && li[2] ? ' · ' + esc(li[2]) : ''); f = { mun: s.mun, zona: s.zona, local: s.local }; }
-      else { k = s.mun + '|' + s.zona + '|' + s.secao; f = { mun: s.mun, zona: s.zona, secao: s.secao }; lab = 'Seção ' + pad(s.secao, 4); ctx = esc(mn) + ' · zona ' + pad(s.zona, 4) + (li ? ' · ' + esc(li[0]) + (li[1] ? ' (' + esc(cap(li[1])) + ')' : '') : ''); }
+      else if (lv === 'zona') { k = s.mun + '|' + s.zona; lab = 'Zona ' + pad(s.zona, 4); ctx = MUNC ? '' : esc(mn); f = { mun: s.mun, zona: s.zona }; }
+      else if (lv === 'bairro') { k = s.mun + '|' + br; lab = esc(bairroTxt(br)); ctx = MUNC ? '' : esc(mn); f = { mun: s.mun, bairro: br }; }
+      else if (lv === 'local') { k = s.mun + '|' + s.zona + '|' + s.local; lab = li ? esc(li[0]) : 'Local ' + s.local; ctx = (MUNC ? '' : esc(mn) + ' · ') + 'zona ' + pad(s.zona, 4) + (li && li[1] ? ' · ' + esc(cap(li[1])) : '') + (li && li[2] ? ' · ' + esc(li[2]) : ''); f = { mun: s.mun, zona: s.zona, local: s.local }; }
+      else { k = s.mun + '|' + s.zona + '|' + s.secao; f = { mun: s.mun, zona: s.zona, secao: s.secao }; lab = 'Seção ' + pad(s.secao, 4); ctx = (MUNC ? '' : esc(mn) + ' · ') + 'zona ' + pad(s.zona, 4) + (li ? ' · ' + esc(li[0]) + (li[1] ? ' (' + esc(cap(li[1])) + ')' : '') : ''); }
       var o = U[k] = U[k] || { k: k, f: f, lab: lab, ctx: ctx, n: 0, c26: 0, c22: 0, q26: 0, q22: 0, t: 0, b: 0, nn: 0, apt: 0, comp: 0, la: 0, lo: 0, w: 0, muns: new Set() };
       o.muns.add(s.mun);
       var cc = COORDS[s.mun + '|' + s.zona + '|' + s.local];
@@ -121,8 +127,10 @@
     if (_IDX) return _IDX;
     var I = [], vistos = {};
     var add = function (p, t, lab, ctx, f) { I.push({ p: p, t: t, lab: lab, ctx: ctx, f: f, n: semAcento(lab + ' ' + ctx) }); };
-    Object.keys(D.regionais).forEach(function (r) { add(0, 'Regional', 'Regional ' + r, '', { reg: r }); });
-    Object.keys(MUN).forEach(function (m) { add(1, 'Município', cap(MUN[m]), 'Regional ' + regionOf(m), { mun: m }); });
+    if (!MUNC) {
+      Object.keys(D.regionais).forEach(function (r) { add(0, 'Regional', 'Regional ' + r, '', { reg: r }); });
+      Object.keys(MUN).forEach(function (m) { add(1, 'Município', cap(MUN[m]), 'Regional ' + regionOf(m), { mun: m }); });
+    }
     SEC.forEach(function (s) {
       var mn = cap(MUN[s.mun]), li = localInfo(s), br = bairroRaw(s);
       var kb = s.mun + '|' + br; if (!vistos[kb]) { vistos[kb] = 1; add(2, 'Bairro', bairroTxt(br), mn, { mun: s.mun, bairro: br }); }
@@ -136,7 +144,7 @@
   function criaPainel(root, modo) {
     var cmp = modo === 'cmp', a22 = modo === '2022', a26 = modo === '2026';
     var campo = a22 ? 'q22' : 'q26', comT = a26;           // 2026 tem total apurado, brancos, nulos, comparecimento, ranking
-    var st = { aba: 'resumo', dr: { reg: '', mun: '', zona: '', bairro: '', local: '', secao: '' }, lv: 'auto', base: 'hib', mun: '', zero: false, pag: 0, psec: 0, zsec: false, ord: 'dif', met: 'dif' };
+    var st = { aba: 'resumo', dr: { reg: REG0, mun: MUN0, zona: '', bairro: '', local: '', secao: '' }, lv: 'auto', base: 'hib', mun: '', zero: false, pag: 0, psec: 0, zsec: false, ord: 'dif', met: 'dif' };
     var mapa = null, iniciado = false, semTam = false;
     var Q = function (u) { return u[campo]; };
     var Cn = function (u) { return a22 ? u.c22 : u.c26; };
@@ -162,16 +170,17 @@
     /* ----- cabeçalho e contadores ----- */
     function montar() {
       var kp;
-      var tit = cmp ? 'Comparativo 2022 × 2026' : (a22 ? 'Eleição 2022' : 'Eleição 2026 · 1º turno');
+      var tit = cmp ? 'Comparativo 2022 × 2026' : (a22 ? 'Eleição 2022' : 'Eleição ' + ANO + ' · 1º turno');
       if (a26) kp =
-        kpi('Votos no estado', vp(E.q), 'total dele nas urnas') +
-        kpi('Municípios com voto', cp(unitRows('mun', {}).filter(function (u) { return u.q26 > 0; }).length, Object.keys(MUN).length), 'de ' + Object.keys(MUN).length) +
-        kpi('Posição no estado', E.pos + 'º', 'de ' + E.nCand + ' candidatos · ' + C.vagas + ' vagas') +
+        kpi('Votos ' + NOESTADO, vp(E.q), C.eleito ? 'eleito' : 'total dele nas urnas') +
+        (MUNC ? kpi('Bairros com voto', cp(unitRows('bairro', {}).filter(function (u) { return u.q26 > 0; }).length, unitRows('bairro', {}).length), 'de ' + unitRows('bairro', {}).length)
+          : kpi('Municípios com voto', cp(unitRows('mun', {}).filter(function (u) { return u.q26 > 0; }).length, Object.keys(MUN).length), 'de ' + Object.keys(MUN).length)) +
+        kpi('Posição ' + NOESTADO, E.pos + 'º', 'de ' + E.nCand + ' candidatos · ' + C.vagas + ' vagas' + (C.eleito ? ' · eleito' : '')) +
         kpi('Votos do partido (' + C.partido + ')', fmt(E.partidoNominais + E.partidoLegenda), 'nominais + legenda') +
         kpi('Seções com voto', cp(secComVoto('q26'), SEC.length), 'de ' + fmt(SEC.length) + ' seções') +
         kpi('Seções em que foi o mais votado', cp(SEC.filter(function (s) { return s.lid === 1; }).length, SEC.length), 'de ' + fmt(SEC.length) + ' seções');
       else if (a22) kp =
-        kpi('Votos no estado', vp(E22.q), 'Deputado Estadual 2022 · nº ' + C.numero) +
+        kpi('Votos ' + NOESTADO, vp(E22.q), 'Deputado Estadual 2022 · nº ' + C.numero) +
         kpi('Seções com voto', cp(secComVoto('q22'), SEC.length), 'de ' + fmt(SEC.length) + ' seções (desenho 2026)') +
         kpi('Municípios com voto', cp(unitRows('mun', {}).filter(function (u) { return u.q22 > 0; }).length, Object.keys(MUN).length), 'de ' + Object.keys(MUN).length) +
         kpi('Locais de votação com voto', cp(unitRows('local', {}).filter(function (u) { return u.q22 > 0; }).length, unitRows('local', {}).length), 'de ' + unitRows('local', {}).length + ' (em 2026 há ' + unitRows('local', {}).filter(function (u) { return u.q26 > 0; }).length + ')') +
@@ -187,7 +196,7 @@
           kpi('Posição 2026', E.pos + 'º', 'de ' + E.nCand + ' candidatos · ' + C.vagas + ' vagas');
       }
       root.innerHTML =
-        '<div class="t26-cab"><div><span class="t26-sub">' + C.cargo + ' · ' + tit + '</span><h2>' + esc(C.nome) + ' <small>' + (cmp ? 'José Luis Schafer · ' : '') + 'nº ' + C.numero + ' · ' + C.partido + '</small></h2></div>' +
+        '<div class="t26-cab"><div><span class="t26-sub">' + C.cargo + ' · ' + tit + '</span><h2>' + esc(C.nome) + ' <small>' + (cmp ? 'José Luis Schafer · ' : '') + 'nº ' + C.numero + ' · ' + C.partido + '</small>' + (C.eleito ? ' <span class="t26-tag ok">Eleito</span>' : '') + '</h2></div>' +
         (a22 ? '<button type="button" class="t26-antigo" data-antigo>Mostrar visão anterior (mapa de 2022)</button>' : '') + '</div>' +
         '<section class="t26-kpis">' + kp + '</section>' +
         (cmp ? '<p class="t26-sub t26-nota">As seções de 2022 foram associadas às de 2026 pelo município, zona e número da seção (inclusive seções agregadas). ' + (E22.q - E22.qMapeado) + ' voto(s) de 2022 ficaram sem seção correspondente e não entram nas unidades.</p>' : '') +
@@ -232,24 +241,29 @@
       }
       var tot = a22 ? E22.q : E.q;
       var com = function (l) { return R[l].filter(function (r) { return Q(r) > 0; }); };
-      var top = function (l, n) { return com(l).sort(function (a, b) { return Q(b) - Q(a); }).slice(0, n).map(function (r) { return { q: Q(r), l: '<b>' + r.lab + '</b>' + (r.ctx && l !== 'mun' ? ' <small>' + r.ctx + '</small>' : ''), t: r.lab }; }); };
+      var top = function (l, n) { return com(l).sort(function (a, b) { return Q(b) - Q(a); }).slice(0, n).map(function (r) { return { q: Q(r), l: '<b>' + r.lab + '</b>' + (r.ctx && l !== 'mun' && !(MUNC && l === 'bairro') ? ' <small>' + r.ctx + '</small>' : ''), t: r.lab }; }); };
       var conc = function (l, n) { return pct(R[l].slice().sort(function (a, b) { return Q(b) - Q(a); }).slice(0, n).reduce(function (s, r) { return s + Q(r); }, 0), tot); };
       var secV = com('sec').sort(function (a, b) { return Q(b) - Q(a); }), mx = secV[0], md = secV.length ? Q(secV[Math.floor(secV.length / 2)]) : 0;
       var comp = SEC.reduce(function (s, x) { return s + x.comp; }, 0);
       var lider = a26 ? SEC.filter(function (s) { return s.lid === 1; }).length : null;
-      var linhas2 = [['Votos no estado', vp(tot)]];
-      if (a26) linhas2.push(['Posição no estado', E.pos + 'º de ' + E.nCand + ' candidatos · ' + C.vagas + ' vagas'], ['Votos do partido (nominais + legenda)', fmt(E.partidoNominais + E.partidoLegenda)]);
-      linhas2.push(['Municípios com voto', cn(com('mun').length, R.mun.length)], ['Zonas com voto', cn(com('zona').length, R.zona.length)], ['Bairros com voto', cn(com('bairro').length, R.bairro.length)], ['Locais de votação com voto', cn(com('local').length, R.local.length)], ['Seções com voto', cn(secV.length, R.sec.length)]);
+      var linhas2 = [['Votos ' + NOESTADO, vp(tot)]];
+      if (a26) linhas2.push(['Posição ' + NOESTADO, E.pos + 'º de ' + E.nCand + ' candidatos · ' + C.vagas + ' vagas'], ['Votos do partido (nominais + legenda)', fmt(E.partidoNominais + E.partidoLegenda)]);
+      if (!MUNC) linhas2.push(['Municípios com voto', cn(com('mun').length, R.mun.length)]);
+      linhas2.push(['Zonas com voto', cn(com('zona').length, R.zona.length)], ['Bairros com voto', cn(com('bairro').length, R.bairro.length)], ['Locais de votação com voto', cn(com('local').length, R.local.length)], ['Seções com voto', cn(secV.length, R.sec.length)]);
       if (a26) linhas2.push(['Seções em que foi o mais votado', cn(lider, R.sec.length)]);
       linhas2.push(['Média / mediana por seção com voto', vp(secV.length ? Math.round(tot / secV.length) : 0) + ' / ' + vp(md)], ['Maior votação numa seção', mx ? vp(Q(mx)) + ' · ' + mx.lab + ' (' + mx.ctx + ')' : '—']);
       if (a26) linhas2.push(['Votos por 1.000 comparecimentos', comp ? (E.q / comp * 1000).toFixed(1).replace('.', ',') : '–']);
-      linhas2.push(['Concentração: 3 / 5 / 10 maiores municípios', conc('mun', 3) + ' / ' + conc('mun', 5) + ' / ' + conc('mun', 10)], ['Concentração: 10 / 50 maiores locais', conc('local', 10) + ' / ' + conc('local', 50)]);
+      if (!MUNC) linhas2.push(['Concentração: 3 / 5 / 10 maiores municípios', conc('mun', 3) + ' / ' + conc('mun', 5) + ' / ' + conc('mun', 10)]);
+      linhas2.push(['Concentração: 10 / 50 maiores locais', conc('local', 10) + ' / ' + conc('local', 50)]);
       var mxR = Math.max.apply(null, R.reg.map(function (r) { return Q(r); }).concat([1]));
       var bl = function (t, l) { var it = top(l, 10); return '<div class="t26-card"><h3>' + t + '</h3>' + (barras(it, it[0] ? it[0].q : 1) || '<p class="t26-sub">Sem votos.</p>') + '</div>'; };
       return '<div class="t26-duas"><div class="t26-card"><h3>Resumo da votação</h3><div class="t26-lista">' + linhas2.map(function (x) { return '<div><span>' + x[0] + '</span><b>' + x[1] + '</b></div>'; }).join('') + '</div></div>' +
-        '<div class="t26-card"><h3>Votos por regional</h3>' + barras(top('reg', 10), mxR) + '</div></div>' +
-        '<div class="t26-duas">' + bl('10 maiores municípios', 'mun') + bl('10 maiores bairros', 'bairro') + '</div>' +
-        '<div class="t26-duas">' + bl('10 maiores locais de votação', 'local') + bl('10 maiores seções', 'sec') + '</div>';
+        (MUNC ? '<div class="t26-card"><h3>Votos por zona</h3>' + barras(top('zona', 10), Math.max.apply(null, R.zona.map(function (r) { return Q(r); }).concat([1]))) + '</div></div>' +
+          '<div class="t26-duas">' + bl('10 maiores bairros', 'bairro') + bl('10 maiores locais de votação', 'local') + '</div>' +
+          '<div class="t26-duas">' + bl('10 maiores seções', 'sec') + '</div>'
+        : '<div class="t26-card"><h3>Votos por regional</h3>' + barras(top('reg', 10), mxR) + '</div></div>' +
+          '<div class="t26-duas">' + bl('10 maiores municípios', 'mun') + bl('10 maiores bairros', 'bairro') + '</div>' +
+          '<div class="t26-duas">' + bl('10 maiores locais de votação', 'local') + bl('10 maiores seções', 'sec') + '</div>');
     }
 
     /* ----- tabelas por nível ----- */
@@ -261,7 +275,7 @@
     function situ(u) { return u.q22 === 0 && u.q26 > 0 ? '<span class="t26-tag ok">novo</span>' : u.q22 > 0 && u.q26 === 0 ? '<span class="t26-tag mau">perdeu tudo</span>' : u.dif > 0 ? '<span class="t26-tag ok">cresceu</span>' : u.dif < 0 ? '<span class="t26-tag mau">caiu</span>' : '<span class="t26-tag">igual</span>'; }
     function varPct(u) { return u.q22 ? ((u.dif / u.q22) * 100).toFixed(1).replace('.', ',').replace(/^(\d)/, '+$1') + '%' : (u.q26 ? 'novo' : '–'); }
     function tabelaNivel(lv) {
-      var simples = lv === 'reg' || lv === 'mun';
+      var simples = lv === 'reg' || lv === 'mun' || (MUNC && (lv === 'zona' || lv === 'bairro'));   // vereador: zona/bairro não precisam de "Localização"
       var mm = simples ? '' : st.mun;
       var rows = unitRows(lv, mm), tot = rows.reduce(function (a, r) { return a + Q(r); }, 0), nCom = rows.filter(function (r) { return Q(r) > 0; }).length, totAll = rows.length;
       if (!st.zero) rows = rows.filter(function (r) { return cmp ? (r.q22 > 0 || r.q26 > 0) : Q(r) > 0; });
@@ -273,24 +287,24 @@
       var k4;
       if (cmp) {
         var s22 = rows.reduce(function (a, r) { return a + r.q22; }, 0), s26 = rows.reduce(function (a, r) { return a + r.q26; }, 0);
-        k4 = kpi('Votos 2022', vp(s22, T22), mm ? 'em ' + esc(cap(MUN[mm])) : 'no estado') + kpi('Votos 2026', vp(s26, T26), vv(s26, s22) + ' sobre 2022') + kpi('Diferença', dv(s26, s22), 'sobre 2022') +
+        k4 = kpi('Votos 2022', vp(s22, T22), mm ? 'em ' + esc(cap(MUN[mm])) : NOESTADO) + kpi('Votos 2026', vp(s26, T26), vv(s26, s22) + ' sobre 2022') + kpi('Diferença', dv(s26, s22), 'sobre 2022') +
           kpi(LV[lv] + ' que cresceram / caíram', cp(rows.filter(function (r) { return r.dif > 0; }).length, rows.length) + ' / ' + cp(rows.filter(function (r) { return r.dif < 0; }).length, rows.length), 'de ' + fmt(rows.length) + ' listadas');
-      } else k4 = kpi('Votos nesta visão', vp(tot), mm ? 'em ' + esc(cap(MUN[mm])) : 'no estado') + kpi(LV[lv] + ' com voto', cp(nCom, totAll), 'de ' + fmt(totAll)) + kpi('Maior votação', vp(rows[0] ? Q(rows[0]) : 0), rows[0] ? rows[0].lab : '–') + kpi('Média por unidade com voto', nCom ? vp(Math.round(tot / nCom)) : '0', 'mediana ' + vt(med));
+      } else k4 = kpi('Votos nesta visão', vp(tot), mm ? 'em ' + esc(cap(MUN[mm])) : NOESTADO) + kpi(LV[lv] + ' com voto', cp(nCom, totAll), 'de ' + fmt(totAll)) + kpi('Maior votação', vp(rows[0] ? Q(rows[0]) : 0), rows[0] ? rows[0].lab : '–') + kpi('Média por unidade com voto', nCom ? vp(Math.round(tot / nCom)) : '0', 'mediana ' + vt(med));
       var head, body;
       if (cmp) {
         head = '<th>#</th><th>' + LV[lv] + '</th>' + (simples ? '' : '<th>Localização</th>') + '<th class="n">Votos 2022</th><th class="n">Votos 2026</th><th class="n">Diferença</th><th class="n">Variação</th><th>Situação</th>';
         body = pg.map(function (r, i) { return '<tr><td>' + (st.pag * PAGE + i + 1) + '</td><td><b>' + r.lab + '</b></td>' + (simples ? '' : '<td class="t26-sub">' + r.ctx + '</td>') + '<td class="n">' + vp(r.q22, T22) + '</td><td class="n"><b>' + vp(r.q26, T26) + '</b></td><td class="n ' + (r.dif > 0 ? 't26-pos' : r.dif < 0 ? 't26-neg' : '') + '">' + sgn(r.dif) + '</td><td class="n">' + varPct(r) + '</td><td>' + situ(r) + '</td></tr>'; }).join('');
       } else {
-        head = '<th>#</th><th>' + LV[lv] + '</th>' + (simples ? '' : '<th>Localização</th>') + '<th class="n">Seções c/ voto</th><th class="n">Votos</th><th class="n">% dos votos dele no estado</th>' + (comT ? '<th class="n">Posição na unidade</th><th class="n">Comparec.</th>' + (lv === 'sec' ? '<th class="n">Brancos</th><th class="n">Nulos</th><th class="n">Total apurado</th>' : '') : '') + '<th>Distribuição</th>';
+        head = '<th>#</th><th>' + LV[lv] + '</th>' + (simples ? '' : '<th>Localização</th>') + '<th class="n">Seções c/ voto</th><th class="n">Votos</th><th class="n">% dos votos dele ' + NOESTADO + '</th>' + (comT ? '<th class="n">Posição na unidade</th>' + (SEM_APTOS ? '' : '<th class="n">Comparec.</th>') + '' + (lv === 'sec' ? '<th class="n">Brancos</th><th class="n">Nulos</th><th class="n">Total apurado</th>' : '') : '') + '<th>Distribuição</th>';
         body = pg.map(function (r, i) {
           return '<tr><td>' + (st.pag * PAGE + i + 1) + '</td><td><b>' + r.lab + '</b></td>' + (simples ? '' : '<td class="t26-sub">' + r.ctx + '</td>') + '<td class="n">' + cn(Cn(r), r.n) + '</td><td class="n"><b>' + fmt(Q(r)) + '</b></td><td class="n">' + pc(Q(r), TB) + '</td>' +
-            (comT ? '<td class="n">' + (r.pos ? r.pos + 'º de ' + r.nc : '—') + '</td><td class="n">' + pct(r.comp, r.apt) + '</td>' + (lv === 'sec' ? '<td class="n">' + fmt(r.b) + '</td><td class="n">' + fmt(r.nn) + '</td><td class="n">' + fmt(r.t) + '</td>' : '') : '') +
+            (comT ? '<td class="n">' + (r.pos ? r.pos + 'º de ' + r.nc : '—') + '</td>' + (SEM_APTOS ? '' : '<td class="n">' + pct(r.comp, r.apt) + '</td>') + (lv === 'sec' ? '<td class="n">' + fmt(r.b) + '</td><td class="n">' + fmt(r.nn) + '</td><td class="n">' + fmt(r.t) + '</td>' : '') : '') +
             '<td><span class="t26-bt"><i style="width:' + (Q(r) / mx * 100).toFixed(1) + '%"></i></span></td></tr>';
         }).join('');
       }
       var ncol = 12;
       return '<div class="t26-card"><div class="t26-topo"><h3>' + (cmp ? 'Comparativo 2022 × 2026 por ' : 'Votação de ' + esc(nome) + ' por ') + LV[lv].toLowerCase() + '</h3><div class="t26-ctl">' +
-        (simples ? '' : '<label>Município <select data-c="mun"><option value="">Todo o estado</option>' + opts + '</select></label>') +
+        (simples || MUNC ? '' : '<label>Município <select data-c="mun"><option value="">' + TODOESTADO + '</option>' + opts + '</select></label>') +
         (cmp ? '<label>Ordenar por <select data-c="ord"><option value="dif"' + (st.ord === 'dif' ? ' selected' : '') + '>Maior ganho</option><option value="perda"' + (st.ord === 'perda' ? ' selected' : '') + '>Maior perda</option><option value="q26"' + (st.ord === 'q26' ? ' selected' : '') + '>Votos 2026</option><option value="q22"' + (st.ord === 'q22' ? ' selected' : '') + '>Votos 2022</option></select></label>' : '') +
         '<label><input type="checkbox" data-c="zero"' + (st.zero ? ' checked' : '') + '> incluir sem voto</label></div></div>' +
         '<section class="t26-kpis t26-kpis4">' + k4 + '</section>' +
@@ -329,8 +343,8 @@
       el.innerHTML = graficoPares(us, '2022 × 2026 por ' + LV[lv].toLowerCase() + ' — ' + esc(escopoTxt()) + (tot > us.length ? ' (' + us.length + ' maiores de ' + tot + ')' : ''), 'ctx');
     }
     function escopoTxt() {
-      var d = st.dr, p = ['Acre'];
-      if (d.reg) p.push('Regional ' + d.reg); if (d.mun) p.push(cap(MUN[d.mun])); if (d.zona !== '') p.push('Zona ' + pad(d.zona, 4)); if (d.bairro) p.push(bairroTxt(d.bairro)); if (d.secao) p.push('Seção ' + pad(d.secao, 4));
+      var d = st.dr, p = [ACRE];
+      if (d.reg && !MUNC) p.push('Regional ' + d.reg); if (d.mun && !MUNC) p.push(cap(MUN[d.mun])); if (d.zona !== '') p.push('Zona ' + pad(d.zona, 4)); if (d.bairro) p.push(bairroTxt(d.bairro)); if (d.secao) p.push('Seção ' + pad(d.secao, 4));
       return p.join(' › ');
     }
 
@@ -353,12 +367,12 @@
       var l = secInfo({ mun: d.mun, zona: d.zona, bairro: d.bairro }), locais = d.mun ? grupo(l, function (s) { return s.local; }, function (s) { var li = localInfo(s); return li ? li[0] : 'Local ' + s.local; }) : [];
       var s2 = secInfo({ mun: d.mun, zona: d.zona, bairro: d.bairro, local: d.local }), secoes = d.mun ? grupo(s2, function (s) { return s.zona + '|' + s.secao; }, function (s) { return (d.zona === '' ? 'Zona ' + pad(s.zona, 4) + ' · ' : '') + 'Seção ' + pad(s.secao, 4); }).sort(function (a, c) { return a.lab.localeCompare(c.lab); }) : [];
       var off = !d.mun, secAtual = d.secao ? d.zona + '|' + d.secao : '';
-      return '<div class="t26-filtros"><b>Detalhar por</b>' + buscaHtml() + sel('reg', 'Regional', regs, d.reg, 'Todas', false) + sel('mun', 'Município', muns, d.mun, d.reg ? 'Toda a regional' : 'Todo o estado', false) + sel('zona', 'Zona', zonas, d.zona, 'Todas', off) + sel('bairro', 'Bairro', bairros, d.bairro, 'Todos', off) + sel('local', 'Local de votação', locais, d.local, 'Todos', off) + sel('secao', 'Seção', secoes, secAtual, 'Todas', off) + '</div>';
+      return '<div class="t26-filtros"><b>Detalhar por</b>' + buscaHtml() + (MUNC ? '' : sel('reg', 'Regional', regs, d.reg, 'Todas', false) + sel('mun', 'Município', muns, d.mun, d.reg ? 'Toda a regional' : TODOESTADO, false)) + sel('zona', 'Zona', zonas, d.zona, 'Todas', off) + sel('bairro', 'Bairro', bairros, d.bairro, 'Todos', off) + sel('local', 'Local de votação', locais, d.local, 'Todos', off) + sel('secao', 'Seção', secoes, secAtual, 'Todas', off) + '</div>';
     }
     /* ----- busca (município, regional, bairro, local de votação ou seção) ----- */
     var buscaRes = [];
     function buscaHtml() {
-      return '<label class="t26-busca">Buscar<input type="search" data-busca placeholder="Município, bairro, local ou seção…" autocomplete="off"><div class="t26-res" data-res hidden></div></label>';
+      return '<label class="t26-busca">Buscar<input type="search" data-busca placeholder="' + (MUNC ? 'Bairro, local ou seção…' : 'Município, bairro, local ou seção…') + '" autocomplete="off"><div class="t26-res" data-res hidden></div></label>';
     }
     function buscar(q) {
       var I = indiceBusca(), toks = semAcento(q).split(/\s+/).filter(Boolean);
@@ -394,9 +408,9 @@
       var q = sc.reduce(function (a, s) { return a + (cmp ? s.q26 : s[campo]); }, 0), q0 = sc.reduce(function (a, s) { return a + s.q22; }, 0);
       var com = sc.filter(function (s) { return s[campo] > 0; }).length;
       var ls = d.local ? SEC.find(function (s) { return s.mun === d.mun && String(s.local) === String(d.local); }) : null, li0 = ls ? localInfo(ls) : null;
-      var mig = [['state', 'Acre']];
-      if (d.reg) mig.push(['reg', 'Regional ' + esc(d.reg)]);
-      if (d.mun) mig.push(['mun', esc(cap(MUN[d.mun]))]);
+      var mig = [['state', ACRE]];
+      if (d.reg && !MUNC) mig.push(['reg', 'Regional ' + esc(d.reg)]);
+      if (d.mun && !MUNC) mig.push(['mun', esc(cap(MUN[d.mun]))]);
       if (d.zona !== '') mig.push(['zona', 'Zona ' + pad(d.zona, 4)]);
       if (d.bairro) mig.push(['bairro', esc(bairroTxt(d.bairro))]);
       if (d.local) mig.push(['local', li0 ? esc(li0[0]) : 'Local ' + d.local]);
@@ -404,7 +418,7 @@
       var resumoEsc = cmp ? vt(q0, T22) + ' → ' + vt(q, T26) + ' votos (' + sgn(q - q0) + ', ' + vv(q, q0) + ' sobre 2022)' : vt(q) + ' votos de ' + esc(nome) + ' · ' + com + ' seções com voto';
       var mapaCard = '<div class="t26-card">' + filtrosHtml() + '<div class="t26-mig">' + mig.map(function (c, i) { return i === mig.length - 1 ? '<b>' + c[1] + '</b>' : '<a data-dr="' + c[0] + '">' + c[1] + '</a>'; }).join(' › ') +
         '<span class="t26-sub"> · ' + resumoEsc + ' · próximo nível: <b>' + LV[auto] + '</b>' + (auto === 'sec' ? ' (último)' : ' — clique num ponto/área') + '</span></div>' +
-        '<div class="t26-gm" data-gm></div><p class="t26-sub">Clique para detalhar: município → zona → bairro → local de votação → seção (use o caminho acima para voltar). Em "Colorir por" dá para ver outro nível, inclusive regional. Imagem: Esri World Imagery.</p></div>';
+        '<div class="t26-gm" data-gm></div><p class="t26-sub">Clique para detalhar: ' + (MUNC ? '' : 'município → ') + 'zona → bairro → local de votação → seção (use o caminho acima para voltar). Em "Colorir por" dá para ver outro nível' + (MUNC ? '' : ', inclusive regional') + '. Imagem: Esri World Imagery.</p></div>';
       return '<div class="t26-mapagrid">' + mapaCard + '<div class="t26-card t26-det">' + detalheMun() + '</div></div>' + (cmp ? '<div class="t26-card t26-grafico" data-grafico></div>' : '') + (d.mun ? tabelaSecoes() : '');
     }
     function listaMun() {
@@ -417,18 +431,18 @@
     var panelUnits = [];
     var FILHO = { state: 'reg', reg: 'mun', mun: 'zona', zona: 'bairro', bairro: 'local', local: 'sec' }, PAI = { reg: 'state', mun: d0reg(), zona: 'mun', bairro: 'zona', local: 'bairro', sec: 'local' };
     function d0reg() { return 'reg'; }
-    function totalEstado() { var us = unitRows('reg', {}), o = { lab: 'Acre', n: 0, c22: 0, c26: 0, q22: 0, q26: 0, t: 0, b: 0, nn: 0, apt: 0, comp: 0, pos: E.pos, nc: E.nCand }; us.forEach(function (u) { ['n', 'c22', 'c26', 'q22', 'q26', 't', 'b', 'nn', 'apt', 'comp'].forEach(function (k) { o[k] += u[k]; }); }); o.dif = o.q26 - o.q22; return o; }
+    function totalEstado() { var us = unitRows('reg', {}), o = { lab: ACRE, n: 0, c22: 0, c26: 0, q22: 0, q26: 0, t: 0, b: 0, nn: 0, apt: 0, comp: 0, pos: E.pos, nc: E.nCand }; us.forEach(function (u) { ['n', 'c22', 'c26', 'q22', 'q26', 't', 'b', 'nn', 'apt', 'comp'].forEach(function (k) { o[k] += u[k]; }); }); o.dif = o.q26 - o.q22; return o; }
     function detalheMun() {
       var d = st.dr, atual = d.secao ? 'sec' : d.local ? 'local' : d.bairro ? 'bairro' : d.zona !== '' ? 'zona' : d.mun ? 'mun' : d.reg ? 'reg' : 'state';
       var o = atual === 'state' ? totalEstado() : unitRows(atual, d)[0];
       if (!o) return '<p class="t26-sub">Sem dados para este recorte.</p>';
       var sg = secInfo(d)[0], li = sg ? localInfo(sg) : null, m = d.mun;
-      var L = atual === 'state' || atual === 'reg' ? [] : [['Regional', esc(regionOf(m))]];
+      var L = atual === 'state' || atual === 'reg' || MUNC ? [] : [['Regional', esc(regionOf(m))]];
       if (atual === 'local' || atual === 'sec') L.push(['Local de votação', li ? esc(li[0]) : 'Local ' + (sg ? sg.local : '')]);
       if (atual === 'sec' || atual === 'local') L.push(['Bairro · endereço', li ? esc(cap(li[1] || '')) + (li[2] ? ' · ' + esc(li[2]) : '') : '—']);
       if (cmp) L.push(['Votos 2022', vp(o.q22, T22)], ['Votos 2026', vp(o.q26, T26)], ['Diferença', dv(o.q26, o.q22) + ' sobre 2022'], ['Seções com voto 2022 → 2026', cp(o.c22, o.n) + ' → ' + cp(o.c26, o.n) + ' de ' + o.n]);
       else if (a26) {
-        L.push(['Votos de ' + esc(nome), vp(o.q26)], ['Posição na unidade', o.pos ? o.pos + 'º de ' + o.nc + ' candidatos' : '—'], ['Votos em branco', fmt(o.b)], ['Votos nulos', fmt(o.nn)], ['Total apurado', fmt(o.t)], ['Comparecimento / aptos', fmt(o.comp) + ' / ' + fmt(o.apt) + ' (' + pct(o.comp, o.apt) + ')']);
+        L.push(['Votos de ' + esc(nome), vp(o.q26)], ['Posição na unidade', o.pos ? o.pos + 'º de ' + o.nc + ' candidatos' : '—'], ['Votos em branco', fmt(o.b)], ['Votos nulos', fmt(o.nn)], ['Total apurado', fmt(o.t)], ['Comparecimento / aptos', fmt(o.comp) + ' / ' + fmt(o.apt) + ' (' + pct(o.comp, o.apt) + ')']); if (SEM_APTOS) L.pop();
         if (atual !== 'sec') L.push(['Seções com voto', cn(o.c26, o.n)]);
       } else L.push(['Votos de ' + esc(nome), vp(o.q22)], ['Seções com voto', cn(o.c22, o.n)]);
       var filho = FILHO[atual], filhos = [];
@@ -438,8 +452,8 @@
       var linhas = filhos.map(function (u, i) {
         return '<tr class="t26-click" data-pu="' + i + '"><td>' + u.lab + '</td>' + (cmp ? '<td class="n">' + vp(u.q22, T22) + '</td><td class="n">' + vp(u.q26, T26) + '</td><td class="n ' + (u.dif > 0 ? 't26-pos' : u.dif < 0 ? 't26-neg' : '') + '">' + dv(u.q26, u.q22) + '</td>' : '<td class="n">' + cn(Cn(u), u.n) + '</td><td class="n">' + fmt(Q(u)) + '</td><td class="n">' + pc(Q(u), TB) + '</td>') + '</tr>';
       }).join('');
-      var rot = atual === 'mun' || atual === 'state' || atual === 'reg' ? o.lab : atual === 'zona' ? o.lab + ' · ' + esc(cap(MUN[m])) : o.lab;
-      return '<div class="t26-topo"><h3>' + rot + '</h3><div class="t26-ctl">' + (PAI[atual] ? '<button type="button" data-dr="' + PAI[atual] + '" class="t26-btn">↑ Subir um nível</button>' : '') + (atual !== 'state' ? '<button type="button" data-dr="state" class="t26-btn">Ver todo o estado</button>' : '') + '</div></div>' +
+      var rot = atual === 'mun' || atual === 'state' || atual === 'reg' ? o.lab : atual === 'zona' && !MUNC ? o.lab + ' · ' + esc(cap(MUN[m])) : o.lab;
+      return '<div class="t26-topo"><h3>' + rot + '</h3><div class="t26-ctl">' + (PAI[atual] && !(MUNC && atual === 'mun') ? '<button type="button" data-dr="' + PAI[atual] + '" class="t26-btn">↑ Subir um nível</button>' : '') + (atual !== 'state' && !(MUNC && atual === 'mun') ? '<button type="button" data-dr="state" class="t26-btn">Ver ' + TODOESTADO.toLowerCase() + '</button>' : '') + '</div></div>' +
         '<div class="t26-lista">' + L.map(function (x) { return '<div><span>' + x[0] + '</span><b>' + x[1] + '</b></div>'; }).join('') + '</div>' +
         (filho ? '<h4>Por ' + LV[filho].toLowerCase() + ' <small class="t26-sub">(clique numa linha para detalhar)</small></h4><div class="t26-tab t26-tabalta"><table><thead><tr>' + cab + '</tr></thead><tbody>' + (linhas || '<tr><td colspan="4">Nenhuma unidade com voto.</td></tr>') + '</tbody></table></div>' : '<p class="t26-sub">Último nível: a seção individual.</p>');
     }
@@ -484,7 +498,11 @@
         var nx = el.nextElementSibling;
         if (!nx || !nx.classList.contains('t26-dica-toque')) el.insertAdjacentHTML('afterend', '<p class="t26-sub t26-dica-toque">Use dois dedos para mover o mapa, ou toque em “Tela cheia” para explorá-lo com um dedo.</p>');
       }
+      // Tela cheia: o mapa ocupa a tela e o painel de detalhe (se houver) fica ao lado/embaixo, sempre à vista.
+      // O estado fica em st.cheia: detalhar (que remonta a aba) reabre o novo mapa já em tela cheia.
       function setCheia(f) {
+        st.cheia = f;
+        root.classList.toggle('t26-modo-cheia', f && !!$('.t26-det'));
         el.classList.toggle('t26-cheia', f);
         var b = el.querySelector('[data-k=fs]'); if (b) b.textContent = f ? '✕ Sair da tela cheia' : '⛶ Tela cheia';
         if (toque) { if (f) map.dragging.enable(); else map.dragging.disable(); }
@@ -513,9 +531,9 @@
       var nivel = function () { return nivelMapa(fixo); };
       var val = function (u) { return cmp ? (st.met === 'dif' ? u.dif : st.met === 'q22' ? u.q22 : u.q26) : Q(u); };
       var tip = function (u, lv) {
-        var m0 = Array.from(u.muns)[0], h = '<b>' + (lv === 'reg' ? '' : LV[lv] + ': ') + u.lab + '</b>' + (u.ctx ? '<br><small>' + u.ctx + '</small>' : '') + '<br>' + (m0 && lv !== 'reg' ? 'Regional ' + esc(regionOf(m0)) + '<br>' : '');
+        var m0 = Array.from(u.muns)[0], h = '<b>' + (lv === 'reg' ? '' : LV[lv] + ': ') + u.lab + '</b>' + (u.ctx ? '<br><small>' + u.ctx + '</small>' : '') + '<br>' + (m0 && lv !== 'reg' && !MUNC ? 'Regional ' + esc(regionOf(m0)) + '<br>' : '');
         if (cmp) return h + '2022: <b>' + fmt(u.q22) + '</b> (' + pc(u.q22, T22) + ' do estado) · 2026: <b>' + fmt(u.q26) + '</b> (' + pc(u.q26, T26) + ' do estado)<br>Diferença: <b>' + sgn(u.dif) + '</b> (' + varPct(u) + ' sobre 2022)<br>Seções com voto: ' + u.c22 + ' → ' + u.c26 + ' de ' + u.n;
-        h += 'Votos: <b>' + fmt(Q(u)) + '</b> (' + pc(Q(u), TB) + ' dos votos dele no estado)<br>Seções com voto: ' + Cn(u) + '/' + u.n;
+        h += 'Votos: <b>' + fmt(Q(u)) + '</b> (' + pc(Q(u), TB) + ' dos votos dele ' + NOESTADO + ')<br>Seções com voto: ' + Cn(u) + '/' + u.n;
         if (comT && u.pos) h += '<br>Posição na unidade: ' + u.pos + 'º de ' + u.nc;
         return h;
       };
@@ -583,6 +601,7 @@
         if (ev.key === 'Escape' && el.classList.contains('t26-cheia')) setCheia(false);
       });
       setBase(); desenhar(); setTimeout(function () { map.invalidateSize(); }, 80);
+      if (st.cheia) setCheia(true);
     }
 
     /* ----- renderização e eventos ----- */
@@ -596,13 +615,13 @@
     function eventos() {
       if (window.ResizeObserver) new ResizeObserver(function () { if (semTam && root.clientWidth > 0 && !root.hidden) { semTam = false; desenha(); } }).observe(root);
       root.addEventListener('click', function (e) {
-        var t = e.target.closest('[data-t26]'); if (t) { st.aba = t.dataset.t26; st.pag = 0; st.psec = 0; desenha(); return; }
+        var t = e.target.closest('[data-t26]'); if (t) { st.aba = t.dataset.t26; st.pag = 0; st.psec = 0; st.cheia = false; root.classList.remove('t26-modo-cheia'); desenha(); return; }
         var an = e.target.closest('[data-antigo]');
         if (an) { var w = document.querySelector('#painel-resultados .resultados-wrap'); if (w) { var vis = w.style.display === 'none'; w.style.display = vis ? '' : 'none'; an.textContent = vis ? 'Ocultar visão anterior (mapa de 2022)' : 'Mostrar visão anterior (mapa de 2022)'; } return; }
         var cr = e.target.closest('[data-dr]');
         if (cr) {
           var k = cr.dataset.dr, d = st.dr;
-          if (k === 'state') d.reg = ''; if (k === 'state' || k === 'reg') d.mun = ''; if (k === 'state' || k === 'reg' || k === 'mun') d.zona = ''; if (k === 'state' || k === 'reg' || k === 'mun' || k === 'zona') d.bairro = ''; if (k !== 'local' && k !== 'secao') d.local = ''; d.secao = '';
+          if (k === 'state') d.reg = REG0; if (k === 'state' || k === 'reg') d.mun = MUN0; if (k === 'state' || k === 'reg' || k === 'mun') d.zona = ''; if (k === 'state' || k === 'reg' || k === 'mun' || k === 'zona') d.bairro = ''; if (k !== 'local' && k !== 'secao') d.local = ''; d.secao = '';
           st.lv = 'auto'; st.psec = 0; desenha(); return;
         }
         var sr = e.target.closest('[data-sr]'); if (sr) { var it = buscaRes[Number(sr.dataset.sr)]; if (it) { var f = it.f, d0 = st.dr; if (f.reg) { d0.reg = ''; } if (f.mun) { d0.mun = ''; } if (!f.reg && !f.mun) { } if (f.zona == null && f.bairro == null && f.local == null && f.secao == null) { d0.zona = d0.bairro = d0.local = d0.secao = ''; } if (f.mun && (f.bairro || f.local != null || f.secao != null)) { d0.zona = d0.bairro = d0.local = d0.secao = ''; } drill(f); } return; }
@@ -635,16 +654,40 @@
   }
 
   var paineis = {};
-  var MODOS = { '2022': 'resultados2022', '2026': 'resultados2026', 'comparar': 'resultadosComparar' };
-  window.PainelEleicao = {
+  var MODOS = modosIds;
+  return {
     mostrar: function (ano) {
       Object.keys(MODOS).forEach(function (a) {
         var el = document.getElementById(MODOS[a]); if (!el) return;
         if (a !== ano) { if (paineis[a]) paineis[a].esconder(); else el.hidden = true; return; }
-        if (!paineis[a]) paineis[a] = criaPainel(el, a === 'comparar' ? 'cmp' : a);
+        if (!paineis[a]) paineis[a] = criaPainel(el, a === 'comparar' ? 'cmp' : (a === '2022' ? '2022' : '2026'));
         paineis[a].mostrar();
       });
     },
     esconder: function () { Object.keys(MODOS).forEach(function (a) { if (paineis[a]) paineis[a].esconder(); else { var el = document.getElementById(MODOS[a]); if (el) el.hidden = true; } }); }
   };
+  }
+
+  if (window.TCHE_2026) window.PainelEleicao = fabrica(window.TCHE_2026, { '2022': 'resultados2022', '2026': 'resultados2026', 'comparar': 'resultadosComparar' });
+  if (window.FELIPE_2024) window.PainelFelipe = fabrica(window.FELIPE_2024, { '2024': 'resultadosFelipe' });
+
+  /* abas de candidato (Tchê / Felipe Tchê) dentro de Resultados */
+  var cands = document.querySelectorAll('.cand-res');
+  var pTche = document.getElementById('cand-tche'), pFel = document.getElementById('cand-felipe');
+  cands.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var felipe = b.dataset.cand === 'felipe';
+      cands.forEach(function (x) { var on = x === b; x.classList.toggle('ativa', on); x.setAttribute('aria-selected', String(on)); });
+      if (pTche) pTche.hidden = felipe;
+      if (pFel) pFel.hidden = !felipe;
+      if (felipe) {
+        if (window.PainelEleicao) window.PainelEleicao.esconder();
+        if (window.PainelFelipe) window.PainelFelipe.mostrar('2024');
+      } else {
+        if (window.PainelFelipe) window.PainelFelipe.esconder();
+        var at = document.querySelector('.anos-resultados .ano-res.ativa'); if (at) at.click();
+      }
+      window.dispatchEvent(new Event('resize'));
+    });
+  });
 })();
