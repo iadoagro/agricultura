@@ -106,7 +106,9 @@ dialog#banco-dialogo,dialog.cadastro-acoes-dialogo{max-width:calc(100vw - 24px)}
   .t26-gm{height:min(62dvh,480px);min-height:340px}
   .t26-gm.t26-cheia{height:100dvh!important;width:100vw!important}
   .t26-modo-cheia .t26-gm.t26-cheia{right:0!important;bottom:auto!important;width:100vw!important;height:52dvh!important}
-  .t26-modo-cheia .t26-det{top:auto;left:0;right:0;width:auto;height:48dvh;box-shadow:0 -6px 20px rgba(0,0,0,.28);border-radius:14px 14px 0 0}
+  .t26-modo-cheia .t26-filtros{left:8px;right:8px;width:auto;max-height:30dvh}
+  .t26-modo-cheia .t26-gm.t26-cheia{top:calc(var(--t26-fh,0px) + 18px)!important;height:calc(52dvh - var(--t26-fh,0px) - 18px)!important}
+  .t26-modo-cheia .t26-det{padding-top:12px;top:auto;left:0;right:0;width:auto;height:48dvh;box-shadow:0 -6px 20px rgba(0,0,0,.28);border-radius:14px 14px 0 0}
   .t26-ctlmapa{max-width:min(290px,calc(100vw - 90px));font-size:14px}
   .t26-ctlmapa label{font-size:14px;flex-direction:column;align-items:stretch;gap:4px}
   .t26-ctlmapa select{font:16px system-ui;max-width:none;min-height:44px}

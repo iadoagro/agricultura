@@ -11,21 +11,22 @@
   <script src="../js/admin-gate.js?v=2026092530"></script>
   <script src="../js/rastreio.js?v=2026100701"></script>
   <script src="../js/nav.js?v=2026100902"></script>
-  <link rel="stylesheet" href="../css/base.css?v=2026091502">
+  <link rel="stylesheet" href="../css/base.css?v=2026101001">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="../css/eleicoes.css?v=2026100209">
-  <link rel="stylesheet" href="../css/eleicao2026-tche.css?v=2026100903">
+  <link rel="stylesheet" href="../css/eleicao2026-tche.css?v=2026101004">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092601">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
 <link rel="stylesheet" href="../css/nav.css?v=2026100701">
-<link rel="stylesheet" href="../css/select-app.css?v=2026092603">
+<link rel="stylesheet" href="../css/select-app.css?v=2026101001">
 <script src="../js/select-app.js?v=2026092603" defer></script>
 <link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
 <script src="../js/modal-ui.js?v=2026092527"></script>
 <link rel="stylesheet" href="../css/padrao.css?v=2026092541">
 <link rel="stylesheet" href="../css/eleicao-exportar.css?v=2026101003">
-<link rel="stylesheet" href="../css/eleicoes-mobile.css?v=2026100903">
+<link rel="stylesheet" href="../css/eleicoes-boletins.css?v=2026101002">
+<link rel="stylesheet" href="../css/eleicoes-mobile.css?v=2026101002">
 </head>
 <body>
   <header class="cab-padrao"><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
@@ -35,14 +36,16 @@
       <button class="aba-el" data-aba="fiscais" type="button" role="tab" id="aba-fiscais" aria-controls="painel-fiscais" aria-selected="false" tabindex="-1">Fiscais</button>
       <button class="aba-el" data-aba="relatorio" type="button" role="tab" id="aba-relatorio" aria-controls="painel-relatorio" aria-selected="false" tabindex="-1">Relatório</button>
       <button class="aba-el" data-aba="cadastrados" type="button" role="tab" id="aba-cadastrados" aria-controls="painel-cadastrados" aria-selected="false" tabindex="-1">Cadastrados</button>
+      <button class="aba-el" data-aba="boletins" type="button" role="tab" id="aba-boletins" aria-controls="painel-boletins" aria-selected="false" tabindex="-1">Boletins</button>
     </nav>
 
     <div class="aba-conteudo" data-aba="resultados" role="tabpanel" id="painel-resultados" aria-labelledby="aba-resultados" tabindex="0">
       <nav class="candidatos-resultados" role="tablist" aria-label="Candidato">
-        <button type="button" role="tab" class="cand-res ativa" data-cand="tche" aria-selected="true">Tchê<small>Deputado Estadual</small></button>
-        <button type="button" role="tab" class="cand-res" data-cand="felipe" aria-selected="false">Felipe Tchê<small>Vereador · Rio Branco</small></button>
+        <button type="button" role="tab" class="cand-res ativa" data-cand="governo" aria-selected="true">Governo<small>Mailza Assis · 2026</small></button>
+        <button type="button" role="tab" class="cand-res" data-cand="tche" aria-selected="false">Deputado Estadual<small>Tchê · PDT 12123</small></button>
+        <button type="button" role="tab" class="cand-res" data-cand="felipe" aria-selected="false">Vereador<small>Felipe Tchê · Rio Branco</small></button>
       </nav>
-      <div id="cand-tche" class="cand-painel" role="tabpanel">
+      <div id="cand-tche" class="cand-painel" role="tabpanel" hidden>
       <nav class="anos-resultados" role="tablist" aria-label="Ano da eleição"><button type="button" role="tab" class="ano-res" data-ano="2022" aria-selected="false">2022</button><button type="button" role="tab" class="ano-res ativa" data-ano="2026" aria-selected="true">2026</button><button type="button" role="tab" class="ano-res" data-ano="comparar" aria-selected="false">2022 × 2026</button></nav>
       <div id="resultados2022" hidden></div>
       <div id="resultados2026" hidden></div>
@@ -75,6 +78,9 @@
       </div>
       <div id="cand-felipe" class="cand-painel" role="tabpanel" hidden>
         <div id="resultadosFelipe" hidden></div>
+      </div>
+      <div id="cand-governo" class="cand-painel" role="tabpanel">
+        <div id="resultadosGoverno" hidden></div>
       </div>
     </div>
 
@@ -341,6 +347,9 @@
         <div class="tabela-scroll"><table class="relatorio-tabela"><thead><tr><th>Cadastrado por</th><th>Data e hora</th><th>Nome</th><th>Telefone</th><th>Município</th><th>Bairro</th><th>Zona</th><th>Seção</th></tr></thead><tbody id="cadPorCorpo"></tbody></table></div>
       </section>
     </div>
+    <div class="aba-conteudo" data-aba="boletins" role="tabpanel" id="painel-boletins" aria-labelledby="aba-boletins" tabindex="0">
+      <section class="mapa-card relatorio" id="boletinsRaiz" aria-label="Boletins de urna da zona rural"></section>
+    </div>
   </main>
   <dialog id="cadastro-acoes-dialogo" class="cadastro-acoes-dialogo" aria-labelledby="cadastro-acoes-titulo">
     <h3 id="cadastro-acoes-titulo"></h3>
@@ -376,8 +385,10 @@
 <script src="../js/eleicoes.js?v=2026100204"></script>
   <script src="../js/dados-tche-2026.js?v=2026100601"></script>
   <script src="../js/dados-felipe-2024.js?v=2026100801"></script>
-  <script src="../js/eleicao-painel.js?v=2026101001"></script>
-  <script src="../js/eleicao-exportar.js?v=2026101006"></script>
+  <script src="../js/dados-governo-2026.js?v=2026100601"></script>
+  <script src="../js/dados-boletins-rural-2026.js?v=2026101002"></script>
+  <script src="../js/eleicao-painel.js?v=2026101005"></script>
+  <script src="../js/eleicao-exportar.js?v=2026101007"></script>
   <script src="../js/eleicoes-resultados.js?v=2026100902"></script>
   <script src="../js/eleicoes-painel.js?v=2026091501"></script>
   <script src="../js/eleicoes-fiscais-mapa.js?v=2026092404"></script>
@@ -385,6 +396,7 @@
   <script src="../js/eleicoes-busca-exportar.js?v=2026092402"></script>
   <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
   <script src="../js/eleicoes-cadastrados.js?v=2026100209"></script>
+<script src="../js/eleicoes-boletins.js?v=2026101005"></script>
 <script src="../js/eleicoes-abas.js?v=2026100601"></script>
   <script src="../js/select-busca.js?v=2026092604"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>

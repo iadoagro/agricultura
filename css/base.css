@@ -33,7 +33,7 @@ body{font-family:"Roboto","Segoe UI",Arial,sans-serif;background:#fafafa;color:v
 /* Painel de busca de js/select-busca.js — fica solto em document.body
    (position:fixed), então não herda nada do CSS específico de cada tela;
    o <select> em si não muda de aparência, só o menu que abre ao clicar. */
-.select-busca-painel{position:fixed;z-index:1000;background:#fff;border:1px solid #bac5bc;
+.select-busca-painel{position:fixed;z-index:100050;background:#fff;border:1px solid #bac5bc;
   border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.18);overflow:hidden}
 .select-busca-campo{display:block;box-sizing:border-box;width:100%;border:0;
   border-bottom:1px solid var(--linha);padding:10px 12px;font:inherit;color:var(--texto)}

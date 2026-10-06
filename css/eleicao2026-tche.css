@@ -46,6 +46,22 @@
 /* tela cheia com painel de detalhe: mapa à esquerda, detalhe à direita (no celular: mapa em cima, detalhe embaixo) */
 .t26-modo-cheia .t26-gm.t26-cheia{right:min(430px,38vw)!important;width:auto!important}
 .t26-modo-cheia .t26-det{position:fixed!important;top:0;right:0;bottom:0;width:min(430px,38vw);margin:0;border-radius:0;overflow:auto;z-index:100000;box-shadow:-6px 0 20px rgba(0,0,0,.28);padding:14px 16px;background:#fff}
+/* tela cheia: coluna da direita em cinza, com o filtro "Detalhar por" como cartão discreto no topo e cada seção do detalhe em seu próprio cartão */
+.t26-modo-cheia .t26-filtros{position:fixed;top:10px;right:10px;width:calc(min(430px,38vw) - 20px);box-sizing:border-box;margin:0;border-radius:8px;z-index:100002;padding:8px 10px;max-height:50vh;overflow:auto;background:#fff;color:#1b2333;box-shadow:0 1px 6px rgba(0,0,0,.4);font:12px system-ui,sans-serif;gap:6px 8px}
+.t26-modo-cheia .t26-filtros b{font:600 12px system-ui,sans-serif;cursor:pointer;display:flex;justify-content:space-between;user-select:none}
+.t26-modo-cheia .t26-filtros label{min-width:calc(50% - 8px);flex:1 1 calc(50% - 8px);gap:2px}
+.t26-modo-cheia .t26-filtros select,.t26-modo-cheia .t26-filtros input{font:12px system-ui;padding:3px 5px}
+.t26-modo-cheia:not(.t26-filt-aberto) .t26-filtros>*:not(b){display:none}
+.t26-modo-cheia.t26-filt-aberto .t26-filt-seta{transform:rotate(180deg)}
+.t26-modo-cheia .t26-det{top:0;padding:calc(var(--t26-fh,0px) + 22px) 10px 12px;background:#e8ecf2;display:flex;flex-direction:column;gap:10px}
+.t26-modo-cheia .t26-det .t26-sec{background:#fff;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.18);padding:10px 12px}
+.t26-modo-cheia .t26-det .t26-sec h4{margin-top:0}
+/* tela cheia: controles do mapa (fundo, colorir por) ficam embaixo, atrás do botão "Opções" */
+.t26-cheia .leaflet-top.leaflet-right{top:auto;bottom:22px}
+.t26-cheia .t26-opc{display:inline-block}
+.t26-cheia .t26-ctlbar{order:2;display:flex;gap:6px}
+.t26-cheia .t26-ctlbar button{flex:1;white-space:nowrap}
+.t26-cheia .t26-ctlmapa:not(.t26-aberto) .t26-opcs{display:none}
 .t26-ctlmapa{background:#fff;color:#1b2333;padding:8px 10px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.4);font:12px system-ui,sans-serif;display:flex;flex-direction:column;gap:6px;max-width:220px}
 .t26-ctlmapa label{display:flex;justify-content:space-between;gap:8px;align-items:center}
 .t26-ctlmapa select{font:12px system-ui;max-width:125px}

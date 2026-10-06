@@ -1,0 +1,37 @@
+/* aba "Boletins" — js/eleicoes-boletins.js */
+.bol-filtros{display:flex;flex-wrap:wrap;gap:8px 10px;margin:10px 0}
+.bol-filtros label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:#153e75;font-weight:600;flex:1 1 170px;min-width:150px}
+.bol-filtros select{font-size:13.5px;padding:8px 10px;border:1px solid #cfd8e3;border-radius:10px;background:#fff;color:#1b2333;font-weight:400}
+.bol-filtros .bol-cargo{flex:1 1 100%}
+.bol-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;margin-top:10px}
+.bol-card{background:#fff;border:1px solid #d9e0ea;border-radius:12px;box-shadow:0 1px 6px rgba(21,62,117,.1);padding:12px 14px;min-width:0}
+.bol-card header{border-bottom:3px solid #153e75;margin:-12px -14px 10px;padding:10px 14px;background:#eef3fb;border-radius:12px 12px 0 0}
+.bol-card h3{margin:0;color:#153e75;font-size:16px}
+.bol-card header p{margin:2px 0 0;font-size:12.5px;color:#475467}
+.bol-cargo-det{border:1px solid #e3e8ef;border-radius:8px;margin-top:8px;background:#fafbfd}
+.bol-cargo-det summary{cursor:pointer;padding:8px 10px;display:flex;justify-content:space-between;gap:8px;color:#153e75;font-size:13.5px}
+.bol-cargo-det summary span{color:#667085;font-size:12px}
+.bol-tab{font-size:12.5px}
+.bol-tab .bol-sub td{color:#667085;border-top:1px dashed #e3e8ef}
+.bol-tab .bol-total td{font-weight:700;color:#153e75;border-top:2px solid #153e75}
+@media (max-width:640px){.bol-lista{grid-template-columns:1fr}.bol-filtros label{flex:1 1 100%}}
+
+.bol-vistas{display:flex;gap:6px;margin:10px 0 0;border-bottom:2px solid #e3e8ef}
+.bol-vistas button{border:0;background:none;padding:9px 18px;font:inherit;font-weight:700;color:#667085;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.bol-vistas button.ativa{color:#153e75;border-bottom-color:#153e75}
+.bd-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:12px 0}
+.bd-kpi{background:#fff;border:1px solid #d9e0ea;border-left:5px solid #153e75;border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;box-shadow:0 1px 6px rgba(21,62,117,.08)}
+.bd-kpi:nth-child(2){border-left-color:#e08a00}.bd-kpi:nth-child(3){border-left-color:#0f9d8a}.bd-kpi:nth-child(4){border-left-color:#b42318}
+.bd-kpi span{font-size:12px;color:#667085;text-transform:uppercase;letter-spacing:.03em}.bd-kpi b{font-size:26px;color:#1b2333}.bd-kpi small{font-size:12px;color:#667085}
+.bd-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;margin-top:14px}
+.bd-card{background:#fff;border:1px solid #d9e0ea;border-radius:12px;padding:14px 16px;box-shadow:0 1px 6px rgba(21,62,117,.08);min-width:0}
+.bd-card h3{margin:0 0 8px;color:#153e75;font-size:16px}.bd-card h3 small,.bd-card h4 small{font-weight:400;color:#667085;font-size:12px}
+.bd-card h4{margin:14px 0 6px;font-size:13px;color:#344054}
+.bd-linha{display:grid;grid-template-columns:minmax(90px,32%) 1fr auto;gap:8px;align-items:center;margin:5px 0;font-size:12.5px}
+.bd-rot{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1b2333}
+.bd-trilho,.bd-pilha{height:14px;background:#e8ecf2;border-radius:7px;overflow:hidden;display:flex}
+.bd-trilho i{display:block;height:100%;border-radius:7px}.bd-pilha i{display:block;height:100%}
+.bd-pilha{grid-column:2/4}.bd-val{font-weight:700;white-space:nowrap;text-align:right}.bd-val small{font-weight:400;color:#667085}
+.bd-leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin-bottom:6px}.bd-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+.bd-nota{margin:8px 0 0;font-size:12px;color:#667085}
+@media (max-width:640px){.bd-grade{grid-template-columns:1fr}.bd-linha{grid-template-columns:1fr auto}.bd-trilho{grid-column:1/3;order:3}.bd-pilha{grid-column:1/3}}

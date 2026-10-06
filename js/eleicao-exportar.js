@@ -60,6 +60,7 @@
   function totalV(d) { return d.tipo === '2022' ? d.T22 : d.T26; }
   function topo(d, l, n, k) { k = k || chaveV(d); return niv(d, l).filter(function (u) { return u[k] > 0; }).sort(function (a, b) { return b[k] - a[k]; }).slice(0, n); }
   function cobAno(d) { return d.tipo === '2022' ? d.cob22 : d.cob26; }
+  function vg(n) { return n === 1 ? '1 vaga' : n + ' vagas'; }
   function ehVereador(d) { return !!d.cand.municipio; }
   function tituloAno(d) { return d.tipo === 'cmp' ? '2022 × 2026' : (d.tipo === '2022' ? '2022' : String(d.ano)); }
   function nomeExib(d) { return d.tipo === '2022' && d.cand.nome2022 ? d.cand.nome2022 + ' (' + d.cand.nome + ')' : d.cand.nome; }
@@ -88,7 +89,7 @@
       var cres = muns.filter(function (u) { return u.dif > 0; }).length, caiu = muns.filter(function (u) { return u.dif < 0; }).length;
       var rc = regs.filter(function (u) { return u.dif > 0; }).length;
       P.push(nomeExib(d) + ' passou de ' + fmt(d.T22) + ' votos em 2022 para ' + fmt(d.T26) + ' em 2026: ' + (dif >= 0 ? 'crescimento' : 'queda') + ' de ' + fmt(Math.abs(dif)) + ' votos (' + vv(d.T26, d.T22) + ').' +
-        (d.pos ? ' Em 2026 ficou na ' + d.pos + 'ª posição entre ' + fmt(d.nCand) + ' candidatos a ' + c.cargo + ' (' + d.cand.vagas + ' vagas).' : ''));
+        (d.pos ? ' Em 2026 ficou na ' + d.pos + 'ª posição entre ' + fmt(d.nCand) + ' candidatos a ' + c.cargo + ' (' + vg(d.cand.vagas) + ').' : ''));
       var gMun = ganhos(d, 'mun', 1)[0], pMun = perdas(d, 'mun', 1)[0], gReg = regs.slice().sort(function (a, b) { return b.dif - a.dif; })[0];
       P.push('Dos ' + muns.length + ' municípios, ' + cres + ' cresceram e ' + caiu + ' perderam votos; ' + (rc === regs.length ? 'todas as ' + regs.length + ' regionais cresceram' : rc + ' de ' + regs.length + ' regionais cresceram') +
         (gReg ? ', com o maior ganho em volume na ' + gReg.rot + ' (' + sgn(gReg.dif) + ', ' + vv(gReg.v26, gReg.v22) + ')' : '') + '.');
@@ -104,11 +105,11 @@
     var quem = nomeExib(d);
     if (vere) {
       P.push(quem + ' (' + c.partido + ' ' + c.numero + ') ' + (c.eleito ? 'foi eleito' : 'concorreu a') + ' ' + (c.eleito ? c.cargo.toLowerCase() + ' de ' + c.municipio : c.cargo.toLowerCase() + ' de ' + c.municipio) + ' em ' + ano + ' com ' + fmt(T) + ' votos' +
-        (d.pos ? ', ' + (d.pos + 'º') + ' mais votado entre ' + fmt(d.nCand) + ' candidatos para ' + c.vagas + ' vagas.' : '.'));
+        (d.pos ? ', ' + (d.pos + 'º') + ' mais votado entre ' + fmt(d.nCand) + ' candidatos para ' + vg(c.vagas) + '.' : '.'));
     } else if (d.tipo === '2022') {
       P.push('Em 2022, ' + quem + ' obteve ' + fmt(T) + ' votos para ' + c.cargo + ', distribuídos por ' + cob.mun.n + ' dos ' + cob.mun.t + ' municípios do Acre.');
     } else {
-      P.push(quem + ' (' + c.partido + ' ' + c.numero + ') obteve ' + fmt(T) + ' votos para ' + c.cargo + ' na eleição de ' + ano + ' (1º turno), ficando em ' + d.pos + 'º lugar entre ' + fmt(d.nCand) + ' candidatos para ' + c.vagas + ' vagas.');
+      P.push(quem + ' (' + c.partido + ' ' + c.numero + ') obteve ' + fmt(T) + ' votos para ' + c.cargo + ' na eleição de ' + ano + ' (1º turno), ficando em ' + d.pos + 'º lugar entre ' + fmt(d.nCand) + ' candidatos para ' + vg(c.vagas) + '.');
     }
     P.push('Teve votos em ' + (vere ? cob.zona.n + ' de ' + cob.zona.t + ' zonas, ' : cob.mun.n + ' de ' + cob.mun.t + ' municípios (' + pc(cob.mun.n, cob.mun.t) + '), ') + fmt(cob.bairro.n) + ' de ' + fmt(cob.bairro.t) + ' bairros, ' +
       fmt(cob.local.n) + ' de ' + fmt(cob.local.t) + ' locais de votação e ' + fmt(cob.sec.n) + ' de ' + fmt(cob.sec.t) + ' seções (' + pc(cob.sec.n, cob.sec.t) + ').');
@@ -210,7 +211,7 @@
     var onde = d.onde, nv = nivelPrincipal(d);
     S.push(sCapa(d, 'Resultado da votação'));
     var kp = [{ rot: 'Votos ' + onde, val: fmt(T0), sub: '100,0% dos votos dele' + (c.eleito && d.tipo !== '2022' ? ' · eleito' : '') }];
-    if (d.tipo !== '2022' && d.pos) kp.push({ rot: 'Posição ' + onde, val: d.pos + 'º', sub: 'de ' + fmt(d.nCand) + ' candidatos · ' + c.vagas + ' vagas' });
+    if (d.tipo !== '2022' && d.pos) kp.push({ rot: 'Posição ' + onde, val: d.pos + 'º', sub: 'de ' + fmt(d.nCand) + ' candidatos · ' + vg(c.vagas) + '' });
     else { var secs = niv(d, 'sec').filter(function (u) { return u[k] > 0; }); kp.push({ rot: 'Média por seção com voto', val: fmt(secs.length ? Math.round(T0 / secs.length) : 0), sub: pc(secs.length ? Math.round(T0 / secs.length) : 0, T0) + ' do total dele' }); }
     kp.push(vere ? { rot: 'Zonas com voto', val: cob.zona.n + ' de ' + cob.zona.t, sub: pc(cob.zona.n, cob.zona.t) + ' das zonas' } : { rot: 'Municípios com voto', val: cob.mun.n + ' de ' + cob.mun.t, sub: pc(cob.mun.n, cob.mun.t) + ' dos municípios' });
     kp.push({ rot: 'Bairros com voto', val: fmt(cob.bairro.n), sub: 'de ' + fmt(cob.bairro.t) + ' · ' + pc(cob.bairro.n, cob.bairro.t) });
@@ -239,7 +240,7 @@
       { rot: 'Diferença', val: sgn(dif), sub: vv(d.T26, d.T22) + ' sobre 2022' },
       { rot: 'Seções com voto', val: fmt(s22.n) + ' → ' + fmt(s26.n), sub: pc(s22.n, s22.t) + ' → ' + pc(s26.n, s26.t) + ' das seções' },
       { rot: 'Seções ganhas / perdidas', val: fmt(d.secGanhas) + ' / ' + fmt(d.secPerdidas), sub: 'passou a ter voto / deixou de ter' },
-      { rot: 'Posição em 2026', val: d.pos + 'º', sub: 'de ' + fmt(d.nCand) + ' candidatos · ' + c.vagas + ' vagas' }]));
+      { rot: 'Posição em 2026', val: d.pos + 'º', sub: 'de ' + fmt(d.nCand) + ' candidatos · ' + vg(c.vagas) + '' }]));
     S.push(sTexto('A comparação em resumo', '2022 × 2026', narrativa(d)));
     var par = function (u) { return { rot: u.rot, v22: u.v22, v26: u.v26, t22: fmt(u.v22) + ' · ' + pc(u.v22, d.T22), t26: fmt(u.v26) + ' · ' + pc(u.v26, d.T26) + ' · ' + vv(u.v26, u.v22) }; };
     S.push(sPares('2022 × 2026 por regional', 'Cada barra: votos e % do total dele no ano; ao lado, a variação sobre 2022',
@@ -495,7 +496,7 @@
       h2('Números-chave');
       kpis([{ rot: 'Votos 2022', val: fmt(d.T22), sub: '100,0% do total dele em 2022' }, { rot: 'Votos 2026', val: fmt(d.T26), sub: '100,0% do total dele em 2026' }, { rot: 'Diferença', val: sgn(dif), sub: vv(d.T26, d.T22) + ' sobre 2022' },
         { rot: 'Seções com voto', val: fmt(s22.n) + ' > ' + fmt(s26.n), sub: pc(s22.n, s22.t) + ' > ' + pc(s26.n, s26.t) + ' das seções' }, { rot: 'Seções ganhas / perdidas', val: fmt(d.secGanhas) + ' / ' + fmt(d.secPerdidas), sub: 'passou a ter voto / deixou de ter' },
-        { rot: 'Posição em 2026', val: d.pos + 'o', sub: 'de ' + fmt(d.nCand) + ' candidatos - ' + c.vagas + ' vagas' }]);
+        { rot: 'Posição em 2026', val: d.pos + 'o', sub: 'de ' + fmt(d.nCand) + ' candidatos - ' + vg(c.vagas) + '' }]);
       var linhaCmp = function (nivel) { return function (u) { var l = [rotCtx(u, nivel), fmt(u.v22), pc(u.v22, d.T22), fmt(u.v26), pc(u.v26, d.T26), sgn(u.dif), vv(u.v26, u.v22)]; l.cor = [null, null, null, null, null, corDif(u.dif), corDif(u.dif)]; return l; }; };
       var colsCmp = function (rot, w0) { return [{ t: rot, w: w0, neg: true }, { t: '2022', w: 15, al: 'r' }, { t: '% 2022', w: 14, al: 'r' }, { t: '2026', w: 15, al: 'r' }, { t: '% 2026', w: 14, al: 'r' }, { t: 'Dif.', w: 15, al: 'r' }, { t: 'Var.', w: 15, al: 'r' }]; };
       h2('Por regional (2022 × 2026)'); pares(niv(d, 'reg').slice().sort(function (a, b) { return b.v26 - a.v26; }).map(function (u) { return { rot: u.rot, v22: u.v22, v26: u.v26, t22: fmt(u.v22) + ' (' + pc(u.v22, d.T22) + ')', t26: fmt(u.v26) + ' (' + pc(u.v26, d.T26) + ') ' + vv(u.v26, u.v22) }; }));
@@ -512,7 +513,7 @@
       h2('Resumo'); narrativa(d).forEach(function (t) { par(t); });
       h2('Números-chave');
       var kp = [{ rot: 'Votos ' + d.onde, val: fmt(T0), sub: '100,0% dos votos dele' + (c.eleito && d.tipo !== '2022' ? ' - eleito' : '') }];
-      if (d.tipo !== '2022' && d.pos) kp.push({ rot: 'Posição ' + d.onde, val: d.pos + 'o', sub: 'de ' + fmt(d.nCand) + ' candidatos - ' + c.vagas + ' vagas' });
+      if (d.tipo !== '2022' && d.pos) kp.push({ rot: 'Posição ' + d.onde, val: d.pos + 'o', sub: 'de ' + fmt(d.nCand) + ' candidatos - ' + vg(c.vagas) + '' });
       else { var secs = niv(d, 'sec').filter(function (u) { return u[k] > 0; }); kp.push({ rot: 'Média por seção com voto', val: fmt(secs.length ? Math.round(T0 / secs.length) : 0), sub: pc(secs.length ? Math.round(T0 / secs.length) : 0, T0) + ' do total dele' }); }
       kp.push(vere ? { rot: 'Zonas com voto', val: cob.zona.n + ' de ' + cob.zona.t, sub: pc(cob.zona.n, cob.zona.t) + ' das zonas' } : { rot: 'Municípios com voto', val: cob.mun.n + ' de ' + cob.mun.t, sub: pc(cob.mun.n, cob.mun.t) + ' dos municípios' });
       kp.push({ rot: 'Bairros com voto', val: fmt(cob.bairro.n), sub: 'de ' + fmt(cob.bairro.t) + ' - ' + pc(cob.bairro.n, cob.bairro.t) });
