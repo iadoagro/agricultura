@@ -131,7 +131,7 @@ html.sb-mini .sb-tema{width:40px}
 .snav-trilha li+li::before{content:"›";flex:none;margin:0 7px;color:var(--snav-suave);font-size:16px}
 .snav-trilha li:last-child{flex:0 1 auto}
 .snav-trilha li:not(:last-child){flex:0 0 auto}
-.snav-trilha a{display:inline-flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;color:var(--snav-suave);text-decoration:none}
+.snav-trilha a{display:inline-flex;align-items:center;gap:6px;min-height:var(--snav-h);padding:4px 6px;border-radius:6px;color:var(--snav-suave);text-decoration:none}
 .snav-trilha a:hover{background:var(--snav-hover);color:var(--snav-texto)}
 .snav-trilha [aria-current]{padding:4px 6px;font-weight:600;color:var(--snav-texto);overflow:hidden;text-overflow:ellipsis}
 .snav-ico-inicio{width:16px;height:16px}

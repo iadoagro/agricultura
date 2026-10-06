@@ -1,13 +1,13 @@
 /* Alterna entre as abas "Fiscais", "Resultados" e "Relatório" de
    eleicoes.html. A aba abre pelo hash da URL (#resultados, #relatorio) e,
-   sem hash reconhecido, abre "fiscais" — a principal. Não mexe em nada
+   sem hash reconhecido, abre "resultados" — a primeira. Não mexe em nada
    dentro de cada aba: js/eleicoes.js, js/eleicoes-resultados.js e
    js/eleicoes-relatorio.js continuam donos do que está dentro da sua. */
 (function () {
   'use strict';
   var nav = document.querySelector('.abas-eleicoes');
   if (!nav) return;
-  var PADRAO = 'fiscais';
+  var PADRAO = 'resultados';
   var botoes = document.querySelectorAll('.aba-el');
   var paineis = document.querySelectorAll('.aba-conteudo');
 

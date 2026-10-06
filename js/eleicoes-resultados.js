@@ -238,6 +238,14 @@
   var avisoAno = document.getElementById('resultadosAvisoAno');
   var botoesAno = document.querySelectorAll('.anos-resultados .ano-res');
   function trocarAno(ano) {
+    if (ano === 'comparar') {
+      botoesAno.forEach(function (b) { var on = b.dataset.ano === ano; b.classList.toggle('ativa', on); b.setAttribute('aria-selected', String(on)); });
+      var w0 = document.querySelector('#painel-resultados .resultados-wrap');
+      if (w0) w0.style.display = 'none';
+      if (avisoAno) avisoAno.hidden = true;
+      if (window.PainelEleicao) window.PainelEleicao.mostrar('comparar');
+      return;
+    }
     if (!ANOS[ano]) return;
     usarDados(ANOS[ano]);
     botoesAno.forEach(function (b) {
@@ -248,6 +256,10 @@
     if (tituloResultados) tituloResultados.textContent = 'Votação por seção — José Luís Schafer (' + ano + ')';
     svg.setAttribute('aria-label', 'Mapa de votos por município para José Luís Schafer em ' + ano);
     if (avisoAno) avisoAno.hidden = DADOS.porMunicipio.length > 0;
+    // 2022 e 2026: painel completo (mapa, níveis e detalhamento); a visão antiga do mapa de 2022 fica atrás de um botão.
+    var wrap = document.querySelector('#painel-resultados .resultados-wrap');
+    if (wrap) wrap.style.display = window.PainelEleicao ? 'none' : '';
+    if (window.PainelEleicao) { window.PainelEleicao.mostrar(ano); if (avisoAno) avisoAno.hidden = true; }
     if (secaoBairros) secaoBairros.hidden = true;
     svg.removeAttribute('hidden');
     mapa.destacar(null);
@@ -256,6 +268,7 @@
     mostrarResumoGeral();
   }
   botoesAno.forEach(function (b) { b.addEventListener('click', function () { trocarAno(b.dataset.ano); }); });
+  trocarAno('2022');
 
   function mostrarDetalhe(id) {
     mapa.destacar(id);

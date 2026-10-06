@@ -29,7 +29,7 @@
      admin: só o responsável. menu: false = só aparece na trilha, não no menu. */
   var MAPA = {
     'index.html':              { nome: 'Início', grupo: null, chave: null },
-    'eleicoes.html':           { nome: 'Fiscais', grupo: 'Fiscais', chave: 'eleicoes', pai: 'index.html' },
+    'eleicoes.html':           { nome: 'Eleições', grupo: 'Fiscais', chave: 'eleicoes', pai: 'index.html' },
     'cadastros-fiscais.html':  { nome: 'Bairros dos fiscais', grupo: 'Fiscais', admin: true, pai: 'eleicoes.html' },
     // Painéis: dois itens no menu, Mecanização e DEAGRO.
     'dashboard.html':          { nome: 'Mecanização', grupo: 'Painéis', chave: 'dashboards', pai: 'index.html' },

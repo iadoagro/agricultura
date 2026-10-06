@@ -225,6 +225,7 @@
   }
 
   function mostrarAvisoLocalizacao() {
+    if (!document.body) { document.addEventListener('DOMContentLoaded', mostrarAvisoLocalizacao, { once: true }); return; }
     if (document.getElementById('avisoLocalizacao')) return;
     var estilo = document.createElement('style');
     estilo.textContent =

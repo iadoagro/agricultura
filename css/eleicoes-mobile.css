@@ -1,0 +1,126 @@
+/* eleicoes.html no celular: alvos de toque de 44px, campos de 16px (o iOS dá zoom
+   em campo menor que isso), nada de rolagem horizontal da página e texto legível.
+   Carregado por último para valer sobre eleicoes.css e eleicao2026-tche.css. */
+
+/* vale em qualquer largura: grades que não podem estourar o cartão */
+.t26-duas{grid-template-columns:repeat(2,minmax(0,1fr))}
+.t26-card,.t26-kpi{min-width:0}
+.t26-seta{margin-bottom:16px}
+.t26-ctlbar{display:flex;gap:6px}
+.t26-ctlbar button{flex:1}
+.t26-glab small.t26-p{display:block}
+.t26-opc{display:none}
+.t26-leg b{cursor:pointer;display:block}
+.t26-leg b::after{content:" ▾";color:#667085}
+.t26-leg-min b::after{content:" ▸"}
+.t26-leg-min>*:not(b){display:none}
+.t26-dica-toque{margin:6px 0 0}
+dialog#banco-dialogo,dialog.cadastro-acoes-dialogo{max-width:calc(100vw - 24px)}
+
+@media(max-width:900px){
+  .t26-duas{grid-template-columns:minmax(0,1fr)}
+}
+
+@media screen and (max-width:760px){
+  /* ---------- campos e botões ---------- */
+  main.eleicoes select,
+  main.eleicoes textarea,
+  main.eleicoes input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]){
+    font-size:16px;min-height:44px;
+  }
+  main.eleicoes #cadastro input,main.eleicoes #cadastro select{font-size:16px}
+  main.eleicoes .prioridades-filtros select{height:auto;min-height:46px}
+  .mapa-rodape a{display:inline-block;padding:14px 0}
+  main.eleicoes input[type=checkbox],main.eleicoes input[type=radio]{width:22px;height:22px;flex:none;margin:0}
+  main.eleicoes label:has(>input[type=checkbox]),main.eleicoes label:has(>input[type=radio]){
+    display:inline-flex;align-items:center;gap:10px;min-height:44px;font-size:14px;
+  }
+  main.eleicoes button,main.eleicoes .t26-antigo,main.eleicoes .t26-btn{min-height:44px;font-size:14px}
+  a.cadastro-whatsapp-compacto,.cadastro-whatsapp{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding-inline:12px}
+  button.cadastro-mais-acoes{min-width:44px;min-height:44px}
+  .editar-cadastro,.excluir-cadastro{padding:10px 16px}
+  .mapa-bairros-acoes{width:100%}
+  .mapa-bairros-acoes button{padding:10px 12px;min-width:44px}
+  .mapa-bairros-topo{margin-left:0}
+  .fiscais-mapa-filtros{grid-template-columns:minmax(0,1fr)}
+  .fiscais-mapa-filtros label:has(>select){flex-direction:column;align-items:stretch;gap:4px;font-size:14px}
+  .fiscais-mapa-filtros select{width:100%;min-width:0}
+  .filtros-eleitorais{grid-template-columns:minmax(0,1fr)}
+  .filtros-eleitorais label,.filtros-eleitorais select{font-size:16px}
+  .cadastro-acoes-dialogo button,#banco-dialogo button{min-height:44px}
+
+  /* ---------- abas principais (cabem as 4 sem cortar) ---------- */
+  .abas-eleicoes{gap:0;scrollbar-width:none}
+  .abas-eleicoes::-webkit-scrollbar{display:none}
+  .abas-eleicoes .aba-el{flex:1 1 auto;padding:12px 8px;min-height:48px;font-size:14px;text-align:center;white-space:nowrap}
+
+  /* ---------- anos e subabas do painel ---------- */
+  .anos-resultados{display:flex;gap:8px;flex-wrap:wrap}
+  .anos-resultados .ano-res{min-height:44px;min-width:44px}
+  .t26-abas{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px}
+  .t26-abas button{padding:6px 4px;font-size:13px;line-height:1.2}
+  .t26-cab{flex-direction:column}
+  .t26-cab h2{font-size:20px}
+  .t26-kpis,.t26-kpis4{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .t26-kpi b{font-size:19px}
+  .t26-card{padding:12px}
+  .t26-bar{grid-template-columns:minmax(80px,32%) minmax(0,1fr) auto;gap:6px}
+  .t26-bn{white-space:normal;line-height:1.2}
+
+  /* ---------- filtros, busca e paginação ---------- */
+  .t26-filtros label{min-width:100%;font-size:13px}
+  .t26-filtros select,.t26-busca input,.t26-ctl select{font-size:16px;min-height:44px;padding:6px 8px}
+  .t26-ctl{width:100%;font-size:14px}
+  .t26-ctl select{flex:1;min-width:0}
+  .t26-ri{padding:12px;font-size:14px}
+  .t26-pag{justify-content:space-between;font-size:14px}
+  .t26-pag button{min-height:44px;padding:8px 14px}
+  .t26-mig{font-size:15px;line-height:1.8}
+  .t26-mig a{display:inline-block;padding:4px 2px}
+
+  /* ---------- tabelas: rolam de lado, com sombra avisando que há mais ---------- */
+  .t26-tab{-webkit-overflow-scrolling:touch;
+    background:linear-gradient(to right,#fff 30%,rgba(255,255,255,0)),linear-gradient(to left,#fff 30%,rgba(255,255,255,0)) 100% 0,
+      radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.22),rgba(0,0,0,0)),radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.22),rgba(0,0,0,0)) 100% 0;
+    background-repeat:no-repeat;background-size:40px 100%,40px 100%,12px 100%,12px 100%;
+    background-attachment:local,local,scroll,scroll}
+  .t26-tab table{min-width:520px;font-size:14px}
+  .t26-tab th,.t26-tab td{padding:10px 10px}
+  .t26-tabalta{max-height:70dvh}
+  .t26-chart{-webkit-overflow-scrolling:touch}
+  /* tabelas de Fiscais/Relatório/Cadastrados: colunas com largura legível e rolagem lateral */
+  .tabela-scroll,.relatorio-rolagem{-webkit-overflow-scrolling:touch;
+    background:linear-gradient(to right,#fff 30%,rgba(255,255,255,0)),linear-gradient(to left,#fff 30%,rgba(255,255,255,0)) 100% 0,
+      radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.22),rgba(0,0,0,0)),radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.22),rgba(0,0,0,0)) 100% 0;
+    background-repeat:no-repeat;background-size:40px 100%,40px 100%,12px 100%,12px 100%;
+    background-attachment:local,local,scroll,scroll}
+  .relatorio-rolagem{overflow-x:auto}
+  .relatorio-tabela{min-width:980px;font-size:14px}
+  .relatorio-tabela th,.relatorio-tabela td{min-width:84px;padding:10px}
+  .relatorio-tabela th:first-child,.relatorio-tabela td:first-child{min-width:40px}
+  .prioridades-tabela{min-width:560px}
+
+  /* ---------- mapa do painel ---------- */
+  .t26-gm{height:min(62dvh,480px);min-height:340px}
+  .t26-gm.t26-cheia{height:100dvh!important;width:100vw!important}
+  .t26-ctlmapa{max-width:min(290px,calc(100vw - 90px));font-size:14px}
+  .t26-ctlmapa label{font-size:14px;flex-direction:column;align-items:stretch;gap:4px}
+  .t26-ctlmapa select{font:16px system-ui;max-width:none;min-height:44px}
+  .t26-ctlmapa button{font:14px system-ui;min-height:44px;padding:8px 10px}
+  .t26-ctlbar{order:-1}
+  .t26-ctlbar button{white-space:nowrap;padding-inline:8px}
+  .t26-antigo{margin-bottom:10px}
+  .t26-opc{display:inline-block}
+  .t26-ctlmapa:not(.t26-aberto) .t26-opcs{display:none}
+  .t26-leg{font-size:12px;line-height:1.45;max-height:130px;overflow:auto;padding:6px 10px}
+  .t26-leg b{padding:6px 0}
+  .leaflet-touch .leaflet-bar a{width:44px;height:44px;line-height:44px;font-size:22px}
+  .leaflet-control-attribution{font-size:10px}
+
+  /* ---------- texto nunca abaixo de 12px ---------- */
+  main.eleicoes small,.t26-kpi small,.t26-seta small,.t26-col span,.t26-glab,.t26-glab small,.t26-tag,
+  .t26-ri small,.t26-rt,.t26-rm,.t26-sub,.t26-chartleg,.t26-leg span,
+  .rotulo,main.eleicoes th,table.dados thead th,.relatorio-tabela th,.indicador-rot,.col-val,.col-rot,.mapa-esquematico-dica{font-size:12px}
+  .t26-seta{font-size:13px}
+  .t26-p,.t26-kpi b .t26-p{font-size:12px}
+}
