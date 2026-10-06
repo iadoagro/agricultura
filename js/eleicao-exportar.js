@@ -40,6 +40,19 @@
     return slug(d.cand.nome) + '-' + tipoDoc + '-' + ano + '.' + ext;
   }
   function dataHoje() { return new Date().toLocaleDateString('pt-BR'); }
+  // Quem está logado (mesmo texto do menu lateral): o login sem o domínio interno.
+  function pessoaLogada() {
+    try {
+      var a = window.ADMIN_AUTH, s = a && a.sessaoAtual && a.sessaoAtual(), e = s && s.user && s.user.email, dom = '@sistema.local';
+      if (e) return e.toLowerCase().slice(-dom.length) === dom ? e.slice(0, -dom.length) : e;
+    } catch (x) { /* sem sessão: cai no texto padrão */ }
+    return 'usuário não identificado';
+  }
+  // Carimbo de todo slide e PDF (discreto, em letra pequena): sistema, quem exportou e quando (dia, hora e minuto do clique).
+  function carimbo() {
+    var n = new Date(), h = n.getHours(), m = n.getMinutes();
+    return 'Gerado no sistema iadoagro · exportado por ' + pessoaLogada() + ' em ' + n.toLocaleDateString('pt-BR') + ', às ' + h + (h === 1 ? ' hora' : ' horas') + ' e ' + m + (m === 1 ? ' minuto' : ' minutos') + '.';
+  }
 
   /* dados de apoio */
   function niv(d, l) { return d.L[l]; }
@@ -179,14 +192,16 @@
     p.push(T(90, 335, 1100, 50, 'nº ' + c.numero + ' · ' + c.partido, { size: 34, cor: '#FFFFFF' }));
     if (c.eleito && d.tipo !== '2022') { p.push(R(90, 410, 190, 52, VERDE, { raio: 26 })); p.push(T(90, 410, 190, 52, 'ELEITO', { size: 26, bold: true, cor: '#FFFFFF', al: 'center' })); }
     p.push(T(90, 500, 1100, 50, linha3, { size: 32, cor: '#FFFFFF' }));
-    p.push(T(90, 640, 1100, 30, 'Gerado em ' + dataHoje() + ' · Fonte: ' + d.fonte, { size: 15, cor: '#BFD4F2' }));
+    p.push(T(90, 630, 1100, 28, 'Fonte: ' + d.fonte, { size: 15, cor: '#BFD4F2' }));
+    p.push(T(90, 666, 1100, 24, d.carimbo, { size: 12, cor: '#8FA9D0' }));
     return { capa: true, bg: AZ, prim: p };
   }
   function sFim(d) {
     var p = [R(0, 0, W, H, AZ), R(0, 0, 18, H, AZ2)];
     p.push(T(90, 250, 1100, 100, 'Obrigado', { size: 84, bold: true, cor: '#FFFFFF' }));
     p.push(T(90, 370, 1100, 40, nomeExib(d) + ' · nº ' + d.cand.numero + ' · ' + d.cand.partido, { size: 30, cor: '#BFD4F2' }));
-    p.push(T(90, 560, 1100, 90, 'Fonte: ' + d.fonte + '. Percentuais calculados sobre o total de votos do próprio candidato.', { size: 18, cor: '#BFD4F2', va: 'top' }));
+    p.push(T(90, 540, 1100, 80, 'Fonte: ' + d.fonte + '. Percentuais calculados sobre o total de votos do próprio candidato.', { size: 18, cor: '#BFD4F2', va: 'top' }));
+    p.push(T(90, 652, 1100, 30, d.carimbo, { size: 12, cor: '#8FA9D0', va: 'top' }));
     return { capa: true, bg: AZ, prim: p };
   }
 
@@ -251,8 +266,9 @@
       if (s.sub) p.push(T(60, 90, 760, 28, s.sub, { size: 18, cor: CZ }));
       p.push(R(60, 124, 120, 5, AZ2));
       s.prim.forEach(function (x) { p.push(x); });
-      p.push(T(60, 684, 900, 24, nomeExib(d) + ' · ' + d.fonte, { size: 13, cor: CZ }));
-      p.push(T(1100, 684, 120, 24, (i + 1) + ' / ' + S.length, { size: 14, cor: CZ, al: 'right' }));
+      p.push(T(60, 668, 1010, 22, nomeExib(d) + ' · ' + d.fonte, { size: 13, cor: CZ }));
+      p.push(T(60, 692, 1010, 20, d.carimbo, { size: 11, cor: '#98A2B3' }));
+      p.push(T(1100, 690, 120, 22, (i + 1) + ' / ' + S.length, { size: 14, cor: CZ, al: 'right' }));
       return { bg: '#FFFFFF', prim: p };
     });
   }
@@ -280,6 +296,7 @@
   var deckAberto = null;
   function exibirSlides(d, msg) {
     if (deckAberto) deckAberto.fechar();
+    d.carimbo = carimbo();
     var S = comMoldura(d, slidesDe(d)), i = 0;
     var raiz = el('div', 'ex-deck'); raiz.setAttribute('role', 'dialog'); raiz.setAttribute('aria-modal', 'true'); raiz.setAttribute('aria-label', 'Apresentação: ' + nomeExib(d));
     raiz.innerHTML = '<div class="ex-deck-barra"><strong class="ex-deck-tit"></strong><span class="ex-deck-esp"></span>' +
@@ -347,6 +364,7 @@
     if (msg) msg('Carregando a biblioteca de slides…');
     return carregar('pptx', 'PptxGenJS').then(function (Pptx) {
       if (msg) msg('Montando o arquivo…');
+      d.carimbo = carimbo();
       var S = comMoldura(d, slidesDe(d)), pptx = new Pptx(), px = function (n) { return n / 96; }, cor = function (h) { return String(h).replace('#', ''); };
       pptx.layout = 'LAYOUT_WIDE'; pptx.title = nomeExib(d) + ' - ' + tituloAno(d); pptx.author = 'Sistema'; pptx.subject = 'Resultado da votação';
       S.forEach(function (s) {
@@ -387,8 +405,9 @@
       fonte(8, false, C_CZ); texto(nomeExib(d) + ' - ' + titulo, M, 14);
       cor(C_LINHA, 'draw'); doc.setLineWidth(0.2); doc.line(M, 16, PW - M, 16); y = 24;
     }
-    function espaco(h) { if (y + h > PH - 16) novaPagina(); }
-    function h2(t) { espaco(16); y += 3; fonte(13, true, C_AZ); texto(t, M, y + 4); cor(C_AZ2, 'fill'); doc.rect(M, y + 6.5, 22, 0.9, 'F'); y += 12; }
+    function espaco(h) { if (y + h > PH - 20) novaPagina(); }
+    function h2(t) { espaco(34);   // o título nunca fica sozinho no fim da página
+      y += 3; fonte(13, true, C_AZ); texto(t, M, y + 4); cor(C_AZ2, 'fill'); doc.rect(M, y + 6.5, 22, 0.9, 'F'); y += 12; }
     function par(t, tam) {
       fonte(tam || 10, false); var ls = doc.splitTextToSize(pdfTxt(t), CW);
       ls.forEach(function (l) { espaco(5.2); doc.text(l, M, y + 3.6); y += 5.2; }); y += 2;
@@ -449,7 +468,7 @@
       }
       espaco(6.8 + rh * 2); cab();
       linhas.forEach(function (ln, i) {
-        if (y + rh > PH - 16) { novaPagina(); cab(); }
+        if (y + rh > PH - 20) { novaPagina(); cab(); }
         if (i % 2) { cor(C_CLARO, 'fill'); doc.rect(M, y, CW, rh, 'F'); }
         cols.forEach(function (c1, j) {
           var neg = !!c1.neg, s = cortar(ln[j], c1.w * esc - 3.2, tam, neg); fonte(tam, neg, ln.cor && ln.cor[j] ? ln.cor[j] : (c1.cor || [33, 33, 33]));
@@ -466,7 +485,7 @@
     fonte(10, false, [191, 212, 242]); texto(c.cargo + ' - ' + (d.tipo === 'cmp' ? 'Comparativo 2022 × 2026' : 'Eleição ' + tituloAno(d)) + (c.municipio ? ' - ' + c.municipio : ''), M, 14);
     fonte(24, true, [255, 255, 255]); texto(nomeExib(d).toUpperCase(), M, 26, { maxWidth: CW });
     fonte(11, false, [255, 255, 255]); texto('nº ' + c.numero + ' - ' + c.partido + (c.eleito && d.tipo !== '2022' ? '  |  ELEITO' : '') + (c.nomeCompleto && d.tipo !== '2022' ? '  |  ' + c.nomeCompleto : ''), M, 34);
-    fonte(8.5, false, [191, 212, 242]); texto(titulo + '  -  gerado em ' + dataHoje(), M, 41);
+    fonte(8.5, false, [191, 212, 242]); texto(titulo, M, 41);
     y = 54;
     var k = chaveV(d), T0 = totalV(d), cob = cobAno(d), vere = ehVereador(d), nv = nivelPrincipal(d);
 
@@ -520,14 +539,15 @@
     // rodapé com numeração
     var n = doc.getNumberOfPages();
     for (var p = 1; p <= n; p++) {
-      doc.setPage(p); cor(C_LINHA, 'draw'); doc.setLineWidth(0.2); doc.line(M, PH - 12, PW - M, PH - 12);
-      fonte(7.5, false, C_CZ); texto(d.fonte, M, PH - 8); texto('Página ' + p + ' de ' + n, PW - M, PH - 8, { align: 'right' });
+      doc.setPage(p); cor(C_LINHA, 'draw'); doc.setLineWidth(0.2); doc.line(M, PH - 16, PW - M, PH - 16);
+      fonte(6.5, false, [152, 162, 179]); texto(d.carimbo, M, PH - 12);
+      fonte(7.5, false, C_CZ); texto('Fonte: ' + d.fonte, M, PH - 7.5); texto('Página ' + p + ' de ' + n, PW - M, PH - 7.5, { align: 'right' });
     }
     return doc;
   }
   function gerarPdf(d, msg) {
     if (msg) msg('Carregando a biblioteca de PDF…');
-    return carregar('jspdf', 'jspdf').then(function (lib) { if (msg) msg('Montando o PDF…'); return montaPdf(d, lib.jsPDF); });
+    return carregar('jspdf', 'jspdf').then(function (lib) { if (msg) msg('Montando o PDF…'); d.carimbo = carimbo(); return montaPdf(d, lib.jsPDF); });
   }
   function pdfBaixar(d, msg) { return gerarPdf(d, msg).then(function (doc) { baixarBlob(doc.output('blob'), nomeArq(d, d.tipo === 'cmp' ? 'comparativo' : 'votacao', 'pdf')); }); }
   function pdfVer(d, msg) {
