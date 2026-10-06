@@ -1,0 +1,46 @@
+/* aba "Exportar" (slide e PDFs) e visualizador de slides — js/eleicao-exportar.js */
+.ex-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:6px}
+.ex-card{display:flex;gap:14px;align-items:flex-start;margin:0}
+.ex-ico{flex:none;width:52px;height:52px;border-radius:14px;background:#153e75;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center}
+.ex-corpo{min-width:0;flex:1}
+.ex-corpo h3{margin:0 0 4px}
+.ex-acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ex-btn{min-height:44px;padding:8px 16px;font-size:14px;font-weight:600}
+.ex-btn.ex-prim{background:#2563eb;border-color:#2563eb;color:#fff}
+.ex-btn:disabled{opacity:.55;cursor:progress}
+.ex-status{margin:10px 0 0;min-height:1.2em}
+.ex-status.ex-erro{color:#b42318;font-weight:600}
+
+/* visualizador de slides: cada slide é uma tela 1280×720 escalada para caber */
+html.ex-deck-aberto{overflow:hidden}
+.ex-deck{position:fixed;inset:0;z-index:200000;background:#0b1626;display:flex;flex-direction:column;color:#fff;font-family:"Segoe UI",Roboto,Arial,sans-serif}
+.ex-deck-barra{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0f2037;border-bottom:1px solid #22344f}
+.ex-deck-tit{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ex-deck-esp{flex:1}
+.ex-deck-b{min-height:44px;min-width:44px;padding:6px 14px;border:1px solid #3a5272;background:#17304f;color:#fff;border-radius:10px;font:inherit;font-size:14px;cursor:pointer}
+.ex-deck-b:hover:not(:disabled){background:#21426b}
+.ex-deck-b:disabled{opacity:.35;cursor:default}
+.ex-deck-x{font-size:18px}
+.ex-deck-dica{display:none;flex:none;margin:0;padding:6px 12px;font-size:13px;text-align:center;color:#bfd4f2;background:#0f2037}
+.ex-deck-palco{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px}
+.ex-deck-caixa{position:relative;box-shadow:0 10px 40px rgba(0,0,0,.5);background:#fff;overflow:hidden;cursor:pointer}
+.ex-deck-pano{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0}
+.ex-slide{position:absolute;inset:0;width:1280px;height:720px;overflow:hidden;font-family:"Segoe UI",Calibri,Roboto,Arial,sans-serif}
+.ex-slide[hidden]{display:none}
+.ex-p{position:absolute;box-sizing:border-box}
+.ex-t{display:flex;line-height:1.2;overflow:hidden}
+.ex-t>span{display:block;max-width:100%;overflow-wrap:anywhere}
+.ex-par{margin:0 0 16px;padding-left:26px;position:relative;line-height:1.3}
+.ex-par::before{content:"";position:absolute;left:4px;top:.55em;width:9px;height:9px;border-radius:50%;background:#2563eb}
+.ex-deck-nav{flex:none;display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 12px;background:#0f2037;border-top:1px solid #22344f}
+.ex-deck-nav .ex-deck-b{font-size:24px;min-width:56px}
+.ex-deck-cont{min-width:70px;text-align:center;font-size:15px;color:#bfd4f2}
+.ex-deck:fullscreen .ex-deck-barra,.ex-deck:fullscreen .ex-deck-nav{opacity:0;transition:opacity .2s}
+.ex-deck:fullscreen:hover .ex-deck-barra,.ex-deck:fullscreen:hover .ex-deck-nav{opacity:1}
+@media(max-width:760px) and (orientation:portrait){.ex-deck-dica{display:block}}
+@media(max-width:760px){
+  .ex-card{flex-direction:column}
+  .ex-acoes .ex-btn{flex:1 1 100%}
+  .ex-deck-b span{display:none}
+  .ex-deck-barra .ex-deck-b[data-a=tela]{display:none}
+}

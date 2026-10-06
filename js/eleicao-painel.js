@@ -15,7 +15,7 @@
   var MUNC = C.municipio || '', ANO = C.ano || 2026;
   var NOESTADO = MUNC ? 'em ' + MUNC : 'no estado', TODOESTADO = MUNC ? 'Todo o município' : 'Todo o estado', ACRE = MUNC || 'Acre';
   var SEM_APTOS = !SEC.some(function (s) { return s.apt > 0; });
-  var ABAS = [['resumo', 'Resumo'], ['mapa', 'Mapa'], ['reg', 'Regional'], ['mun', 'Município'], ['zona', 'Zona'], ['bairro', 'Bairro'], ['local', 'Local de votação'], ['sec', 'Seção']]
+  var ABAS = [['resumo', 'Resumo'], ['mapa', 'Mapa'], ['reg', 'Regional'], ['mun', 'Município'], ['zona', 'Zona'], ['bairro', 'Bairro'], ['local', 'Local de votação'], ['sec', 'Seção'], ['exportar', 'Exportar']]
     .filter(function (a) { return !(MUNC && (a[0] === 'reg' || a[0] === 'mun')); });
   var MUN0 = MUNC ? Object.keys(MUN)[0] : '', REG0 = MUNC ? (D.regional[MUN0] || '') : '';   // vereador: o recorte já nasce dentro do município
 
@@ -604,17 +604,76 @@
       if (st.cheia) setCheia(true);
     }
 
+    /* ----- exportar: slide (exibir/baixar) e PDFs (visualizar/baixar) ----- */
+    var FONTE = MUNC ? 'TSE (Tribunal Superior Eleitoral) - votação por seção, 1º turno de ' + ANO
+      : (cmp ? 'Boletins de urna do 1º turno de 2026 e votação por seção de 2022 (TSE)' : (a22 ? 'TSE (Tribunal Superior Eleitoral) - votação por seção, 2022' : 'Boletins de urna do 1º turno de 2026'));
+    function plano(s) { return String(s == null ? '' : s).replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'); }
+    // Reúne os números (em texto puro) que o slide e os PDFs usam; nada aqui depende da aba aberta.
+    function coletar(tipo) {
+      var R = {}, L = {}, cob22 = {}, cob26 = {};
+      Object.keys(LV).forEach(function (l) {
+        R[l] = unitRows(l, {});
+        L[l] = R[l].map(function (u) { return { rot: plano(u.lab), ctx: plano(u.ctx), v22: u.q22, v26: u.q26, dif: u.dif, c22: u.c22, c26: u.c26, n: u.n, pos: u.pos, nc: u.nc }; });
+        cob22[l] = { n: R[l].filter(function (u) { return u.q22 > 0; }).length, t: R[l].length };
+        cob26[l] = { n: R[l].filter(function (u) { return u.q26 > 0; }).length, t: R[l].length };
+      });
+      return {
+        tipo: tipo, ano: ANO, fonte: FONTE, esc: ACRE, onde: NOESTADO, T22: T22, T26: T26, pos: E.pos, nCand: E.nCand,
+        cand: { nome: C.nome, nomeCompleto: C.nomeCompleto || '', nome2022: C.nome2022 || '', numero: C.numero, partido: C.partido, cargo: C.cargo, vagas: C.vagas, eleito: !!C.eleito, municipio: MUNC },
+        L: L, cob22: cob22, cob26: cob26,
+        secGanhas: SEC.filter(function (s) { return s.q22 === 0 && s.q26 > 0; }).length,
+        secPerdidas: SEC.filter(function (s) { return s.q22 > 0 && s.q26 === 0; }).length,
+        liderSecoes: SEC.filter(function (s) { return s.lid === 1; }).length,
+        semSecao22: E22.q - E22.qMapeado
+      };
+    }
+    function rotAno(tipo) { return tipo === 'cmp' ? '2022 × 2026' : (tipo === '2022' ? '2022' : String(ANO)); }
+    function cartaoEx(icone, titulo, desc, botoes) {
+      return '<div class="t26-card ex-card"><div class="ex-ico" aria-hidden="true">' + icone + '</div><div class="ex-corpo"><h3>' + titulo + '</h3><p class="t26-sub">' + desc + '</p>' +
+        '<div class="ex-acoes">' + botoes + '</div><p class="t26-sub ex-status" role="status" aria-live="polite"></p></div></div>';
+    }
+    function btnEx(acao, tipo, rot, prim) { return '<button type="button" class="t26-btn ex-btn' + (prim ? ' ex-prim' : '') + '" data-ex="' + acao + '" data-tipo="' + tipo + '">' + rot + '</button>'; }
+    function exportar() {
+      var tipoSlide = MUNC ? '2026' : (cmp ? 'cmp' : (a22 ? '2022' : '2026'));
+      var tipoPdf = MUNC ? '2026' : (a22 ? '2022' : '2026');
+      var quem = esc(C.nome) + (MUNC ? ' (' + esc(C.cargo) + ' de ' + esc(MUNC) + ')' : ' (' + esc(C.cargo) + ')');
+      var h = '<p class="t26-sub t26-nota">Materiais de ' + quem + ' prontos para apresentar ou enviar. Os percentuais são sempre sobre o total de votos do próprio candidato' + (MUNC ? ' em ' + esc(MUNC) : ' no estado') + '.</p><div class="ex-grade">';
+      h += cartaoEx('▶', 'Slide do resultado · ' + rotAno(tipoSlide),
+        'Apresentação com os números-chave, ' + (cmp ? 'comparação por regional, municípios, bairros, locais e seções.' : (MUNC ? 'votos por zona, bairros, locais de votação e seções.' : 'votos por regional, municípios, bairros, locais de votação e seções.')),
+        btnEx('slide-ver', tipoSlide, '▶ Exibir slide', true) + btnEx('slide-baixar', tipoSlide, '⬇ Baixar slide (.pptx)'));
+      h += cartaoEx('▤', 'PDF da votação · ' + rotAno(tipoPdf),
+        'Relatório sobre a votação: resumo, cobertura do território' + (MUNC ? '' : ', regionais') + ' e rankings de ' + (MUNC ? 'bairros, locais e seções.' : 'municípios, bairros, locais e seções.'),
+        btnEx('pdf-ver', tipoPdf, 'Visualizar PDF', true) + btnEx('pdf-baixar', tipoPdf, '⬇ Baixar PDF'));
+      if (!MUNC) h += cartaoEx('⇄', 'PDF comparativo · 2022 × 2026',
+        'Resumo comparando 2022 e 2026: crescimento total, por regional e município, onde mais ganhou e mais perdeu, e cobertura de seções.',
+        btnEx('pdf-ver', 'cmp', 'Visualizar PDF', true) + btnEx('pdf-baixar', 'cmp', '⬇ Baixar PDF'));
+      return h + '</div>';
+    }
+    function exportarAcao(acao, tipo, btn) {
+      var cartao = btn.closest('.ex-card'), alvo = cartao && cartao.querySelector('.ex-status');
+      function msg(t, erro) { if (alvo) { alvo.textContent = t || ''; alvo.className = 't26-sub ex-status' + (erro ? ' ex-erro' : ''); } }
+      if (!window.EleicaoExportar || !window.EleicaoExportar[acao]) { msg('O módulo de exportação não carregou. Recarregue a página.', true); return; }
+      btn.disabled = true; msg('Preparando…');
+      var p;
+      try { p = window.EleicaoExportar[acao](coletar(tipo), msg); } catch (e) { p = Promise.reject(e); }
+      Promise.resolve(p).then(function () { msg(acao.indexOf('baixar') >= 0 ? 'Arquivo gerado. Confira a pasta de downloads.' : ''); })
+        .catch(function (e) { msg('Não foi possível gerar: ' + (e && e.message ? e.message : e), true); })
+        .then(function () { btn.disabled = false; });
+    }
+
     /* ----- renderização e eventos ----- */
     function desenha() {
       var corpo = $('.t26-corpo'); if (!corpo) return;
       marcaAba();
       if (st.aba === 'resumo') { corpo.innerHTML = resumo(); if (mapa) { try { mapa.remove(); } catch (e) { } mapa = null; } return; }
       if (st.aba === 'mapa') { corpo.innerHTML = abaMapa(); iniciaMapa(null); return; }
+      if (st.aba === 'exportar') { corpo.innerHTML = exportar(); if (mapa) { try { mapa.remove(); } catch (e) { } mapa = null; } return; }
       corpo.innerHTML = tabelaNivel(st.aba); iniciaMapa(st.aba);
     }
     function eventos() {
       if (window.ResizeObserver) new ResizeObserver(function () { if (semTam && root.clientWidth > 0 && !root.hidden) { semTam = false; desenha(); } }).observe(root);
       root.addEventListener('click', function (e) {
+        var ex = e.target.closest('[data-ex]'); if (ex) { exportarAcao(ex.dataset.ex, ex.dataset.tipo, ex); return; }
         var t = e.target.closest('[data-t26]'); if (t) { st.aba = t.dataset.t26; st.pag = 0; st.psec = 0; st.cheia = false; root.classList.remove('t26-modo-cheia'); desenha(); return; }
         var an = e.target.closest('[data-antigo]');
         if (an) { var w = document.querySelector('#painel-resultados .resultados-wrap'); if (w) { var vis = w.style.display === 'none'; w.style.display = vis ? '' : 'none'; an.textContent = vis ? 'Ocultar visão anterior (mapa de 2022)' : 'Mostrar visão anterior (mapa de 2022)'; } return; }
