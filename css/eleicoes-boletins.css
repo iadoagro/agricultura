@@ -35,3 +35,44 @@
 .bd-leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin-bottom:6px}.bd-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
 .bd-nota{margin:8px 0 0;font-size:12px;color:#667085}
 @media (max-width:640px){.bd-grade{grid-template-columns:1fr}.bd-linha{grid-template-columns:1fr auto}.bd-trilho{grid-column:1/3;order:3}.bd-pilha{grid-column:1/3}}
+
+/* abas de nível (regional → seção) e cartões de grupo */
+.bol-niveis{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.bol-niveis button{border:1px solid #cfd8e3;background:#fff;color:#344054;border-radius:10px;padding:8px 16px;font:inherit;font-size:14px;cursor:pointer}
+.bol-niveis button:hover{border-color:#153e75;color:#153e75}
+.bol-niveis button.ativa{background:#4a63e7;border-color:#4a63e7;color:#fff;font-weight:700}
+.bol-lista.bol-grupos{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));align-items:start}
+.bol-dica{grid-column:1/-1;margin:0;font-size:13px;color:#667085}
+.bol-grupo{background:#fff;border:1px solid #d9e0ea;border-radius:12px;box-shadow:0 1px 6px rgba(21,62,117,.1);padding:12px 14px;min-width:0}
+.bol-grupo header{border-bottom:3px solid #153e75;margin:-12px -14px 10px;padding:10px 14px;background:#eef3fb;border-radius:12px 12px 0 0}
+.bol-grupo h3{margin:0;color:#153e75;font-size:16px}
+.bol-grupo header p{margin:2px 0 0;font-size:12.5px;color:#475467}
+.bol-nums{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:#667085}
+.bol-nums b{color:#1b2333;font-size:14px}
+.bol-acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.bol-btn{border:1px solid #cfd8e3;background:#fff;color:#153e75;border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.bol-btn:hover{border-color:#153e75}
+.bol-btn.bol-prim{background:#153e75;border-color:#153e75;color:#fff}
+.bol-cons:empty{display:none}
+.bol-nota{margin:8px 0 0;font-size:12px;color:#667085}
+@media (max-width:640px){.bol-lista.bol-grupos{grid-template-columns:1fr}}
+
+/* Resultados › Outro político */
+.outro-sel{margin-bottom:14px}
+.outro-barra{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px}
+.outro-barra label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:#153e75;font-weight:600;flex:1 1 200px}
+.outro-barra select,.outro-barra input{font-size:14px;padding:8px 10px;border:1px solid #cfd8e3;border-radius:10px;background:#fff;color:#1b2333;font-weight:400}
+.outro-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;max-height:340px;overflow:auto;padding:2px}
+.outro-cand{position:relative;text-align:left;border:1px solid #d9e0ea;background:#fff;border-radius:10px;padding:8px 10px 11px;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.outro-cand:hover{border-color:#153e75}
+.outro-cand.ativa{border-color:#4a63e7;background:#eef1ff}
+.outro-nome{font-weight:700;color:#153e75;font-size:13.5px}
+.outro-cand small{color:#667085;font-size:12px}
+.outro-cand i{position:absolute;left:0;bottom:0;height:3px;background:#4a63e7;opacity:.7}
+.bol-busca{display:flex;flex-direction:column;gap:3px;margin-top:10px;font-size:12.5px;color:#153e75;font-weight:600}
+.bol-busca input{font-size:14px;padding:9px 12px;border:1px solid #cfd8e3;border-radius:10px;font-weight:400;color:#1b2333;background:#fff}
+.bol-filtros .bol-cand{flex:1 1 100%}
+.bol-filtros .bol-cand small{font-weight:400;color:#667085}
+.bol-filtros .bol-cand input{font-size:13.5px;padding:8px 10px;border:1px solid #cfd8e3;border-radius:10px;background:#fff;color:#1b2333;font-weight:400}
+.bol-tab .bol-destaque td{background:#eef1ff;font-weight:700;color:#153e75}
+.bol-tab .bol-destaque small{font-weight:400;color:#667085}

@@ -586,9 +586,30 @@
             us.filter(function (u) { return u.lat != null; }).sort(function (x, y) { return (cmp ? Math.max(y.q22, y.q26) - Math.max(x.q22, x.q26) : Q(y) - Q(x)); }).some(function (u) { nucleo.extend([u.lat, u.lon]); ac += cmp ? Math.max(u.q22, u.q26) : Q(u); return ac >= tot * 0.85; });
             if (nucleo.isValid()) fb = nucleo.pad(0.25);
           }
-          if (fb.isValid()) map.fitBounds(fb.pad(0.05), { maxZoom: 17 });
+          if (fb.isValid()) { map.fitBounds(fb.pad(0.05), { maxZoom: 17 }); fixaBase(); }
         }
       }
+      // Zoom out regride um nível: a seleção sobe e o mapa mostra os "irmãos" (outros locais do mesmo bairro,
+      // depois outros bairros da zona etc.), do mais micro para o mais macro.
+      var baseZ = null, baseT = 0;
+      function fixaBase() {
+        baseZ = null; clearTimeout(baseT);
+        baseT = setTimeout(function () { if (document.body.contains(el)) baseZ = map.getZoom(); }, 800);
+      }
+      function subirNivel() {
+        var d = st.dr;
+        if (d.secao || d.local) aplicaFiltro('local', '');
+        else if (d.bairro) aplicaFiltro('bairro', '');
+        else if (d.zona !== '') aplicaFiltro('zona', '');
+        else if (d.mun && !MUNC) aplicaFiltro('mun', '');
+        else if (d.reg) aplicaFiltro('reg', '');
+        else return false;
+        return true;
+      }
+      if (!fixo) map.on('zoomend', function () {
+        if (baseZ == null || st.lv !== 'auto' || map.getZoom() > baseZ - 0.75) return;
+        baseZ = null; subirNivel();
+      });
       var ctl = L.control({ position: 'topright' });
       ctl.onAdd = function () {
         var dv = L.DomUtil.create('div', 't26-ctlmapa'); L.DomEvent.disableClickPropagation(dv); L.DomEvent.disableScrollPropagation(dv);
@@ -740,16 +761,18 @@
   };
   }
 
+  window.EleicaoPainelFabrica = fabrica;
   if (window.TCHE_2026) window.PainelEleicao = fabrica(window.TCHE_2026, { '2022': 'resultados2022', '2026': 'resultados2026', 'comparar': 'resultadosComparar' });
   if (window.FELIPE_2024) window.PainelFelipe = fabrica(window.FELIPE_2024, { '2024': 'resultadosFelipe' });
   if (window.GOVERNO_2026) window.PainelGoverno = fabrica(window.GOVERNO_2026, { '2026': 'resultadosGoverno' });
 
-  /* abas de cargo/candidato dentro de Resultados: Deputado Estadual (Tchê), Vereador (Felipe Tchê) e Governo (Mailza Assis) */
+  /* abas de cargo/candidato dentro de Resultados: Deputado Estadual (Tchê), Vereador (Felipe Tchê), Governo (Mailza Assis) e Outro político (js/eleicao-outro.js) */
   var cands = document.querySelectorAll('.cand-res');
   var CANDS = {
     tche: { el: 'cand-tche', painel: function () { return window.PainelEleicao; }, ano: null },
     felipe: { el: 'cand-felipe', painel: function () { return window.PainelFelipe; }, ano: '2024' },
-    governo: { el: 'cand-governo', painel: function () { return window.PainelGoverno; }, ano: '2026' }
+    governo: { el: 'cand-governo', painel: function () { return window.PainelGoverno; }, ano: '2026' },
+    outro: { el: 'cand-outro', painel: function () { return window.PainelOutro; }, ano: '2026' }
   };
   cands.forEach(function (b) {
     b.addEventListener('click', function () {
