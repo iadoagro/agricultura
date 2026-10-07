@@ -653,6 +653,11 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
 /* ============================================================ ABA RELATÓRIO */
 .relatorio-cab{margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .relatorio-cab .busca{max-width:340px;flex:1 1 240px;display:block}
+.relatorio-geral{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;
+  margin-bottom:16px;padding:10px 14px;border:1.5px solid var(--linha-t);border-radius:10px;background:var(--superficie)}
+.relatorio-geral[hidden]{display:none}
+.relatorio-geral-rot{font-size:12.5px;font-weight:700;color:var(--tinta2)}
+.relatorio-geral-acoes{display:flex;gap:8px;flex-wrap:wrap}
 .relatorio-vis{display:flex;gap:0;border:1.5px solid var(--linha-t);border-radius:9px;overflow:hidden;flex:none}
 .relatorio-vis button{display:flex;align-items:center;gap:6px;padding:8px 14px;border:0;
   background:var(--superficie);color:var(--tinta2);font-family:inherit;font-size:12.5px;

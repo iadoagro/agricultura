@@ -2899,6 +2899,10 @@
       .filter(function (m) { return m && m !== NI; })
       .sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
 
+    // o relatório geral só faz sentido com mais de um município para somar
+    var geral = el('relatorioGeral');
+    if (geral) geral.hidden = muns.length < 2;
+
     if (!muns.length) {
       grid.innerHTML = '<p class="vazio">Nenhum município na seleção atual.</p>';
       return;
@@ -2937,8 +2941,242 @@
   }
 
   function abrirRelatorioMunicipio(mun, D) {
-    var sub = D.filter(function (r) { return r.mun === mun; });
+    abrirRelatorio(mun, D.filter(function (r) { return r.mun === mun; }), 'mun');
+  }
+
+  /** Municípios com nome válido presentes na seleção (mesma regra dos cartões). */
+  function munsDaSelecao(D) {
+    return Array.from(new Set(D.map(function (r) { return r.mun; })))
+      .filter(function (m) { return m && m !== NI; })
+      .sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
+  }
+
+  /** Relatório que soma todos os municípios da seleção.
+      'geral'  = completo (detalhamento + registros de todos os municípios);
+      'resumo' = só indicadores e a tabela de um município por linha. */
+  function abrirRelatorioGeral(D, modo) {
+    var muns = munsDaSelecao(D);
+    var sub = D.filter(function (r) { return r.mun && r.mun !== NI; });
     if (!sub.length) return;
+    abrirRelatorio(modo === 'resumo' ? 'Geral — resumido' : 'Geral — completo', sub, modo, muns);
+  }
+
+  /* ------------------------------------------- PDF A4 do relatório geral */
+  /* jsPDF + autoTable só são baixados no clique (mesmo padrão das exportações
+     de eleições): o painel não paga por eles ao abrir. */
+  var LIBS_PDF = {
+    jspdf: ['https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'],
+    autotable: ['https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js']
+  };
+
+  function carregarLib(urls, pronto) {
+    return new Promise(function (ok, falha) {
+      if (pronto()) return ok();
+      var i = 0;
+      (function tenta() {
+        if (i >= urls.length) return falha(new Error('Não foi possível carregar a biblioteca de PDF (verifique a internet).'));
+        var s = document.createElement('script');
+        s.src = urls[i++];
+        s.onload = function () { if (pronto()) ok(); else tenta(); };
+        s.onerror = tenta;
+        document.head.appendChild(s);
+      })();
+    });
+  }
+
+  function carregarPdf() {
+    return carregarLib(LIBS_PDF.jspdf, function () { return window.jspdf && window.jspdf.jsPDF; })
+      .then(function () {
+        return carregarLib(LIBS_PDF.autotable, function () {
+          return window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable;
+        });
+      });
+  }
+
+  /** Gera e baixa o PDF A4 do relatório geral ('geral' completo ou 'resumo'). */
+  function baixarPdfGeral(D, modo) {
+    var muns = munsDaSelecao(D);
+    var sub = D.filter(function (r) { return r.mun && r.mun !== NI; });
+    if (!sub.length) return;
+    var resumo = modo === 'resumo';
+    var btns = el('relatorioGeral').querySelectorAll('button');
+    btns.forEach(function (b) { b.disabled = true; });
+
+    carregarPdf().then(function () {
+      var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+      var PW = 210, M = 14, CW = PW - 2 * M;
+      var AZUL = [46, 79, 125], CINZA = [107, 120, 133], TINTA = [27, 36, 48];
+      var mec = sub.filter(function (r) { return r.pc === MEC; });
+      var acu = sub.filter(function (r) { return r.pc === ACU; });
+      var ha = soma(mec, function (r) { return r.ha; });
+      var hrs = soma(acu, function (r) { return r.hrs; });
+      var nAc = soma(acu, function (r) { return r.ac; });
+      var nProd = nProdutores(sub);
+      var titulo = 'Relatório geral ' + (resumo ? 'resumido' : 'completo');
+      var y;
+
+      // cabeçalho
+      doc.setFillColor.apply(doc, AZUL);
+      doc.rect(0, 0, PW, 26, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+      doc.text(titulo, M, 12);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+      doc.text('Mecanização e Açudagem  |  ' + rotuloAno() + '  |  ' + muns.length + ' municípios', M, 19);
+      y = 34;
+
+      function secao(txt) {
+        if (y > 262) { doc.addPage(); y = 18; }
+        doc.setTextColor.apply(doc, AZUL);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+        doc.text(txt, M, y);
+        doc.setDrawColor.apply(doc, AZUL); doc.setLineWidth(0.4);
+        doc.line(M, y + 1.8, M + CW, y + 1.8);
+        y += 6;
+      }
+      function tabela(cab, linhas, opt) {
+        opt = opt || {};
+        doc.autoTable({
+          startY: y, margin: { left: M, right: M, top: 16, bottom: 16 },
+          head: [cab], body: linhas, theme: 'grid',
+          styles: { font: 'helvetica', fontSize: opt.fs || 8.5, cellPadding: 1.6, textColor: TINTA,
+                    lineColor: [216, 222, 229], lineWidth: 0.15, overflow: 'linebreak' },
+          headStyles: { fillColor: [238, 242, 244], textColor: [74, 85, 97], fontStyle: 'bold', fontSize: (opt.fs || 8.5) - 0.5 },
+          alternateRowStyles: { fillColor: [250, 251, 252] },
+          columnStyles: opt.cols || {},
+          didParseCell: function (d) {
+            // última linha de totais em negrito
+            if (opt.totais && d.section === 'body' && d.row.index === linhas.length - 1) {
+              d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [238, 242, 244];
+            }
+          }
+        });
+        y = doc.lastAutoTable.finalY + 7;
+      }
+      var dir = { halign: 'right' };
+
+      // indicadores
+      var kpis = [
+        ['Atendimentos', G.num(sub.length)],
+        ['Mecanização', G.num(mec.length) + ' (' + G.num(ha, 1) + ' ha)'],
+        ['Açudagem', G.num(acu.length) + ' (' + G.num(hrs, 1) + ' h)'],
+        ['Tanques / açudes', G.num(nAc)],
+        ['Produtores', G.num(nProd)],
+        ['Atend. por município', G.num(sub.length / muns.length, 1)],
+        ['Municípios', G.num(muns.length)],
+        ['Meses com vistoria', G.num(chavesTempo(sub).length)]
+      ];
+      var kw = (CW - 9) / 4, kh = 15;
+      kpis.forEach(function (k, i) {
+        var x = M + (i % 4) * (kw + 3), yy = y + Math.floor(i / 4) * (kh + 3);
+        doc.setFillColor(247, 249, 250); doc.setDrawColor(216, 222, 229); doc.setLineWidth(0.2);
+        doc.roundedRect(x, yy, kw, kh, 1.5, 1.5, 'FD');
+        doc.setTextColor.apply(doc, CINZA); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+        doc.text(k[0].toUpperCase(), x + 2.5, yy + 5);
+        doc.setTextColor.apply(doc, TINTA); doc.setFontSize(10.5);
+        doc.text(String(k[1]), x + 2.5, yy + 11.5, { maxWidth: kw - 4 });
+      });
+      y += 2 * kh + 3 + 9;
+
+      // um município por linha
+      secao('Por município');
+      var linhasMun = muns.map(function (m) {
+        var s = sub.filter(function (r) { return r.mun === m; });
+        var sm = s.filter(function (r) { return r.pc === MEC; });
+        var sa = s.filter(function (r) { return r.pc === ACU; });
+        return [m, G.num(s.length), G.num(sm.length), G.num(sa.length),
+          G.num(soma(sm, function (r) { return r.ha; }), 1), G.num(soma(sa, function (r) { return r.hrs; }), 1),
+          G.num(soma(sa, function (r) { return r.ac; })), G.num(nProdutores(s))];
+      });
+      linhasMun.push(['Total', G.num(sub.length), G.num(mec.length), G.num(acu.length), G.num(ha, 1),
+        G.num(hrs, 1), G.num(nAc), G.num(nProd)]);
+      var cols9 = {};
+      for (var c = 1; c < 8; c++) cols9[c] = dir;
+      tabela(['Município', 'Atend.', 'Mecaniz.', 'Açud.', 'Hectares', 'Horas', 'Tanques', 'Produt.'],
+        linhasMun, { cols: cols9, totais: true });
+
+      if (!resumo) {
+        var rkCult = ranking((function () {
+          var m = new Map();
+          mec.forEach(function (r) { r.cult.forEach(function (c) { m.set(c[0], (m.get(c[0]) || 0) + c[1]); }); });
+          return m;
+        })(), 30);
+        if (rkCult.length) {
+          secao('Mecanização - culturas');
+          tabela(['Cultura', 'Hectares', '%'], rkCult.map(function (d) {
+            return [d.rot, G.num(d.val, 1), (ha ? G.num(d.val / ha * 100, 1) : '0') + '%'];
+          }), { cols: { 1: dir, 2: dir } });
+        }
+        var rkMaq = ranking(contar(mec, function (r) { return r.maq; }), 10);
+        if (rkMaq.length) {
+          secao('Máquinas utilizadas');
+          tabela(['Equipamento', 'Ocorrências'], rkMaq.map(function (d) { return [d.rot, G.num(d.val)]; }), { cols: { 1: dir } });
+        }
+        var rkImpl = ranking(contar(mec, function (r) { return r.impl; }), 10);
+        if (rkImpl.length) {
+          secao('Implementos e serviços');
+          tabela(['Implemento / Serviço', 'Ocorrências'], rkImpl.map(function (d) { return [d.rot, G.num(d.val)]; }), { cols: { 1: dir } });
+        }
+        var tempo = chavesTempo(sub);
+        if (tempo.length) {
+          var cnt = somarPor(sub, chaveTempo, function () { return 1; });
+          var hMap = somarPor(mec, chaveTempo, function (r) { return r.ha; });
+          var hrMap = somarPor(acu, chaveTempo, function (r) { return r.hrs; });
+          var acMap = somarPor(acu, chaveTempo, function (r) { return r.ac; });
+          secao('Evolução por ' + (porAno() ? 'ano' : 'mês'));
+          tabela([porAno() ? 'Ano' : 'Mês', 'Atendimentos', 'Hectares', 'Horas', 'Tanques'], tempo.map(function (k) {
+            return [rotTempo(k), G.num(cnt.get(k) || 0), G.num(hMap.get(k) || 0, 1),
+              G.num(hrMap.get(k) || 0, 1), G.num(acMap.get(k) || 0)];
+          }), { cols: { 1: dir, 2: dir, 3: dir, 4: dir } });
+        }
+        var tecMap = new Map();
+        sub.forEach(function (r) {
+          if (!r.rt) return;
+          if (!tecMap.has(r.rt)) tecMap.set(r.rt, { n: 0, esc: r.esc });
+          tecMap.get(r.rt).n++;
+        });
+        if (tecMap.size) {
+          secao('Responsáveis técnicos');
+          tabela(['Técnico', 'Escritório local', 'Vistorias'],
+            Array.from(tecMap, function (e) { return [e[0], e[1].esc || '-', e[1].n]; })
+              .sort(function (a, b) { return b[2] - a[2]; })
+              .map(function (l) { return [l[0], l[1], G.num(l[2])]; }), { cols: { 2: dir } });
+        }
+        doc.addPage(); y = 18;
+        secao('Registros detalhados');
+        tabela(['Município', 'Vistoria', 'Serviço', 'Produtor / Propriedade', 'Culturas', 'Área (ha)', 'Horas', 'Tanq.', 'Técnico'],
+          sub.slice().sort(function (a, b) { return a.mun.localeCompare(b.mun, 'pt-BR'); }).map(function (r) {
+            return [r.mun, dataBR(r.dv), r.pc, (r.prod || '-') + (r.propr ? '\n' + r.propr : ''),
+              r.cult.length ? r.cult.map(function (c) { return c[0] + ' (' + G.num(c[1], 1) + ' ha)'; }).join(', ') : '-',
+              r.ha ? G.num(r.ha, 1) : '-', r.hrs ? G.num(r.hrs, 1) : '-', r.ac ? G.num(r.ac) : '-', r.rt || '-'];
+          }), { fs: 7, cols: { 5: dir, 6: dir, 7: dir } });
+      }
+
+      // rodapé com paginação em todas as páginas
+      var n = doc.internal.getNumberOfPages();
+      var hoje = new Date().toLocaleDateString('pt-BR');
+      for (var p = 1; p <= n; p++) {
+        doc.setPage(p);
+        doc.setTextColor.apply(doc, CINZA); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+        doc.text('Gerado em ' + hoje + ' | Sistema de gestão', M, 289);
+        doc.text('Página ' + p + ' de ' + n, PW - M, 289, { align: 'right' });
+      }
+      doc.save('relatorio-geral-' + (resumo ? 'resumido' : 'completo') + '-' +
+        String(rotuloAno()).replace(/[^\w-]+/g, '_') + '.pdf');
+    }).catch(function (e) {
+      alert(e && e.message ? e.message : 'Não foi possível gerar o PDF.');
+    }).then(function () {
+      btns.forEach(function (b) { b.disabled = false; });
+    });
+  }
+
+  /** modo: 'mun' (um município), 'geral' (completo) ou 'resumo'. */
+  function abrirRelatorio(mun, sub, modo, muns) {
+    if (!sub.length) return;
+    var multi = modo !== 'mun';
+    var resumo = modo === 'resumo';
 
     var mec = sub.filter(function (r) { return r.pc === MEC; });
     var acu = sub.filter(function (r) { return r.pc === ACU; });
@@ -2946,7 +3184,6 @@
     var hrs = soma(acu, function (r) { return r.hrs; });
     var nAc = soma(acu, function (r) { return r.ac; });
     var nProd = nProdutores(sub);
-    var dae = soma(sub, function (r) { return r.dae; });
 
     var areaCult = new Map();
     mec.forEach(function (r) {
@@ -3034,12 +3271,44 @@
         '</div>';
     }
 
+    // um município por linha, com os totais no rodapé — o miolo do relatório geral
+    var htmlMuns = '';
+    if (multi) {
+      var linhasMun = muns.map(function (m) {
+        var s = sub.filter(function (r) { return r.mun === m; });
+        var sMec = s.filter(function (r) { return r.pc === MEC; });
+        var sAcu = s.filter(function (r) { return r.pc === ACU; });
+        return '<tr><td class="forte">' + G.esc(m) + '</td>' +
+          '<td class="num">' + G.num(s.length) + '</td>' +
+          '<td class="num">' + G.num(sMec.length) + '</td>' +
+          '<td class="num">' + G.num(sAcu.length) + '</td>' +
+          '<td class="num">' + G.num(soma(sMec, function (r) { return r.ha; }), 1) + '</td>' +
+          '<td class="num">' + G.num(soma(sAcu, function (r) { return r.hrs; }), 1) + '</td>' +
+          '<td class="num">' + G.num(soma(sAcu, function (r) { return r.ac; })) + '</td>' +
+          '<td class="num">' + G.num(nProdutores(s)) + '</td></tr>';
+      }).join('');
+      linhasMun += '<tr><td class="forte">Total</td>' +
+        '<td class="num forte">' + G.num(sub.length) + '</td>' +
+        '<td class="num forte">' + G.num(mec.length) + '</td>' +
+        '<td class="num forte">' + G.num(acu.length) + '</td>' +
+        '<td class="num forte">' + G.num(ha, 1) + '</td>' +
+        '<td class="num forte">' + G.num(hrs, 1) + '</td>' +
+        '<td class="num forte">' + G.num(nAc) + '</td>' +
+        '<td class="num forte">' + G.num(nProd) + '</td></tr>';
+      htmlMuns = '<h2 class="relatorio-sec-tit">Por munic&iacute;pio</h2>' +
+        tTbl(['Munic&iacute;pio', 'Atend.', 'Mecaniza&ccedil;&atilde;o', 'A&ccedil;udagem', 'Hectares', 'Horas', 'Tanques', 'Produtores'],
+          linhasMun);
+    }
+
+    var titulo = multi ? 'Relat&oacute;rio geral ' + (resumo ? 'resumido' : 'completo') : G.esc(mun);
+
     var html = '<div class="relatorio-doc">' +
       '<div class="relatorio-header">' +
       '<div class="relatorio-header-org">Sistema de gestão</div>' +
       '<div class="relatorio-header-sub">Relat&oacute;rio de Mecaniza&ccedil;&atilde;o e A&ccedil;udagem &middot; ' + G.esc(rotuloAno()) + '</div>' +
       '</div>' +
-      '<h1 class="relatorio-mun-titulo">' + G.esc(mun) + '</h1>' +
+      '<h1 class="relatorio-mun-titulo">' + titulo + '</h1>' +
+      (multi ? '<p class="fraco">' + G.num(muns.length) + ' munic&iacute;pios: ' + G.esc(muns.join(', ')) + '</p>' : '') +
       '<div class="relatorio-kpis">' +
       kpiRel('Atendimentos', G.num(sub.length), 'vistorias registradas') +
       (mec.length ? kpiRel('Mecanização', G.num(mec.length), G.num(ha, 1) + ' ha mecanizados') : '') +
@@ -3048,23 +3317,25 @@
       (hrs ? kpiRel('Horas', G.num(hrs, 1) + ' h', 'de escavadeira') : '') +
       (nAc ? kpiRel('Tanques', G.num(nAc), 'construídos ou reformados') : '') +
       kpiRel('Produtores', G.num(nProd), 'nomes distintos atendidos') +
-      (dae ? kpiRel('DAE', moeda(dae), 'arrecadada') : '') +
       '</div>' +
-      '<div class="relatorio-secoes">' + htmlMec + htmlAcu + '</div>' +
-      (rkTec.length ? '<h2 class="relatorio-sec-tit">Responsáveis Técnicos</h2>' +
+      htmlMuns +
+      (resumo ? '' : '<div class="relatorio-secoes">' + htmlMec + htmlAcu + '</div>') +
+      (rkTec.length && !resumo ? '<h2 class="relatorio-sec-tit">Responsáveis Técnicos</h2>' +
         tTbl(['Técnico', 'Escritório Local', 'Vistorias'],
           rkTec.map(function (d) {
             return '<tr><td class="forte">' + G.esc(d.rot) + '</td><td>' + G.esc(d.esc || '—') +
               '</td><td class="num">' + G.num(d.val) + '</td></tr>';
           }).join('')) : '') +
-      '<h2 class="relatorio-sec-tit">Registros Detalhados</h2>' +
+      (resumo ? '' : '<h2 class="relatorio-sec-tit">Registros Detalhados</h2>' +
       '<div class="relatorio-registros"><table class="dados" style="min-width:720px"><thead><tr>' +
+      (multi ? '<th>Munic&iacute;pio</th>' : '') +
       '<th>Inser&ccedil;&atilde;o</th><th>Vistoria</th><th>Servi&ccedil;o</th>' +
       '<th>Produtor / Propriedade</th><th>Culturas</th>' +
       '<th>&Aacute;rea (ha)</th><th>Horas</th><th>Tanques</th><th>T&eacute;cnico</th>' +
       '</tr></thead><tbody>' +
-      sub.map(function (r) {
+      sub.slice().sort(function (a, b) { return multi ? a.mun.localeCompare(b.mun, 'pt-BR') : 0; }).map(function (r) {
         return '<tr>' +
+          (multi ? '<td class="forte">' + G.esc(r.mun) + '</td>' : '') +
           '<td class="num">' + dataBR(r.d) + '</td>' +
           '<td class="num">' + dataBR(r.dv) + '</td>' +
           '<td><span class="tag ' + tagServico(r.pc) + '">' + G.esc(r.pc) + '</span></td>' +
@@ -3076,12 +3347,12 @@
           '<td>' + G.esc(r.rt || '—') + '</td>' +
           '</tr>';
       }).join('') +
-      '</tbody></table></div>' +
+      '</tbody></table></div>') +
       '<div class="relatorio-footer">Gerado em ' + hoje + ' &middot; Sistema de gestão</div>' +
       '</div>';
 
     el('relatorioConteudo').innerHTML = html;
-    el('relatorioTitulo').textContent = mun;
+    el('relatorioTitulo').textContent = multi ? 'Relatório geral ' + (resumo ? 'resumido' : 'completo') : mun;
     el('relatorioOverlay').classList.add('show');
   }
 
@@ -3878,6 +4149,11 @@
     aplicarVisRelatorio();
   });
   el('relatorBusca').addEventListener('input', aplicarBuscaRelatorio);
+  el('relatorioGeral').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-geral]');
+    if (!btn) return;
+    baixarPdfGeral(filtrar(), btn.getAttribute('data-geral'));
+  });
   /* Busca do dia a dia: só a tabela é refeita, não a aba inteira — os
      gráficos ao lado mostram o período todo, e piscar a cada tecla seria
      trabalho jogado fora. */
