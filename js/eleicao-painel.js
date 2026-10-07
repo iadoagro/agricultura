@@ -673,7 +673,7 @@
       var h = '<p class="t26-sub t26-nota">Materiais de ' + quem + ' prontos para apresentar ou enviar. Os percentuais são sempre sobre o total de votos do próprio candidato' + (MUNC ? ' em ' + esc(MUNC) : ' no estado') + '.</p><div class="ex-grade">';
       h += cartaoEx('▶', 'Slide do resultado · ' + rotAno(tipoSlide),
         'Apresentação com os números-chave, ' + (cmp ? 'comparação por regional, municípios, bairros, locais e seções.' : (MUNC ? 'votos por zona, bairros, locais de votação e seções.' : 'votos por regional, municípios, bairros, locais de votação e seções.')),
-        btnEx('slide-ver', tipoSlide, '▶ Exibir slide', true) + btnEx('slide-baixar', tipoSlide, '⬇ Baixar slide (.pptx)'));
+        btnEx('slide-ver', tipoSlide, '▶ Exibir slide', true) + btnEx('slide-baixar', tipoSlide, '⬇ Baixar slide (PDF)') + btnEx('slide-baixar-pptx', tipoSlide, 'Baixar editável (.pptx)'));
       h += cartaoEx('▤', 'PDF da votação · ' + rotAno(tipoPdf),
         'Relatório sobre a votação: resumo, cobertura do território' + (MUNC ? '' : ', regionais') + ' e rankings de ' + (MUNC ? 'bairros, locais e seções.' : 'municípios, bairros, locais e seções.'),
         btnEx('pdf-ver', tipoPdf, 'Visualizar PDF', true) + btnEx('pdf-baixar', tipoPdf, '⬇ Baixar PDF'));

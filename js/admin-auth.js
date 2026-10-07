@@ -318,6 +318,21 @@
       return m;
     } catch (e) { return {}; }
   }
+  /* ---- bloqueio após 3 senhas erradas (database/login-bloqueio.sql) ----
+     Tela de login (sem sessão): a conta digitada já está bloqueada? { bloqueado }
+     e registro de uma senha errada → { existe, bloqueado, restantes }. Root: pedidos de reset e liberação. */
+  async function loginStatus(login) {
+    return requisicao('/rest/v1/rpc/login_status', { method: 'POST', body: JSON.stringify({ p_email: normalizarEmailLogin(login) }) }, false);
+  }
+  async function loginFalhou(login) {
+    return requisicao('/rest/v1/rpc/login_falhou', { method: 'POST', body: JSON.stringify({ p_email: normalizarEmailLogin(login) }) }, false);
+  }
+  // Root: contas bloqueadas esperando aprovação do reset → [{ usuario_id, email, bloqueado_em }]
+  async function listarPedidosReset() {
+    try { return (await requisicao('/rest/v1/senha_bloqueios?select=usuario_id,email,bloqueado_em&reset_pendente=is.true&order=bloqueado_em.asc')) || []; }
+    catch (e) { return []; }
+  }
+  async function liberarConta(id) { await requisicao('/rest/v1/rpc/login_liberar', { method: 'POST', body: JSON.stringify({ p_usuario: id }) }); }
   async function pinReexibir(id) {
     await requisicao('/rest/v1/rpc/pin_reexibir', { method: 'POST', body: JSON.stringify({ p_usuario: id }) });
   }
@@ -364,6 +379,7 @@
     agendarRenovacao();
     try { await atualizarStatus(); }
     catch (e) { limpar(); throw e; }
+    try { await requisicao('/rest/v1/rpc/login_sucesso', { method: 'POST', body: '{}' }); } catch (e) { /* zera a contagem de erros; sem isso o login segue */ }
     registrarEvento('login', 'acesso', 'Entrou no sistema');
   }
 
@@ -501,7 +517,12 @@
   }
   async function excluirUsuario(id) { await chamarAdminPHP('excluir', { id }); }
   async function editarEmail(id, email) { await chamarAdminPHP('editar_email', { id, email }); }
-  async function redefinirSenhaPadrao(id) { await chamarAdminPHP('redefinir_senha', { id }); }
+  // Redefine para a senha padrão e, se a conta estava bloqueada por tentativas, libera o bloqueio e fecha o pedido.
+  async function redefinirSenhaPadrao(id) {
+    await chamarAdminPHP('redefinir_senha', { id });
+    try { await liberarConta(id); }
+    catch (e) { throw new Error('A senha foi redefinida, mas não foi possível liberar o bloqueio da conta (' + e.message + '). Tente aprovar de novo.'); }
+  }
 
   window.ADMIN_AUTH = {
     online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SEMPRE_LIBERADAS, SENHA_PADRAO,
@@ -509,7 +530,7 @@
     cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
     registrarEvento, listarEventos, resumirEventos, localizarIPs,
     listarAlertas, contarAlertasNaoVistos, marcarAlertasVistos,
-    listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinSituacao, pinRegistrarEntrada, pinRecusar, listarPinBloqueados, pinReexibir, MAX_RECUSAS_PIN,
+    listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinSituacao, loginStatus, loginFalhou, listarPedidosReset, liberarConta, pinRegistrarEntrada, pinRecusar, listarPinBloqueados, pinReexibir, MAX_RECUSAS_PIN,
     sessaoAtual: () => sessao,
     garantirSessao, renovarSessao: renovar,
     papel: () => sessao ? sessao.papel : null,

@@ -192,13 +192,29 @@
       .finally(function () { botao.disabled = false; });
   });
 
+  // Bloqueio por tentativas: na 3ª senha errada a conta é bloqueada e o root recebe um pedido de redefinição
+  // (database/login-bloqueio.sql). Aqui a tela só conta os erros, avisa quantas tentativas restam e informa o bloqueio.
+  var MSG_BLOQUEIO = 'Sua conta foi bloqueada após 3 tentativas com senha incorreta. Entre em contato com o administrador para fazer o reset da senha.';
+  function tratarSenhaErrada(login) {
+    return auth.loginFalhou(login).then(function (r) {
+      if (r && r.bloqueado) mostrarErro(MSG_BLOQUEIO);
+      else if (r && r.existe) mostrarErro('Senha incorreta. Você tem mais ' + r.restantes + (r.restantes === 1 ? ' tentativa' : ' tentativas') + ' antes de a conta ser bloqueada.');
+      else mostrarErro('Confira o usuário e a senha.');
+    }).catch(function () { mostrarErro('Confira o usuário e a senha.'); });
+  }
+
   formEntrar.addEventListener('submit', function (e) {
     e.preventDefault();
     var botao = formEntrar.querySelector('button[type="submit"]'); botao.disabled = true;
     limparMsg();
     var senha = document.getElementById('entSenha').value;
+    var login = document.getElementById('entEmail').value.trim();
     decidindoOfertas = true;
-    auth.entrar(document.getElementById('entEmail').value.trim(), senha)
+    // conta já bloqueada: nem tenta entrar (o Supabase também recusaria, mesmo com a senha certa)
+    auth.loginStatus(login).catch(function () { return null; }).then(function (st) {
+      if (st && st.bloqueado) { var b = new Error('bloqueada'); b.bloqueada = true; throw b; }
+      return auth.entrar(login, senha);
+    })
       .then(function () {
         if (campoEntrar) campoEntrar.guardar();   // próximo login abre no mesmo modo
         var entrouComPin = /^\d{6}$/.test(senha);
@@ -211,7 +227,11 @@
           });
         });
       })
-      .catch(function (err) { mostrarErro(err.message); })
+      .catch(function (err) {
+        if (err && err.bloqueada) { mostrarErro(MSG_BLOQUEIO); return; }
+        if (err && err.message === 'Confira o e-mail e a senha.') return tratarSenhaErrada(login);   // credencial recusada: conta o erro
+        mostrarErro(err.message);
+      })
       .then(function () { decidindoOfertas = false; avaliarSessao(); })
       .finally(function () { botao.disabled = false; });
   });

@@ -6,7 +6,8 @@
 <title>SISTEMA</title>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026092401">
+<link rel="stylesheet" href="../css/admin-auth.css?v=2026101101">
+<link rel="stylesheet" href="../css/login-bloqueio.css?v=2026101101">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092601">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
@@ -26,6 +27,12 @@
   </section>
 
   <p class="admin-desc" id="avisoAcesso" hidden>Esta página é restrita ao responsável.</p>
+
+  <section id="painelResets" class="usuarios-resets" aria-labelledby="resetsTitulo" hidden>
+    <h3 id="resetsTitulo">Pedidos de redefinição de senha <span id="resetsContagem"></span></h3>
+    <p>Estas contas foram <strong>bloqueadas após 3 tentativas com senha incorreta</strong>. Ao aprovar, a senha volta a ser 123456, a conta é liberada e a pessoa precisa trocar a senha no próximo acesso.</p>
+    <ul id="listaResets"></ul>
+  </section>
 
   <div id="painelUsuarios" class="usuarios-grade">
     <form id="formNovo" class="permissoes-novo" autocomplete="off">
@@ -56,11 +63,11 @@
 </main>
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
-<script src="../js/admin-auth.js?v=2026092908"></script>
+<script src="../js/admin-auth.js?v=2026101101"></script>
 <script src="../js/admin-gate.js?v=2026092530"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
 <script src="../js/nav.js?v=2026100902"></script>
-<script src="../js/admin-usuarios.js?v=2026092907"></script>
+<script src="../js/admin-usuarios.js?v=2026101101"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

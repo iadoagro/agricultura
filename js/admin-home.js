@@ -114,6 +114,9 @@
         var n = (l || []).filter(function (x) { return x.status === 'pendente'; }).length;
         return cartaoPend('admin-usuarios.html', n, 'cadastros de usuário para aprovar', 'aviso');
       }));
+      itens.push(auth.listarPedidosReset().then(function (l) {
+        return cartaoPend('admin-usuarios.html', l.length, 'pedidos de redefinição de senha para aprovar', l.length ? 'perigo' : '');
+      }));
       itens.push(lancadores().then(function (r) {
         var n = (r.lancadores || []).filter(function (x) { return !x.nome && !x.usuario_email; }).length;
         return cartaoPend('dashboard.html#lancamento', n, 'e-mails de lançamento sem nome', '');

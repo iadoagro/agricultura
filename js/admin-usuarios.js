@@ -15,6 +15,11 @@
   var DOMINIO_USUARIO = '@sistema.local';
   var linhas = [];
   var pinBloqueados = {};       // id → recusas: contas que recusaram o convite de PIN 5 vezes
+  var pedidosReset = [];        // contas bloqueadas por 3 senhas erradas, esperando o root aprovar a redefinição
+  var painelResets = document.getElementById('painelResets');
+  var listaResets = document.getElementById('listaResets');
+  var resetsContagem = document.getElementById('resetsContagem');
+  function bloqueadaPorSenha(id) { return pedidosReset.some(function (p) { return p.usuario_id === id; }); }
   // Acessos (antes numa tela à parte, admin-permissoes.html): clicar na
   // pessoa abre as páginas liberadas pra ela. Nenhuma página é liberada por padrão
   // (só as marcadas aqui valem).
@@ -61,6 +66,7 @@
           ? '<button type="button" class="desativar" data-acao="desativar">Desativar</button>'
           : '<button type="button" class="ativar" data-acao="ativar">Reativar</button>');
       }
+      if (bloqueadaPorSenha(l.id)) botoes.unshift('<button type="button" class="aprovar" data-acao="redefinir" title="Aprova o pedido: a senha volta a ser ' + escapar(auth.SENHA_PADRAO) + ' e a conta é liberada">Aprovar redefinição</button>');
       if (pinBloqueados[l.id] != null) botoes.push('<button type="button" class="redefinir" data-acao="reexibirpin" title="Volta a oferecer o cadastro de PIN no login">Reexibir PIN</button>');
       botoes.push('<button type="button" class="redefinir" data-acao="redefinir">Redefinir senha</button>');
       botoes.push('<button type="button" class="editar" data-acao="editar">Editar login/e-mail</button>');
@@ -71,6 +77,7 @@
         '<div class="sol-info"><button type="button" class="sol-pessoa" aria-expanded="' + expandido + '" title="Ver e alterar os acessos">' +
         '<strong>' + escapar(mostrarLogin(l.email)) + '</strong><span>' + (expandido ? 'Ocultar acessos ▴' : 'Ver acessos ▾') + '</span></button></div>' +
         '<div class="sol-situacao"><span class="sol-status ' + escapar(l.status) + '">' + rotuloStatus(l.status) + '</span>' +
+        (bloqueadaPorSenha(l.id) ? '<span class="sol-status bloqueada" title="3 tentativas com senha incorreta: a conta está bloqueada até o root aprovar a redefinição">Bloqueada (3 senhas erradas)</span>' : '') +
         '<span class="sol-status ' + (ativo ? 'ativo' : 'inativo') + '">' + (ativo ? 'Ativo' : 'Desativado') + '</span>' +
         (pinBloqueados[l.id] != null ? '<span class="sol-status inativo" title="Recusou o convite para cadastrar PIN ' + pinBloqueados[l.id] + ' vezes; o convite não aparece mais para ela">Recusou o PIN ' + pinBloqueados[l.id] + 'x</span>' : '') + '</div>' +
         '<div class="sol-acoes" data-id="' + escapar(l.id) + '" data-email="' + escapar(l.email) + '">' + botoes.join('') + '</div>';
@@ -82,6 +89,39 @@
       bloco.querySelectorAll('button').forEach(function (botao) {
         botao.addEventListener('click', function () { executar(bloco, botao); });
       });
+    });
+  }
+
+  // Pedidos de redefinição (contas bloqueadas por 3 senhas erradas): o root aprova aqui e a senha volta ao padrão.
+  function renderResets() {
+    if (!painelResets) return;
+    painelResets.hidden = !pedidosReset.length;
+    resetsContagem.textContent = pedidosReset.length ? '(' + pedidosReset.length + ')' : '';
+    listaResets.innerHTML = '';
+    pedidosReset.forEach(function (p) {
+      var li = document.createElement('li');
+      var quando = p.bloqueado_em ? new Date(p.bloqueado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+      li.innerHTML = '<div class="reset-info"><strong>' + escapar(mostrarLogin(p.email)) + '</strong>' +
+        '<span>Bloqueada' + (quando ? ' em ' + escapar(quando) : '') + ' após 3 tentativas com senha incorreta</span></div>' +
+        '<button type="button" class="aprovar">Aprovar redefinição para ' + escapar(auth.SENHA_PADRAO) + '</button>';
+      li.querySelector('button').addEventListener('click', function (ev) { aprovarReset(p, ev.currentTarget); });
+      listaResets.appendChild(li);
+    });
+  }
+  function aprovarReset(p, botao) {
+    var login = mostrarLogin(p.email);
+    window.Modal.confirmar({
+      titulo: 'Aprovar redefinição de senha',
+      mensagem: 'Aprovar a redefinição de ' + login + '? A senha volta a ser ' + auth.SENHA_PADRAO + ', a conta é liberada e a pessoa será obrigada a trocá-la no próximo acesso.',
+      confirmar: 'Aprovar'
+    }).then(function (ok) {
+      if (!ok) return;
+      botao.disabled = true; msg.textContent = 'Aguarde…'; msg.className = 'admin-msg';
+      auth.redefinirSenhaPadrao(p.usuario_id).then(function () {
+        msg.textContent = 'Redefinição aprovada: a senha de ' + login + ' voltou a ser ' + auth.SENHA_PADRAO + ' e a conta foi liberada. Ela vai ser obrigada a trocar a senha no próximo acesso.';
+        auth.registrarEvento('redefinir', 'usuarios', 'Aprovou a redefinição de senha de ' + login + ' (conta bloqueada por tentativas)');
+        carregar();
+      }).catch(function (e) { msg.textContent = e.message; msg.className = 'admin-msg erro'; botao.disabled = false; });
     });
   }
 
@@ -192,9 +232,10 @@
   });
 
   function carregar() {
-    Promise.all([auth.listarSolicitacoes(), auth.listarPinBloqueados()]).then(function (r) {
-      var dados = r[0]; pinBloqueados = r[1];
+    Promise.all([auth.listarSolicitacoes(), auth.listarPinBloqueados(), auth.listarPedidosReset()]).then(function (r) {
+      var dados = r[0]; pinBloqueados = r[1]; pedidosReset = r[2];
       linhas = dados.filter(function (l) { return l.email.toLowerCase() !== auth.RESPONSAVEL_EMAIL; });
+      renderResets();
       render();
     }).catch(function (e) { msg.textContent = e.message; msg.className = 'admin-msg erro'; });
   }

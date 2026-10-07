@@ -302,7 +302,8 @@
     var raiz = el('div', 'ex-deck'); raiz.setAttribute('role', 'dialog'); raiz.setAttribute('aria-modal', 'true'); raiz.setAttribute('aria-label', 'Apresentação: ' + nomeExib(d));
     raiz.innerHTML = '<div class="ex-deck-barra"><strong class="ex-deck-tit"></strong><span class="ex-deck-esp"></span>' +
       '<button type="button" class="ex-deck-b" data-a="tela" title="Tela cheia (F)">⛶ Tela cheia</button>' +
-      '<button type="button" class="ex-deck-b" data-a="baixar" title="Baixar como PowerPoint">⬇ Baixar (.pptx)</button>' +
+      '<button type="button" class="ex-deck-b" data-a="baixar" title="Baixar os slides em PDF">⬇ Baixar PDF</button>' +
+      '<button type="button" class="ex-deck-b" data-a="pptx" title="Baixar como PowerPoint (editável)">.pptx</button>' +
       '<button type="button" class="ex-deck-b ex-deck-x" data-a="fechar" title="Fechar (Esc)" aria-label="Fechar">✕</button></div>' +
       '<p class="ex-deck-dica">Dica: gire o celular na horizontal para ver o slide maior.</p><div class="ex-deck-palco"><div class="ex-deck-caixa"><div class="ex-deck-pano"></div></div></div>' +
       '<div class="ex-deck-nav"><button type="button" class="ex-deck-b" data-a="ant" aria-label="Slide anterior">‹</button><span class="ex-deck-cont" aria-live="polite"></span><button type="button" class="ex-deck-b" data-a="prox" aria-label="Próximo slide">›</button></div>';
@@ -344,7 +345,7 @@
       if (b) {
         var a = b.dataset.a;
         if (a === 'prox') ir(i + 1); else if (a === 'ant') ir(i - 1); else if (a === 'fechar') fechar(); else if (a === 'tela') alternaTela();
-        else if (a === 'baixar') { b.disabled = true; baixarSlides(d, function () { }).then(function () { b.disabled = false; }, function (e) { b.disabled = false; alert('Não foi possível gerar o arquivo: ' + e.message); }); }
+        else if (a === 'baixar' || a === 'pptx') { b.disabled = true; (a === 'pptx' ? baixarSlides : pdfDeSlides)(d, function () { }).then(function () { b.disabled = false; }, function (e) { b.disabled = false; alert('Não foi possível gerar o arquivo: ' + e.message); }); }
         return;
       }
       if (ev.target.closest('.ex-deck-caixa')) ir(i + 1);   // toque/clique no slide avança
@@ -389,9 +390,26 @@
   }
 
   /* ------------------------------------------------------------------- PDF */
-  var C_AZ = [21, 62, 117], C_AZ2 = [37, 99, 235], C_LAR = [237, 125, 49], C_CZ = [102, 112, 133], C_VERDE = [26, 127, 60], C_VERM = [180, 35, 24], C_CLARO = [244, 247, 251], C_LINHA = [207, 216, 227];
+  var C_AZ = [21, 62, 117], C_AZ2 = [37, 99, 235], C_LAR = [237, 125, 49], C_CZ = [102, 112, 133], C_VERDE = [26, 127, 60], C_VERM = [180, 35, 24], C_CLARO = [244, 247, 251], C_LINHA = [207, 216, 227], C_TRILHO = [229, 233, 240];
+  var PALETA = [[21, 62, 117], [37, 99, 235], [237, 125, 49], [26, 127, 60], [124, 58, 237], [8, 145, 178], [202, 138, 4], [156, 163, 175]];
   function pdfTxt(s) {   // as fontes padrão do PDF não têm setas nem alguns traços
-    return String(s == null ? '' : s).replace(/→/g, ' > ').replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, '...').replace(/[▲]/g, '+').replace(/[▼]/g, '-');
+    return String(s == null ? '' : s).replace(/→/g, ' para ').replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, '...').replace(/[▲]/g, '+').replace(/[▼]/g, '-');
+  }
+  // Frases curtas do topo do relatório (o resto é gráfico).
+  function destaques(d) {
+    var c = d.cand, k = chaveV(d), T0 = totalV(d), cob = cobAno(d), vere = ehVereador(d), H = [];
+    if (d.tipo === 'cmp') {
+      var dif = d.T26 - d.T22, muns = niv(d, 'mun'), gM = ganhos(d, 'mun', 1)[0], s22 = d.cob22.sec, s26 = d.cob26.sec;
+      H.push('De ' + fmt(d.T22) + ' votos em 2022 para ' + fmt(d.T26) + ' em 2026: ' + sgn(dif) + ' (' + vv(d.T26, d.T22) + ')' + (d.pos ? ' - ' + d.pos + 'º entre ' + fmt(d.nCand) + ' candidatos' : ''));
+      H.push(muns.filter(function (u) { return u.dif > 0; }).length + ' de ' + muns.length + ' municípios cresceram' + (gM ? ' - maior ganho: ' + gM.rot + ' (' + sgn(gM.dif) + ', ' + vv(gM.v26, gM.v22) + ')' : ''));
+      H.push('Seções com voto: ' + fmt(s22.n) + ' para ' + fmt(s26.n) + ' (' + pc(s26.n, s26.t) + ' do total) - ' + fmt(d.secGanhas) + ' novas, ' + fmt(d.secPerdidas) + ' perdidas');
+      return H;
+    }
+    var top1 = topo(d, vere ? 'zona' : 'reg', 1, k)[0], top2 = topo(d, vere ? 'bairro' : 'mun', 1, k)[0];
+    H.push(fmt(T0) + ' votos' + (d.tipo !== '2022' && d.pos ? ' - ' + d.pos + 'º entre ' + fmt(d.nCand) + ' candidatos (' + vg(c.vagas) + ')' : '') + (c.eleito && d.tipo !== '2022' ? ' - ELEITO' : ''));
+    H.push('Presente em ' + (vere ? cob.zona.n + ' de ' + cob.zona.t + ' zonas' : cob.mun.n + ' de ' + cob.mun.t + ' municípios') + ' e em ' + pc(cob.sec.n, cob.sec.t) + ' das seções (' + fmt(cob.sec.n) + ' de ' + fmt(cob.sec.t) + ')');
+    if (top1 && top2) H.push(top1.rot + ': ' + pc(top1[k], T0) + ' dos votos - ' + (vere ? 'bairro mais votado: ' : '') + top2.rot + ': ' + pc(top2[k], T0));
+    return H;
   }
   function montaPdf(d, JsPDF) {
     var doc = new JsPDF({ unit: 'mm', format: 'a4' }), PW = 210, PH = 297, M = 15, CW = PW - 2 * M, y = 0;
@@ -400,22 +418,32 @@
     function cor(arr, tipo) { (tipo === 'fill' ? doc.setFillColor : (tipo === 'draw' ? doc.setDrawColor : doc.setTextColor)).apply(doc, arr); }
     function texto(s, x, yy, o) { doc.text(pdfTxt(s), x, yy, o || {}); }
     function fonte(tam, neg, c2) { doc.setFont('helvetica', neg ? 'bold' : 'normal'); doc.setFontSize(tam); cor(c2 || [33, 33, 33], 'text'); }
+    function cortar(s, larg, tam, neg) {
+      doc.setFont('helvetica', neg ? 'bold' : 'normal'); doc.setFontSize(tam || 9); s = pdfTxt(s);
+      if (doc.getTextWidth(s) <= larg) return s;
+      while (s.length > 1 && doc.getTextWidth(s + '...') > larg) s = s.slice(0, -1);
+      return s + '...';
+    }
     function novaPagina() {
-      doc.addPage(); y = 20;
-      cor(C_AZ, 'fill'); doc.rect(0, 0, PW, 9, 'F');
+      doc.addPage(); cor(C_AZ, 'fill'); doc.rect(0, 0, PW, 9, 'F');
       fonte(8, false, C_CZ); texto(nomeExib(d) + ' - ' + titulo, M, 14);
       cor(C_LINHA, 'draw'); doc.setLineWidth(0.2); doc.line(M, 16, PW - M, 16); y = 24;
     }
     function espaco(h) { if (y + h > PH - 20) novaPagina(); }
-    function h2(t) { espaco(34);   // o título nunca fica sozinho no fim da página
-      y += 3; fonte(13, true, C_AZ); texto(t, M, y + 4); cor(C_AZ2, 'fill'); doc.rect(M, y + 6.5, 22, 0.9, 'F'); y += 12; }
-    function par(t, tam) {
-      fonte(tam || 10, false); var ls = doc.splitTextToSize(pdfTxt(t), CW);
-      ls.forEach(function (l) { espaco(5.2); doc.text(l, M, y + 3.6); y += 5.2; }); y += 2;
+    function h2(t, precisa) { espaco(precisa || 34); y += 3; fonte(13, true, C_AZ); texto(t, M, y + 4); cor(C_AZ2, 'fill'); doc.rect(M, y + 6.5, 22, 0.9, 'F'); y += 12; }
+    function trilho(x, yy, w, h, frac, corPreench) {
+      cor(C_TRILHO, 'fill'); doc.roundedRect(x, yy, w, h, h / 2, h / 2, 'F');
+      var f = Math.max(0, Math.min(1, frac)); if (f > 0) { cor(corPreench, 'fill'); doc.roundedRect(x, yy, Math.max(h, w * f), h, h / 2, h / 2, 'F'); }
     }
-    function lista(itens) {
-      itens.forEach(function (t) { fonte(10, false); var ls = doc.splitTextToSize(pdfTxt(t), CW - 6); ls.forEach(function (l, i) { espaco(5.2); if (i === 0) { cor(C_AZ2, 'fill'); doc.circle(M + 1.3, y + 2.4, 0.8, 'F'); fonte(10, false); } doc.text(l, M + 5, y + 3.6); y += 5.2; }); y += 1.2; });
-      y += 1;
+    /* caixa de destaques: poucas frases, o resto é gráfico */
+    function caixaDestaques(itens) {
+      fonte(10, false); var linhas = itens.map(function (t) { return doc.splitTextToSize(pdfTxt(t), CW - 14); });
+      var h = 9 + linhas.reduce(function (s, l) { return s + l.length * 5 + 1.6; }, 0);
+      espaco(h + 4); cor([239, 246, 255], 'fill'); cor(C_LINHA, 'draw'); doc.setLineWidth(0.25); doc.roundedRect(M, y, CW, h, 2.5, 2.5, 'FD');
+      cor(C_AZ2, 'fill'); doc.roundedRect(M, y, 2.2, h, 1.1, 1.1, 'F');
+      fonte(8, true, C_AZ2); texto('DESTAQUES', M + 7, y + 6); var yy = y + 11.5;
+      linhas.forEach(function (ls) { ls.forEach(function (l, i) { fonte(10, false); if (i === 0) { cor(C_AZ2, 'fill'); doc.circle(M + 8, yy - 1.2, 0.9, 'F'); } doc.text(l, M + 11, yy); yy += 5; }); yy += 1.6; });
+      y += h + 5;
     }
     function kpis(itens) {
       var w = (CW - 8) / 3, h = 23;
@@ -426,62 +454,79 @@
           cor(C_CLARO, 'fill'); cor(C_LINHA, 'draw'); doc.setLineWidth(0.25); doc.roundedRect(x, y, w, h, 2, 2, 'FD');
           fonte(7.5, false, C_CZ); texto(it.rot, x + 3, y + 5.2);
           var tam = it.val.length > 20 ? 10.5 : (it.val.length > 12 ? 13 : 17); fonte(tam, true, C_AZ); texto(it.val, x + 3, y + 13.2);
-          fonte(7, false, C_CZ); var sb = doc.splitTextToSize(pdfTxt(it.sub || ''), w - 6); texto(sb.slice(0, 2).join(' '), x + 3, y + 18.5); if (sb[1]) texto(sb[1], x + 3, y + 21.4);
+          fonte(7, false, C_CZ); var sb = doc.splitTextToSize(pdfTxt(it.sub || ''), w - 6); texto(sb[0] || '', x + 3, y + 18.5); if (sb[1]) texto(sb[1], x + 3, y + 21.4);
         });
         y += h + 3;
       }
       y += 1;
     }
+    /* rosca (fatias = [{v, cor}]) com o total no centro */
+    function rosca(cx, cy, R, r, fatias, centro, sub) {
+      var tot = fatias.reduce(function (s, f) { return s + f.v; }, 0), ang = -Math.PI / 2;
+      fatias.forEach(function (f) {
+        if (f.v <= 0 || !tot) return;
+        var a2 = ang + f.v / tot * 2 * Math.PI, n = Math.max(3, Math.ceil((a2 - ang) / 0.08)), pts = [], i, a;
+        for (i = 0; i <= n; i++) { a = ang + (a2 - ang) * i / n; pts.push([cx + R * Math.cos(a), cy + R * Math.sin(a)]); }
+        for (i = n; i >= 0; i--) { a = ang + (a2 - ang) * i / n; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+        var rel = []; for (i = 1; i < pts.length; i++) rel.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
+        cor(f.cor, 'fill'); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.5); doc.lines(rel, pts[0][0], pts[0][1], [1, 1], 'FD', true);
+        ang = a2;
+      });
+      fonte(11, true, C_AZ); texto(centro, cx, cy + 0.5, { align: 'center' }); fonte(6.5, false, C_CZ); texto(sub || '', cx, cy + 4.2, { align: 'center' });
+    }
+    function legenda(x, yy, itens, larg) {
+      itens.forEach(function (it, i) {
+        cor(it.cor, 'fill'); doc.roundedRect(x, yy + i * 5.6 - 2.4, 3.2, 3.2, 0.7, 0.7, 'F');
+        fonte(8, true, [50, 60, 80]); texto(cortar(it.rot, larg - 22, 8, true), x + 5, yy + i * 5.6);
+        fonte(8, false, C_CZ); texto(it.txt, x + larg, yy + i * 5.6, { align: 'right' });
+      });
+    }
+    function medidor(x, yy, w, rot, dir, frac, corP) {
+      fonte(8.5, true, C_AZ); texto(rot, x, yy + 3); fonte(8, false, C_CZ); texto(dir, x + w, yy + 3, { align: 'right' }); trilho(x, yy + 4.6, w, 3.6, frac, corP);
+    }
     function barras(itens, o) {
-      o = o || {}; var mx = Math.max.apply(null, itens.map(function (i) { return i.v; }).concat([1])), bx = M + 64, bwmax = CW - 64 - 40;
+      o = o || {}; var mx = Math.max.apply(null, itens.map(function (i) { return i.v; }).concat([1])), lw = o.lw || 62, bx = M + lw + 2, bwmax = CW - lw - 2 - 36;
       itens.forEach(function (it) {
-        espaco(6.4); fonte(8.5, true, C_AZ); texto(cortar(it.rot, 62, 8.5, true), M, y + 4.2);
-        cor(o.cor || C_AZ2, 'fill'); var bw = Math.max(0.8, it.v / mx * bwmax); doc.roundedRect(bx, y + 0.8, bw, 4.2, 1, 1, 'F');
-        fonte(8.5, false); texto(it.txt, bx + bw + 2, y + 4.2); y += 6.4;
+        espaco(5.9); fonte(8.5, true, C_AZ); texto(cortar(it.rot, lw, 8.5, true), M, y + 4.1);
+        cor(C_TRILHO, 'fill'); doc.roundedRect(bx, y + 0.9, bwmax, 3.7, 1, 1, 'F');
+        cor(o.cor || C_AZ2, 'fill'); var bw = Math.max(1.2, it.v / mx * bwmax); doc.roundedRect(bx, y + 0.9, bw, 3.7, 1, 1, 'F');
+        fonte(8.5, false); texto(it.txt, bx + bwmax + 2, y + 4.1); y += 5.8;
       });
       y += 2;
     }
-    function pares(itens) {
-      var mx = Math.max.apply(null, itens.map(function (i) { return Math.max(i.v22, i.v26); }).concat([1])), bx = M + 50, bwmax = CW - 50 - 56;
-      espaco(10); fonte(8, false, C_CZ); cor(C_LAR, 'fill'); doc.rect(M + 50, y, 3, 3, 'F'); texto('2022', M + 54.5, y + 2.6); cor(C_AZ, 'fill'); doc.rect(M + 68, y, 3, 3, 'F'); texto('2026', M + 72.5, y + 2.6); y += 6;
+    function pares(itens, o) {
+      o = o || {}; var comp = !!o.compacto, mx = Math.max.apply(null, itens.map(function (i) { return Math.max(i.v22, i.v26); }).concat([1])), lw = 46, bx = M + lw + 2, bwmax = CW - lw - 2 - 44, rh = comp ? 6.4 : 8.2, bh = comp ? 2.3 : 3.1;
+      espaco(10); fonte(8, false, C_CZ); cor(C_LAR, 'fill'); doc.rect(bx, y, 3, 3, 'F'); texto('2022', bx + 4.5, y + 2.6); cor(C_AZ, 'fill'); doc.rect(bx + 18, y, 3, 3, 'F'); texto('2026', bx + 22.5, y + 2.6); y += 6;
       itens.forEach(function (it) {
-        espaco(10.5); fonte(8.5, true, C_AZ); texto(cortar(it.rot, 48, 8.5, true), M, y + 5);
+        espaco(rh + 1); fonte(8.5, true, C_AZ); texto(cortar(it.rot, lw, 8.5, true), M, y + (comp ? 3.7 : 5));
         var b1 = Math.max(0.8, it.v22 / mx * bwmax), b2 = Math.max(0.8, it.v26 / mx * bwmax);
-        cor(C_LAR, 'fill'); doc.roundedRect(bx, y + 0.6, b1, 3.6, 0.8, 0.8, 'F'); fonte(7.5, false, C_CZ); texto(it.t22, bx + b1 + 2, y + 3.5);
-        cor(C_AZ, 'fill'); doc.roundedRect(bx, y + 4.6, b2, 3.6, 0.8, 0.8, 'F'); fonte(7.5, false); texto(it.t26, bx + b2 + 2, y + 7.5);
-        y += 9.6;
-      });
-      y += 2;
-    }
-    function cortar(s, larg, tam, neg) {
-      doc.setFont('helvetica', neg ? 'bold' : 'normal'); doc.setFontSize(tam || 9); s = pdfTxt(s);
-      if (doc.getTextWidth(s) <= larg) return s;
-      while (s.length > 1 && doc.getTextWidth(s + '...') > larg) s = s.slice(0, -1);
-      return s + '...';
-    }
-    function tabela(cols, linhas, o) {
-      o = o || {}; var rh = o.rh || 6.2, tam = o.tam || 8.5, W0 = cols.reduce(function (s, c1) { return s + c1.w; }, 0), esc = CW / W0;
-      var xs = []; cols.reduce(function (acc, c1) { xs.push(acc); return acc + c1.w * esc; }, M);
-      function cab() {
-        cor(C_AZ, 'fill'); doc.rect(M, y, CW, 6.8, 'F'); fonte(8, true, [255, 255, 255]);
-        cols.forEach(function (c1, j) { if (c1.al === 'r') texto(c1.t, xs[j] + c1.w * esc - 1.6, y + 4.6, { align: 'right' }); else texto(c1.t, xs[j] + 1.6, y + 4.6); });
-        y += 6.8;
-      }
-      espaco(6.8 + rh * 2); cab();
-      linhas.forEach(function (ln, i) {
-        if (y + rh > PH - 20) { novaPagina(); cab(); }
-        if (i % 2) { cor(C_CLARO, 'fill'); doc.rect(M, y, CW, rh, 'F'); }
-        cols.forEach(function (c1, j) {
-          var neg = !!c1.neg, s = cortar(ln[j], c1.w * esc - 3.2, tam, neg); fonte(tam, neg, ln.cor && ln.cor[j] ? ln.cor[j] : (c1.cor || [33, 33, 33]));
-          if (c1.al === 'r') texto(s, xs[j] + c1.w * esc - 1.6, y + rh - 1.8, { align: 'right' }); else texto(s, xs[j] + 1.6, y + rh - 1.8);
-        });
+        cor(C_LAR, 'fill'); doc.roundedRect(bx, y + 0.4, b1, bh, 0.8, 0.8, 'F'); cor(C_AZ, 'fill'); doc.roundedRect(bx, y + 0.8 + bh, b2, bh, 0.8, 0.8, 'F');
+        fonte(7.5, true, it.dif > 0 ? C_VERDE : (it.dif < 0 ? C_VERM : C_CZ)); texto(it.txt, bx + bwmax + 3, y + (comp ? 3.8 : 5.2));
         y += rh;
       });
-      cor(C_LINHA, 'draw'); doc.setLineWidth(0.2); doc.line(M, y, PW - M, y); y += 3;
+      y += 3;
     }
-    function corDif(v) { return v > 0 ? C_VERDE : (v < 0 ? C_VERM : [33, 33, 33]); }
+    /* duas colunas: onde mais ganhou (verde) e onde mais perdeu (vermelho) */
+    function divergente(titulo2, esq, dir, nivel) {
+      var h = 14 + 8 * 6.2; espaco(h + 12); h2(titulo2, 0);
+      var larg = (CW - 8) / 2, y0 = y;
+      [[esq, 'Mais ganharam', C_VERDE, M], [dir, 'Mais perderam', C_VERM, M + larg + 8]].forEach(function (col) {
+        var itens = col[0], x = col[3], mx = Math.max.apply(null, itens.map(function (u) { return Math.abs(u.dif); }).concat([1]));
+        fonte(9.5, true, col[2]); texto(col[1], x, y0 + 3);
+        if (!itens.length) { fonte(8.5, false, C_CZ); texto('Nenhum caso.', x, y0 + 10); }
+        itens.slice(0, 8).forEach(function (u, i) {
+          var yy = y0 + 8 + i * 6.2; fonte(8, true, C_AZ); texto(cortar(rotCtx(u, nivel), larg * 0.46, 8, true), x, yy + 3.4);
+          var bx = x + larg * 0.47, bw = Math.max(1, Math.abs(u.dif) / mx * (larg * 0.22));
+          cor(C_TRILHO, 'fill'); doc.roundedRect(bx, yy + 0.8, larg * 0.22, 3.4, 0.9, 0.9, 'F'); cor(col[2], 'fill'); doc.roundedRect(bx, yy + 0.8, bw, 3.4, 0.9, 0.9, 'F');
+          fonte(7.5, true, col[2]); texto(sgn(u.dif) + ' (' + vv(u.v26, u.v22) + ')', x + larg, yy + 3.5, { align: 'right' });
+        });
+      });
+      y = y0 + 8 + 8 * 6.2 + 3;
+    }
+    /* distribuição por regional/zona: rosca + legenda (uma por ano no comparativo) */
+    function fatiasDe(l, k, mapaCor) { return topo(d, l, 8, k).map(function (u, i) { return { rot: u.rot.replace(/^Regional /, ''), v: u[k], cor: mapaCor[u.rot] || PALETA[i % PALETA.length] }; }); }
 
-    /* capa / cabeçalho */
+    /* cabeçalho */
     cor(C_AZ, 'fill'); doc.rect(0, 0, PW, 46, 'F'); cor(C_AZ2, 'fill'); doc.rect(0, 0, 4, 46, 'F');
     fonte(10, false, [191, 212, 242]); texto(c.cargo + ' - ' + (d.tipo === 'cmp' ? 'Comparativo 2022 × 2026' : 'Eleição ' + tituloAno(d)) + (c.municipio ? ' - ' + c.municipio : ''), M, 14);
     fonte(24, true, [255, 255, 255]); texto(nomeExib(d).toUpperCase(), M, 26, { maxWidth: CW });
@@ -489,55 +534,64 @@
     fonte(8.5, false, [191, 212, 242]); texto(titulo, M, 41);
     y = 54;
     var k = chaveV(d), T0 = totalV(d), cob = cobAno(d), vere = ehVereador(d), nv = nivelPrincipal(d);
+    caixaDestaques(destaques(d));
 
     if (d.tipo === 'cmp') {
-      var dif = d.T26 - d.T22, s22 = d.cob22.sec, s26 = d.cob26.sec;
-      h2('Resumo'); narrativa(d).forEach(function (t) { par(t); });
-      h2('Números-chave');
-      kpis([{ rot: 'Votos 2022', val: fmt(d.T22), sub: '100,0% do total dele em 2022' }, { rot: 'Votos 2026', val: fmt(d.T26), sub: '100,0% do total dele em 2026' }, { rot: 'Diferença', val: sgn(dif), sub: vv(d.T26, d.T22) + ' sobre 2022' },
+      var dif = d.T26 - d.T22, s22 = d.cob22.sec, s26 = d.cob26.sec, regs = niv(d, 'reg').slice().sort(function (a, b) { return b.v26 - a.v26; });
+      kpis([{ rot: 'Votos 2022', val: fmt(d.T22), sub: '100,0% do total dele em 2022' }, { rot: 'Votos 2026', val: fmt(d.T26), sub: vv(d.T26, d.T22) + ' sobre 2022' }, { rot: 'Diferença', val: sgn(dif), sub: 'votos a mais em 2026' },
         { rot: 'Seções com voto', val: fmt(s22.n) + ' > ' + fmt(s26.n), sub: pc(s22.n, s22.t) + ' > ' + pc(s26.n, s26.t) + ' das seções' }, { rot: 'Seções ganhas / perdidas', val: fmt(d.secGanhas) + ' / ' + fmt(d.secPerdidas), sub: 'passou a ter voto / deixou de ter' },
-        { rot: 'Posição em 2026', val: d.pos + 'o', sub: 'de ' + fmt(d.nCand) + ' candidatos - ' + vg(c.vagas) + '' }]);
-      var linhaCmp = function (nivel) { return function (u) { var l = [rotCtx(u, nivel), fmt(u.v22), pc(u.v22, d.T22), fmt(u.v26), pc(u.v26, d.T26), sgn(u.dif), vv(u.v26, u.v22)]; l.cor = [null, null, null, null, null, corDif(u.dif), corDif(u.dif)]; return l; }; };
-      var colsCmp = function (rot, w0) { return [{ t: rot, w: w0, neg: true }, { t: '2022', w: 15, al: 'r' }, { t: '% 2022', w: 14, al: 'r' }, { t: '2026', w: 15, al: 'r' }, { t: '% 2026', w: 14, al: 'r' }, { t: 'Dif.', w: 15, al: 'r' }, { t: 'Var.', w: 15, al: 'r' }]; };
-      h2('Por regional (2022 × 2026)'); pares(niv(d, 'reg').slice().sort(function (a, b) { return b.v26 - a.v26; }).map(function (u) { return { rot: u.rot, v22: u.v22, v26: u.v26, t22: fmt(u.v22) + ' (' + pc(u.v22, d.T22) + ')', t26: fmt(u.v26) + ' (' + pc(u.v26, d.T26) + ') ' + vv(u.v26, u.v22) }; }));
-      tabela(colsCmp('Regional', 48), niv(d, 'reg').slice().sort(function (a, b) { return b.v26 - a.v26; }).map(linhaCmp('reg')));
-      h2('Todos os municípios'); tabela(colsCmp('Município', 48), niv(d, 'mun').slice().sort(function (a, b) { return b.v26 - a.v26; }).map(linhaCmp('mun')));
-      [['mun', 'Municípios'], ['bairro', 'Bairros'], ['local', 'Locais de votação']].forEach(function (a) {
-        h2(a[1] + ': onde mais ganhou'); tabela(colsCmp(a[1].replace(/s$/, ''), 54), ganhos(d, a[0], 10).map(linhaCmp(a[0])), { tam: 8 });
-        h2(a[1] + ': onde mais perdeu'); var pp = perdas(d, a[0], 10); if (pp.length) tabela(colsCmp(a[1].replace(/s$/, ''), 54), pp.map(linhaCmp(a[0])), { tam: 8 }); else par('Nenhum caso de queda.');
+        { rot: 'Posição em 2026', val: d.pos + 'o', sub: 'de ' + fmt(d.nCand) + ' candidatos - ' + vg(c.vagas) }]);
+      var mapaCor = {}; regs.forEach(function (u, i) { mapaCor[u.rot] = PALETA[i % PALETA.length]; });
+      h2('Distribuição dos votos por regional', 70);
+      var yR = y + 24;
+      [['2022', 'v22', d.T22, M + 24], ['2026', 'v26', d.T26, M + 24 + 62]].forEach(function (a) {
+        rosca(a[3], yR, 22, 13, fatiasDe('reg', a[1], mapaCor), fmt(a[2]), 'votos em ' + a[0]);
       });
-      h2('Presença no território');
-      tabela([{ t: 'Nível', w: 40, neg: true }, { t: 'Com voto 2022', w: 28, al: 'r' }, { t: '% do total', w: 20, al: 'r' }, { t: 'Com voto 2026', w: 28, al: 'r' }, { t: '% do total', w: 20, al: 'r' }, { t: 'Variação', w: 22, al: 'r' }],
-        ['mun', 'bairro', 'local', 'sec'].map(function (l) { return [nomeNivel(l, true).replace(/^./, function (m) { return m.toUpperCase(); }), fmt(d.cob22[l].n) + ' de ' + fmt(d.cob22[l].t), pc(d.cob22[l].n, d.cob22[l].t), fmt(d.cob26[l].n) + ' de ' + fmt(d.cob26[l].t), pc(d.cob26[l].n, d.cob26[l].t), vv(d.cob26[l].n, d.cob22[l].n)]; }));
+      legenda(M + 128, yR - 15, regs.map(function (u) { return { rot: u.rot.replace(/^Regional /, ''), cor: mapaCor[u.rot], txt: pc(u.v22, d.T22) + ' > ' + pc(u.v26, d.T26) }; }), 52);
+      y += 52;
+      h2('Por regional: 2022 × 2026', 60);
+      pares(regs.map(function (u) { return { rot: u.rot, v22: u.v22, v26: u.v26, dif: u.dif, txt: fmt(u.v26) + ' (' + vv(u.v26, u.v22) + ')' }; }));
+      h2('Todos os municípios', 50);
+      pares(niv(d, 'mun').slice().sort(function (a, b) { return b.v26 - a.v26; }).map(function (u) { return { rot: u.rot, v22: u.v22, v26: u.v26, dif: u.dif, txt: fmt(u.v26) + ' (' + vv(u.v26, u.v22) + ')' }; }), { compacto: true });
+      divergente('Municípios: onde mais ganhou e onde mais perdeu', ganhos(d, 'mun', 8), perdas(d, 'mun', 8), 'mun');
+      divergente('Bairros: onde mais ganhou e onde mais perdeu', ganhos(d, 'bairro', 8), perdas(d, 'bairro', 8), 'bairro');
+      divergente('Locais de votação: onde mais ganhou e onde mais perdeu', ganhos(d, 'local', 8), perdas(d, 'local', 8), 'local');
+      h2('Presença no território', 62);
+      ['mun', 'bairro', 'local', 'sec'].forEach(function (l) {
+        espaco(15); var a = d.cob22[l], b = d.cob26[l], nome = nomeNivel(l, true).replace(/^./, function (m) { return m.toUpperCase(); });
+        fonte(8.5, true, C_AZ); texto(nome, M, y + 3); fonte(8, false, C_CZ); texto(fmt(a.n) + ' > ' + fmt(b.n) + ' de ' + fmt(b.t) + '  (' + vv(b.n, a.n) + ')', M + CW, y + 3, { align: 'right' });
+        trilho(M, y + 4.6, CW, 2.8, a.n / Math.max(a.t, 1), C_LAR); trilho(M, y + 8, CW, 2.8, b.n / Math.max(b.t, 1), C_AZ); y += 14;
+      });
     } else {
-      h2('Resumo'); narrativa(d).forEach(function (t) { par(t); });
-      h2('Números-chave');
-      var kp = [{ rot: 'Votos ' + d.onde, val: fmt(T0), sub: '100,0% dos votos dele' + (c.eleito && d.tipo !== '2022' ? ' - eleito' : '') }];
-      if (d.tipo !== '2022' && d.pos) kp.push({ rot: 'Posição ' + d.onde, val: d.pos + 'o', sub: 'de ' + fmt(d.nCand) + ' candidatos - ' + vg(c.vagas) + '' });
-      else { var secs = niv(d, 'sec').filter(function (u) { return u[k] > 0; }); kp.push({ rot: 'Média por seção com voto', val: fmt(secs.length ? Math.round(T0 / secs.length) : 0), sub: pc(secs.length ? Math.round(T0 / secs.length) : 0, T0) + ' do total dele' }); }
-      kp.push(vere ? { rot: 'Zonas com voto', val: cob.zona.n + ' de ' + cob.zona.t, sub: pc(cob.zona.n, cob.zona.t) + ' das zonas' } : { rot: 'Municípios com voto', val: cob.mun.n + ' de ' + cob.mun.t, sub: pc(cob.mun.n, cob.mun.t) + ' dos municípios' });
-      kp.push({ rot: 'Bairros com voto', val: fmt(cob.bairro.n), sub: 'de ' + fmt(cob.bairro.t) + ' - ' + pc(cob.bairro.n, cob.bairro.t) });
-      kp.push({ rot: 'Locais de votação com voto', val: fmt(cob.local.n), sub: 'de ' + fmt(cob.local.t) + ' - ' + pc(cob.local.n, cob.local.t) });
-      kp.push({ rot: 'Seções com voto', val: fmt(cob.sec.n), sub: 'de ' + fmt(cob.sec.t) + ' - ' + pc(cob.sec.n, cob.sec.t) });
-      kpis(kp);
-      h2('Presença no território');
-      tabela([{ t: 'Nível', w: 50, neg: true }, { t: 'Com voto', w: 30, al: 'r' }, { t: 'Total', w: 30, al: 'r' }, { t: '% do total', w: 30, al: 'r' }],
-        [vere ? ['zona', 'Zonas'] : ['mun', 'Municípios'], ['bairro', 'Bairros'], ['local', 'Locais de votação'], ['sec', 'Seções']].map(function (a) { return [a[1], fmt(cob[a[0]].n), fmt(cob[a[0]].t), pc(cob[a[0]].n, cob[a[0]].t)]; }));
-      var it = function (u) { return { rot: u.rot, v: u[k], txt: fmt(u[k]) + ' (' + pc(u[k], T0) + ')' }; };
-      h2('Votos por ' + nomeNivel(nv)); barras(topo(d, nv, 12, k).map(it));
-      var rank = function (l, n, rotCol, ctxCol) {
-        return tabela([{ t: '#', w: 8 }, { t: rotCol, w: 60, neg: true }, { t: ctxCol, w: 62 }, { t: 'Votos', w: 18, al: 'r' }, { t: '% dos votos dele', w: 24, al: 'r' }],
-          topo(d, l, n, k).map(function (u, i) { return [String(i + 1), u.rot, u.ctx || '', fmt(u[k]), pc(u[k], T0)]; }), { tam: 8 });
-      };
-      if (!vere) { h2('Os 10 maiores municípios'); rank('mun', 10, 'Município', 'Regional'); }
-      h2('Os 15 maiores bairros'); rank('bairro', 15, 'Bairro', 'Município');
-      h2('Os 15 maiores locais de votação'); rank('local', 15, 'Local de votação', 'Localização');
-      h2('As 15 maiores seções'); rank('sec', 15, 'Seção', 'Local');
+      kpis((function () {
+        var kp = [{ rot: 'Votos ' + d.onde, val: fmt(T0), sub: '100,0% dos votos dele' + (c.eleito && d.tipo !== '2022' ? ' - eleito' : '') }];
+        if (d.tipo !== '2022' && d.pos) kp.push({ rot: 'Posição ' + d.onde, val: d.pos + 'o', sub: 'de ' + fmt(d.nCand) + ' candidatos - ' + vg(c.vagas) });
+        else { var secs = niv(d, 'sec').filter(function (u) { return u[k] > 0; }), md = secs.length ? Math.round(T0 / secs.length) : 0; kp.push({ rot: 'Média por seção com voto', val: fmt(md), sub: pc(md, T0) + ' do total dele' }); }
+        kp.push(vere ? { rot: 'Zonas com voto', val: cob.zona.n + ' de ' + cob.zona.t, sub: pc(cob.zona.n, cob.zona.t) + ' das zonas' } : { rot: 'Municípios com voto', val: cob.mun.n + ' de ' + cob.mun.t, sub: pc(cob.mun.n, cob.mun.t) + ' dos municípios' });
+        kp.push({ rot: 'Bairros com voto', val: fmt(cob.bairro.n), sub: 'de ' + fmt(cob.bairro.t) + ' - ' + pc(cob.bairro.n, cob.bairro.t) });
+        kp.push({ rot: 'Locais de votação com voto', val: fmt(cob.local.n), sub: 'de ' + fmt(cob.local.t) + ' - ' + pc(cob.local.n, cob.local.t) });
+        kp.push({ rot: 'Seções com voto', val: fmt(cob.sec.n), sub: 'de ' + fmt(cob.sec.t) + ' - ' + pc(cob.sec.n, cob.sec.t) });
+        return kp;
+      })());
+      h2('De onde vieram os votos e onde ele esteve presente', 64);
+      var fat = topo(d, nv, 8, k).map(function (u, i) { return { rot: u.rot.replace(/^Regional /, ''), v: u[k], cor: PALETA[i % PALETA.length], txt: pc(u[k], T0) }; });
+      var yc = y + 25; rosca(M + 25, yc, 24, 14.5, fat, fmt(T0), 'votos por ' + nomeNivel(nv));
+      legenda(M + 55, yc - 14, fat, 42);
+      var xm = M + 106, wm = CW - 106, ym = y + 4;
+      [[vere ? 'Zonas' : 'Municípios', vere ? cob.zona : cob.mun, C_AZ2], ['Bairros', cob.bairro, C_VERDE], ['Locais de votação', cob.local, C_LAR], ['Seções', cob.sec, C_AZ]].forEach(function (a, i) {
+        medidor(xm, ym + i * 12.5, wm, a[0], fmt(a[1].n) + ' de ' + fmt(a[1].t) + ' - ' + pc(a[1].n, a[1].t), a[1].n / Math.max(a[1].t, 1), a[2]);
+      });
+      y += 56;
+      var it = function (l) { return function (u) { return { rot: rotCtx(u, l), v: u[k], txt: fmt(u[k]) + ' (' + pc(u[k], T0) + ')' }; }; };
+      if (!vere) { h2('Os 10 maiores municípios', 76); barras(topo(d, 'mun', 10, k).map(it('mun')), { lw: 50 }); }
+      h2('Os 10 maiores bairros', 76); barras(topo(d, 'bairro', 10, k).map(it('bairro')), { lw: 58, cor: C_VERDE });
+      h2('Os 10 maiores locais de votação', 76); barras(topo(d, 'local', 10, k).map(it('local')), { lw: 74, cor: C_LAR });
+      h2('As 10 maiores seções', 76); barras(topo(d, 'sec', 10, k).map(it('sec')), { lw: 46 });
     }
-    h2('Observações');
-    lista(['Todos os percentuais são calculados sobre o total de votos do próprio candidato' + (vere ? ' em ' + c.municipio : ' no estado') + ' (nenhum percentual compara com outros candidatos).',
-      'Fonte dos dados: ' + d.fonte + '.', d.tipo === 'cmp' ? 'As seções de 2022 foram associadas às de 2026 pelo município, zona e número da seção; ' + fmt(d.semSecao22) + ' voto(s) de 2022 ficaram sem seção correspondente.' : 'Unidades "com voto" são aquelas em que o candidato recebeu ao menos um voto.']);
-    // rodapé com numeração
+    espaco(24); y += 2; fonte(8, true, C_CZ); texto('Como ler', M, y + 3); fonte(7.5, false, C_CZ);
+    var nota = doc.splitTextToSize(pdfTxt('Percentuais sobre o total de votos do próprio candidato' + (vere ? ' em ' + c.municipio : ' no estado') + ' (nunca contra outros candidatos). "Com voto" = unidade em que recebeu ao menos um voto. Fonte: ' + d.fonte + '.' + (d.tipo === 'cmp' ? ' ' + fmt(d.semSecao22) + ' voto(s) de 2022 ficaram sem seção correspondente em 2026.' : '')), CW);
+    nota.forEach(function (l, i) { texto(l, M, y + 7 + i * 3.6); });
+    // rodapé com carimbo e numeração
     var n = doc.getNumberOfPages();
     for (var p = 1; p <= n; p++) {
       doc.setPage(p); cor(C_LINHA, 'draw'); doc.setLineWidth(0.2); doc.line(M, PH - 16, PW - M, PH - 16);
@@ -546,6 +600,50 @@
     }
     return doc;
   }
+
+  /* ------------------------------------------- baixar o slide em PDF (o padrão) */
+  function desenhaPrim(doc, p, K) {
+    var x = p.x * K, y = p.y * K, w = p.w * K, h = p.h * K;
+    if (p.k === 'r') {
+      doc.setFillColor(p.fill);
+      if (p.borda) { doc.setDrawColor(p.borda); doc.setLineWidth(1.1); }
+      var st = p.borda ? 'FD' : 'F', rr = Math.min(p.raio * K, w / 2, h / 2);
+      if (p.raio) doc.roundedRect(x, y, w, h, rr, rr, st); else doc.rect(x, y, w, h, st);
+      return;
+    }
+    var fs = p.size * K, lh = fs * 1.2;
+    doc.setFont('helvetica', p.bold ? 'bold' : 'normal'); doc.setFontSize(fs); doc.setTextColor(p.cor);
+    if (p.paras) {
+      var yy = y;
+      p.paras.forEach(function (t) {
+        var ls = doc.splitTextToSize(pdfTxt(t), w - 26 * K);
+        doc.setFillColor('#2563EB'); doc.circle(x + 6 * K, yy + lh * 0.55, 3.4 * K, 'F');
+        ls.forEach(function (l, i) { doc.text(l, x + 26 * K, yy + lh * 0.85 + i * lh); });
+        yy += ls.length * lh + 16 * K;
+      });
+      return;
+    }
+    var ls2 = doc.splitTextToSize(pdfTxt(p.txt), w), th = ls2.length * lh;
+    var y0 = p.va === 'top' ? y : (p.va === 'bottom' ? y + h - th : y + (h - th) / 2);
+    var xx = p.al === 'center' ? x + w / 2 : (p.al === 'right' ? x + w : x);
+    ls2.forEach(function (l, i) { doc.text(l, xx, y0 + lh * 0.82 + i * lh, { align: p.al === 'center' ? 'center' : (p.al === 'right' ? 'right' : 'left') }); });
+  }
+  function pdfDeSlides(d, msg) {
+    if (msg) msg('Carregando a biblioteca de PDF…');
+    return carregar('jspdf', 'jspdf').then(function (lib) {
+      if (msg) msg('Montando o PDF do slide…');
+      d.carimbo = carimbo();
+      var S = comMoldura(d, slidesDe(d)), K = 0.75, doc = new lib.jsPDF({ orientation: 'landscape', unit: 'pt', format: [W * K, H * K] });
+      doc.setProperties({ title: pdfTxt(nomeExib(d) + ' - ' + tituloAno(d)), subject: 'Slide do resultado da votação', author: 'Sistema' });
+      S.forEach(function (s, i) {
+        if (i) doc.addPage([W * K, H * K], 'landscape');
+        doc.setFillColor(s.bg || '#FFFFFF'); doc.rect(0, 0, W * K, H * K, 'F');
+        s.prim.forEach(function (p) { desenhaPrim(doc, p, K); });
+      });
+      return doc.output('blob');
+    }).then(function (blob) { baixarBlob(blob, nomeArq(d, 'slides', 'pdf')); });
+  }
+
   function gerarPdf(d, msg) {
     if (msg) msg('Carregando a biblioteca de PDF…');
     return carregar('jspdf', 'jspdf').then(function (lib) { if (msg) msg('Montando o PDF…'); d.carimbo = carimbo(); return montaPdf(d, lib.jsPDF); });
@@ -561,5 +659,5 @@
     }, function (e) { if (aba && !aba.closed) aba.close(); throw e; });
   }
 
-  window.EleicaoExportar = { 'slide-ver': exibirSlides, 'slide-baixar': baixarSlides, 'pdf-ver': pdfVer, 'pdf-baixar': pdfBaixar, _slides: function (d) { return comMoldura(d, slidesDe(d)); }, _narrativa: narrativa };
+  window.EleicaoExportar = { 'slide-ver': exibirSlides, 'slide-baixar': pdfDeSlides, 'slide-baixar-pptx': baixarSlides, 'pdf-ver': pdfVer, 'pdf-baixar': pdfBaixar, _slides: function (d) { return comMoldura(d, slidesDe(d)); }, _narrativa: narrativa };
 })();
