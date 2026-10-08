@@ -2700,11 +2700,6 @@
       'e é só nisso que os dois totais diferem.</p>';
   }
 
-  /* ============================================ ABA: ATUALIZAR DADOS (admin) */
-  function abaAdmin() {
-    fonteDados();
-  }
-
   /* ================================================== ABA: LANÇAMENTO (admin) */
   /* Vive inteira em js/lancamento-mecanizacao.js — não depende de D/TODOS,
      só precisa da lista de municípios (para o <select>) e ser avisada de
@@ -2722,7 +2717,7 @@
     geral: abaGeral, mecanizacao: abaMecanizacao, acudagem: abaAcudagem,
     cultura: abaCultura, municipio: abaMunicipio, mapa: abaMapa, escritorio: abaEscritorio,
     beneficiario: abaBeneficiario, registros: abaRegistros,
-    relatorio: abaRelatorio, admin: abaAdmin,
+    relatorio: abaRelatorio,
     // lançamento abre sem senha (só salvar/ler PDF pede); as quatro abaixo e
     // "admin" só aparecem com a senha (ver aplicarAdmin)
     lancamento: abaLancamento,
@@ -2951,6 +2946,28 @@
       .sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
   }
 
+  /** Cabeçalho do relatório conforme os filtros marcados, na ordem
+      Serviço, Ano, Mês, Regional, Município, Escritório, Cultura, Técnico.
+      Filtro sem marcação não entra (é "todos"); serviço e ano sempre entram.
+      `periodo` é o intervalo das datas de vistoria dos registros do relatório. */
+  function cabecalhoRelatorio(sub) {
+    var meses = F.mes.slice().sort().map(function (m) {
+      var n = MESES[+m - 1];
+      return n.charAt(0).toUpperCase() + n.slice(1);
+    });
+    var itens = [
+      ['Serviço', F.pc.length ? F.pc.join(', ') : 'Mecanização e Açudagem'],
+      ['Ano', rotuloAno()]
+    ];
+    [['Mês', meses], ['Regional', F.reg], ['Município', F.mun], ['Escritório local', F.esc],
+     ['Cultura', F.cult], ['Técnico', F.tec]].forEach(function (p) {
+      if (p[1].length) itens.push([p[0], p[1].join(', ')]);
+    });
+    var datas = sub.map(dataRef).filter(Boolean).sort();
+    var periodo = datas.length ? dataBR(datas[0]) + ' a ' + dataBR(datas[datas.length - 1]) : '—';
+    return { itens: itens, periodo: periodo };
+  }
+
   /** Relatório que soma todos os municípios da seleção.
       'geral'  = completo (detalhamento + registros de todos os municípios);
       'resumo' = só indicadores e a tabela de um município por linha. */
@@ -3017,15 +3034,23 @@
       var titulo = 'Relatório geral ' + (resumo ? 'resumido' : 'completo');
       var y;
 
-      // cabeçalho
+      // cabeçalho personalizado pela seleção (filtros marcados + período)
+      var cab = cabecalhoRelatorio(sub);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      var linhasCab = [];
+      cab.itens.forEach(function (it) {
+        linhasCab = linhasCab.concat(doc.splitTextToSize(it[0] + ': ' + it[1], CW));
+      });
+      linhasCab.push('Período das vistorias: ' + cab.periodo + '  |  ' + muns.length + ' municípios');
+      var altCab = 18 + linhasCab.length * 4.6 + 3;
       doc.setFillColor.apply(doc, AZUL);
-      doc.rect(0, 0, PW, 26, 'F');
+      doc.rect(0, 0, PW, altCab, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
       doc.text(titulo, M, 12);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
-      doc.text('Mecanização e Açudagem  |  ' + rotuloAno() + '  |  ' + muns.length + ' municípios', M, 19);
-      y = 34;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      linhasCab.forEach(function (l, i) { doc.text(l, M, 19 + i * 4.6); });
+      y = altCab + 8;
 
       function secao(txt) {
         if (y > 262) { doc.addPage(); y = 18; }
@@ -3058,16 +3083,16 @@
       var dir = { halign: 'right' };
 
       // indicadores
-      var kpis = [
-        ['Atendimentos', G.num(sub.length)],
-        ['Mecanização', G.num(mec.length) + ' (' + G.num(ha, 1) + ' ha)'],
-        ['Açudagem', G.num(acu.length) + ' (' + G.num(hrs, 1) + ' h)'],
-        ['Tanques / açudes', G.num(nAc)],
-        ['Produtores', G.num(nProd)],
+      // serviço sem registro na seleção não aparece em lugar nenhum do relatório
+      var temMec = mec.length > 0, temAcu = acu.length > 0;
+      var kpis = [['Atendimentos', G.num(sub.length)]];
+      if (temMec) kpis.push(['Mecanização', G.num(mec.length) + ' (' + G.num(ha, 1) + ' ha)']);
+      if (temAcu) kpis.push(['Açudagem', G.num(acu.length) + ' (' + G.num(hrs, 1) + ' h)'],
+        ['Tanques / açudes', G.num(nAc)]);
+      kpis.push(['Produtores', G.num(nProd)],
         ['Atend. por município', G.num(sub.length / muns.length, 1)],
         ['Municípios', G.num(muns.length)],
-        ['Meses com vistoria', G.num(chavesTempo(sub).length)]
-      ];
+        ['Meses com vistoria', G.num(chavesTempo(sub).length)]);
       var kw = (CW - 9) / 4, kh = 15;
       kpis.forEach(function (k, i) {
         var x = M + (i % 4) * (kw + 3), yy = y + Math.floor(i / 4) * (kh + 3);
@@ -3078,24 +3103,31 @@
         doc.setTextColor.apply(doc, TINTA); doc.setFontSize(10.5);
         doc.text(String(k[1]), x + 2.5, yy + 11.5, { maxWidth: kw - 4 });
       });
-      y += 2 * kh + 3 + 9;
+      y += Math.ceil(kpis.length / 4) * (kh + 3) + 6;
 
       // um município por linha
       secao('Por município');
+      function colsMun(nm, s, sm, sa) {
+        var l = [nm, G.num(s.length)];
+        if (temMec) l.push(G.num(sm.length), G.num(soma(sm, function (r) { return r.ha; }), 1));
+        if (temAcu) l.push(G.num(sa.length), G.num(soma(sa, function (r) { return r.hrs; }), 1),
+          G.num(soma(sa, function (r) { return r.ac; })));
+        l.push(G.num(nProdutores(s)));
+        return l;
+      }
       var linhasMun = muns.map(function (m) {
         var s = sub.filter(function (r) { return r.mun === m; });
-        var sm = s.filter(function (r) { return r.pc === MEC; });
-        var sa = s.filter(function (r) { return r.pc === ACU; });
-        return [m, G.num(s.length), G.num(sm.length), G.num(sa.length),
-          G.num(soma(sm, function (r) { return r.ha; }), 1), G.num(soma(sa, function (r) { return r.hrs; }), 1),
-          G.num(soma(sa, function (r) { return r.ac; })), G.num(nProdutores(s))];
+        return colsMun(m, s, s.filter(function (r) { return r.pc === MEC; }),
+          s.filter(function (r) { return r.pc === ACU; }));
       });
-      linhasMun.push(['Total', G.num(sub.length), G.num(mec.length), G.num(acu.length), G.num(ha, 1),
-        G.num(hrs, 1), G.num(nAc), G.num(nProd)]);
+      linhasMun.push(colsMun('Total', sub, mec, acu));
+      var cabMun = ['Município', 'Atend.'];
+      if (temMec) cabMun.push('Mecaniz.', 'Hectares');
+      if (temAcu) cabMun.push('Açud.', 'Horas', 'Tanques');
+      cabMun.push('Produt.');
       var cols9 = {};
-      for (var c = 1; c < 8; c++) cols9[c] = dir;
-      tabela(['Município', 'Atend.', 'Mecaniz.', 'Açud.', 'Hectares', 'Horas', 'Tanques', 'Produt.'],
-        linhasMun, { cols: cols9, totais: true });
+      for (var c = 1; c < cabMun.length; c++) cols9[c] = dir;
+      tabela(cabMun, linhasMun, { cols: cols9, totais: true });
 
       if (!resumo) {
         var rkCult = ranking((function () {
@@ -3126,10 +3158,17 @@
           var hrMap = somarPor(acu, chaveTempo, function (r) { return r.hrs; });
           var acMap = somarPor(acu, chaveTempo, function (r) { return r.ac; });
           secao('Evolução por ' + (porAno() ? 'ano' : 'mês'));
-          tabela([porAno() ? 'Ano' : 'Mês', 'Atendimentos', 'Hectares', 'Horas', 'Tanques'], tempo.map(function (k) {
-            return [rotTempo(k), G.num(cnt.get(k) || 0), G.num(hMap.get(k) || 0, 1),
-              G.num(hrMap.get(k) || 0, 1), G.num(acMap.get(k) || 0)];
-          }), { cols: { 1: dir, 2: dir, 3: dir, 4: dir } });
+          var cabEv = [porAno() ? 'Ano' : 'Mês', 'Atendimentos'];
+          if (temMec) cabEv.push('Hectares');
+          if (temAcu) cabEv.push('Horas', 'Tanques');
+          var colsEv = {};
+          for (var q = 1; q < cabEv.length; q++) colsEv[q] = dir;
+          tabela(cabEv, tempo.map(function (k) {
+            var l = [rotTempo(k), G.num(cnt.get(k) || 0)];
+            if (temMec) l.push(G.num(hMap.get(k) || 0, 1));
+            if (temAcu) l.push(G.num(hrMap.get(k) || 0, 1), G.num(acMap.get(k) || 0));
+            return l;
+          }), { cols: colsEv });
         }
         var tecMap = new Map();
         sub.forEach(function (r) {
@@ -3146,12 +3185,21 @@
         }
         doc.addPage(); y = 18;
         secao('Registros detalhados');
-        tabela(['Município', 'Vistoria', 'Serviço', 'Produtor / Propriedade', 'Culturas', 'Área (ha)', 'Horas', 'Tanq.', 'Técnico'],
+        var cabReg = ['Município', 'Vistoria', 'Serviço', 'Produtor / Propriedade', 'Culturas'];
+        if (temMec) cabReg.push('Área (ha)');
+        if (temAcu) cabReg.push('Horas', 'Tanq.');
+        cabReg.push('Técnico');
+        var colsReg = {};
+        for (var k = 5; k < cabReg.length - 1; k++) colsReg[k] = dir;
+        tabela(cabReg,
           sub.slice().sort(function (a, b) { return a.mun.localeCompare(b.mun, 'pt-BR'); }).map(function (r) {
-            return [r.mun, dataBR(r.dv), r.pc, (r.prod || '-') + (r.propr ? '\n' + r.propr : ''),
-              r.cult.length ? r.cult.map(function (c) { return c[0] + ' (' + G.num(c[1], 1) + ' ha)'; }).join(', ') : '-',
-              r.ha ? G.num(r.ha, 1) : '-', r.hrs ? G.num(r.hrs, 1) : '-', r.ac ? G.num(r.ac) : '-', r.rt || '-'];
-          }), { fs: 7, cols: { 5: dir, 6: dir, 7: dir } });
+            var l = [r.mun, dataBR(r.dv), r.pc, (r.prod || '-') + (r.propr ? '\n' + r.propr : ''),
+              r.cult.length ? r.cult.map(function (c) { return c[0] + ' (' + G.num(c[1], 1) + ' ha)'; }).join(', ') : '-'];
+            if (temMec) l.push(r.ha ? G.num(r.ha, 1) : '-');
+            if (temAcu) l.push(r.hrs ? G.num(r.hrs, 1) : '-', r.ac ? G.num(r.ac) : '-');
+            l.push(r.rt || '-');
+            return l;
+          }), { fs: 7, cols: colsReg });
       }
 
       // rodapé com paginação em todas as páginas
@@ -3274,29 +3322,23 @@
     // um município por linha, com os totais no rodapé — o miolo do relatório geral
     var htmlMuns = '';
     if (multi) {
+      function celMun(nome, s, sMec, sAcu, cls) {
+        var c = function (v) { return '<td class="num' + cls + '">' + v + '</td>'; };
+        return '<tr><td class="forte">' + nome + '</td>' + c(G.num(s.length)) +
+          (mec.length ? c(G.num(sMec.length)) + c(G.num(soma(sMec, function (r) { return r.ha; }), 1)) : '') +
+          (acu.length ? c(G.num(sAcu.length)) + c(G.num(soma(sAcu, function (r) { return r.hrs; }), 1)) +
+            c(G.num(soma(sAcu, function (r) { return r.ac; }))) : '') +
+          c(G.num(nProdutores(s))) + '</tr>';
+      }
       var linhasMun = muns.map(function (m) {
         var s = sub.filter(function (r) { return r.mun === m; });
-        var sMec = s.filter(function (r) { return r.pc === MEC; });
-        var sAcu = s.filter(function (r) { return r.pc === ACU; });
-        return '<tr><td class="forte">' + G.esc(m) + '</td>' +
-          '<td class="num">' + G.num(s.length) + '</td>' +
-          '<td class="num">' + G.num(sMec.length) + '</td>' +
-          '<td class="num">' + G.num(sAcu.length) + '</td>' +
-          '<td class="num">' + G.num(soma(sMec, function (r) { return r.ha; }), 1) + '</td>' +
-          '<td class="num">' + G.num(soma(sAcu, function (r) { return r.hrs; }), 1) + '</td>' +
-          '<td class="num">' + G.num(soma(sAcu, function (r) { return r.ac; })) + '</td>' +
-          '<td class="num">' + G.num(nProdutores(s)) + '</td></tr>';
+        return celMun(G.esc(m), s, s.filter(function (r) { return r.pc === MEC; }),
+          s.filter(function (r) { return r.pc === ACU; }), '');
       }).join('');
-      linhasMun += '<tr><td class="forte">Total</td>' +
-        '<td class="num forte">' + G.num(sub.length) + '</td>' +
-        '<td class="num forte">' + G.num(mec.length) + '</td>' +
-        '<td class="num forte">' + G.num(acu.length) + '</td>' +
-        '<td class="num forte">' + G.num(ha, 1) + '</td>' +
-        '<td class="num forte">' + G.num(hrs, 1) + '</td>' +
-        '<td class="num forte">' + G.num(nAc) + '</td>' +
-        '<td class="num forte">' + G.num(nProd) + '</td></tr>';
+      linhasMun += celMun('Total', sub, mec, acu, ' forte');
       htmlMuns = '<h2 class="relatorio-sec-tit">Por munic&iacute;pio</h2>' +
-        tTbl(['Munic&iacute;pio', 'Atend.', 'Mecaniza&ccedil;&atilde;o', 'A&ccedil;udagem', 'Hectares', 'Horas', 'Tanques', 'Produtores'],
+        tTbl(['Munic&iacute;pio', 'Atend.'].concat(mec.length ? ['Mecaniza&ccedil;&atilde;o', 'Hectares'] : [],
+          acu.length ? ['A&ccedil;udagem', 'Horas', 'Tanques'] : [], ['Produtores']),
           linhasMun);
     }
 
@@ -3306,6 +3348,13 @@
       '<div class="relatorio-header">' +
       '<div class="relatorio-header-org">Sistema de gestão</div>' +
       '<div class="relatorio-header-sub">Relat&oacute;rio de Mecaniza&ccedil;&atilde;o e A&ccedil;udagem &middot; ' + G.esc(rotuloAno()) + '</div>' +
+      (function () {
+        var cab = cabecalhoRelatorio(sub);
+        return '<div class="relatorio-header-sub">' + cab.itens.map(function (it) {
+          return '<b>' + G.esc(it[0]) + ':</b> ' + G.esc(it[1]);
+        }).join(' &middot; ') + '</div>' +
+          '<div class="relatorio-header-sub"><b>Per&iacute;odo das vistorias:</b> ' + G.esc(cab.periodo) + '</div>';
+      })() +
       '</div>' +
       '<h1 class="relatorio-mun-titulo">' + titulo + '</h1>' +
       (multi ? '<p class="fraco">' + G.num(muns.length) + ' munic&iacute;pios: ' + G.esc(muns.join(', ')) + '</p>' : '') +
@@ -3331,7 +3380,8 @@
       (multi ? '<th>Munic&iacute;pio</th>' : '') +
       '<th>Inser&ccedil;&atilde;o</th><th>Vistoria</th><th>Servi&ccedil;o</th>' +
       '<th>Produtor / Propriedade</th><th>Culturas</th>' +
-      '<th>&Aacute;rea (ha)</th><th>Horas</th><th>Tanques</th><th>T&eacute;cnico</th>' +
+      (mec.length ? '<th>&Aacute;rea (ha)</th>' : '') +
+      (acu.length ? '<th>Horas</th><th>Tanques</th>' : '') + '<th>T&eacute;cnico</th>' +
       '</tr></thead><tbody>' +
       sub.slice().sort(function (a, b) { return multi ? a.mun.localeCompare(b.mun, 'pt-BR') : 0; }).map(function (r) {
         return '<tr>' +
@@ -3341,9 +3391,9 @@
           '<td><span class="tag ' + tagServico(r.pc) + '">' + G.esc(r.pc) + '</span></td>' +
           '<td class="forte">' + G.esc(r.prod || '—') + '<br><small class="fraco">' + G.esc(r.propr || '') + '</small></td>' +
           '<td>' + (r.cult.length ? r.cult.map(function (c) { return G.esc(c[0]) + ' (' + G.num(c[1], 1) + ' ha)'; }).join(', ') : '—') + '</td>' +
-          '<td class="num">' + (r.ha ? G.num(r.ha, 1) : '—') + '</td>' +
-          '<td class="num">' + (r.hrs ? G.num(r.hrs, 1) : '—') + '</td>' +
-          '<td class="num">' + (r.ac ? G.num(r.ac) : '—') + '</td>' +
+(mec.length ? '<td class="num">' + (r.ha ? G.num(r.ha, 1) : '—') + '</td>' : '') +
+          (acu.length ? '<td class="num">' + (r.hrs ? G.num(r.hrs, 1) : '—') + '</td>' +
+            '<td class="num">' + (r.ac ? G.num(r.ac) : '—') + '</td>' : '') +
           '<td>' + G.esc(r.rt || '—') + '</td>' +
           '</tr>';
       }).join('') +
@@ -3508,7 +3558,7 @@
 
   /* Versão pública: estas abas não existem (registros linha a linha,
      lançamento e administração). */
-  var ABAS_FORA_DO_PUBLICO = ['registros', 'lancamento', 'ins-pessoa', 'ins-dia', 'ins-mes', 'ins-cultura', 'admin'];
+  var ABAS_FORA_DO_PUBLICO = ['registros', 'lancamento', 'ins-pessoa', 'ins-dia', 'ins-mes', 'ins-cultura'];
   function abaValida(nome) {
     if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) return false;
     return botoes.some(function (b) { return b.getAttribute('data-aba') === nome && !b.hidden; });
@@ -3666,25 +3716,6 @@
     // "Atualizar dados" e as quatro abas de inserção: todas marcadas .aba-admin
     document.querySelectorAll('.aba-admin').forEach(function (b) { b.hidden = !on; });
     el('adminBtn').innerHTML = on ? '&#9989;<span>Admin (sair)</span>' : '&#128274;<span>Admin</span>';
-    // sem servidor não há o que publicar: o botão sai de cena em vez de falhar
-    var aplicar = el('upAplicar');
-    if (aplicar) {
-      aplicar.hidden = ADMIN_LOCAL;
-      aplicar.title = ADMIN_LOCAL ? 'Indisponível sem o servidor PHP' : '';
-    }
-    /* Antes o modo local só se anunciava pelo title do botão escondido: quem
-       abria a aba via um formulário de upload que parecia inteiro e descobria
-       tarde demais que não havia como publicar. Agora o motivo fica na tela. */
-    var box = el('upModoLocal');
-    if (box) {
-      box.innerHTML = (on && ADMIN_LOCAL)
-        ? '<p class="aviso erro"><b>Modo local: publicar está desativado.</b> ' + MOTIVO_LOCAL +
-          ' A senha não chegou a ser conferida e nada pode ser gravado em ' +
-          '<code>data/mecanizacao.json</code> — o que for carregado aqui vale só neste navegador.' +
-          '<br>Para publicar de verdade, abra o painel por um servidor que execute PHP: o Apache do ' +
-          'XAMPP, ou <code>php -S localhost:8734 -t .</code> na raiz do projeto.</p>'
-        : '';
-    }
     // saiu do admin estando numa aba restrita: volta para a visão geral
     var ativa = document.querySelector('.aba.ativa');
     if (!on && ativa && ativa.classList.contains('aba-admin')) abrirAba('geral');
@@ -3755,88 +3786,12 @@
       } catch (e) { /* privado */ }
       el('admOverlay').classList.remove('show');
       aplicarAdmin();
-      abrirAba('admin');
+      abrirAba('ins-pessoa');
     });
   }
 
   function aviso(alvo, classe, html) {
     el(alvo).innerHTML = '<p class="aviso ' + classe + '">' + html + '</p>';
-  }
-
-  function fonteDados() {
-    if (!el('upFonte')) return;
-    var rotulos = {
-      servidor: 'Publicado no servidor (<code>data/mecanizacao.json</code>)',
-      navegador: 'Carga local, só neste navegador',
-      embutido: 'Arquivo embutido (<code>js/dados-mecanizacao.js</code>)'
-    };
-    var per = META.periodo || ['', ''];
-    var itens = [
-      ['Origem (ano corrente)', rotulos[FONTE] || FONTE],
-      ['Planilha', G.esc(META.arquivo || '—')],
-      ['Importada em', G.esc(META.gerado_em || '—')],
-      ['Publicada em', G.esc(META.publicado_em || '—')],
-      ['Registros do ano corrente', G.num(N_CORRENTE)],
-      ['Período de inserção', per[0] ? dataBR(per[0]) + ' a ' + dataBR(per[1]) : '—'],
-      ['Histórico embutido', META_HIST.registros
-        ? G.num(META_HIST.registros) + ' registros (' + G.esc((META_HIST.anos || []).join(', ')) + ')'
-        : '—'],
-      ['Total no painel', G.num(TODOS.length)]
-    ];
-    el('upFonte').innerHTML = '<div class="ficha">' + itens.map(function (i) {
-      return '<div class="ficha-item"><div class="ficha-rot">' + i[0] + '</div>' +
-        '<div class="ficha-val">' + i[1] + '</div></div>';
-    }).join('') + '</div>' +
-      (FONTE === 'navegador'
-        ? '<p class="aviso">Estes dados estão apenas neste navegador. Use <b>Publicar para todos</b> na aba de atualização para valer para todo mundo, ou limpe com o botão abaixo.<br><button class="btn" id="upLimparLocal" type="button" style="margin-top:8px">Descartar carga local</button></p>'
-        : '');
-    var limpar = el('upLimparLocal');
-    if (limpar) {
-      limpar.addEventListener('click', function () {
-        try { localStorage.removeItem(CHAVE_LOCAL); } catch (e) { /* nada */ }
-        location.reload();
-      });
-    }
-  }
-
-  var pendente = null; // pacote lido da planilha, aguardando confirmação
-
-  function lerArquivo(arquivo) {
-    if (!arquivo) return;
-    if (!/\.xlsx$/i.test(arquivo.name)) {
-      return aviso('upStatus', 'erro', 'Envie um arquivo <b>.xlsx</b>. Se a planilha estiver em .xls ou no Google Sheets, exporte como .xlsx primeiro.');
-    }
-    pendente = null;
-    el('upAcoes').hidden = true;
-    el('upResumo').innerHTML = '';
-    aviso('upStatus', 'carregando', 'Lendo <b>' + G.esc(arquivo.name) + '</b> (' +
-      (arquivo.size / 1048576).toFixed(1).replace('.', ',') + ' MB)…');
-
-    IMPORTAR.lerPlanilha(arquivo).then(function (pacote) {
-      pendente = pacote;
-      // a comparação é só com a planilha do ano corrente: o histórico não vem no upload
-      var antes = N_CORRENTE, depois = pacote.registros.length;
-      var novos = depois - antes;
-      var q = pacote.meta.qualidade || {};
-      aviso('upStatus', 'ok', 'Planilha lida com sucesso: <b>' + G.num(depois) +
-        ' registros</b> na aba <code>' + IMPORTAR.aba + '</code>.');
-      el('upResumo').innerHTML = '<div class="ficha">' + [
-        ['Registros no painel agora', G.num(antes)],
-        ['Registros na planilha enviada', G.num(depois)],
-        ['Diferença', (novos > 0 ? '+' : '') + G.num(novos) + (novos < 0 ? ' (a planilha tem menos linhas!)' : '')],
-        ['Produtores distintos', G.num(pacote.meta.produtores || 0)],
-        ['Período de inserção', dataBR(pacote.meta.periodo[0]) + ' a ' + dataBR(pacote.meta.periodo[1])],
-        ['Registros sem data válida', G.num(q.sem_data_valida || 0)]
-      ].map(function (i) {
-        return '<div class="ficha-item"><div class="ficha-rot">' + i[0] + '</div>' +
-          '<div class="ficha-val">' + i[1] + '</div></div>';
-      }).join('') + '</div>' +
-        (novos < 0 ? '<p class="aviso erro">A planilha enviada tem <b>menos</b> linhas que os dados atuais. ' +
-          'Confirme se é o arquivo certo antes de publicar.</p>' : '');
-      el('upAcoes').hidden = false;
-    }).catch(function (e) {
-      aviso('upStatus', 'erro', '<b>Não foi possível ler a planilha.</b><br>' + G.esc(e && e.message ? e.message : String(e)));
-    });
   }
 
   /** Registros dos exercícios encerrados. Um ano que também venha no pacote do
@@ -3892,7 +3847,6 @@
     invalidar();
     // dependem só de TODOS/META: saem do caminho quente e rodam ao trocar a base
     nota();
-    fonteDados();
   }
 
   /* --------------------------------------------- histórico em segundo plano */
@@ -3916,54 +3870,6 @@
     });
   }
 
-  function publicar() {
-    if (!pendente) return;
-    if (ADMIN_LOCAL) {
-      return aviso('upStatus', 'erro', 'Sem servidor PHP não há como publicar. ' +
-        'Use <b>Usar só neste navegador</b> para conferir os dados.');
-    }
-    /* Reconfirma a senha antes de sobrescrever a base de todo mundo: a sessão
-       admin não é autorização para gravar, é só o que abre esta aba. Quem
-       decide continua sendo o PHP, que confere a senha de novo. */
-    var senha = prompt('Confirme a senha de administrador para publicar:');
-    if (senha == null) return;
-    aviso('upStatus', 'carregando', 'Publicando no servidor…');
-    fetch('../salvar_mecanizacao.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ senha: senha, dados: pendente })
-    }).then(function (r) {
-      return r.json().then(function (j) { return { ok: r.ok, corpo: j }; });
-    }).then(function (res) {
-      if (!res.ok || !res.corpo.ok) throw new Error(res.corpo.erro || 'Erro no servidor.');
-      aviso('upStatus', 'ok', 'Publicado: <b>' + G.num(res.corpo.registros) +
-        ' registros</b> em ' + G.esc(res.corpo.publicado_em) + '. Todo mundo já vê os dados novos.');
-      try { localStorage.removeItem(CHAVE_LOCAL); } catch (e) { /* nada */ }
-      usarPacote(pendente, 'servidor');
-      pendente = null;
-      el('upAcoes').hidden = true;
-      render();
-    }).catch(function (e) {
-      aviso('upStatus', 'erro', '<b>Falha ao publicar.</b> ' + G.esc(e.message) +
-        '<br>Se o servidor não tem PHP (ex.: GitHub Pages), use <b>Usar só neste navegador</b> ' +
-        'ou rode <code>python tools/gerar_dados_mecanizacao.py</code> e publique o arquivo gerado.');
-    });
-  }
-
-  function usarSoLocal() {
-    if (!pendente) return;
-    try {
-      localStorage.setItem(CHAVE_LOCAL, JSON.stringify(pendente));
-    } catch (e) {
-      return aviso('upStatus', 'erro', 'Não foi possível guardar no navegador (espaço insuficiente): ' + G.esc(e.message));
-    }
-    aviso('upStatus', 'ok', 'Dados carregados <b>só neste navegador</b>. O servidor não foi alterado.');
-    usarPacote(pendente, 'navegador');
-    pendente = null;
-    el('upAcoes').hidden = true;
-    render();
-  }
-
   function ligarAdmin() {
     el('adminBtn').addEventListener('click', function () {
       if (ehAdmin()) {
@@ -3984,28 +3890,6 @@
     });
     el('admOverlay').addEventListener('click', function (e) {
       if (e.target === el('admOverlay')) el('admOverlay').classList.remove('show');
-    });
-
-    var zona = el('upZona');
-    zona.addEventListener('click', function () { el('upArquivo').click(); });
-    el('upArquivo').addEventListener('change', function () { lerArquivo(this.files[0]); });
-    ['dragenter', 'dragover'].forEach(function (ev) {
-      zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('sobre'); });
-    });
-    ['dragleave', 'drop'].forEach(function (ev) {
-      zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.remove('sobre'); });
-    });
-    zona.addEventListener('drop', function (e) {
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) lerArquivo(e.dataTransfer.files[0]);
-    });
-    el('upAplicar').addEventListener('click', publicar);
-    el('upSoLocal').addEventListener('click', usarSoLocal);
-    el('upCancelar').addEventListener('click', function () {
-      pendente = null;
-      el('upAcoes').hidden = true;
-      el('upResumo').innerHTML = '';
-      el('upArquivo').value = '';
-      aviso('upStatus', '', 'Carga cancelada. Nada foi alterado.');
     });
   }
 
@@ -4045,28 +3929,37 @@
   ligarAdmin();
   aplicarAdmin();
   (function ligarLinkPublico() {
-    var campo = el('linkPublicoUrl'), botao = el('linkPublicoCopiar');
-    if (!campo || !botao) return;
-    /* O link é o do site publicado (GitHub Pages), não o endereço de onde o painel
-       está aberto: em localhost ou num arquivo local ele não abriria para ninguém.
-       Em qualquer outro endereço o link acompanha o próprio site. */
+    /* Dois links para o mesmo painel público. O WEB é sempre o do site publicado
+       (GitHub Pages): é o que se manda para quem está fora. O LOCAL é o deste
+       computador — o endereço de onde o painel está aberto quando ele já é local
+       (localhost, 127.0.0.1 ou arquivo); aberto pela web, cai no XAMPP padrão. */
     var SITE_PUBLICADO = 'https://iadoagro.github.io/agricultura/pages/';
-    var url;
+    var ARQ = 'mecanizacao-publico.html';
+    var web = SITE_PUBLICADO + ARQ;
+    var local = 'http://localhost/agricultura/pages/' + ARQ;
     try {
-      var local = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname) || location.protocol === 'file:';
-      url = local ? SITE_PUBLICADO + 'mecanizacao-publico.html' : new URL('mecanizacao-publico.html', location.href).href;
-    } catch (e) { url = SITE_PUBLICADO + 'mecanizacao-publico.html'; }
-    campo.value = url;
-    campo.addEventListener('focus', function () { campo.select(); });
-    botao.addEventListener('click', function () {
-      function feito() { botao.textContent = 'Copiado!'; setTimeout(function () { botao.textContent = 'Copiar'; }, 1800); }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(feito, function () { campo.select(); });
-      } else {
-        campo.select();
-        try { if (document.execCommand('copy')) feito(); } catch (e) { /* o texto fica selecionado */ }
+      if (/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname) || location.protocol === 'file:') {
+        local = new URL(ARQ, location.href).href;
       }
-    });
+    } catch (e) { /* fica o padrão do XAMPP */ }
+
+    function ligar(idCampo, idBotao, url) {
+      var campo = el(idCampo), botao = el(idBotao);
+      if (!campo || !botao) return;
+      campo.value = url;
+      campo.addEventListener('focus', function () { campo.select(); });
+      botao.addEventListener('click', function () {
+        function feito() { botao.textContent = 'Copiado!'; setTimeout(function () { botao.textContent = 'Copiar'; }, 1800); }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(feito, function () { campo.select(); });
+        } else {
+          campo.select();
+          try { if (document.execCommand('copy')) feito(); } catch (e) { /* o texto fica selecionado */ }
+        }
+      });
+    }
+    ligar('linkPublicoWeb', 'linkPublicoWebCopiar', web);
+    ligar('linkPublicoLocal', 'linkPublicoLocalCopiar', local);
   })();
   // o perfil da conta chega depois da página: reaplica quando ele muda
   window.addEventListener('admin-auth-atualizado', aplicarAdmin);

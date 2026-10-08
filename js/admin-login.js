@@ -35,7 +35,24 @@
     return;
   }
 
-  function redirecionar() { location.href = auth.deveTrocarSenha() ? 'admin-trocar-senha.html' : 'index.html'; }
+  /* Destino pedido por quem chegou de um atalho (ex.: "Lançar relatório" do painel público):
+     só páginas .html desta pasta, com #aba opcional — nunca endereço externo. Fica na sessão
+     para sobreviver à troca de senha e ao convite do PIN, e é consumido na primeira entrada. */
+  var DESTINO_OK = /^[\w-]+\.html(#[\w-]+)?$/;
+  try {
+    var pedido = new URLSearchParams(location.search).get('destino');
+    if (pedido && DESTINO_OK.test(pedido)) sessionStorage.setItem('seagri_destino', pedido);
+  } catch (e) { /* sem sessionStorage: cai no Início */ }
+  function destinoFinal() {
+    var d = 'index.html';
+    try {
+      var v = sessionStorage.getItem('seagri_destino');
+      if (v && DESTINO_OK.test(v)) d = v;
+      sessionStorage.removeItem('seagri_destino');
+    } catch (e) { /* nada */ }
+    return d;
+  }
+  function redirecionar() { location.href = auth.deveTrocarSenha() ? 'admin-trocar-senha.html' : destinoFinal(); }
 
   /* Convite depois do login, antes de ir pro Início: o cadastro e o 1º acesso
      são só com senha normal. A partir da 2ª entrada, quem usa senha normal e
@@ -59,7 +76,7 @@
     location.href = 'admin-trocar-senha.html?modo=pin';
   });
   document.getElementById('pinAgoraNao').addEventListener('click', function () {
-    auth.pinRecusar().catch(function () { /* sem banco: só segue */ }).then(function () { location.href = 'index.html'; });
+    auth.pinRecusar().catch(function () { /* sem banco: só segue */ }).then(function () { location.href = destinoFinal(); });
   });
 
   function avaliarSessao() {

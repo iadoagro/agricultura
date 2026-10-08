@@ -10,7 +10,7 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026100701">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026100801">
 <link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026092536">
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
@@ -112,6 +112,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       Lan&ccedil;ar relat&oacute;rios
     </button>
+    <!-- Só na versão pública: leva ao login e, depois dele, direto para "Lan&ccedil;ar relat&oacute;rios"
+         (destino lido por js/admin-login.js). Fora do .aba de prop&oacute;sito: n&atilde;o &eacute; uma aba. -->
+    <a class="aba-lancar-publico" href="admin-login.html?destino=dashboard.html%23lancamento">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Lan&ccedil;ar relat&oacute;rio
+    </a>
     <!-- "Mostrar mais": Registros e as abas de administra&ccedil;&atilde;o. As de Admin reproduzem as
          planilhas "Inser&ccedil;&otilde;es por pessoa", "por dia", "por mes" e "culturas", contam
          LAN&Ccedil;AMENTOS e nomeiam quem lan&ccedil;ou: s&oacute; aparecem para a conta respons&aacute;vel
@@ -143,10 +149,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/><path d="M7 17l3-3 3 2 4-4"/></svg>
         Inser&ccedil;&otilde;es por m&ecirc;s
       </button>
-      <button class="aba aba-admin" data-aba="admin" type="button" role="tab" id="abaAdmin" aria-controls="painel-admin" aria-selected="false" tabindex="-1" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 8-7 9-4-1-7-4.5-7-9V7z"/><path d="M12 11v4M12 8.5v.5"/></svg>
-        Atualizar dados
-      </button>
       </div>
     </div>
   </div>
@@ -163,6 +165,10 @@
          e nada marcado = tudo. O Per&iacute;odo &eacute; a exce&ccedil;&atilde;o: abre no exerc&iacute;cio mais
          recente, para a tela inicial ser o ano corrente inteiro.
          Marcar uma regional recorta a lista de munic&iacute;pios para os dela. -->
+    <div class="filtro">
+      <span class="filtro-rot" id="rotPonto">Servi&ccedil;o</span>
+      <div class="multi" id="fPonto"></div>
+    </div>
     <div class="filtro" id="filtroExercicio" hidden>
       <span class="filtro-rot" id="rotExercicio">Per&iacute;odo</span>
       <div class="multi" id="fExercicio"></div>
@@ -170,10 +176,6 @@
     <div class="filtro">
       <span class="filtro-rot" id="rotMes">M&ecirc;s da vistoria</span>
       <div class="multi" id="fMes"></div>
-    </div>
-    <div class="filtro">
-      <span class="filtro-rot" id="rotPonto">Servi&ccedil;o</span>
-      <div class="multi" id="fPonto"></div>
     </div>
     <div class="filtro">
       <span class="filtro-rot" id="rotReg">Regional</span>
@@ -203,10 +205,15 @@
     <p class="filtro-resumo" id="resumo" role="status" aria-live="polite"></p>
     <!-- Link para quem n&atilde;o tem login: o mesmo painel, s&oacute; de Mecaniza&ccedil;&atilde;o e s&oacute; para ler. -->
     <div class="link-publico" id="linkPublico">
-      <span class="filtro-rot" title="Painel de Mecaniza&ccedil;&atilde;o sem login, s&oacute; para leitura">Link p&uacute;blico (sem login)</span>
+      <span class="filtro-rot" title="Painel de Mecaniza&ccedil;&atilde;o sem login, s&oacute; para leitura">Link p&uacute;blico web (sem login)</span>
       <div class="link-publico-linha">
-        <input type="text" id="linkPublicoUrl" readonly aria-label="Link p&uacute;blico do painel de Mecaniza&ccedil;&atilde;o">
-        <button class="btn" id="linkPublicoCopiar" type="button">Copiar</button>
+        <input type="text" id="linkPublicoWeb" readonly aria-label="Link p&uacute;blico web do painel de Mecaniza&ccedil;&atilde;o">
+        <button class="btn" id="linkPublicoWebCopiar" type="button">Copiar</button>
+      </div>
+      <span class="filtro-rot" title="Mesmo painel, servido por este computador (XAMPP ou servidor local)">Link p&uacute;blico local (sem login)</span>
+      <div class="link-publico-linha">
+        <input type="text" id="linkPublicoLocal" readonly aria-label="Link p&uacute;blico local do painel de Mecaniza&ccedil;&atilde;o">
+        <button class="btn" id="linkPublicoLocalCopiar" type="button">Copiar</button>
       </div>
     </div>
   </section>
@@ -779,73 +786,6 @@
     </div>
   </div>
 
-  <!-- ======================================== ABA: ATUALIZAR DADOS (admin) -->
-  <div class="aba-conteudo" data-aba="admin" role="tabpanel" id="painel-admin" aria-labelledby="abaAdmin" tabindex="0">
-    <div class="painel-grid">
-      <section class="painel duplo">
-        <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>Carregar planilha atualizada</h2>
-          <p class="sub">Envie o <code>.xlsx</code> do formul&aacute;rio de mecaniza&ccedil;&atilde;o com as linhas novas.
-             A leitura acontece no seu navegador; s&oacute; os dados j&aacute; tratados v&atilde;o para o servidor.</p>
-        </div></div>
-
-        <!-- preenchido por dashboard.js quando o painel abre sem PHP: sem ele
-             o formul&aacute;rio abaixo parece inteiro, mas nada pode ser publicado -->
-        <div id="upModoLocal"></div>
-
-        <div class="upload" id="upZona">
-          <input type="file" id="upArquivo" accept=".xlsx" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <p class="upload-tit">Arraste a planilha aqui ou clique para escolher</p>
-          <p class="upload-sub">Somente a aba <b>dados</b> &eacute; lida. A estrutura de colunas deve ser a mesma.</p>
-        </div>
-
-        <div id="upStatus"></div>
-        <div id="upResumo"></div>
-        <div class="upload-acoes" id="upAcoes" hidden>
-          <button class="btn btn-verde" id="upAplicar" type="button">Publicar para todos</button>
-          <button class="btn" id="upSoLocal" type="button">Usar s&oacute; neste navegador</button>
-          <button class="btn" id="upCancelar" type="button">Cancelar</button>
-        </div>
-      </section>
-
-      <section class="painel">
-        <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>Situa&ccedil;&atilde;o dos dados</h2>
-          <p class="sub">De onde o painel est&aacute; lendo agora.</p>
-        </div></div>
-        <div id="upFonte"></div>
-      </section>
-
-      <section class="painel largo">
-        <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>Como funciona</h2>
-        </div></div>
-        <div class="ajuda">
-          <ol>
-            <li>Exporte a planilha do formul&aacute;rio mantendo a aba <b>dados</b> e as mesmas colunas &mdash; s&oacute; acrescente linhas.</li>
-            <li>Envie o arquivo aqui. O painel compara com os dados atuais e mostra quantos registros entraram.</li>
-            <li><b>Publicar para todos</b> grava <code>data/mecanizacao.json</code> no servidor (precisa do PHP ativo, como no XAMPP)
-                e todo mundo passa a ver os dados novos. A vers&atilde;o anterior fica guardada em
-                <code>data/mecanizacao-anterior.json</code>.</li>
-            <li><b>Usar s&oacute; neste navegador</b> guarda no seu navegador, sem tocar no servidor &mdash; serve para conferir antes de publicar.</li>
-            <li>As abas <b>Inser&ccedil;&otilde;es por pessoa / por dia / por m&ecirc;s</b> e <b>Culturas</b> saem da mesma
-                aba <b>dados</b> e s&oacute; aparecem com a senha &mdash; elas nomeiam quem lan&ccedil;ou cada linha.
-                Publicar uma planilha nova atualiza as quatro junto com o resto do painel.</li>
-            <li>O upload troca <b>apenas o ano corrente</b>. Os exerc&iacute;cios encerrados (2023 a 2025) ficam em
-                <code>js/dados-mecanizacao-historico.js</code> e n&atilde;o s&atilde;o afetados. Para refaz&ecirc;-los,
-                rode <code>python tools/gerar_historico_mecanizacao.py</code>.</li>
-          </ol>
-          <p class="ajuda-aviso"><b>Aten&ccedil;&atilde;o:</b> o <b>exerc&iacute;cio</b> de cada linha &eacute; o da planilha em que ela
-             foi lan&ccedil;ada &mdash; por isso o total de um per&iacute;odo bate com o SOMA do Excel daquela planilha, mesmo
-             quando a vistoria foi feita no ano anterior. J&aacute; o <b>m&ecirc;s</b> nos gr&aacute;ficos &eacute; o da
-             <b>Data da Vistoria</b>; quando essa data &eacute; imposs&iacute;vel (ano digitado errado ou data futura),
-             vale a data de lan&ccedil;amento e a linha aparece destacada na listagem.</p>
-        </div>
-      </section>
-    </div>
-  </div>
-
   <!-- ========================================================= ABA: LANÇAMENTO -->
   <!-- Digitação de UMA vistoria a partir da ficha em papel; grava direto no
        Supabase (mecanizacao_lancamentos), separado do pacote agregado que
@@ -1146,14 +1086,13 @@
      em segundo plano, depois do primeiro desenho. -->
 <script src="../js/dados-mecanizacao.js?v=2026091101"></script>
 <script src="../js/graficos.js?v=2026081307"></script>
-<script src="../js/importar.js?v=2026081307"></script>
 <script src="../js/mapa-acre.js?v=2026091402"></script>
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
 <script src="../js/data-br.js?v=2026092504"></script>
 <script src="../js/select-busca.js?v=2026092604" defer></script>
 <script src="../js/lancamento-campos.js?v=2026092517"></script>
 <script src="../js/lancamento-mecanizacao.js?v=2026092544"></script>
-<script src="../js/dashboard.js?v=2026100703"></script>
+<script src="../js/dashboard.js?v=2026100802"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

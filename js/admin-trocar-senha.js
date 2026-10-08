@@ -44,7 +44,13 @@
     auth.alterarPropriaSenha(senha1)
       .then(function () {
         if (campo) campo.guardar();   // o login abre no mesmo modo (PIN ou senha)
-        location.href = 'index.html';
+        var destino = 'index.html';
+        try {
+          var v = sessionStorage.getItem('seagri_destino');
+          if (v && /^[\w-]+\.html(#[\w-]+)?$/.test(v)) destino = v;
+          sessionStorage.removeItem('seagri_destino');
+        } catch (e) { /* nada */ }
+        location.href = destino;
       })
       .catch(function (err) { msg.textContent = err.message; msg.className = 'admin-msg erro'; botao.disabled = false; });
   });
