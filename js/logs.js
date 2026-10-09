@@ -717,6 +717,19 @@
     busca.value = '';
     atualizar();
   });
+  // Atualizar sem F5: recarrega com os filtros atuais; "Automático" repete a cada 30 s (só com a aba visível)
+  var timerAuto = null;
+  el('logsAtualizar').addEventListener('click', atualizar);
+  // Forçar: recarrega a página inteira (scripts e estilos novos) ignorando o cache; o parâmetro _f muda a URL
+  el('logsForcar').addEventListener('click', function () {
+    var u = new URL(location.href);
+    u.searchParams.set('_f', Date.now());
+    location.replace(u.toString());
+  });
+  el('logsAuto').addEventListener('change', function () {
+    clearInterval(timerAuto); timerAuto = null;
+    if (this.checked) timerAuto = setInterval(function () { if (!document.hidden) atualizar(); }, 30000);
+  });
   lista.addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-filtro-pessoa]');
     if (!b) return;

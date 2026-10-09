@@ -373,7 +373,16 @@
     var pronto = auth && auth.garantirSessao
       ? auth.garantirSessao().then(function (s) { if (s && s.access_token && fd.has('token')) fd.set('token', s.access_token); }, function () {})
       : Promise.resolve();
-    return pronto.then(function () { return enviarAgora(fd, cfg, lerJson); });
+    return pronto.then(function () { return enviarAgora(fd, cfg, lerJson); }).then(function (res) {
+      // 401 com token que parecia válido (relógio do computador atrasado, token invalidado):
+      // força a renovação e tenta de novo uma vez antes de pedir pra entrar de novo
+      if (res.status !== 401 || !fd.has('token') || !auth || !auth.renovarSessao) return res;
+      return auth.renovarSessao().then(function (s) {
+        if (!s || !s.access_token || s.access_token === fd.get('token')) return res;
+        fd.set('token', s.access_token);
+        return enviarAgora(fd, cfg, lerJson);
+      }, function () { return res; });
+    });
   }
 
   function enviarAgora(fd, cfg, lerJson) {

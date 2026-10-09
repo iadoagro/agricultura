@@ -34,6 +34,8 @@
 .logs-filtros label[hidden]{display:none}
 .logs-limpar{min-height:42px;padding:8px 14px;border:1px solid #cbd8e9;border-radius:9px;background:#fff;color:#42536e;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .logs-limpar:hover{background:#f2f6fc}
+.logs-atualizar{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.logs-auto{display:flex;flex-direction:row;align-items:center;gap:6px;min-height:42px;font-size:13px;font-weight:600;color:#42536e;white-space:nowrap}
 /* resumo do período */
 .logs-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
 .logs-kpis:empty{display:none}
