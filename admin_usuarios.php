@@ -203,9 +203,11 @@ if ($acao === 'excluir') {
 
 if ($acao === 'redefinir_senha') {
     // Volta a senha pra padrão e obriga a trocar no próximo acesso.
-    [$status, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'PUT', '/auth/v1/admin/users/' . $id, ['password' => SENHA_PADRAO]);
+    // ban_duration 'none' também tira o bloqueio por 3 senhas erradas (banned_until), direto com a service role.
+    [$status, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'PUT', '/auth/v1/admin/users/' . $id, ['password' => SENHA_PADRAO, 'ban_duration' => 'none']);
     if ($status >= 200 && $status < 300) {
         chamarSupabase($supabaseUrl, $serviceRole, 'PATCH', '/rest/v1/admin_solicitacoes?id=eq.' . $id, ['deve_trocar_senha' => true], ['Prefer: return=minimal']);
+        chamarSupabase($supabaseUrl, $serviceRole, 'PATCH', '/rest/v1/senha_bloqueios?usuario_id=eq.' . $id, ['falhas' => 0, 'bloqueado' => false, 'reset_pendente' => false], ['Prefer: return=minimal']);
         responder(200, ['ok' => true]);
     }
     responder(502, ['ok' => false, 'erro' => $corpo['msg'] ?? 'O Supabase não concluiu a redefinição da senha.']);
