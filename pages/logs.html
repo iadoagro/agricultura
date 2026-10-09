@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092601">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092556">
+<link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/select-app.css?v=2026092603">
 <script src="../js/select-app.js?v=2026092603" defer></script>
 <link rel="stylesheet" href="../css/padrao.css?v=2026092541">
@@ -108,6 +108,11 @@
       <div class="logs-mapa-topo">
         <h3 id="logsMapaTitulo">Mapa dos acessos</h3>
         <span class="logs-mapa-resumo" id="logsMapaResumo"></span>
+        <div class="logs-atualizar">
+          <label class="logs-auto"><input type="checkbox" id="logsAuto"> Automático (30 s)</label>
+          <button type="button" class="logs-alerta-visto" id="logsAtualizar">Atualizar</button>
+          <button type="button" class="logs-alerta-visto" id="logsForcar" title="Recarrega a página inteira ignorando o cache do navegador">Forçar atualização</button>
+        </div>
         <button type="button" class="logs-alerta-visto" id="logsMapaBotao" aria-expanded="false" aria-controls="logsMapaCorpo">Mostrar mapa</button>
       </div>
       <div id="logsMapaCorpo" hidden>
@@ -116,12 +121,6 @@
           <span class="logs-mapa-legenda"><i class="ac"></i>Acre <i class="fora"></i>Fora do Acre <i class="proxy"></i>VPN / proxy / servidor <i class="conhecido"></i>Local conhecido <i class="posicao"></i>Posição do aparelho</span></p>
       </div>
     </section>
-
-    <div class="logs-atualizar">
-      <label class="logs-auto"><input type="checkbox" id="logsAuto"> Automático (30 s)</label>
-      <button type="button" class="logs-limpar" id="logsAtualizar">Atualizar</button>
-      <button type="button" class="logs-limpar" id="logsForcar" title="Recarrega a página inteira ignorando o cache do navegador">Forçar atualização</button>
-    </div>
 
     <p class="admin-msg" id="logsMsg" role="status"></p>
 
@@ -157,8 +156,8 @@
 <script src="../js/admin-auth.js?v=2026101101"></script>
 <script src="../js/admin-gate.js?v=2026092530"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
-<script src="../js/nav.js?v=2026100902"></script>
-<script src="../js/data-br.js?v=2026092504"></script>
+<script src="../js/nav.js?v=2026101201"></script>
+<script src="../js/data-br.js?v=2026101206"></script>
 <script src="../js/logs.js?v=2026092504"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>

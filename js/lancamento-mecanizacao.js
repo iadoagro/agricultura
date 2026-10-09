@@ -100,7 +100,12 @@
     window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
         botao.disabled = false;
-        if (!res.corpo.ok) { aviso('lancSalvarStatus', 'erro', esc(res.corpo.erro || 'Não foi possível salvar.')); return; }
+        if (!res.corpo.ok) {
+          aviso('lancSalvarStatus', 'erro', esc(res.corpo.erro || 'Não foi possível salvar.'));
+          // fica no log: "Enviou o formulário" sozinho não diz se gravou
+          window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('erro', 'mecanizacao', 'Não conseguiu salvar o lançamento de mecanização (HTTP ' + res.status + '): ' + (res.corpo.erro || 'sem detalhe'));
+          return;
+        }
         loteAnterior = {};
         CAMPOS_MANTIDOS_APOS_SALVAR.forEach(function (c) { loteAnterior[c] = form.elements[c].value; });
         var nome = form.elements['nome_beneficiario'].value;
@@ -410,6 +415,12 @@
       }).join('');
     sel.value = atual;
     if (sel.value !== atual) sel.value = '';
+    // "Ver como" (só root): as mesmas pessoas, para ver a lista como cada uma a enxerga
+    var vc = el('lancVerComo'), vcAtual = vc.value;
+    vc.innerHTML = '<option value="">Eu mesmo (root)</option>' + Object.keys(porNome).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); })
+      .map(function (nome) { return '<option value="' + esc(porNome[nome].emails.join(',')) + '">' + esc(nome) + '</option>'; }).join('');
+    vc.value = vcAtual;
+    if (vc.value !== vcAtual) vc.value = '';
   }
 
   /* ------------------------------------------ "Pessoas" (só responsável) */
@@ -853,6 +864,9 @@
     fd.append('pagina', String(paginaAtual));
     var filtros = el('lancFiltros').elements;
     CAMPOS_FILTRO.forEach(function (c) { if (filtros[c] && filtros[c].value) fd.append(c, filtros[c].value); });
+    // "Ver como": lista só da pessoa escolhida, desenhada como ela vê (sem poderes de root)
+    var verComo = ehResponsavel ? el('lancVerComo').value : '';
+    if (verComo) fd.set('f_pessoa', verComo);
     var meuPedido = ++pedidoLista;   // resposta de um filtro antigo não sobrescreve a do atual
     window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
@@ -872,6 +886,10 @@
         ehResponsavel = !!res.corpo.vendo_de_todos;   // só root@root.com
         meusEmails = res.corpo.meus_emails || meusEmails;
         el('lancPessoasBtn').hidden = !ehResponsavel;
+        el('lancVerComoRotulo').hidden = !ehResponsavel;
+        var simulado = ehResponsavel && !!verComo;
+        if (simulado) meusEmails = verComo.split(',').map(function (e) { return e.trim().toLowerCase(); });
+        var comPoder = ehResponsavel && !simulado;   // root de verdade (fora do "Ver como")
         if (!eraResponsavel) carregarSolicitacoes();   // primeira carga; depois, só quando resolve um pedido
         // sem a frase "Mostrando lançamentos de…": o filtro "Lançado por" já diz de quem é a lista
         var nota = '';
@@ -888,9 +906,10 @@
             var dataAttrs = ' data-id="' + esc(r.id) + '" data-nome="' + esc(r.nome_beneficiario) + '"';
             // Com pedido pendente, quem não é o responsável não pede de novo
             // (o servidor também barra) — só visualiza.
-            var travado = pend && !ehResponsavel ? ' disabled' : '';
+            // No "Ver como" os botões só ilustram (cadeado/prazo): não agem, pra o root não excluir sem querer.
+            var travado = (pend && !comPoder) || simulado ? ' disabled' : '';
             // Lançamento de outra pessoa: só visualizar (o servidor também barra).
-            var meu = ehResponsavel || meusEmails.indexOf(String(r.criado_por_email || '').toLowerCase()) >= 0;
+            var meu = comPoder || meusEmails.indexOf(String(r.criado_por_email || '').toLowerCase()) >= 0;
             return '<tr><td>' + esc(window.DATA_BR.dataHoraBr(r.criado_em)) + '</td>' +
               '<td title="' + esc(r.criado_por_email || '') + '">' + esc(nomeDeEmail(r.criado_por_email)) + '</td>' +
               '<td>' + esc(r.tipo_servico || '—') + '</td><td>' + esc(r.nome_beneficiario) + selo + '</td>' +
@@ -902,10 +921,10 @@
               '<td class="lanc-tabela-acoes">' +
                 '<a class="btn lanc-btn-icone" href="lancamento-editar.html?modo=ver&id=' + encodeURIComponent(r.id) + '" title="Ver lançamento" aria-label="Ver lançamento">' + ICONES.ver + '</a>' +
                 (meu
-                  ? botaoIcone('lanc-editar', ICONES.editar + (ehResponsavel ? '' : ICONES.cadeado),
-                      ehResponsavel ? 'Editar' : (pend ? 'Aguardando aprovação' : 'Editar (precisa de aprovação)'), dataAttrs + travado) +
-                    botaoIcone('btn-excluir lanc-excluir' + (ehResponsavel ? '' : ' lanc-bloqueado'), ICONES.excluir + (ehResponsavel ? '' : ICONES.cadeado),
-                      ehResponsavel ? 'Excluir' : (pend ? 'Aguardando aprovação' : 'Solicitar exclusão'), dataAttrs + travado)
+                  ? botaoIcone('lanc-editar', ICONES.editar + (comPoder ? '' : ICONES.cadeado),
+                      comPoder ? 'Editar' : (pend ? 'Aguardando aprovação' : 'Editar (precisa de aprovação)'), dataAttrs + travado) +
+                    botaoIcone('btn-excluir lanc-excluir' + (comPoder ? '' : ' lanc-bloqueado'), ICONES.excluir + (comPoder ? '' : ICONES.cadeado),
+                      comPoder ? 'Excluir' : (pend ? 'Aguardando aprovação' : 'Solicitar exclusão'), dataAttrs + travado)
                   : '') +
               '</td></tr>';
           }).join('') + '</tbody></table></div>';

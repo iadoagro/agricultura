@@ -71,6 +71,8 @@
     function escolher(op) {
       if (select.value !== op.value) {
         select.value = op.value;
+        // como o <select> nativo: "input" e depois "change" (os filtros do Lançar relatórios escutam o "input" do formulário)
+        select.dispatchEvent(new Event('input', { bubbles: true }));
         select.dispatchEvent(new Event('change', { bubbles: true }));
       }
       fechar();

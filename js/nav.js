@@ -53,6 +53,8 @@
   var GRUPOS = ['Eleições', 'Painéis', 'Chamados', 'Documentos', 'Administração'];
   // Grupo com um item só que vira link solto no menu (como o Início), sem título de grupo.
   var GRUPOS_SOLTOS = { 'Eleições': true };
+  // Grupo que aparece como um link só no menu e vira abas dentro das páginas dele.
+  var GRUPO_ABAS = 'Administração';
   var ICONES = {
     'Início': '<path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     'Eleições': '<path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7z"/><path d="M22 19H2"/>',
@@ -126,7 +128,22 @@
     return passos;
   }
 
-  var barra, lateral, busca, veu;
+  var barra, lateral, busca, veu, abas;
+
+  /* ------------------------------------------------------- abas da Administração */
+  function montarAbas() {
+    if (atual.grupo !== GRUPO_ABAS || atual.menu === false) return;
+    var itens = Object.keys(MAPA).filter(function (a) { return MAPA[a].grupo === GRUPO_ABAS && MAPA[a].menu !== false && pode(a); });
+    if (itens.length < 2) return;
+    abas = document.createElement('nav');
+    abas.className = 'snav-abas';
+    abas.setAttribute('aria-label', GRUPO_ABAS);
+    abas.innerHTML = itens.map(function (a) {
+      var aceso = a === arquivo;
+      return '<a class="snav-aba' + (aceso ? ' atual' : '') + '" href="' + esc(a) + '"' + (aceso ? ' aria-current="page"' : '') + '>' + esc(MAPA[a].nome) + '</a>';
+    }).join('');
+    barra.parentNode.insertBefore(abas, barra.nextSibling);
+  }
 
   /* ------------------------------------------------------------ barra do topo */
   function montarBarra() {
@@ -216,6 +233,14 @@
         html += '<a class="sb-inicio sb-solto' + (acesoSolto ? ' atual' : '') + '" href="' + esc(arqSolto) + '"' + (acesoSolto ? ' aria-current="page"' : '') +
           ' data-busca="' + esc(semAcento(MAPA[arqSolto].nome + ' ' + (MAPA[arqSolto].busca || ''))) + '" title="' + esc(MAPA[arqSolto].nome) + '">' +
           icone(g) + '<span>' + esc(MAPA[arqSolto].nome) + '</span></a>';
+        return;
+      }
+      // Administração: um link só no menu; as páginas do grupo viram abas no topo de cada uma (montarAbas)
+      if (g === GRUPO_ABAS) {
+        var acesoAba = atual.grupo === g;
+        html += '<a class="sb-inicio sb-solto' + (acesoAba ? ' atual' : '') + '" href="' + esc(itens[0]) + '"' + (acesoAba ? ' aria-current="page"' : '') +
+          ' data-busca="' + esc(semAcento(g + ' ' + itens.map(function (a) { return MAPA[a].nome + ' ' + (MAPA[a].busca || ''); }).join(' '))) + '" title="' + esc(g) + '">' +
+          icone(g) + '<span>' + esc(g) + '</span></a>';
         return;
       }
       var aceso = atual.grupo === g;
@@ -359,6 +384,7 @@
     if (!semMenu) montarLateral();
     montarBarra();
     if (barra && lateral) document.body.insertBefore(barra, lateral.nextSibling.nextSibling);
+    montarAbas();
     sincronizarBotao();
     // painéis que medem a altura útil na carga (dashboard.js, deagro.js)
     // mediram antes da barra existir — o "resize" faz eles medirem de novo
@@ -367,8 +393,8 @@
   // As permissões podem chegar depois da página (conta carregada do banco): se passar a ter
   // um módulo só (ou deixar de ter), monta/desmonta o menu lateral e a barra do topo.
   function remontar() {
-    [barra, lateral, veu].forEach(function (el) { if (el && el.parentNode) el.parentNode.removeChild(el); });
-    barra = lateral = veu = busca = null;
+    [barra, lateral, veu, abas].forEach(function (el) { if (el && el.parentNode) el.parentNode.removeChild(el); });
+    barra = lateral = veu = busca = abas = null;
     raiz.classList.remove('sb-on', 'sb-mini', 'sb-gaveta');
     if (!semMenu) reservarEspaco();
     iniciar();

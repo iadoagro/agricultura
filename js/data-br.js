@@ -29,12 +29,12 @@
     return ano + '-' + pad(mes) + '-' + pad(d);
   }
 
-  /** Data (Date ou ISO) com hora: "25/09/2026 14:05". */
+  /** Data (Date ou ISO) com hora: "25/09/2026 14:05:09". */
   function dataHoraBr(v) {
     if (!v) return '—';
     var d = v instanceof Date ? v : new Date(v);
     if (isNaN(d)) return '—';
-    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
   }
 
   /* Máscara enquanto digita: só números, barras entram sozinhas. */

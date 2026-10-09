@@ -121,6 +121,16 @@ html.sb-mini .sb-tema{width:40px}
   background:var(--snav-fundo);border-bottom:1px solid var(--snav-borda);color:var(--snav-texto);
   font:14px/1.2 "Segoe UI",Roboto,Arial,sans-serif;
 }
+/* abas da Administração (Usuários · Logs · Bairros dos fiscais), logo abaixo da barra do topo */
+.snav-abas{
+  position:relative;z-index:690;flex:none;display:flex;gap:4px;overflow-x:auto;
+  padding:0 12px;background:var(--snav-fundo);border-bottom:1px solid var(--snav-borda);
+  font:600 14px/1.2 "Segoe UI",Roboto,Arial,sans-serif;
+}
+.snav-aba{flex:none;padding:11px 14px 9px;border-bottom:2px solid transparent;color:var(--snav-suave);text-decoration:none;white-space:nowrap}
+.snav-aba:hover{color:var(--snav-texto);background:var(--snav-hover)}
+.snav-aba.atual{color:var(--sb-ativo);border-bottom-color:var(--sb-ativo)}
+.snav-aba:focus-visible{outline:2px solid #6f9be6;outline-offset:-2px}
 .snav button{font:inherit}
 .snav-menu,.snav-sair{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:32px;min-width:34px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:none;color:inherit;cursor:pointer}
 .snav-menu:hover,.snav-sair:hover{background:var(--snav-hover)}

@@ -32,7 +32,7 @@
 <script src="../js/admin-auth.js?v=2026101101"></script>
 <script src="../js/admin-gate.js?v=2026092530"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
-<script src="../js/nav.js?v=2026100902"></script>
+<script src="../js/nav.js?v=2026101201"></script>
 <script>
   /* aplica o tema antes da pintura para não piscar branco */
   (function () {
@@ -46,7 +46,7 @@
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092601">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
-<link rel="stylesheet" href="../css/nav.css?v=2026092556">
+<link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/select-app.css?v=2026092603">
 <script src="../js/select-app.js?v=2026092603" defer></script>
 <link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
@@ -820,6 +820,7 @@
           <form id="lancFiltros" class="lanc-filtros" role="search" onsubmit="return false">
             <label class="lanc-filtro-busca">Buscar<input type="search" name="f_busca" placeholder="Nome do benefici&aacute;rio ou CPF" autocomplete="off"></label>
             <label class="lanc-filtro-pessoa">Lan&ccedil;ado por<select name="f_pessoa" id="lancFiltroPessoa"><option value="">Meus lan&ccedil;amentos</option><option value="todos">Todas as pessoas</option></select></label>
+            <label class="lanc-filtro-pessoa" id="lancVerComoRotulo" hidden>Ver como (só root)<select id="lancVerComo"><option value="">Eu mesmo (root)</option></select></label>
             <label>Ano<select name="f_ano" id="lancFiltroAno"></select></label>
             <label>Servi&ccedil;o<select name="f_tipo_servico"><option value="">Todos</option><option>Mecaniza&ccedil;&atilde;o</option><option>A&ccedil;udagem</option></select></label>
             <label>Munic&iacute;pio<select name="f_municipio" id="lancFiltroMunicipio"></select></label>
@@ -1088,10 +1089,10 @@
 <script src="../js/graficos.js?v=2026081307"></script>
 <script src="../js/mapa-acre.js?v=2026091402"></script>
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
-<script src="../js/data-br.js?v=2026092504"></script>
-<script src="../js/select-busca.js?v=2026092604" defer></script>
-<script src="../js/lancamento-campos.js?v=2026092517"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026092544"></script>
+<script src="../js/data-br.js?v=2026101206"></script>
+<script src="../js/select-busca.js?v=2026101203" defer></script>
+<script src="../js/lancamento-campos.js?v=2026101204"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026101205"></script>
 <script src="../js/dashboard.js?v=2026100802"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026092001"></script>
