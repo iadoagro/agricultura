@@ -338,7 +338,7 @@ body{overflow-x:clip}
 /* ------------------------------ Extras: Magic Card / Ripple / Animated Badge */
 @media (prefers-reduced-motion:no-preference){
   .mo-spot{
-    background-image:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(37,99,235,.075),transparent 70%);
+    /* brilho que seguia o mouse: removido (distraía) */
   }
   .mo-ripple-host{overflow:hidden}
   .mo-ripple{

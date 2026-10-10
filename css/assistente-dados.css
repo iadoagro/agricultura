@@ -1,0 +1,149 @@
+/* Assistente de perguntas da aba Mecanização (js/assistente-dados.js).
+   Usa só os tokens do painel (css/dashboard.css), então acompanha o tema escuro. */
+
+.assistente{position:fixed;right:2px;top:50%;margin-top:-34px;z-index:900;opacity:.35;transition:opacity .2s;display:flex;
+  flex-direction:column;align-items:flex-end}
+
+.ia-abrir{display:flex;flex-direction:column;align-items:center;gap:0;padding:0;border:0;background:none;
+  color:var(--tinta);font:inherit;cursor:pointer}
+.ia-abrir:focus-visible{outline:2px solid var(--acento);outline-offset:4px;border-radius:12px}
+.ia-bola{position:relative;display:flex;align-items:center;justify-content:center;width:42px;height:42px;
+  border-radius:50%;background:var(--superficie);border:1px solid var(--anel);
+  box-shadow:0 2px 8px rgba(21,62,117,.25);animation:ia-pulso 2s ease-in-out infinite}
+.ia-abrir:hover .ia-bola{animation-play-state:paused;transform:scale(1.06)}
+.ia-abrir-txt{margin-bottom:5px;transition:opacity .25s;font-size:9.5px;font-weight:700;line-height:1;white-space:nowrap;color:var(--tinta);
+  background:var(--superficie);border:1px solid var(--anel);border-radius:999px;padding:3px 7px;
+  box-shadow:0 2px 8px rgba(11,11,11,.14)}
+.ia-abrir:hover .ia-abrir-txt{color:var(--acento);border-color:var(--acento)}
+.assistente.aberto .ia-bola{animation:none}
+@keyframes ia-pulso{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@media (prefers-reduced-motion:reduce){.ia-bola{animation:none}}
+.ia-robo{flex:0 0 auto;width:28px;height:28px;color:var(--acento)}
+.ia-orb{display:block;cursor:pointer}
+.ia-topo{display:flex;align-items:center;gap:10px;padding:12px 0 0}
+.ia-topo-txt{display:flex;flex-direction:column;gap:1px}
+.ia-topo-txt b{font-size:14px;font-weight:600}
+.ia-estado{font-size:11.5px;color:var(--tinta3);white-space:nowrap}
+.ia-seta{display:none}
+
+.ia-caixa{position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);width:min(640px,calc(100vw - 120px));max-height:min(78vh,720px);overflow:auto;
+  padding:4px 16px 16px;background:var(--superficie);border:1px solid var(--anel);border-radius:14px;
+  box-shadow:0 12px 40px rgba(11,11,11,.28)}
+.ia-form{display:flex;gap:8px;margin:14px 0 10px}
+.ia-campo{flex:1 1 auto;min-width:0;height:42px;padding:0 14px;border:1px solid var(--eixo);border-radius:10px;
+  background:var(--superficie);color:var(--tinta);font:inherit;font-size:14px}
+.ia-campo:focus{outline:2px solid var(--acento);outline-offset:1px;border-color:var(--acento)}
+.ia-enviar{flex:0 0 auto;height:42px;padding:0 18px;border:0;border-radius:10px;background:var(--acento-fundo);
+  color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.ia-enviar:hover{filter:brightness(1.1)}
+.ia-enviar:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+
+.ia-sugestoes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.ia-sug{border:1px solid var(--anel);background:var(--superficie2);color:var(--tinta2);border-radius:999px;
+  padding:5px 12px;font:inherit;font-size:12px;cursor:pointer;text-align:left}
+.ia-sug:hover{border-color:var(--acento);color:var(--acento)}
+
+.ia-saida{display:flex;flex-direction:column;gap:14px;margin-top:10px}
+.ia-resp{border:1px solid var(--anel);border-radius:10px;padding:14px;background:var(--superficie)}
+.ia-pergunta{font-size:14px;font-weight:600;color:var(--tinta);margin-bottom:8px}
+.ia-pergunta span{color:var(--tinta3)}
+.ia-entendi{display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center;font-size:11.5px;color:var(--tinta3);margin-bottom:12px}
+.ia-entendi > span{font-weight:700;letter-spacing:.4px;text-transform:uppercase;font-size:10.5px}
+.ia-entendi em{font-style:normal;background:var(--superficie2);border:1px solid var(--anel);border-radius:6px;
+  padding:2px 8px;color:var(--tinta2)}
+.ia-entendi b{color:var(--tinta);font-weight:600}
+
+.ia-kpis{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.ia-kpi{display:flex;flex-direction:column;gap:1px;padding:8px 14px;border:1px solid var(--anel);border-radius:10px;
+  background:var(--superficie2);min-width:104px}
+.ia-kpi b{font-size:20px;font-weight:700;color:var(--tinta);font-variant-numeric:tabular-nums}
+.ia-kpi span{font-size:11.5px;color:var(--tinta3)}
+.ia-kpi.destaque{background:var(--acento-suave);border-color:var(--acento)}
+.ia-kpi.destaque b{color:var(--acento);font-size:26px}
+
+.ia-tab-wrap{max-height:320px;overflow:auto;border:1px solid var(--linha-t);border-radius:8px}
+.ia-tab{width:100%;border-collapse:collapse;font-size:13px}
+.ia-tab th{position:sticky;top:0;background:var(--superficie2);text-align:left;font-size:11px;font-weight:700;
+  letter-spacing:.4px;text-transform:uppercase;color:var(--tinta3);padding:8px 10px;border-bottom:1px solid var(--linha-t)}
+.ia-tab td{padding:7px 10px;border-bottom:1px solid var(--linha-t);color:var(--tinta);vertical-align:middle}
+.ia-tab tr:last-child td{border-bottom:0}
+.ia-tab .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--tinta2)}
+.ia-tab td.ia-barra{position:relative;min-width:150px}
+.ia-barra i{position:absolute;left:10px;top:50%;height:60%;max-width:calc(100% - 20px);transform:translateY(-50%);
+  background:var(--s1);opacity:.22;border-radius:4px}
+.ia-barra b{position:relative;font-weight:600;font-variant-numeric:tabular-nums}
+.ia-nota{font-size:11.5px;color:var(--tinta3);margin:8px 0 0;line-height:1.4}
+.ia-vazio{font-size:13px;color:var(--tinta2);margin:4px 0 0;line-height:1.5}
+.ia-limpar{margin-top:12px;border:0;background:none;color:var(--acento);font:inherit;font-size:12px;
+  font-weight:600;cursor:pointer;padding:4px 0}
+.ia-limpar:hover{text-decoration:underline}
+
+@media (max-width:640px){
+  .assistente{right:4px}
+  .ia-caixa{position:fixed;right:10px;bottom:10px;top:auto;transform:none;max-height:70vh}
+  .ia-caixa{width:calc(100vw - 20px)}
+  .ia-form{flex-direction:column}
+  .ia-enviar{width:100%}
+  .ia-caixa{padding:4px 12px 14px}
+  .ia-kpi{flex:1 1 calc(50% - 10px)}
+  .ia-tab td.ia-barra{min-width:110px}
+}
+
+/* gráficos da resposta */
+.ia-grafico{margin:0 0 12px;border:1px solid var(--linha-t);border-radius:8px;padding:10px 8px 8px;background:var(--superficie)}
+.ia-svg{display:block;width:100%;height:auto}
+.ia-svg .ia-eixo{font-size:10px;fill:var(--tinta3)}
+.ia-svg .ia-grade{stroke:var(--grade);stroke-width:1}
+.ia-leg{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:12px}
+.ia-leg li{display:flex;align-items:center;gap:8px}
+.ia-leg i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+.ia-leg span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tinta2)}
+.ia-leg b{font-variant-numeric:tabular-nums}
+.ia-leg em{font-style:normal;color:var(--tinta3);min-width:44px;text-align:right}
+.ia-leg-h{flex-direction:row;justify-content:center;gap:16px}
+.ia-grafico-pizza{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.ia-pizza{width:190px;flex:0 0 auto}
+.ia-grafico-pizza .ia-leg{flex:1 1 220px}
+
+.ia-abrir-txt.troca{opacity:0}
+@media (prefers-reduced-motion:reduce){.ia-abrir-txt{transition:none}}
+
+.assistente:hover,.assistente:focus-within,.assistente.aberto{opacity:1}
+.ia-bola{background:color-mix(in srgb,var(--superficie) 70%,transparent)}
+.ia-abrir-txt{background:color-mix(in srgb,var(--superficie) 80%,transparent)}
+
+.ia-robo-grande{width:24px;height:24px}
+.ia-topo .ia-orb{flex:0 0 auto}
+
+.ia-abrir-txt{font-size:9.5px!important;font-weight:600}
+.ia-bola{animation:none!important}
+.assistente:not(:hover):not(.aberto){opacity:.3}
+
+/* Na barra azul do topo (js/assistente-dados.js move o bloco para dentro do header).
+   O header tem overflow:clip, por isso a caixa é position:fixed (o JS ajusta --ia-top). */
+.assistente.na-barra{position:absolute;top:0;bottom:0;right:16px;margin:0;opacity:1!important;
+  flex-direction:row;align-items:center;z-index:1200}
+.na-barra .ia-abrir{flex-direction:row-reverse;align-items:center;gap:9px;padding:8px 16px 8px 10px;
+  border:2px solid #fff;border-radius:999px;background:#fff;color:#153e75;
+  box-shadow:0 3px 14px rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s}
+.na-barra .ia-abrir:hover,.na-barra.aberto .ia-abrir{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.na-barra .ia-bola{width:auto;height:auto;background:none!important;border:0;box-shadow:none;border-radius:0;
+  transform:none!important}
+.na-barra .ia-robo-grande{width:28px;height:28px;color:#153e75}
+.na-barra .ia-abrir-txt{margin:0;padding:0;border:0;background:none!important;box-shadow:none;color:#153e75;
+  font-size:13.5px!important;font-weight:700;min-width:158px;text-align:left}
+.na-barra .ia-abrir:hover .ia-abrir-txt{color:#153e75}
+.na-barra .ia-caixa{position:fixed;top:var(--ia-top,100px);right:16px;bottom:auto;transform:none;margin:0;
+  text-align:left;color:var(--tinta);z-index:1300;
+  width:min(640px,calc(100vw - 32px));max-height:calc(100vh - var(--ia-top,100px) - 12px)}
+@media (max-width:760px){
+  .assistente.na-barra{right:10px}
+  .na-barra .ia-abrir-txt{display:none}
+  .na-barra .ia-abrir{padding:7px}
+  .na-barra .ia-caixa{right:10px;width:calc(100vw - 20px)}
+}
+
+.ia-prev{margin:0 0 6px}
+.ia-prev-tit{display:block;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--tinta3);margin:0 0 6px}
+.ia-sug.recente::before{content:"\21BB  ";color:var(--tinta3)}

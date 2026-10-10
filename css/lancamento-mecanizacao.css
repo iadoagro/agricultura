@@ -258,3 +258,233 @@
 .lanc-form .btn-verde:hover,#lancNovoBtn:hover,.lanc-dialogo .btn-verde:hover{background:linear-gradient(180deg,#3b78f5,#2560e6)}
 .lanc-form .btn,.lanc-dialogo .btn,.lanc-filtros .btn{border-radius:10px}
 .lanc-dialogo{border-radius:18px}
+
+
+/* ---- botão "Novo relatório": seção branca própria, separada da listagem ---- */
+.lanc-novo{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  background:var(--superficie);margin-bottom:16px}
+.lanc-novo-txt h2{margin:0;font-size:16px}
+.lanc-novo-txt .sub{margin:2px 0 0}
+
+/* ---- zona UTM: preenchida pelo município, só leitura ---- */
+.lanc-campos input.lanc-zona-fixa{background:var(--superficie2);color:var(--tinta);font-weight:700;
+  cursor:default;pointer-events:none;border-color:transparent}
+.lanc-campos input.lanc-zona-fixa::placeholder{font-weight:400;color:var(--tinta3)}
+
+/* ---- opções (máquinas, implementos…) e tipo de serviço: sem linhas ao redor ---- */
+.lanc-fieldset{border:0;padding:0;margin-top:18px;background:none}
+.lanc-fieldset legend{padding:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.3px;
+  text-transform:uppercase;color:var(--tinta3)}
+.lanc-caixas{gap:8px}
+.lanc-caixas label{border:0;background:var(--superficie2);border-radius:10px;padding:10px 14px;
+  transition:background .2s,color .2s,box-shadow .2s}
+.lanc-caixas label:hover{background:var(--acento-suave);border-color:transparent}
+.lanc-caixas label:has(input:checked){background:var(--acento-suave);color:var(--acento-fundo);font-weight:700}
+.lanc-caixas input{accent-color:var(--acento-fundo)}
+.lanc-caixas .lc-outra-texto{border:0;background:var(--superficie);border-radius:8px;
+  box-shadow:inset 0 0 0 1px var(--linha-t)}
+.lanc-caixas .lc-outra-texto:focus{outline:none;box-shadow:inset 0 0 0 2px var(--acento-fundo)}
+
+.lanc-radio-grande{border:0;background:var(--superficie2);box-shadow:none}
+.lanc-radio-grande:hover{background:var(--acento-suave);border-color:transparent}
+.lanc-radio-grande.lanc-marcado{border-color:transparent;background:var(--acento-fundo);color:#fff;box-shadow:none}
+.lanc-radio-grande:focus-within{outline:none;box-shadow:none}
+.painel.lanc-novo{display:flex;flex-direction:row;align-items:center;justify-content:space-between;text-align:left}
+.painel.lanc-novo .lanc-novo-txt{text-align:left}
+
+/* registros por página, ao lado do paginador */
+.lanc-pag-dir{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px 16px}
+.lanc-pag-por{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--tinta3);margin:0}
+.lanc-pag-por select{min-height:34px;padding:4px 28px 4px 10px;border:1px solid var(--linha-t);
+  border-radius:8px;background:var(--superficie);color:var(--tinta);font:inherit;font-size:13px;font-weight:600}
+
+/* opções (máquinas, implementos…): sem fundo cinza — só o texto e a caixa de marcar */
+.lanc-caixas label{background:transparent}
+.lanc-caixas label:hover{background:var(--acento-suave)}
+/* botão "Novo relatório" à esquerda, com o texto ao lado */
+.painel.lanc-novo{justify-content:flex-start;gap:18px}
+.painel.lanc-novo #lancNovoBtn{order:-1;flex:none}
+
+/* "Outro" é uma opção como as demais; ao marcar, a linha inteira de texto abre abaixo */
+.lanc-caixas label.lanc-caixa-outra{flex:1 1 150px}
+.lanc-caixas .lc-outra-linha{flex:1 1 100%}
+.lanc-caixas .lc-outra-linha[hidden]{display:none}
+.lanc-caixas .lc-outra-texto{display:block;width:100%;min-height:46px;margin:0;padding:11px 14px;
+  border:0;border-radius:10px;background:var(--superficie);color:var(--tinta);font:inherit;font-size:14px;
+  box-shadow:inset 0 0 0 1.5px var(--linha-t)}
+.lanc-caixas .lc-outra-texto:focus{outline:none;box-shadow:inset 0 0 0 2px var(--acento-fundo)}
+
+/* campos obrigatórios em branco apontados ao escolher o serviço */
+.lanc-campos .lanc-faltando{box-shadow:0 0 0 2px #dc2626;border-color:#dc2626}
+#lancServicoErro{margin:12px 0 0;padding:10px 14px;border-radius:10px;background:#fef2f2;color:#b91c1c;
+  font-size:13.5px;font-weight:600;line-height:1.45}
+
+/* ---- respiro do formulário: um pouco maior e com paddings melhores ---- */
+.lanc-form{gap:18px}
+.lanc-form .painel{padding:24px 28px 26px}
+.lanc-form .painel-cab{margin-bottom:6px}
+.lanc-form .painel h2{font-size:17px;font-weight:700;line-height:1.3;margin:0 0 6px}
+.lanc-form .painel .sub{font-size:13px;margin:0 0 14px}
+.lanc-campos{gap:20px 22px;margin-top:10px}
+.lanc-campos label{font-size:14.5px;font-weight:600;line-height:1.3}
+.lanc-campos input,.lanc-campos select,.lanc-campos textarea{
+  margin-top:8px;min-height:48px;padding:12px 15px;font-size:15px;border-radius:11px}
+.lanc-campos textarea{min-height:110px;line-height:1.5}
+.lanc-campos input:disabled,.lanc-campos select:disabled{opacity:1}
+.lanc-caixas{gap:10px}
+.lanc-caixas label{padding:12px 16px;font-size:14.5px}
+.lanc-fieldset{margin-top:22px}
+.lanc-fieldset legend{padding-bottom:10px}
+@media (max-width:640px){
+  .lanc-form .painel{padding:18px 16px 20px}
+  .lanc-campos{gap:16px 14px}
+}
+
+/* mensagem de data inválida/futura sob o campo */
+.data-erro{display:block;margin-top:6px;font-size:12.5px;font-weight:600;color:#b91c1c}
+.data-erro[hidden]{display:none}
+
+/* ---- PDF: botão da lista e da ficha ---- */
+.lanc-lista-barra{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.lanc-pdf{position:relative}
+.lanc-pdf > .btn,.lanc-exportar .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.lanc-pdf-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:30;min-width:260px;padding:6px;
+  background:var(--superficie);border:1px solid var(--anel);border-radius:12px;
+  box-shadow:0 14px 34px -12px rgba(15,23,42,.35)}
+.lanc-pdf-menu[hidden]{display:none}
+.lanc-pdf-menu button{display:block;width:100%;text-align:left;padding:10px 12px;border:0;border-radius:8px;
+  background:none;color:var(--tinta);font:inherit;font-size:14px;cursor:pointer}
+.lanc-pdf-menu button:hover{background:var(--acento-suave);color:var(--acento-fundo)}
+.lanc-pdf-status{font-size:12.5px;color:var(--tinta3)}
+.lanc-exportar{margin-top:12px}
+
+/* ---- seletor Mecanização / Açudagem: cartões com ícone, descrição e marca ---- */
+.lanc-tipo-servico{gap:16px}
+.lanc-radio-grande{justify-content:flex-start;text-align:left;gap:16px;padding:20px 22px;border:0;border-radius:16px;
+  background:var(--superficie2);color:var(--tinta);cursor:pointer;
+  transition:background .25s,transform .2s,box-shadow .25s}
+.lanc-radio-grande:hover{background:var(--acento-suave);transform:translateY(-1px)}
+.lanc-rg-icone{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:14px;
+  background:var(--superficie);color:var(--tinta3);transition:background .25s,color .25s}
+.lanc-rg-texto{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.lanc-rg-texto b{font-size:17px;font-weight:700;line-height:1.2}
+.lanc-rg-texto small{font-size:13px;font-weight:400;color:var(--tinta3);line-height:1.35}
+.lanc-rg-marca{flex:none;position:relative;width:24px;height:24px;border-radius:50%;
+  background:var(--superficie);box-shadow:inset 0 0 0 2px var(--eixo);transition:background .25s,box-shadow .25s}
+.lanc-rg-marca::after{content:'';position:absolute;left:8px;top:4px;width:6px;height:11px;border:solid #fff;
+  border-width:0 2.5px 2.5px 0;rotate:45deg;opacity:0;transition:opacity .2s}
+.lanc-radio-grande.lanc-marcado{background:var(--acento-suave);color:var(--acento-fundo);box-shadow:none}
+.lanc-radio-grande.lanc-marcado .lanc-rg-icone{background:var(--acento-fundo);color:#fff}
+.lanc-radio-grande.lanc-marcado .lanc-rg-texto small{color:var(--tinta2)}
+.lanc-radio-grande.lanc-marcado .lanc-rg-marca{background:var(--acento-fundo);box-shadow:none}
+.lanc-radio-grande.lanc-marcado .lanc-rg-marca::after{opacity:1}
+.lanc-radio-grande:focus-within{outline:none;box-shadow:0 0 0 3px var(--acento-suave)}
+@media (max-width:640px){
+  .lanc-tipo-servico{grid-template-columns:1fr}
+  .lanc-radio-grande{padding:16px}
+}
+
+/* ---- "como estava" x "como querem que fique" ---- */
+.lanc-alteracoes{margin-bottom:16px}
+.lanc-alteracoes .lanc-diff-antes{color:#b91c1c;text-decoration:none;background:#fef2f2}
+.lanc-alteracoes .lanc-diff-depois{color:#166534;font-weight:600;background:#f0fdf4}
+.lanc-alteracoes th.lanc-diff-antes,.lanc-alteracoes th.lanc-diff-depois{font-weight:700}
+.lanc-alteracoes td:first-child{font-weight:600;white-space:nowrap}
+
+/* PDF da linha: o ícone gira enquanto a ficha é buscada */
+.lanc-pdf-linha.lanc-carregando{opacity:.6;cursor:progress}
+.lanc-pdf-linha.lanc-carregando svg{animation:lanc-gira 1s linear infinite}
+@keyframes lanc-gira{to{rotate:360deg}}
+
+/* ---- máquinas e implementos: grade regular, colunas alinhadas ---- */
+.lanc-caixas{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px}
+.lanc-caixas label{flex:none;display:flex;align-items:center;gap:10px;min-height:46px;padding:10px 14px;
+  border-radius:10px;line-height:1.25}
+.lanc-caixas label.lanc-caixa-outra{flex:none}
+.lanc-caixas input[type=checkbox]{width:18px;height:18px;flex:none;margin:0}
+.lanc-caixas .lc-outra-linha{grid-column:1 / -1;flex:none;margin-top:2px}
+.lanc-fieldset + .lanc-fieldset{margin-top:26px}
+.lanc-fieldset legend{padding-bottom:12px}
+@media (max-width:520px){
+  .lanc-caixas{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 8px}
+  .lanc-caixas label{padding:10px}
+}
+
+/* ---- botões lado a lado no lugar de selects com poucas opções ---- */
+.lanc-seg-oculto{position:absolute!important;opacity:0;pointer-events:none;width:1px!important;height:1px!important;
+  min-height:0!important;margin:0!important;padding:0!important;border:0!important}
+.lanc-seg{display:flex;gap:6px;margin-top:8px;padding:4px;border-radius:12px;background:var(--superficie2)}
+.lanc-seg-op{flex:1 1 0;min-width:0;min-height:42px;padding:8px 10px;border:0;border-radius:9px;background:transparent;
+  color:var(--tinta2);font:inherit;font-size:14.5px;font-weight:600;cursor:pointer;
+  transition:background .18s,color .18s,box-shadow .18s}
+.lanc-seg-op:hover{background:var(--superficie);color:var(--tinta)}
+.lanc-seg-op.on{background:var(--acento-fundo);color:#fff;box-shadow:0 2px 8px -3px rgba(21,62,117,.6)}
+.lanc-seg-op:focus-visible{outline:2px solid var(--acento);outline-offset:1px}
+.lanc-seg-oculto:disabled + .lanc-seg{opacity:.7}
+.lanc-seg-oculto:disabled + .lanc-seg .lanc-seg-op{cursor:default}
+.lanc-seg-oculto.lanc-faltando + .lanc-seg{box-shadow:0 0 0 2px #dc2626}
+@media (max-width:420px){.lanc-seg-op{font-size:13.5px;padding:8px 6px}}
+
+/* ---- culturas e DAEs: remover (×) à esquerda, adicionar (+) no fim da última linha ---- */
+.lanc-cultura-linha{grid-template-columns:auto 2fr 1fr 1fr auto}
+.lanc-dae-linha{grid-template-columns:auto 2fr 1fr auto}
+.lanc-cultura-remover,.lanc-add-mais{width:44px;height:44px;border-radius:11px;font-size:20px;line-height:1;
+  display:inline-grid;place-items:center;padding:0;cursor:pointer;transition:background .18s,color .18s,opacity .18s}
+.lanc-add-mais{border:0;background:var(--acento-fundo);color:#fff;font-size:26px;font-weight:400}
+.lanc-add-mais:hover:not(:disabled){filter:brightness(1.12)}
+.lanc-add-mais:disabled{background:var(--superficie2);color:var(--tinta3);cursor:not-allowed}
+.lanc-add-slot{display:grid;width:44px;min-height:44px;align-items:center}
+.lanc-cultura-linha select,.lanc-cultura-linha input,.lanc-dae-linha input{min-height:44px;border-radius:10px;font-size:14px}
+@media(max-width:760px){
+  .lanc-cultura-linha{grid-template-columns:1fr 1fr;grid-template-areas:"cult cult" "area sist" "rem add"}
+  .lanc-cultura-linha .lc-cultura{grid-area:cult}
+  .lanc-cultura-linha .lc-area{grid-area:area}
+  .lanc-cultura-linha .lc-sistema{grid-area:sist}
+  .lanc-cultura-linha .lanc-cultura-remover{grid-area:rem}
+  .lanc-cultura-linha .lanc-add-slot{grid-area:add;justify-self:end}
+  .lanc-dae-linha{grid-template-columns:auto 1fr auto;grid-template-areas:"rem num add" "val val val"}
+  .lanc-dae-linha .lanc-cultura-remover{grid-area:rem}
+  .lanc-dae-linha .ld-numero{grid-area:num}
+  .lanc-dae-linha .ld-valor{grid-area:val}
+  .lanc-dae-linha .lanc-add-slot{grid-area:add}
+}
+
+/* ================= agilidade: barra fixa, progresso, atalhos ================= */
+.lanc-form .upload-acoes{grid-column:1 / -1;position:sticky;bottom:12px;z-index:25;display:flex;flex-wrap:wrap;
+  align-items:center;justify-content:flex-end;gap:10px;margin-top:4px;padding:12px 16px;border-radius:16px;
+  background:color-mix(in srgb,var(--superficie) 92%,transparent);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 10px 30px -10px rgba(15,23,42,.35),0 0 0 1px var(--anel)}
+#lancSalvarStatus:not(:empty){grid-column:1 / -1}
+.lanc-primario{order:3}
+
+.lanc-progresso{position:relative;margin-right:auto;min-width:0}
+.lanc-prog-btn{display:flex;align-items:center;gap:10px;padding:6px 10px;border:0;border-radius:10px;background:none;
+  color:var(--tinta2);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.lanc-prog-btn:hover{background:var(--superficie2)}
+.lanc-prog-barra{display:block;width:120px;height:8px;border-radius:99px;background:var(--superficie2);overflow:hidden;
+  box-shadow:inset 0 0 0 1px var(--anel)}
+.lanc-prog-barra i{display:block;height:100%;width:0;border-radius:99px;background:var(--acento-fundo);transition:width .3s}
+.lanc-progresso.completo .lanc-prog-barra i{background:#16a34a}
+.lanc-progresso.completo .lanc-prog-txt{color:#15803d}
+.lanc-prog-lista{position:absolute;left:0;bottom:calc(100% + 10px);width:min(340px,80vw);max-height:50vh;overflow:auto;
+  padding:12px;border-radius:14px;background:var(--superficie);box-shadow:0 14px 36px -12px rgba(15,23,42,.45),0 0 0 1px var(--anel)}
+.lanc-prog-lista[hidden]{display:none}
+.lanc-prog-lista p{margin:0 0 8px;font-size:12.5px;color:var(--tinta3);font-weight:600}
+.lanc-prog-lista ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.lanc-prog-lista li button{width:100%;text-align:left;padding:8px 10px;border:0;border-radius:8px;background:none;
+  color:var(--tinta);font:inherit;font-size:13.5px;cursor:pointer}
+.lanc-prog-lista li button:hover{background:var(--acento-suave);color:var(--acento-fundo)}
+
+/* seção concluída: "visto" ao lado do título */
+.lanc-form section.painel.lanc-ok .painel-cab-tit h2::after{content:'';display:inline-block;width:20px;height:20px;
+  margin-left:10px;vertical-align:-4px;border-radius:50%;background:#16a34a;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center/16px no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center/16px no-repeat;
+  background:#16a34a}
+
+@media (max-width:640px){
+  .lanc-form .upload-acoes{bottom:8px;padding:10px 12px;justify-content:stretch}
+  .lanc-progresso{flex:1 1 100%;margin-right:0}
+  .lanc-form .upload-acoes .btn{flex:1 1 auto}
+}

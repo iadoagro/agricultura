@@ -40,20 +40,9 @@ body:not(.login-page)::before{
 header{overflow:clip}
 
 /* ============ Border Beam (feixe girando na borda) ============ */
-.fx-beam{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;z-index:3;
-  padding:2px;
-  background:conic-gradient(from var(--fx-a),transparent 0deg,transparent 240deg,rgba(var(--fx-ciano),.95) 300deg,rgba(var(--fx-azul),1) 340deg,transparent 360deg);
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
-  mask-composite:exclude;
-  transition:opacity .45s var(--mo-out,ease)}
-.fx-beam-host{position:relative}
-/* O giro só roda em quem está com o mouse em cima (curto por natureza) —
-   antes os KPIs giravam pra sempre, mesmo sem ninguém olhando. */
-@media (prefers-reduced-motion:no-preference){
-  .fx-beam-host:hover>.fx-beam,.fx-beam-host:focus-within>.fx-beam,.card-link:hover .fx-beam{opacity:1;animation:fx-gira 3.2s linear infinite}
-}
-@keyframes fx-gira{to{--fx-a:360deg}}
+/* Desligado: a linha que corria pelas bordas ao passar o mouse ou focar num campo
+   atrapalhava a leitura. js/fx-ui.js ainda cria o elemento, por isso fica oculto. */
+.fx-beam{display:none!important}
 
 /* ============ Animate UI "Highlight": linhas e itens de lista ============ */
 @media (hover:hover){

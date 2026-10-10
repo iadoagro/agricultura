@@ -1175,7 +1175,7 @@
   /* Rótulos dos dados cadastrais — usados cheios e vazios, para a ficha em
      branco ter exatamente a mesma forma da preenchida. */
   var FICHA_ROTULOS = ['Produtor', 'Município', 'Escritório local', 'Propriedade',
-    'Endereço / local', 'Sexo', 'Estado civil', 'Associação / coop.', 'DAP', 'Técnico(s)'];
+    'Endereço / local', 'Sexo', 'Estado civil', 'Associação / coop.', 'CAF', 'Técnico(s)'];
   var HIST_COLUNAS = ['Inserção', 'Vistoria', 'Serviço', 'Município', 'Culturas / área',
     'Hectares', 'Horas', 'Tanques', 'Técnico', 'Obs.', 'Form.'];
 
@@ -1710,7 +1710,7 @@
       // nomes distintos, não registros: o cartão está na seção de perfil dos
       // beneficiários, ao lado de "Produtores recorrentes", e contar linhas
       // fazia o mesmo produtor aparecer uma vez por atendimento
-      { rot: 'Produtores com DAP', val: G.num(nProdutores(D.filter(function (r) { return r.dap === 'Sim'; }))),
+      { rot: 'Produtores com CAF', val: G.num(nProdutores(D.filter(function (r) { return r.dap === 'Sim'; }))),
         ir: 'beneficiario' },
       { rot: 'Associações e cooperativas', val: G.num(C.nAssoc), ir: 'beneficiario' },
       { rot: 'DAE arrecadada', val: C.daeVal(C.dae), cls: 'texto', ir: 'registros',
@@ -1953,9 +1953,10 @@
   }
 
   function mapaMecCorCategoria(cat) {
-    if (cat === 'mec') return 'var(--mec)';
-    if (cat === 'acu') return 'var(--acu)';
-    if (cat === 'both') return 'color-mix(in srgb, var(--mec) 50%, var(--acu) 50%)';
+    // verde = mecanização, azul = açudagem, ciano (mistura dos dois) = os dois
+    if (cat === 'mec') return 'var(--mapa-mec)';
+    if (cat === 'acu') return 'var(--mapa-acu)';
+    if (cat === 'both') return 'var(--mapa-ambos)';
     return 'var(--grade)';
   }
 
@@ -1978,6 +1979,150 @@
     if (!F.mun.length) return '';
     var ids = unicos(F.mun.map(mapaMecIdPorNome).filter(Boolean));
     return ids.length === 1 ? ids[0] : '';
+  }
+
+  /* Colorir por volume: escala de 5 classes, do maior para o menor, numa cor só
+     (verde = hectares, azul = horas, azul-marinho = atendimentos). Município sem
+     registro no filtro fica cinza. */
+  var MAPA_COR = 'tipo';   // tipo | n | ha | hrs
+  /* Cada métrica diz como ler o valor do município (t = MAPA_TIP[id]), como
+     escrever e a cor-base da escala. "mul" e "pmul" contam atendimentos a
+     mulheres; "media" é hectares por vistoria de mecanização. */
+  var MAPA_METRICAS = {
+    n:     { rot: 'Atendimentos',          base: 'var(--acento-fundo)', dec: 0, un: '',    v: function (t) { return t.n; } },
+    ha:    { rot: 'Hectares',              base: 'var(--mapa-mec)',     dec: 1, un: ' ha', v: function (t) { return t.ha; } },
+    hrs:   { rot: 'Horas de máquina',      base: 'var(--mapa-acu)',     dec: 1, un: ' h',  v: function (t) { return t.hrs; } },
+    mul:   { rot: 'Mulheres atendidas',    base: '#c0348c',             dec: 0, un: '',    v: function (t) { return t.mul; } },
+    pmul:  { rot: '% de mulheres',         base: '#a8286f',             dec: 1, un: '%',   v: function (t) { return t.pmul; } },
+    prod:  { rot: 'Produtores atendidos',  base: '#6d4fc2',             dec: 0, un: '',    v: function (t) { return t.prod; } },
+    ac:    { rot: 'Tanques/açudes',        base: '#0f8a8a',             dec: 0, un: '',    v: function (t) { return t.ac; } },
+    dap:   { rot: 'Com CAF',               base: '#d98a1f',             dec: 0, un: '',    v: function (t) { return t.dap; } },
+    media: { rot: 'Média de ha por vistoria', base: '#4a8f2a',          dec: 1, un: ' ha', v: function (t) { return t.media; } },
+    dae:   { rot: 'DAE arrecadada',        base: '#8a5a2b',             dec: 0, un: '',    moeda: true, v: function (t) { return t.dae; } }
+  };
+  var MAPA_COR_ROT = { tipo: 'Serviço' };
+  Object.keys(MAPA_METRICAS).forEach(function (k) { MAPA_COR_ROT[k] = MAPA_METRICAS[k].rot; });
+
+  function mapaMecFmt(m, v) {
+    var d = MAPA_METRICAS[m];
+    return d.moeda ? moeda(v) : G.num(v, d.dec) + d.un;
+  }
+  var MAPA_COR_PCT = [20, 38, 56, 76, 100];   // da menor classe para a maior
+
+  function mapaMecCorClasse(metrica, k) {
+    return 'color-mix(in srgb, ' + MAPA_METRICAS[metrica].base + ' ' + MAPA_COR_PCT[k] + '%, var(--superficie))';
+  }
+
+  /* Colorir por serviço: o matiz diz o serviço (verde, azul, ciano) e a
+     intensidade diz o volume de atendimentos do município — mais ação, mais
+     escuro; menos ação, mais claro. */
+  var MAPA_COR_CAT = { mec: 'var(--mapa-mec)', acu: 'var(--mapa-acu)', both: 'var(--mapa-ambos)' };
+
+  /** Classes por quantis (cada faixa leva ~o mesmo número de municípios): com um
+      município muito maior que os outros, faixas de largura igual deixariam o
+      mapa quase todo na cor mais clara. Devolve { limites, classe(v), max }. */
+  function mapaMecClasses(valores) {
+    var N = MAPA_COR_PCT.length;
+    var v = valores.filter(function (x) { return x > 0; }).sort(function (a, b) { return a - b; });
+    var lim = [];
+    for (var k = 1; k <= N; k++) {
+      lim.push(v.length ? v[Math.min(v.length - 1, Math.ceil(k * v.length / N) - 1)] : 0);
+    }
+    return {
+      limites: lim,
+      max: v.length ? v[v.length - 1] : 0,
+      classe: function (x) {
+        for (var k = 0; k < N; k++) if (x <= lim[k]) return k;
+        return N - 1;
+      }
+    };
+  }
+
+  function mapaMecMisturar(base, k) {
+    return 'color-mix(in srgb, ' + base + ' ' + MAPA_COR_PCT[k] + '%, var(--superficie))';
+  }
+
+  function mapaMecPintarServico(catPorId) {
+    var N = MAPA_COR_PCT.length;
+    var cls = mapaMecClasses(Object.keys(MAPA_TIP).map(function (id) { return MAPA_TIP[id].n || 0; }));
+    var max = cls.max;
+    MAPA_MEC.pintar(function (id) {
+      var cat = catPorId[id], t = MAPA_TIP[id];
+      if (!cat || cat === 'none' || !t || !t.n || !(max > 0)) return 'var(--grade)';
+      return mapaMecMisturar(MAPA_COR_CAT[cat], cls.classe(t.n));
+    });
+
+    var leg = el('mapaMecLegenda'), host = el('mapaMecEscala');
+    if (host) host.hidden = true;
+    if (!leg) return;
+    leg.hidden = false;
+    function grad(base) {
+      var h = '<span class="leg-grad">';
+      for (var k = 0; k < N; k++) h += '<i style="background:' + mapaMecMisturar(base, k) + '"></i>';
+      return h + '</span>';
+    }
+    var claro = cls.limites[0], escuro = cls.limites[N - 2];
+    leg.innerHTML =
+      '<li>' + grad(MAPA_COR_CAT.mec) + ' Mecaniza&ccedil;&atilde;o</li>' +
+      '<li>' + grad(MAPA_COR_CAT.acu) + ' A&ccedil;udagem</li>' +
+      '<li>' + grad(MAPA_COR_CAT.both) + ' Os dois</li>' +
+      '<li><span class="ponto nenhum"></span> Sem registro no filtro</li>' +
+      '<li class="leg-nota">Quanto mais escuro, mais atendimentos no munic&iacute;pio: ' +
+      (max > 0 ? 'mais claro = at&eacute; ' + G.num(claro, 0) + (claro === 1 ? ' atendimento' : ' atendimentos') + '; mais escuro = acima de ' +
+        G.num(escuro, 0) + ' (m&aacute;ximo ' + G.num(max, 0) + ').' : 'sem registros no filtro.') + '</li>';
+  }
+
+  function mapaMecPintarEscala() {
+    var m = MAPA_COR, N = MAPA_COR_PCT.length, def = MAPA_METRICAS[m];
+    var cls = mapaMecClasses(Object.keys(MAPA_TIP).map(function (id) { return def.v(MAPA_TIP[id]) || 0; }));
+    var max = cls.max;
+    MAPA_MEC.pintar(function (id) {
+      var t = MAPA_TIP[id], v = t ? (def.v(t) || 0) : 0;
+      if (!(v > 0) || !(max > 0)) return 'var(--grade)';
+      return mapaMecCorClasse(m, cls.classe(v));
+    });
+
+    var host = el('mapaMecEscala');
+    if (el('mapaMecLegenda')) el('mapaMecLegenda').hidden = true;
+    if (!host) return;
+    host.hidden = false;
+    if (!(max > 0)) {
+      host.innerHTML = '<h4>' + G.esc(def.rot) + ' por município</h4><p class="sub">Sem valores no filtro atual.</p>';
+      return;
+    }
+    var itens = '';
+    for (var k = N - 1; k >= 0; k--) {   // do maior para o menor
+      var de = k ? cls.limites[k - 1] : 0, ate = cls.limites[k];
+      if (k && ate <= de) continue;   // quantis repetidos: classe sem municípios
+      itens += '<li><i style="background:' + mapaMecCorClasse(m, k) + '"></i>' +
+        (k === 0 ? '<span>at&eacute; <b>' + G.esc(mapaMecFmt(m, ate)) + '</b></span></li>'
+          : '<span><b>' + G.esc(mapaMecFmt(m, de)) + '</b> a <b>' + G.esc(mapaMecFmt(m, ate)) + '</b></span></li>');
+    }
+    itens += '<li><i style="background:var(--grade)"></i><span>Sem registro no filtro</span></li>';
+    host.innerHTML = '<h4>' + G.esc(def.rot) + ' por município &mdash; do maior para o menor</h4>' +
+      '<div class="mapa-mec-escala-barra" style="background:linear-gradient(to right,' +
+      mapaMecCorClasse(m, N - 1) + ',' + mapaMecCorClasse(m, 0) + ')"></div>' +
+      '<div class="mapa-mec-escala-pontas"><span>Maior: ' + G.esc(mapaMecFmt(m, max)) + '</span><span>Menor: &gt; 0</span></div>' +
+      '<ul>' + itens + '</ul>';
+  }
+
+  function mapaMecDesenharModo() {
+    var host = el('mapaMecModo');
+    if (!host) return;
+    host.innerHTML = '<span class="sub" style="margin:0 4px 0 0;align-self:center">Colorir por:</span>' +
+      ['tipo', 'n', 'ha', 'hrs', 'mul', 'pmul', 'prod', 'ac', 'dap', 'media', 'dae'].map(function (v) {
+        return '<button type="button" data-v="' + v + '" class="' + (MAPA_COR === v ? 'ativo' : '') + '">' +
+          G.esc(MAPA_COR_ROT[v]) + '</button>';
+      }).join('');
+    if (host.getAttribute('data-ligado') !== '1') {
+      host.setAttribute('data-ligado', '1');
+      host.addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-v]');
+        if (!b) return;
+        MAPA_COR = b.getAttribute('data-v');
+        render();
+      });
+    }
   }
 
   function mapaMecDesenharTipo() {
@@ -2060,6 +2205,10 @@
     return '<div class="mo-tip-tit">' + G.esc(nome) + '</div>' +
       '<div class="mo-tip-l"><span class="ponto mec"></span>Hectares <b>' + (t.ha ? G.num(t.ha, 1) + ' ha' : '—') + '</b></div>' +
       '<div class="mo-tip-l"><span class="ponto acu"></span>Horas de máquina <b>' + (t.hrs ? G.num(t.hrs, 1) + ' h' : '—') + '</b></div>' +
+      (MAPA_METRICAS[MAPA_COR] && ['n', 'ha', 'hrs'].indexOf(MAPA_COR) < 0
+        ? '<div class="mo-tip-l"><span class="ponto" style="background:' + MAPA_METRICAS[MAPA_COR].base + '"></span>' +
+          G.esc(MAPA_METRICAS[MAPA_COR].rot) + ' <b>' + G.esc(mapaMecFmt(MAPA_COR, MAPA_METRICAS[MAPA_COR].v(t) || 0)) + '</b></div>'
+        : '') +
       '<div class="mo-tip-sub">' + G.num(t.n) + (t.n === 1 ? ' atendimento' : ' atendimentos') + '</div>';
   }
 
@@ -2105,15 +2254,32 @@
     C.D.forEach(function (r) {
       var id = mapaMecIdPorNome(r.mun);
       if (!id) return;
-      var tp = MAPA_TIP[id] || (MAPA_TIP[id] = { ha: 0, hrs: 0, n: 0 });
+      var tp = MAPA_TIP[id] || (MAPA_TIP[id] = { ha: 0, hrs: 0, n: 0, mul: 0, ac: 0, dap: 0, dae: 0, nmec: 0, pset: {} });
       tp.n++;
+      if (r.sexo === 'Feminino') tp.mul++;
+      if (r.dap === 'Sim') tp.dap++;
+      tp.ac += r.ac || 0;
+      tp.dae += r.dae || 0;
+      if (r.pc === MEC) tp.nmec++;
+      if (r.prod) tp.pset[chaveProdutor(r)] = true;
       if (r.pc === MEC) tp.ha += r.ha || 0;
       else if (r.pc === ACU) tp.hrs += r.hrs || 0;
       var atual = catPorId[id] || 'none';
       var este = r.pc === MEC ? 'mec' : r.pc === ACU ? 'acu' : 'none';
       catPorId[id] = atual === 'none' ? este : atual === este ? atual : 'both';
     });
-    MAPA_MEC.pintar(function (id) { return mapaMecCorCategoria(catPorId[id] || 'none'); });
+    Object.keys(MAPA_TIP).forEach(function (id) {
+      var t = MAPA_TIP[id];
+      t.prod = Object.keys(t.pset).length;
+      t.pmul = t.n ? t.mul / t.n * 100 : 0;
+      t.media = t.nmec ? t.ha / t.nmec : 0;
+    });
+    mapaMecDesenharModo();
+    if (MAPA_COR === 'tipo') {
+      mapaMecPintarServico(catPorId);
+    } else {
+      mapaMecPintarEscala();
+    }
     MAPA_MEC.destacar(mapaMecDestacado());
 
     mapaMecDesenharTipo();
@@ -2207,8 +2373,8 @@
       /* Quanto do cadastro está de fato preenchido. Antes isso só existia no
          texto da nota, que quase ninguém abre — e não respondia aos filtros. */
       { _sec: 'Qualidade do cadastro' },
-      { rot: 'DAP informada', val: C.pct(comDap, D.length), cls: 'texto',
-        sub: G.num(D.length - comDap) + ' sem resposta sobre DAP' },
+      { rot: 'CAF informada', val: C.pct(comDap, D.length), cls: 'texto',
+        sub: G.num(D.length - comDap) + ' sem resposta sobre CAF' },
       { rot: 'Propriedade informada', val: C.pct(comPropr, D.length), cls: 'texto',
         sub: G.num(D.length - comPropr) + ' sem nome do imóvel' },
       { rot: 'Formulário digitalizado', val: C.pct(C.nComForm, D.length), cls: 'texto',
@@ -3478,6 +3644,24 @@
     }).length;
     var anosHist = (META_HIST.anos || []).join(', ');
     if (!el('nota')) return;
+    if (META.fonte === 'lancamentos') {
+      el('nota').innerHTML =
+        '<b>Sobre os dados.</b> O painel lê direto dos <b>lançamentos do sistema</b> — ' + G.num(N_CORRENTE) +
+        ' fichas, lidas em ' + G.esc(META.gerado_em || '—') + ' (cada abertura do painel traz o que foi lançado até agora). ' +
+        '<b>O exercício é o ano do lançamento</b> (data de inserção da ficha).' +
+        '<ul>' +
+        '<li>' + G.num(outroAno) + ' registros têm vistoria confiável de um ano e lançamento de outro: ' +
+        'contam no exercício do <em>lançamento</em>, e o mês continua sendo o da vistoria;</li>' +
+        '<li>' + G.num(semVistoria) + ' registros têm <em>Data da Vistoria</em> impossível ' +
+        '(ano digitado errado ou data futura) e entraram pela data de lançamento — ' +
+        'aparecem destacados na coluna Vistoria da listagem;</li>' +
+        '<li>os produtores distintos são contados pelo <em>nome</em> normalizado: ' +
+        'CPF e data de nascimento nunca saem do banco para o painel;</li>' +
+        '<li>' + G.num(somar('sem_geo')) + ' registros sem coordenada geográfica, por isso não há mapa de pontos;</li>' +
+        '<li>' + G.num(somar('sem_formulario')) + ' registros sem link do formulário digitalizado.</li>' +
+        '</ul>';
+      return;
+    }
     el('nota').innerHTML =
       '<b>Sobre os dados.</b> Fonte: <code>' + G.esc(META.arquivo || 'planilha de mecanização') +
       '</code>, aba <code>' + G.esc(META.aba || 'dados') + '</code> — ' + G.num(N_CORRENTE) +
@@ -3894,7 +4078,41 @@
   }
 
   /* -------------------------------------------------------- carregar dados */
+  /* Fonte principal: os LANÇAMENTOS do sistema (ação "painel" do servidor), no
+     mesmo formato de data/mecanizacao.json. Assim o que foi lançado aparece no
+     painel na hora, sem republicar planilha. Se o servidor não responder, cai no
+     arquivo publicado (data/mecanizacao.json) e depois nos demais. */
+  function lerLancamentos() {
+    var enviar = window.LANCAMENTO_CAMPOS && window.LANCAMENTO_CAMPOS.enviar;
+    if (!enviar) return Promise.reject(new Error('sem cliente'));
+    var fd = new FormData();
+    fd.append('acao', 'painel');
+    // a versão pública nunca manda o token: não recebe endereço nem link do formulário
+    if (!window.MODO_PUBLICO) {
+      var sessao = window.ADMIN_AUTH && window.ADMIN_AUTH.sessaoAtual && window.ADMIN_AUTH.sessaoAtual();
+      if (sessao && sessao.access_token) fd.append('token', sessao.access_token);
+    }
+    var limite = new Promise(function (_, falha) { setTimeout(function () { falha(new Error('tempo esgotado')); }, 25000); });
+    return Promise.race([enviar(fd), limite]).then(function (res) {
+      var c = res && res.corpo;
+      if (!c || !c.ok || !Array.isArray(c.registros) || !c.registros.length) throw new Error('sem lançamentos');
+      return { pacote: { meta: c.meta || {}, registros: c.registros }, fonte: 'lancamentos' };
+    });
+  }
+
+  /** Na versão pública, endereço e link do formulário não aparecem nem se vierem do arquivo de apoio. */
+  function limparParaPublico(res) {
+    if (window.MODO_PUBLICO && res && res.pacote && Array.isArray(res.pacote.registros)) {
+      res.pacote.registros.forEach(function (r) { r.loc = ''; r.form = ''; });
+    }
+    return res;
+  }
+
   function carregarDados() {
+    return lerLancamentos().catch(function () { return carregarArquivo(); }).then(limparParaPublico);
+  }
+
+  function carregarArquivo() {
     return fetch('../data/mecanizacao.json', { cache: 'no-store' })
       .then(function (r) {
         if (!r.ok) throw new Error('sem arquivo publicado');
@@ -4069,6 +4287,16 @@
   ligarTeclasAbas();
   ligarMais();
 
+  /* Base e regras do painel para o assistente de perguntas (js/assistente-dados.js).
+     Só leitura: ele consulta a mesma base já carregada, sem os filtros da lateral. */
+  window.PAINEL_DADOS = {
+    registros: function () { return TODOS; },
+    dataRef: dataRef, anoDe: anoDe, regionalDe: regionalDe, chaveProdutor: chaveProdutor,
+    regionais: function () { return REGIONAIS.map(function (r) { return r.nome; }); },
+    MEC: MEC, ACU: ACU,
+    historicoCarregado: function () { return !!window.DADOS_MECANIZACAO_HISTORICO; }
+  };
+
   carregarDados().then(function (res) {
     if (!res.pacote || !res.pacote.registros) {
       document.querySelector('.wrap').insertAdjacentHTML('afterbegin',
@@ -4082,6 +4310,8 @@
     /* Só agora o histórico: o painel já está desenhado e utilizável. Ao chegar,
        a base é remontada mantendo a seleção e o seletor de período ganha os
        exercícios encerrados. */
+    // vindo dos lançamentos, o pacote já traz todos os anos: o arquivo do histórico é dispensável
+    if (res.fonte === 'lancamentos') return;
     carregarHistorico().then(function (ok) {
       if (!ok || !PACOTE) return;
       usarPacote(PACOTE, FONTE, true);

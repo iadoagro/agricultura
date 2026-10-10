@@ -17,6 +17,7 @@
   --sombra-p:0 2px 8px rgba(27,55,94,.08);
   --s1:#2a78d6; --s2:#eb6834; --s3:#1b59af; --s4:#eda100; --s5:#e87ba4;
   --mec:#2a78d6; --acu:#eb6834;
+  --mapa-mec:#2e9d57; --mapa-acu:#2a78d6; --mapa-ambos:#19b5c9;   /* mapa: verde = mecanização, azul = açudagem */
   --acento:#153e75;      /* verde de interface (aba ativa, links) */
   --acento-fundo:#153e75;/* fundo do botão ativo */
   --acento-suave:#eff6ff;
@@ -38,6 +39,7 @@ html[data-tema="escuro"]{
   --sombra-p:0 2px 10px rgba(0,0,0,.45);
   --s1:#3987e5; --s2:#d95926; --s3:#19509e; --s4:#c98500; --s5:#d55181;
   --mec:#3987e5; --acu:#d95926;
+  --mapa-mec:#3fb36b; --mapa-acu:#3987e5; --mapa-ambos:#2cc4d8;
   --acento:#7b99c4;
   --acento-fundo:#2563eb;
   --acento-suave:#1e232b;
@@ -795,10 +797,9 @@ footer{padding:18px 24px;font-size:12px;color:var(--tinta3);text-align:center;bo
   padding-top:10px;border-top:1px solid var(--linha-t);font-size:12.5px;color:var(--tinta2)}
 .mapa-mec-legenda li{display:flex;align-items:center;gap:6px}
 .mapa-mec-legenda .ponto{width:12px;height:12px;border-radius:3px;display:inline-block}
-.mapa-mec-legenda .ponto.mec{background:var(--mec)}
-.mapa-mec-legenda .ponto.acu{background:var(--acu)}
-.mapa-mec-legenda .ponto.ambos{background:linear-gradient(135deg,var(--mec) 50%,var(--acu) 50%)}
-.mapa-mec-legenda .ponto.nenhum{background:var(--grade)}
+.mapa-mec-legenda .ponto.mec,.mapa-mec-tipo-btn .ponto.mec,.mo-tip-l .ponto.mec{background:var(--mapa-mec)}
+.mapa-mec-legenda .ponto.acu,.mapa-mec-tipo-btn .ponto.acu,.mo-tip-l .ponto.acu{background:var(--mapa-acu)}
+.mapa-mec-legenda .ponto.ambos,.mapa-mec-tipo-btn .ponto.ambos{background:var(--mapa-ambos)}
 .mapa-mec-lateral{background:var(--superficie);border:1px solid var(--anel);border-radius:14px;
   padding:16px;position:sticky;top:72px;display:flex;flex-direction:column;gap:16px;
   max-height:calc(100vh - 90px);overflow:auto}
@@ -862,3 +863,22 @@ html.modo-publico .link-publico{display:none!important}
 .lanc-cab{justify-content:flex-start}
 .lanc-cab .painel-acoes{margin-right:auto}
 .lanc-listagem > .lanc-cab{margin-bottom:18px}
+
+/* mapa: colorir por serviço ou por volume (escala do maior para o menor) */
+.mapa-mec-modo{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.mapa-mec-modo button{border:1px solid var(--anel);background:var(--superficie);color:var(--tinta2);
+  border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.mapa-mec-modo button:hover{border-color:var(--acento);color:var(--acento)}
+.mapa-mec-modo button.ativo{background:var(--acento-fundo);border-color:var(--acento-fundo);color:#fff;font-weight:600}
+.mapa-mec-escala{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--linha-t);font-size:12.5px;color:var(--tinta2)}
+.mapa-mec-escala h4{margin:0 0 8px;font-size:12.5px;font-weight:600;color:var(--tinta)}
+.mapa-mec-escala-barra{height:12px;border-radius:6px;border:1px solid var(--anel)}
+.mapa-mec-escala-pontas{display:flex;justify-content:space-between;margin:4px 0 10px;font-size:11.5px;color:var(--tinta3)}
+.mapa-mec-escala ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px}
+.mapa-mec-escala li{display:flex;align-items:center;gap:6px}
+.mapa-mec-escala li i{width:14px;height:14px;border-radius:3px;border:1px solid var(--anel);flex:none}
+.mapa-mec-escala li b{font-weight:600;color:var(--tinta);font-variant-numeric:tabular-nums}
+
+.mapa-mec-legenda .leg-grad{display:inline-flex;border:1px solid var(--anel);border-radius:3px;overflow:hidden}
+.mapa-mec-legenda .leg-grad i{width:12px;height:12px;display:block}
+.mapa-mec-legenda .leg-nota{flex:1 1 100%;font-size:11.5px;color:var(--tinta3)}

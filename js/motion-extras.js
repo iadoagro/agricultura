@@ -10,7 +10,8 @@
   var BOTOES = 'button:not(:disabled),.btn,.ch-btn,a.portaria-link,.aba,.aba-el,.filtro-btn';
 
   /* ---------- Spotlight (só ponteiro fino = mouse) ---------- */
-  if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+  /* Desligado: o brilho que seguia o mouse nos cartões distraía na leitura. */
+  if (false) {
     var ultimo = null, pendente = null, quadroPedido = false;
     // pointermove pode disparar centenas de vezes por segundo; sem isso,
     // cada evento repintava o gradiente na hora — em computador fraco isso

@@ -68,8 +68,12 @@
     ajuda.atualizarBotoesAdicionar();
   }
 
+  var ux = null;   // js/lancamento-ux.js: progresso, atalhos e "salvar e lançar outro"
+
   function salvar(e) {
     e.preventDefault();
+    // qual botão enviou: "outro" fica no formulário (com o lote mantido); o resto volta para a lista
+    var depois = (e.submitter && e.submitter.getAttribute('data-depois')) || 'lista';
     if (!form.reportValidity()) return;
     if (!ajuda.validarServico()) return;
 
@@ -110,6 +114,18 @@
         CAMPOS_MANTIDOS_APOS_SALVAR.forEach(function (c) { loteAnterior[c] = form.elements[c].value; });
         var nome = form.elements['nome_beneficiario'].value;
         window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('criar', 'mecanizacao', 'Cadastrou o lançamento de mecanização de "' + nome + '"');
+        if (depois === 'outro') {
+          // segue no formulário: serviço, data, município, escritório e técnico ficam; o resto zera
+          limparFormulario(true);
+          aviso('lancSalvarStatus', 'ok', 'Lançamento salvo para <b>' + esc(nome) + '</b>. Pode lançar o próximo.');
+          setTimeout(function () {
+            var s = el('lancSalvarStatus');
+            if (s && /Pode lançar o próximo/.test(s.textContent)) aviso('lancSalvarStatus', '', '');
+          }, 7000);
+          form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (ux) { ux.atualizar(); setTimeout(ux.focarPrimeiro, 250); }
+          return;
+        }
         limparFormulario(false);
         aviso('lancSalvarStatus', '', '');
         mostrarLista();
@@ -131,6 +147,7 @@
     el('lancListaView').hidden = true;
     el('lancFormView').hidden = false;
     ajuda.marcarHorarioInsercao();
+    if (ux) { ux.atualizar(); setTimeout(ux.focarPrimeiro, 120); }
   }
 
   /* ------------------------------------------------------------- recentes */
@@ -138,6 +155,7 @@
     ver: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
     editar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
     excluir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>',
+    pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>',
     cadeado: '<svg class="lanc-icone-cadeado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>',
     aprovar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
     recusar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>'
@@ -241,7 +259,7 @@
     tipo_servico: 'Serviço', data_vistoria: 'Data da vistoria', escritorio_local: 'Escritório local',
     responsavel_tecnico: 'Responsável técnico', ponto_controle: 'Ponto de controle',
     nome_beneficiario: 'Beneficiário', cpf: 'CPF', data_nascimento: 'Data de nascimento',
-    estado_civil: 'Estado civil', sexo: 'Sexo', indigena: 'Indígena', etnia: 'Etnia', possui_dap: 'Possui DAP',
+    estado_civil: 'Estado civil', sexo: 'Sexo', indigena: 'Indígena', etnia: 'Etnia', possui_dap: 'Possui CAF',
     associacao_cooperativa: 'Associação/Cooperativa', telefone: 'Telefone', endereco: 'Endereço',
     nome_propriedade: 'Propriedade', municipio: 'Município', culturas: 'Culturas', area_total_ha: 'Área total (ha)',
     horas_maquina: 'Horas-máquina', quantidade_acudes: 'Açudes', pontos_geo: 'Georreferenciamento',
@@ -355,21 +373,23 @@
   /* ------------------------------------------------- filtros e paginação */
   // A lista inclui as fichas importadas da planilha (milhares de linhas):
   // o servidor filtra e devolve uma página por vez, com o total.
-  var POR_PAGINA = 20;
+  /* Registros por página: a pessoa escolhe ao lado do paginador (10 é o padrão) e
+     a escolha fica neste navegador. O servidor aceita até 100 por página. */
+  var OPCOES_POR_PAGINA = [10, 20, 50, 100];
+  var CHAVE_POR_PAGINA = 'seagri_lanc_por_pagina';
+  var POR_PAGINA = (function () {
+    try {
+      var v = +localStorage.getItem(CHAVE_POR_PAGINA);
+      if (OPCOES_POR_PAGINA.indexOf(v) >= 0) return v;
+    } catch (e) { /* modo privado */ }
+    return 10;
+  })();
   /* Em tela larga (filtros ao lado da lista) a página tem exatamente as linhas que
      cabem entre o topo da lista e o rodapé da tela: sem rolagem, com paginação. A
      altura de uma linha é medida na primeira tabela desenhada; até lá vale 45px. */
   var alturaLinha = 45;
   function porPaginaQueCabe() {
-    if (!window.matchMedia('(min-width:1500px)').matches) return 20;
-    var caixa = el('lancRecentes');
-    if (!caixa || !caixa.offsetParent) return POR_PAGINA;
-    var topo = caixa.getBoundingClientRect().top + window.scrollY;
-    // 34 = cabeçalho da tabela; 60 = paginação; 52 = respiro do cartão e da base da página;
-    // mais o rodapé do site, que também entra na altura da página
-    var rodape = document.querySelector('footer');
-    var sobra = window.innerHeight - topo - 34 - 60 - 52 - (rodape ? rodape.offsetHeight : 0);
-    return Math.max(5, Math.min(100, Math.floor(sobra / alturaLinha)));
+    return POR_PAGINA;   // o tamanho da página é o que a pessoa escolheu
   }
   var paginaAtual = 1, totalLinhas = 0, pedidoLista = 0, filtrosProntos = false;
   var CAMPOS_FILTRO = ['f_busca', 'f_pessoa', 'f_ano', 'f_tipo_servico', 'f_municipio', 'f_escritorio'];
@@ -800,6 +820,16 @@
         paginaAtual = 1;
         carregarRecentes();
       });
+      el('lancPaginacao').addEventListener('change', function (e) {
+        if (e.target.id !== 'lancPorPagina') return;
+        var novo = +e.target.value;
+        if (OPCOES_POR_PAGINA.indexOf(novo) < 0) return;
+        var primeiro = (paginaAtual - 1) * POR_PAGINA;   // mantém o primeiro item à vista
+        POR_PAGINA = novo;
+        paginaAtual = Math.floor(primeiro / POR_PAGINA) + 1;
+        try { localStorage.setItem(CHAVE_POR_PAGINA, String(novo)); } catch (err) { /* sem armazenamento */ }
+        carregarRecentes();
+      });
       el('lancPaginacao').addEventListener('click', function (e) {
         var b = e.target.closest('button[data-pagina]');
         if (!b || b.disabled) return;
@@ -823,7 +853,7 @@
 
   function paginacaoHtml() {
     var paginas = Math.max(1, Math.ceil(totalLinhas / POR_PAGINA));
-    if (totalLinhas <= POR_PAGINA) return '';
+    if (!totalLinhas) return '';
     var ini = (paginaAtual - 1) * POR_PAGINA + 1, fim = Math.min(totalLinhas, paginaAtual * POR_PAGINA);
     function bt(p, rotulo, titulo, atual) {
       return '<button type="button" class="btn' + (atual ? ' lanc-pag-atual' : '') + '" data-pagina="' + p + '"' +
@@ -833,15 +863,33 @@
     var de = Math.max(1, Math.min(paginaAtual - 2, paginas - 4)), ate = Math.min(paginas, de + 4);
     var nums = '';
     for (var p = de; p <= ate; p++) nums += bt(p, p, 'Página ' + p, p === paginaAtual);
+    var opcoes = OPCOES_POR_PAGINA.map(function (n) {
+      return '<option value="' + n + '"' + (n === POR_PAGINA ? ' selected' : '') + '>' + n + '</option>';
+    }).join('');
+    var botoes = paginas > 1
+      ? '<span class="lanc-pag-botoes">' +
+        bt(1, '«', 'Primeira página') + bt(paginaAtual - 1, '‹', 'Página anterior') + nums +
+        bt(paginaAtual + 1, '›', 'Próxima página') + bt(paginas, '»', 'Última página') + '</span>'
+      : '';
     return '<span class="lanc-pag-info">' + ini.toLocaleString('pt-BR') + '–' + fim.toLocaleString('pt-BR') + ' de ' + totalLinhas.toLocaleString('pt-BR') + '</span>' +
-      '<span class="lanc-pag-botoes">' +
-      bt(1, '«', 'Primeira página') + bt(paginaAtual - 1, '‹', 'Página anterior') + nums +
-      bt(paginaAtual + 1, '›', 'Próxima página') + bt(paginas, '»', 'Última página') + '</span>';
+      '<span class="lanc-pag-dir">' +
+      '<label class="lanc-pag-por">Registros por página<select id="lancPorPagina" aria-label="Registros por página">' + opcoes + '</select></label>' +
+      botoes + '</span>';
   }
 
   function dataBr(iso) {
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
     return m ? m[3] + '/' + m[2] + '/' + m[1] : '—';
+  }
+
+  /** ha só existe na mecanização; horas e açudes, só na açudagem. Onde não se
+      aplica ao serviço do lançamento, a célula mostra "-". */
+  function medidaDe(r, qual) {
+    var servico = r.tipo_servico;
+    var valor = qual === 'ha' ? r.area_total_ha : qual === 'h' ? r.horas_maquina : r.quantidade_acudes;
+    var aplica = servico === 'Mecanização' ? qual === 'ha' : servico === 'Açudagem' ? qual !== 'ha' : true;
+    if (!aplica) return '-';
+    return valor === null || valor === undefined || valor === '' ? '-' : String(valor);
   }
 
   function carregarRecentes() {
@@ -895,8 +943,8 @@
         var nota = '';
         if (!linhas.length) { el('lancRecentes').innerHTML = nota + '<p class="nota">Nenhum lançamento encontrado com esses filtros.</p>'; return; }
         el('lancRecentes').innerHTML = nota + '<div class="tabela-scroll"><table class="lanc-tabela"><thead><tr>' +
-          '<th>Salvo em</th><th>Lançado por</th><th>Serviço</th><th>Beneficiário</th><th>Município</th><th>Escritório</th>' +
-          '<th>Vistoria</th><th class="num">ha</th><th class="num">h</th><th class="num">Açudes</th><th>Ações</th>' +
+          '<th>Salvo em</th><th>Serviço</th><th>Beneficiário</th><th>Município</th><th>Escritório</th>' +
+          '<th>Vistoria</th><th class="num">ha</th><th class="num">h</th><th class="num">Açudes</th><th>Lançado por</th><th>Ações</th>' +
           '</tr></thead><tbody>' + linhas.map(function (r) {
             var pend = pendencias[r.id];
             var selo = pend
@@ -911,23 +959,27 @@
             // Lançamento de outra pessoa: só visualizar (o servidor também barra).
             var meu = comPoder || meusEmails.indexOf(String(r.criado_por_email || '').toLowerCase()) >= 0;
             return '<tr><td>' + esc(window.DATA_BR.dataHoraBr(r.criado_em)) + '</td>' +
-              '<td title="' + esc(r.criado_por_email || '') + '">' + esc(nomeDeEmail(r.criado_por_email)) + '</td>' +
               '<td>' + esc(r.tipo_servico || '—') + '</td><td>' + esc(r.nome_beneficiario) + selo + '</td>' +
               '<td>' + esc(r.municipio || '—') + '</td><td>' + esc(r.escritorio_local || '—') + '</td>' +
               '<td>' + esc(dataBr(r.data_vistoria)) + '</td>' +
-              '<td class="num">' + esc(r.area_total_ha || '') + '</td>' +
-              '<td class="num">' + esc(r.horas_maquina || '') + '</td>' +
-              '<td class="num">' + esc(r.quantidade_acudes || '') + '</td>' +
+              '<td class="num">' + esc(medidaDe(r, 'ha')) + '</td>' +
+              '<td class="num">' + esc(medidaDe(r, 'h')) + '</td>' +
+              '<td class="num">' + esc(medidaDe(r, 'acudes')) + '</td>' +
+              '<td title="' + esc(r.criado_por_email || '') + '">' + esc(nomeDeEmail(r.criado_por_email)) + '</td>' +
               '<td class="lanc-tabela-acoes">' +
                 '<a class="btn lanc-btn-icone" href="lancamento-editar.html?modo=ver&id=' + encodeURIComponent(r.id) + '" title="Ver lançamento" aria-label="Ver lançamento">' + ICONES.ver + '</a>' +
+                botaoIcone('lanc-pdf-linha', ICONES.pdf, 'Baixar PDF deste lançamento', dataAttrs) +
                 (meu
                   ? botaoIcone('lanc-editar', ICONES.editar + (comPoder ? '' : ICONES.cadeado),
                       comPoder ? 'Editar' : (pend ? 'Aguardando aprovação' : 'Editar (precisa de aprovação)'), dataAttrs + travado) +
-                    botaoIcone('btn-excluir lanc-excluir' + (comPoder ? '' : ' lanc-bloqueado'), ICONES.excluir + (comPoder ? '' : ICONES.cadeado),
-                      comPoder ? 'Excluir' : (pend ? 'Aguardando aprovação' : 'Solicitar exclusão'), dataAttrs + travado)
+                    // excluir: só o responsável (root); os demais não veem o botão
+                    (comPoder ? botaoIcone('btn-excluir lanc-excluir', ICONES.excluir, 'Excluir', dataAttrs + travado) : '')
                   : '') +
               '</td></tr>';
           }).join('') + '</tbody></table></div>';
+        Array.prototype.forEach.call(el('lancRecentes').querySelectorAll('.lanc-pdf-linha'), function (b) {
+          b.addEventListener('click', function () { baixarPdfLinha(b); });
+        });
         Array.prototype.forEach.call(el('lancRecentes').querySelectorAll('.lanc-excluir'), function (b) {
           b.addEventListener('click', function () { excluir(b.getAttribute('data-id'), b.getAttribute('data-nome')); });
         });
@@ -944,6 +996,32 @@
       .catch(function () { /* lista de conferência: falha aqui não impede o resto da aba */ });
   }
 
+  /* ------------------------------------------------------ PDF de uma linha */
+  /* A lista só traz o resumo; o PDF é da ficha inteira, então busca o lançamento
+     completo (ação "carregar", a mesma do botão de ver) e gera a ficha. */
+  function baixarPdfLinha(botao) {
+    if (botao.disabled) return;
+    var id = botao.getAttribute('data-id');
+    var original = botao.innerHTML;
+    botao.disabled = true;
+    botao.classList.add('lanc-carregando');
+    enviarAcao({ acao: 'carregar', id: id })
+      .then(function (res) {
+        if (!res.corpo.ok || !res.corpo.lancamento) throw new Error(res.corpo.erro || 'Não foi possível abrir o lançamento.');
+        var reg = res.corpo.lancamento;
+        return window.LANCAMENTO_PDF.ficha(reg, { lancadoPor: nomeDeEmail(reg.criado_por_email) });
+      })
+      .catch(function (e) {
+        if (e === null) return;   // sessão expirada: enviarAcao já avisou
+        aviso('lancListaAviso', 'erro', esc((e && e.message) || 'Não foi possível gerar o PDF.'));
+      })
+      .then(function () {
+        botao.disabled = false;
+        botao.classList.remove('lanc-carregando');
+        botao.innerHTML = original;
+      });
+  }
+
   /* --------------------------------------------------------------- montagem */
   function montar() {
     form = el('lancForm');
@@ -955,6 +1033,7 @@
     ajuda.alternarAssociacao();
     ajuda.atualizarBotoesAdicionar();
     ajuda.ligarEventosComuns();
+    if (window.LANCAMENTO_UX) ux = window.LANCAMENTO_UX.ligar(form, { salvarOutro: true });
 
     form.addEventListener('submit', salvar);
     el('lancLimpar').addEventListener('click', function () { limparFormulario(false); aviso('lancSalvarStatus', '', ''); });

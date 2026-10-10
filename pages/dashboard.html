@@ -10,8 +10,9 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026100801">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026092536">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026100805">
+<link rel="stylesheet" href="../css/assistente-dados.css?v=2026100922">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026100915">
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
      sem login, sem menu lateral e sem Registros, lançamento ou administração. Precisa vir antes dos
@@ -44,8 +45,8 @@
   })();
 </script>
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
-<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026092601">
-<link rel="stylesheet" href="../css/fx-ui.css?v=2026092103">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
+<link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
 <link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/select-app.css?v=2026092603">
 <script src="../js/select-app.js?v=2026092603" defer></script>
@@ -485,14 +486,16 @@
           <h2>Munic&iacute;pios atendidos</h2>
           <p class="sub">Cada munic&iacute;pio mostra se teve mecaniza&ccedil;&atilde;o, a&ccedil;udagem ou os dois, dentro do filtro atual. Sem coordenada exata por vistoria, o recorte &eacute; por munic&iacute;pio.</p>
         </div>
+        <div class="mapa-mec-modo" id="mapaMecModo" role="group" aria-label="Colorir o mapa por"></div>
         <p id="mapaMecStatus" role="status">Carregando mapa&hellip;</p>
         <svg id="mapaMec" viewBox="0 0 1000 600" aria-label="Mapa de munic&iacute;pios atendidos pela mecaniza&ccedil;&atilde;o e a&ccedil;udagem"></svg>
-        <ul class="mapa-mec-legenda" aria-hidden="true">
+        <ul class="mapa-mec-legenda" id="mapaMecLegenda" aria-hidden="true">
           <li><span class="ponto mec"></span> Mecaniza&ccedil;&atilde;o</li>
           <li><span class="ponto acu"></span> A&ccedil;udagem</li>
           <li><span class="ponto ambos"></span> Os dois</li>
           <li><span class="ponto nenhum"></span> Sem registro no filtro</li>
         </ul>
+        <div class="mapa-mec-escala" id="mapaMecEscala" hidden></div>
       </section>
       <aside class="mapa-mec-lateral" aria-label="Filtro do mapa">
         <div class="mapa-mec-bloco">
@@ -811,12 +814,12 @@
           <div id="lancSolicitacoes"></div>
         </section>
 
+        <section class="painel largo lanc-novo">
+          <div class="lanc-novo-txt"><h2>Novo relatório</h2><p class="sub">Digite uma vistoria a partir da ficha em papel.</p></div>
+          <button class="btn btn-verde" id="lancNovoBtn" type="button">+ Novo relatório</button>
+        </section>
+
         <section class="painel largo lanc-listagem">
-          <div class="painel-cab lanc-cab">
-            <div class="painel-acoes">
-              <button class="btn btn-verde" id="lancNovoBtn" type="button">+ Novo relatório</button>
-            </div>
-          </div>
           <form id="lancFiltros" class="lanc-filtros" role="search" onsubmit="return false">
             <label class="lanc-filtro-busca">Buscar<input type="search" name="f_busca" placeholder="Nome do benefici&aacute;rio ou CPF" autocomplete="off"></label>
             <label class="lanc-filtro-pessoa">Lan&ccedil;ado por<select name="f_pessoa" id="lancFiltroPessoa"><option value="">Meus lan&ccedil;amentos</option><option value="todos">Todas as pessoas</option></select></label>
@@ -908,14 +911,14 @@
           <div class="painel-cab"><div class="painel-cab-tit"><h2>1. Serviço e vistoria</h2></div></div>
           <div class="lanc-campos">
             <label>Hor&aacute;rio da inser&ccedil;&atilde;o<input type="text" id="lancHorarioInsercao" disabled></label>
-            <label>Data da vistoria<span class="lanc-obrig">*</span><input type="date" name="data_vistoria" required></label>
+            <label>Data da vistoria<span class="lanc-obrig">*</span><input type="date" name="data_vistoria" data-sem-futuro required></label>
             <label>Munic&iacute;pio<span class="lanc-obrig">*</span>
               <select name="municipio" required><option value="">Selecione&hellip;</option></select>
             </label>
             <label>Escrit&oacute;rio local<span class="lanc-obrig">*</span>
               <select name="escritorio_local" required disabled><option value="">Selecione&hellip;</option></select>
             </label>
-            <label>Respons&aacute;vel t&eacute;cnico<span class="lanc-obrig">*</span><input type="text" name="responsavel_tecnico" required autocomplete="off"></label>
+            <label>Respons&aacute;vel t&eacute;cnico<span class="lanc-obrig">*</span><select name="responsavel_tecnico" required><option value="">Selecione&hellip;</option></select></label>
           </div>
         </section>
 
@@ -924,7 +927,7 @@
           <div class="lanc-campos">
             <label class="lanc-larga">Nome do beneficiário<span class="lanc-obrig">*</span><input type="text" name="nome_beneficiario" required autocomplete="off"></label>
             <label>CPF<span class="lanc-obrig">*</span><input type="text" name="cpf" inputmode="numeric" placeholder="000.000.000-00" required autocomplete="off"></label>
-            <label>Data de nascimento<span class="lanc-obrig">*</span><input type="date" name="data_nascimento" required></label>
+            <label>Data de nascimento<span class="lanc-obrig">*</span><input type="date" name="data_nascimento" data-sem-futuro required></label>
             <label>Telefone<input type="text" name="telefone" placeholder="(68) 90000-0000" autocomplete="off"></label>
             <label>Estado civil
               <select name="estado_civil">
@@ -936,7 +939,7 @@
             <label>Sexo<span class="lanc-obrig">*</span>
               <select name="sexo" required><option value="">Selecione&hellip;</option><option value="F">Feminino</option><option value="M">Masculino</option></select>
             </label>
-            <label>Possui DAP<span class="lanc-obrig">*</span>
+            <label>Possui CAF<span class="lanc-obrig">*</span>
               <select name="possui_dap" required><option value="">Selecione&hellip;</option><option>Sim</option><option>Não</option><option>Vencida</option></select>
             </label>
             <label>Indígena
@@ -961,8 +964,8 @@
         <section class="painel duplo">
           <div class="painel-cab"><div class="painel-cab-tit"><h2>4. Tipo de serviço</h2></div></div>
           <div class="lanc-tipo-servico">
-            <label class="lanc-radio-grande"><input type="radio" name="tipo_servico" value="Mecanização" required><span>Mecanização</span></label>
-            <label class="lanc-radio-grande"><input type="radio" name="tipo_servico" value="Açudagem" required><span>Açudagem</span></label>
+            <label class="lanc-radio-grande"><input type="radio" name="tipo_servico" value="Mecaniza&ccedil;&atilde;o" required><span class="lanc-rg-icone"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="17" r="3"/><circle cx="18" cy="17" r="2"/><path d="M4 14V7h6l2 5h6v5"/></svg></span><span class="lanc-rg-texto"><b>Mecaniza&ccedil;&atilde;o</b><small>Preparo de &aacute;rea, destoca, gradagem e plantio</small></span><span class="lanc-rg-marca" aria-hidden="true"></span></label>
+            <label class="lanc-radio-grande"><input type="radio" name="tipo_servico" value="A&ccedil;udagem" required><span class="lanc-rg-icone"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4 5 6.5 5 9a5 5 0 01-10 0c0-2.5 2-5 5-9z"/></svg></span><span class="lanc-rg-texto"><b>A&ccedil;udagem</b><small>Escava&ccedil;&atilde;o e constru&ccedil;&atilde;o de tanques e a&ccedil;udes</small></span><span class="lanc-rg-marca" aria-hidden="true"></span></label>
           </div>
           <p id="lancServicoErro" class="lanc-erro" hidden></p>
         </section>
@@ -974,7 +977,7 @@
                liberar para adicionar a próxima (até 4, como na ficha).</p>
           </div></div>
           <div id="lancCulturas" class="lanc-culturas"></div>
-          <button type="button" class="btn" id="lancAddCultura" disabled>+ Adicionar cultura</button>
+          <button type="button" class="lanc-add-mais" id="lancAddCultura" title="Adicionar cultura" aria-label="Adicionar cultura" disabled>+</button>
           <p id="lancCulturaErro" class="lanc-erro" hidden>Adicione pelo menos uma cultura.</p>
           <div class="lanc-campos" style="margin-top:14px">
             <label>Área total (ha)<input type="number" step="0.01" min="0" name="area_total_ha" id="lancAreaTotal">
@@ -992,16 +995,16 @@
           <p id="lancAcudeErro" class="lanc-erro" hidden>Informe pelo menos 1 tanque/açude.</p>
         </section>
 
-        <section class="painel duplo">
+        <section class="painel duplo lanc-sec-servico" hidden>
           <div class="painel-cab"><div class="painel-cab-tit"><h2>6. Georreferenciamento (3.1 — UTM WGS84)</h2></div></div>
           <div class="lanc-campos">
             <label>X<input type="text" name="geo_x" inputmode="numeric" autocomplete="off"></label>
             <label>Y<input type="text" name="geo_y" inputmode="numeric" autocomplete="off"></label>
-            <label>Zona<select name="geo_zona"><option value="">—</option><option value="18">18</option><option value="19">19</option></select></label>
+            <label>Zona (pelo município)<input type="text" name="geo_zona" class="lanc-zona-fixa" readonly tabindex="-1" placeholder="Escolha o município" autocomplete="off"></label>
           </div>
         </section>
 
-        <section class="painel duplo">
+        <section class="painel duplo lanc-sec-servico" hidden>
           <div class="painel-cab"><div class="painel-cab-tit"><h2>7. Maquinário (3.2)</h2></div></div>
           <div class="lanc-campos">
             <label>Tipo de trator<input type="text" name="tipo_trator" autocomplete="off"></label>
@@ -1020,17 +1023,17 @@
           </fieldset>
         </section>
 
-        <section class="painel duplo">
+        <section class="painel duplo lanc-sec-servico" hidden>
           <div class="painel-cab"><div class="painel-cab-tit">
             <h2>8. Documento de Arrecadação Estadual — DAE (3.3)</h2>
             <p class="sub">Adicione um número e valor por DAE emitida, e só depois vai liberar para adicionar
                a próxima (até 10).</p>
           </div></div>
           <div id="lancDaes" class="lanc-daes"></div>
-          <button type="button" class="btn" id="lancAddDae" disabled>+ Adicionar DAE</button>
+          <button type="button" class="lanc-add-mais" id="lancAddDae" title="Adicionar DAE" aria-label="Adicionar DAE" disabled>+</button>
         </section>
 
-        <section class="painel duplo">
+        <section class="painel duplo lanc-sec-servico" hidden>
           <div class="painel-cab"><div class="painel-cab-tit"><h2>9. Observações</h2></div></div>
           <div class="lanc-campos">
             <label class="lanc-larga">Observação<textarea name="observacao" rows="3"></textarea></label>
@@ -1085,17 +1088,43 @@
 <!-- dados-mecanizacao-historico.js (1,3 MB, exercícios encerrados) NÃO entra
      aqui de propósito: o painel abre no ano corrente e js/dashboard.js o busca
      em segundo plano, depois do primeiro desenho. -->
-<script src="../js/dados-mecanizacao.js?v=2026091101"></script>
+<script src="../js/dados-mecanizacao.js?v=2026100901"></script>
+<!-- Assistente de perguntas (js/assistente-dados.js): bot&atilde;o flutuante no canto inferior direito, em todas as abas. -->
+<section class="assistente" id="assistenteDados" aria-label="Pergunte ao Agricultura">
+  <button class="ia-abrir" type="button" aria-expanded="false" aria-controls="iaCaixa" aria-label="Pergunte ao Agricultura">
+    <span class="ia-abrir-txt" aria-hidden="true">Pergunte ao &ldquo;Agricultura&rdquo;</span>
+    <span class="ia-bola"><svg class="ia-robo ia-robo-grande" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3"/><circle cx="12" cy="2.6" r="1" fill="currentColor"/><rect x="4" y="6" width="16" height="12" rx="4"/><circle cx="9" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M9.5 15.5h5"/><path d="M2 11v3M22 11v3"/><path d="M8 18v2.5M16 18v2.5"/></svg></span>
+  </button>
+  <div class="ia-caixa" id="iaCaixa" hidden>
+    <div class="ia-topo">
+      <canvas class="ia-orb" aria-hidden="true"></canvas>
+      <div class="ia-topo-txt">
+        <b>Pergunte ao &ldquo;Agricultura&rdquo;</b>
+        <span class="ia-estado" role="status" aria-live="polite">Pode perguntar</span>
+      </div>
+    </div>
+    <form class="ia-form" autocomplete="off">
+      <input class="ia-campo" type="text" maxlength="240" placeholder="Ex.: quantos relat&oacute;rios foram lan&ccedil;ados nos &uacute;ltimos 15 dias, por munic&iacute;pio?" aria-label="Pergunta sobre os dados">
+      <button class="ia-enviar" type="submit">Perguntar</button>
+    </form>
+    <div class="ia-prev" hidden><span class="ia-prev-tit">Perguntas prov&aacute;veis</span><div class="ia-sugestoes"></div></div>
+    <div class="ia-saida" aria-live="polite"></div>
+    <button class="ia-limpar" type="button" hidden>Limpar respostas</button>
+  </div>
+</section>
 <script src="../js/graficos.js?v=2026081307"></script>
 <script src="../js/mapa-acre.js?v=2026091402"></script>
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
-<script src="../js/data-br.js?v=2026101206"></script>
+<script src="../js/data-br.js?v=2026101207"></script>
 <script src="../js/select-busca.js?v=2026101203" defer></script>
-<script src="../js/lancamento-campos.js?v=2026101204"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026101205"></script>
-<script src="../js/dashboard.js?v=2026100802"></script>
+<script src="../js/lancamento-campos.js?v=2026101212"></script>
+<script src="../js/lancamento-ux.js?v=2026101002"></script>
+<script src="../js/lancamento-pdf.js?v=2026100904"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026101212"></script>
+<script src="../js/dashboard.js?v=2026100815"></script>
+<script src="../js/assistente-dados.js?v=2026100923"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
-<script src="../js/motion-extras.js?v=2026092001"></script>
+<script src="../js/motion-extras.js?v=2026100901"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>
 <script src="../js/mobile-ui.js?v=2026092001"></script>
 </body>

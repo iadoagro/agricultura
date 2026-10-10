@@ -95,6 +95,84 @@
     aviso('lancEditarAviso', 'carregando', 'As alterações que você salvar aqui ficam <b>pendentes</b> até a conta responsável aprovar.');
   }
 
+  /* Exporta para PDF o lançamento como foi salvo (não o que está digitado agora). */
+  el('lancExportarPdf').addEventListener('click', function () {
+    var btn = el('lancExportarPdf');
+    if (!registroOriginal || btn.disabled) return;
+    btn.disabled = true;
+    var rotulo = btn.textContent;
+    btn.textContent = 'Gerando PDF…';
+    window.LANCAMENTO_PDF.ficha(registroOriginal, {})
+      .catch(function (e) { aviso('lancEditarAviso', 'erro', esc((e && e.message) || 'Não foi possível gerar o PDF.')); })
+      .then(function () { btn.disabled = false; btn.textContent = rotulo; });
+  });
+
+  /* ---- Pedido de edição pendente: "como estava" x "como querem que fique" ---- */
+  var ROTULOS = {
+    tipo_servico: 'Serviço', data_vistoria: 'Data da vistoria', escritorio_local: 'Escritório local',
+    responsavel_tecnico: 'Responsável técnico', ponto_controle: 'Ponto de controle',
+    nome_beneficiario: 'Beneficiário', cpf: 'CPF', data_nascimento: 'Data de nascimento',
+    estado_civil: 'Estado civil', sexo: 'Sexo', indigena: 'Indígena', etnia: 'Etnia', possui_dap: 'Possui CAF',
+    associacao_cooperativa: 'Associação/Cooperativa', telefone: 'Telefone', endereco: 'Endereço',
+    nome_propriedade: 'Propriedade', municipio: 'Município', culturas: 'Culturas', area_total_ha: 'Área total (ha)',
+    horas_maquina: 'Horas-máquina', quantidade_acudes: 'Açudes', pontos_geo: 'Georreferenciamento',
+    tipo_trator: 'Tipo de trator', maquinas: 'Máquinas', implementos: 'Implementos', tipo_uso: 'Tipo de uso',
+    num_identificacao_patrimonio: 'Nº patrimônio', daes: 'DAEs', observacao: 'Observação'
+  };
+  function valorLegivel(v) {
+    if (v === null || v === undefined || v === '') return '—';
+    if (v === true) return 'Sim';
+    if (v === false) return 'Não';
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v.slice(8) + '/' + v.slice(5, 7) + '/' + v.slice(0, 4);
+    if (Array.isArray(v)) {
+      if (!v.length) return '—';
+      return v.map(function (item) {
+        return item && typeof item === 'object'
+          ? Object.keys(item).map(function (k) { return item[k]; }).filter(function (x) { return x !== null && x !== ''; }).join(' / ')
+          : String(item);
+      }).join('; ');
+    }
+    return String(v);
+  }
+  function mesmoValor(a, b) {
+    var norm = function (x) {
+      if (x === '' || x === undefined) return null;
+      if (x !== null && typeof x === 'object') return JSON.stringify(x, function (k, v) { return k && v !== null && typeof v !== 'object' ? norm(v) : v; });
+      return x !== null && x !== true && x !== false && isFinite(Number(x)) ? String(Number(x)) : x;
+    };
+    return norm(a) === norm(b);
+  }
+  function nomeDoEmail(email) {
+    var u = String(email || '').split('@')[0].replace(/\d+/g, ' ').replace(/[._-]+/g, ' ').trim();
+    return u.replace(/\S+/g, function (p) { return p.charAt(0).toUpperCase() + p.slice(1); }) || String(email || '');
+  }
+
+  function mostrarAlteracoesSolicitadas(pendente, atual) {
+    var sec = el('lancAlteracoesSec');
+    if (!sec || !pendente || pendente.tipo !== 'editar') return;
+    var novo = pendente.dados;
+    var por = nomeDoEmail(pendente.solicitado_por_email);
+    var quando = pendente.criado_em ? ' em ' + window.DATA_BR.dataHoraBr(pendente.criado_em) : '';
+    el('lancAlteracoesSub').innerHTML = 'Pedido de <b>' + esc(por) + '</b>' + quando +
+      (pendente.motivo ? ' — motivo: ' + esc(pendente.motivo) : '') + '.';
+    if (!novo || typeof novo !== 'object') {
+      el('lancAlteracoesCorpo').innerHTML = '<p class="nota">Os campos propostos não vieram do servidor. ' +
+        'Atualize a função do Supabase (lancar-mecanizacao) para ver o comparativo aqui.</p>';
+      sec.hidden = false;
+      return;
+    }
+    var campos = Object.keys(ROTULOS).filter(function (c) { return c in novo && !mesmoValor(atual[c], novo[c]); });
+    el('lancAlteracoesCorpo').innerHTML = campos.length
+      ? '<div class="tabela-scroll"><table class="lanc-tabela"><thead><tr><th>Campo</th>' +
+        '<th class="lanc-diff-antes">Como estava</th><th class="lanc-diff-depois">Como querem que fique</th></tr></thead><tbody>' +
+        campos.map(function (c) {
+          return '<tr><td>' + esc(ROTULOS[c]) + '</td><td class="lanc-diff-antes">' + esc(valorLegivel(atual[c])) + '</td>' +
+            '<td class="lanc-diff-depois">' + esc(valorLegivel(novo[c])) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : '<p class="nota">Nenhum campo diferente do lançamento atual.</p>';
+    sec.hidden = false;
+  }
+
   function preencherFormulario(dados) {
     CAMPOS_DIRETOS.forEach(function (campo) {
       if (!form.elements[campo]) return;
@@ -103,6 +181,8 @@
       form.elements[campo].value = campo.indexOf('data_') === 0 ? window.DATA_BR.isoParaBr(v) : v;
     });
 
+    if (dados.responsavel_tecnico) ajuda.garantirTecnico(dados.responsavel_tecnico);
+    if (form.elements['cpf']) form.elements['cpf'].value = window.LANCAMENTO_CAMPOS.formatarCpf(dados.cpf);
     if (dados.tipo_servico) form.elements['tipo_servico'].value = dados.tipo_servico;
     ajuda.alternarSecoesServico();
 
@@ -207,7 +287,9 @@
           a.textContent = ' Abrir formulário digitalizado ↗';
           el('lancEditarContexto').appendChild(a);
         }
+        mostrarAlteracoesSolicitadas(res.corpo.pendente, registroOriginal);
         preencherFormulario(registroOriginal);
+        el('lancExportarPdf').hidden = false;
         form.hidden = false;
         prepararModo(!!res.corpo.eh_responsavel, res.corpo.pendente, res.corpo.pode_editar !== false);
       })
@@ -243,6 +325,7 @@
     ajuda.montarCaixasVazias();
     ajuda.preencherDinamicos();   // uma linha vazia de cultura/DAE até o carregamento chegar
     ajuda.ligarEventosComuns();
+    if (window.LANCAMENTO_UX) window.LANCAMENTO_UX.ligar(form, {});
     form.addEventListener('submit', salvar);
     carregar();
   }

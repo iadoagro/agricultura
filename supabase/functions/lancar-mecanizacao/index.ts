@@ -97,6 +97,12 @@ function lerRegistro(fd: FormData, emailDono: string): Record<string, unknown> {
 
   const nomeBeneficiario = txt('nome_beneficiario');
   if (nomeBeneficiario === null) responder(400, { ok: false, erro: 'Informe o nome do beneficiário.' });
+  // data da vistoria e de nascimento não podem ser futuras (UTC: nunca recusa o "hoje" de quem digita no Acre)
+  const hojeUtc = new Date().toISOString().slice(0, 10);
+  for (const [campoData, rotuloData] of [['data_vistoria', 'A data da vistoria'], ['data_nascimento', 'A data de nascimento']]) {
+    const valorData = data(campoData);
+    if (valorData !== null && valorData > hojeUtc) responder(400, { ok: false, erro: `${rotuloData} não pode ser futura.` });
+  }
 
   const registro = {
     criado_por_email: emailDono,
@@ -185,7 +191,7 @@ function lerMotivo(fd: FormData): string {
 
 async function solicitacaoPendente(lancamentoId: string): Promise<Record<string, unknown> | null> {
   const [status, corpo] = await chamarSupabase('GET',
-    `${TABELA_SOLICITACOES}?select=id,tipo,motivo,solicitado_por_email,criado_em&status=eq.pendente&lancamento_id=eq.${encodeURIComponent(lancamentoId)}`);
+    `${TABELA_SOLICITACOES}?select=id,tipo,motivo,solicitado_por_email,criado_em,dados&status=eq.pendente&lancamento_id=eq.${encodeURIComponent(lancamentoId)}`);
   return status >= 200 && status < 300 && Array.isArray(corpo) && corpo.length ? corpo[0] as Record<string, unknown> : null;
 }
 
@@ -240,8 +246,124 @@ function exigirId(fd: FormData, msg: string): string {
   return id;
 }
 
+
+/* ------------------------------------------------------- painel (público) --
+   O painel da mecanização lê os lançamentos direto daqui. Devolve o MESMO
+   formato de data/mecanizacao.json (um registro por ficha), só com o que os
+   gráficos usam: nada de CPF, telefone ou data de nascimento. Não exige login —
+   é o que a versão pública do painel também lê. */
+const NAO_INFORMADO = 'Não informado';
+const CAMPOS_PAINEL = 'criado_em,criado_por_email,tipo_servico,data_vistoria,escritorio_local,responsavel_tecnico,' +
+  'nome_beneficiario,sexo,estado_civil,possui_dap,associacao_cooperativa,endereco,nome_propriedade,municipio,' +
+  'culturas,area_total_ha,horas_maquina,quantidade_acudes,pontos_geo,tipo_uso,maquinas,implementos,daes,' +
+  'observacao,formulario_url';
+
+function nomeSugeridoDoEmail(email: string): string {
+  const u = email.split('@')[0].replace(/\d+/g, ' ').replace(/[._-]+/g, ' ').trim();
+  return u.replace(/\S+/g, (p) => p.charAt(0).toUpperCase() + p.slice(1)) || email;
+}
+
+function paraRegistroPainel(l: Record<string, unknown>, nomes: Map<string, string>, logado: boolean): Record<string, unknown> {
+  const ou = (v: unknown, padrao = NAO_INFORMADO) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : padrao);
+  const numero = (v: unknown) => { const n = Number(v); return isFinite(n) ? n : 0; };
+  const lista = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x)).filter((x) => x !== '') : []);
+  // data do lançamento no horário de Rio Branco (UTC-5, sem horário de verão)
+  const criado = new Date(String(l.criado_em));
+  const d = new Date(criado.getTime() - 5 * 3600 * 1000).toISOString().slice(0, 10);
+  const email = String(l.criado_por_email ?? '').trim().toLowerCase();
+  const sexo = String(l.sexo ?? '');
+  const culturas = (Array.isArray(l.culturas) ? l.culturas : []) as Record<string, unknown>[];
+  const daes = (Array.isArray(l.daes) ? l.daes : []) as Record<string, unknown>[];
+  return {
+    d,
+    ex: d.slice(0, 4),
+    dv: typeof l.data_vistoria === 'string' ? l.data_vistoria : '',
+    pc: ou(l.tipo_servico),
+    mun: ou(l.municipio),
+    esc: ou(l.escritorio_local),
+    rt: ou(l.responsavel_tecnico),
+    alim: (email && (nomes.get(email) || nomeSugeridoDoEmail(email))) || NAO_INFORMADO,
+    prod: ou(l.nome_beneficiario),
+    sexo: /^f/i.test(sexo) ? 'Feminino' : /^m/i.test(sexo) ? 'Masculino' : NAO_INFORMADO,
+    ec: ou(l.estado_civil),
+    dap: ou(l.possui_dap),
+    assoc: ou(l.associacao_cooperativa),
+    // endereço e link do formulário digitalizado: só para quem está logado (a versão pública não recebe)
+    loc: logado ? ou(l.endereco, '') : '',
+    propr: ou(l.nome_propriedade, ''),
+    cult: culturas
+      .map((c) => [String(c.cultura ?? '').trim(), numero(c.area_ha), String(c.sistema_cultivo ?? '').trim()])
+      .filter((c) => c[0] !== ''),
+    ha: numero(l.area_total_ha),
+    hrs: numero(l.horas_maquina),
+    ac: Math.trunc(numero(l.quantidade_acudes)),
+    tt: ou(l.tipo_uso),
+    maq: lista(l.maquinas),
+    impl: lista(l.implementos),
+    dae: daes.reduce((a, x) => a + numero(x.valor), 0),
+    form: logado && typeof l.formulario_url === 'string' ? l.formulario_url : '',
+    obs: ou(l.observacao, ''),
+    _geo: Array.isArray(l.pontos_geo) && l.pontos_geo.length > 0,
+  };
+}
+
+async function montarPacotePainel(logado: boolean): Promise<Record<string, unknown>> {
+  // nomes de exibição definidos pelo responsável (tela "Pessoas")
+  const nomes = new Map<string, string>();
+  const [stN, ln] = await chamarSupabase('GET', '/rest/v1/mecanizacao_lancadores?select=email,nome');
+  if (stN >= 200 && stN < 300 && Array.isArray(ln)) {
+    for (const x of ln as Record<string, unknown>[]) {
+      const e = String(x.email ?? '').trim().toLowerCase();
+      const n = typeof x.nome === 'string' ? x.nome.trim() : '';
+      if (e && n) nomes.set(e, n);
+    }
+  }
+  const registros: Record<string, unknown>[] = [];
+  const TAM = 1000;
+  for (let pagina = 0; pagina < 100; pagina++) {
+    const [st, corpo] = await chamarSupabase('GET',
+      `${TABELA}?select=${CAMPOS_PAINEL}&order=criado_em.asc,id.asc&limit=${TAM}&offset=${pagina * TAM}`);
+    if (st < 200 || st >= 300 || !Array.isArray(corpo)) {
+      responder(502, { ok: false, erro: mensagem(corpo, 'Não foi possível ler os lançamentos.') });
+    }
+    for (const l of corpo as Record<string, unknown>[]) registros.push(paraRegistroPainel(l, nomes, logado));
+    if ((corpo as unknown[]).length < TAM) break;
+  }
+  let semGeo = 0, semForm = 0, outroAno = 0;
+  const produtores = new Set<string>();
+  for (const r of registros) {
+    if (!r._geo) semGeo++;
+    if (!r.form && logado) semForm++;
+    if (r.dv && String(r.dv).slice(0, 4) !== String(r.d).slice(0, 4)) outroAno++;
+    produtores.add(String(r.prod).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim());
+    delete r._geo;
+  }
+  const agora = new Date(Date.now() - 5 * 3600 * 1000);
+  const dia = agora.toISOString().slice(0, 10).split('-').reverse().join('/');
+  return {
+    ok: true,
+    meta: {
+      fonte: 'lancamentos',
+      arquivo: 'lançamentos do sistema',
+      aba: 'mecanizacao_lancamentos',
+      gerado_em: dia + ' ' + agora.toISOString().slice(11, 16),
+      registros: registros.length,
+      produtores: produtores.size,
+      periodo: registros.length ? [String(registros[0].d), String(registros[registros.length - 1].d)] : ['', ''],
+      qualidade: { sem_data_valida: 0, vistoria_outro_ano: outroAno, sem_geo: semGeo, sem_formulario: logado ? semForm : 0, acudes_texto: 0 },
+    },
+    registros,
+  };
+}
+
 async function tratar(fd: FormData): Promise<never> {
   const acao = String(fd.get('acao') ?? '');
+
+  // público: o painel lê os lançamentos sem login (só campos agregáveis, sem dado pessoal)
+  if (acao === 'painel') {
+    const logado = (await emailAutenticado(String(fd.get('token') ?? ''))) !== null;
+    responder(200, await montarPacotePainel(logado));
+  }
 
   if (acao === 'salvar') {
     const email = await exigirSessao(fd);

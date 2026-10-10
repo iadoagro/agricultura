@@ -48,9 +48,39 @@
     validar(campo);
   }
 
+  /** Hoje, no relógio de quem digita (o dia em que o lançamento está sendo inserido). */
+  function hojeIso() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  /** Mensagem de erro logo abaixo do campo (some quando a data está certa). */
+  function mostrarErro(campo, msg) {
+    var no = campo.nextElementSibling;
+    if (!no || !no.classList || !no.classList.contains('data-erro')) {
+      if (!msg) return;
+      no = document.createElement('small');
+      no.className = 'data-erro';
+      no.setAttribute('role', 'alert');
+      campo.parentNode.insertBefore(no, campo.nextSibling);
+    }
+    no.textContent = msg || '';
+    no.hidden = !msg;
+  }
+
   function validar(campo) {
-    var v = campo.value;
-    campo.setCustomValidity(v && !brParaIso(v) ? 'Data inválida — use dia/mês/ano (ex.: 25/09/2026).' : '');
+    var v = campo.value, msg = '';
+    if (v) {
+      var iso = brParaIso(v);
+      if (!iso) {
+        // só reclama de data incompleta quando a pessoa já saiu do campo ou completou os 10 caracteres
+        if (v.length === 10 || document.activeElement !== campo) msg = 'Data inválida — use dia/mês/ano (ex.: 25/09/2026).';
+      } else if (campo.hasAttribute('data-sem-futuro') && iso > hojeIso()) {
+        msg = 'A data não pode ser futura (hoje é ' + isoParaBr(hojeIso()) + ').';
+      }
+    }
+    campo.setCustomValidity(msg);
+    mostrarErro(campo, msg);
   }
 
   /** Converte um <input type="date"> em campo de texto dd/mm/aaaa. */
@@ -66,6 +96,7 @@
     campo.value = isoParaBr(valorIso);
     campo.addEventListener('input', mascarar);
     campo.addEventListener('blur', function () { validar(campo); });
+    campo.addEventListener('change', function () { validar(campo); });
   }
 
   function aplicarTodos(raiz) {

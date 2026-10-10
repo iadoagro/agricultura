@@ -175,6 +175,14 @@ function lerRegistroDoPost(string $emailConfirmado): array
     if ($nomeBeneficiario === null) {
         responder(400, ['ok' => false, 'erro' => 'Informe o nome do beneficiário.']);
     }
+    // data da vistoria e de nascimento não podem ser futuras (UTC: nunca recusa o "hoje" de quem digita no Acre)
+    $hojeUtc = gmdate('Y-m-d');
+    foreach (['data_vistoria' => 'A data da vistoria', 'data_nascimento' => 'A data de nascimento'] as $campoData => $rotuloData) {
+        $valorData = $data($campoData);
+        if ($valorData !== null && $valorData > $hojeUtc) {
+            responder(400, ['ok' => false, 'erro' => $rotuloData . ' não pode ser futura.']);
+        }
+    }
 
     $registro = [
         'criado_por_email' => $emailConfirmado,
@@ -297,7 +305,7 @@ function solicitacaoPendente(string $supabaseUrl, string $serviceRole, string $l
 {
     [$status, $corpo] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'GET',
-        TABELA_SOLICITACOES . '?select=id,tipo,motivo,solicitado_por_email,criado_em&status=eq.pendente&lancamento_id=eq.' . urlencode($lancamentoId)
+        TABELA_SOLICITACOES . '?select=id,tipo,motivo,solicitado_por_email,criado_em,dados&status=eq.pendente&lancamento_id=eq.' . urlencode($lancamentoId)
     );
     return ($status >= 200 && $status < 300 && is_array($corpo) && count($corpo)) ? $corpo[0] : null;
 }
@@ -356,6 +364,107 @@ function filtrosDaLista(array $emailsDoLogin): string
         $q .= filtroEmails(array_map('strtolower', array_map('trim', explode(',', $pessoa))));
     }
     return $q;
+}
+
+
+/* ============================================================== painel === */
+/* O painel da mecanização lê os lançamentos direto daqui (mesma regra da ação
+ * "painel" da Edge Function). Formato idêntico ao de data/mecanizacao.json, só
+ * com o que os gráficos usam — sem CPF, telefone ou nascimento. Não exige login:
+ * é o que a versão pública do painel também lê. */
+if ($acao === 'painel') {
+    $NI = 'Não informado';
+    // endereço e link do formulário digitalizado: só para quem está logado
+    $logado = emailAutenticado($supabaseUrl, $serviceRole) !== null;
+    $ou = function ($v, string $padrao = 'Não informado') {
+        return is_string($v) && trim($v) !== '' ? trim($v) : $padrao;
+    };
+    $numero = function ($v) { return is_numeric($v) ? (float) $v : 0.0; };
+    $listaTxt = function ($v) {
+        return is_array($v) ? array_values(array_filter(array_map('strval', $v), function ($x) { return $x !== ''; })) : [];
+    };
+
+    $nomes = [];
+    [$stN, $ln] = chamarSupabase($supabaseUrl, $serviceRole, 'GET', '/rest/v1/mecanizacao_lancadores?select=email,nome');
+    if ($stN >= 200 && $stN < 300 && is_array($ln)) {
+        foreach ($ln as $x) {
+            $e = strtolower(trim((string) ($x['email'] ?? '')));
+            $n = trim((string) ($x['nome'] ?? ''));
+            if ($e !== '' && $n !== '') $nomes[$e] = $n;
+        }
+    }
+    $sugerido = function (string $email) {
+        $u = preg_replace('/\d+/', ' ', explode('@', $email)[0]);
+        $u = trim(preg_replace('/[._-]+/', ' ', $u));
+        return $u === '' ? $email : implode(' ', array_map(function ($p) { return mb_strtoupper(mb_substr($p, 0, 1)) . mb_substr($p, 1); }, preg_split('/\s+/', $u)));
+    };
+
+    $campos = 'criado_em,criado_por_email,tipo_servico,data_vistoria,escritorio_local,responsavel_tecnico,' .
+        'nome_beneficiario,sexo,estado_civil,possui_dap,associacao_cooperativa,endereco,nome_propriedade,municipio,' .
+        'culturas,area_total_ha,horas_maquina,quantidade_acudes,pontos_geo,tipo_uso,maquinas,implementos,daes,' .
+        'observacao,formulario_url';
+    $registros = [];
+    $semGeo = $semForm = $outroAno = 0;
+    $produtores = [];
+    $tam = 1000;
+    for ($pagina = 0; $pagina < 100; $pagina++) {
+        [$st, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'GET',
+            '/rest/v1/mecanizacao_lancamentos?select=' . $campos .
+            '&order=criado_em.asc,id.asc&limit=' . $tam . '&offset=' . ($pagina * $tam));
+        if ($st < 200 || $st >= 300 || !is_array($corpo)) {
+            responder(502, ['ok' => false, 'erro' => 'Não foi possível ler os lançamentos.']);
+        }
+        foreach ($corpo as $l) {
+            $criado = strtotime((string) ($l['criado_em'] ?? ''));
+            $d = gmdate('Y-m-d', ($criado ?: time()) - 5 * 3600);   // Rio Branco: UTC-5, sem horário de verão
+            $email = strtolower(trim((string) ($l['criado_por_email'] ?? '')));
+            $sexo = (string) ($l['sexo'] ?? '');
+            $cult = [];
+            foreach ((is_array($l['culturas'] ?? null) ? $l['culturas'] : []) as $c) {
+                $nome = trim((string) ($c['cultura'] ?? ''));
+                if ($nome !== '') $cult[] = [$nome, $numero($c['area_ha'] ?? 0), trim((string) ($c['sistema_cultivo'] ?? ''))];
+            }
+            $dae = 0.0;
+            foreach ((is_array($l['daes'] ?? null) ? $l['daes'] : []) as $x) $dae += $numero($x['valor'] ?? 0);
+            $dv = is_string($l['data_vistoria'] ?? null) ? $l['data_vistoria'] : '';
+            $prod = $ou($l['nome_beneficiario'] ?? null);
+            $form = $logado && is_string($l['formulario_url'] ?? null) ? $l['formulario_url'] : '';
+            if (empty($l['pontos_geo'])) $semGeo++;
+            if ($form === '' && $logado) $semForm++;
+            if ($dv !== '' && substr($dv, 0, 4) !== substr($d, 0, 4)) $outroAno++;
+            $produtores[mb_strtolower(preg_replace('/\s+/', ' ', trim($prod)))] = true;
+            $registros[] = [
+                'd' => $d, 'ex' => substr($d, 0, 4), 'dv' => $dv,
+                'pc' => $ou($l['tipo_servico'] ?? null), 'mun' => $ou($l['municipio'] ?? null),
+                'esc' => $ou($l['escritorio_local'] ?? null), 'rt' => $ou($l['responsavel_tecnico'] ?? null),
+                'alim' => $email !== '' ? ($nomes[$email] ?? $sugerido($email)) : $NI,
+                'prod' => $prod,
+                'sexo' => preg_match('/^f/i', $sexo) ? 'Feminino' : (preg_match('/^m/i', $sexo) ? 'Masculino' : $NI),
+                'ec' => $ou($l['estado_civil'] ?? null), 'dap' => $ou($l['possui_dap'] ?? null),
+                'assoc' => $ou($l['associacao_cooperativa'] ?? null),
+                'loc' => $logado ? $ou($l['endereco'] ?? null, '') : '', 'propr' => $ou($l['nome_propriedade'] ?? null, ''),
+                'cult' => $cult,
+                'ha' => $numero($l['area_total_ha'] ?? 0), 'hrs' => $numero($l['horas_maquina'] ?? 0),
+                'ac' => (int) $numero($l['quantidade_acudes'] ?? 0),
+                'tt' => $ou($l['tipo_uso'] ?? null),
+                'maq' => $listaTxt($l['maquinas'] ?? null), 'impl' => $listaTxt($l['implementos'] ?? null),
+                'dae' => $dae, 'form' => $form, 'obs' => $ou($l['observacao'] ?? null, ''),
+            ];
+        }
+        if (count($corpo) < $tam) break;
+    }
+    $n = count($registros);
+    responder(200, [
+        'ok' => true,
+        'meta' => [
+            'fonte' => 'lancamentos', 'arquivo' => 'lançamentos do sistema', 'aba' => 'mecanizacao_lancamentos',
+            'gerado_em' => date('d/m/Y H:i'), 'registros' => $n, 'produtores' => count($produtores),
+            'periodo' => $n ? [$registros[0]['d'], $registros[$n - 1]['d']] : ['', ''],
+            'qualidade' => ['sem_data_valida' => 0, 'vistoria_outro_ano' => $outroAno, 'sem_geo' => $semGeo,
+                'sem_formulario' => $semForm, 'acudes_texto' => 0],
+        ],
+        'registros' => $registros,
+    ]);
 }
 
 /* =============================================================== salvar === */
