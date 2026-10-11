@@ -274,8 +274,8 @@
     el.innerHTML =
       lado(11, CORES[0], 'c1', v1, p ? p.munM : 0, p ? p.secM : 0, pos1) +
       '<div class="pg-centro"><div class="pg-duelo' + (tem ? '' : ' vazio') + '">' + (tem ? '<i class="e" style="width:' + pc1.toFixed(2) + '%;background:' + CORES[0] + '">' + pf1(pc1) + '</i><i class="d" style="width:' + pc2.toFixed(2) + '%;background:' + CORES[1] + '">' + pf1(pc2) + '</i>' : '') +
-        '<span class="pg-nome">' + (tem && lid ? '▲ ' + esc(curto(lid)).toUpperCase() + ' ESTÁ GANHANDO' : (tem ? 'EMPATE' : '—')) + '</span></div>' + vence +
-      '<p class="pg-vira' + (viraDef ? ' def' : '') + '">' + esc(viraMsg) + '</p>' +
+        '<span class="pg-nome">' + (tem && lid ? '▲ ' + esc(curto(lid)).toUpperCase() + ' ESTÁ GANHANDO' : (tem ? 'EMPATE' : '—')) + '</span></div>' +
+      '<p class="pg-vira' + (viraDef ? ' def' : '') + '">' + esc(viraMsg) + '</p>' + vence +
       '<div class="pg-stats"><span><i>Votos válidos</i><b>' + fmt(v) + '</b></span><span><i>Brancos</i><b>' + fmt(e ? e.brancos : 0) + '</b></span><span><i>Nulos</i><b>' + fmt(e ? e.nulos : 0) + '</b></span>' +
       '<span><i>Municípios com voto</i><b>' + (p ? p.munCom : 0) + ' de ' + (p ? p.nMun : 22) + '</b></span></div></div>' +
       lado(10, CORES[1], 'c2', v2, p ? p.munA : 0, p ? p.secA : 0, pos2);
