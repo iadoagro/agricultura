@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="et-fs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <!-- Página pública da apuração do 2º turno (endereço: …/pages/publico): sem login, sem menu e sem acesso às telas internas.
+       A política abaixo limita o que ela pode carregar e a quem pode falar (TSE e a verificação do link). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://resultados.tse.jus.br https://nivbogsrfirumtbqpqff.supabase.co; base-uri 'none'; form-action 'none'">
+  <title>Apuração · Governo do Acre — 2º turno</title>
+  <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="../../css/base.css?v=2026101001">
+  <link rel="stylesheet" href="../../css/eleicoes.css?v=2026100209">
+  <link rel="stylesheet" href="../../css/eleicao2026-tche.css?v=2026101004">
+  <link rel="stylesheet" href="../../css/eleicoes-boletins.css?v=2026101104">
+  <link rel="stylesheet" href="../../css/eleicoes-2turno.css?v=2026101419">
+  <link rel="stylesheet" href="../../css/apuracao-publica.css?v=2026101419">
+  <script src="../../js/banco-config.js?v=2026091406"></script>
+</head>
+<body class="ap-publica">
+  <div id="apPubAviso" class="ap-aviso"><p>Verificando o link…</p></div>
+  <main class="eleicoes ap-main" id="apPubApp" hidden>
+    <div class="et-turno" data-turno="2" id="painel-turno2">
+      <div class="aba-conteudo ativa" data-aba="eleicoes">
+        <div class="et-barra" id="etBarra" role="region" aria-label="Apuração do 2º turno"></div>
+        <div class="et-geral" id="etGeral"></div>
+        <div class="et-pg" id="etPlacarGrande"></div>
+        <section class="mapa-card relatorio" id="eleicoes2tRaiz" aria-label="Apuração do 2º turno"></section>
+        <section class="et-detalhe" aria-label="Painel detalhado do 2º turno">
+          <p class="et-status" id="etDetStatus" role="status"></p>
+          <div id="resultadosGoverno2T" hidden></div>
+        </section>
+      </div>
+    </div>
+    <footer class="ap-rodape">Dados oficiais do TSE — Tribunal Superior Eleitoral. Página pública somente para consulta.</footer>
+  </main>
+  <script src="../../js/apuracao-publica.js?v=2026101419"></script>
+</body>
+</html>

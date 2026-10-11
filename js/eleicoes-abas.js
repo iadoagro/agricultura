@@ -7,7 +7,7 @@
   'use strict';
   var nav = document.querySelector('.abas-eleicoes');
   if (!nav) return;
-  var PADRAO = 'resultados';
+  var PADRAO = 'eleicoes';
   var botoes = document.querySelectorAll('.aba-el');
   var paineis = document.querySelectorAll('.aba-conteudo');
 

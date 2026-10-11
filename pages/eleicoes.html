@@ -26,68 +26,19 @@
 <link rel="stylesheet" href="../css/padrao.css?v=2026092541">
 <link rel="stylesheet" href="../css/eleicao-exportar.css?v=2026101003">
 <link rel="stylesheet" href="../css/eleicoes-boletins.css?v=2026101104">
+<link rel="stylesheet" href="../css/eleicoes-2turno.css?v=2026101429">
 <link rel="stylesheet" href="../css/eleicoes-mobile.css?v=2026101002">
 </head>
 <body>
   <header class="cab-padrao"><h1>SISTEMA</h1><p>Cadastros por município do Acre</p></header>
   <main class="eleicoes">
         <nav class="abas-eleicoes" role="tablist" aria-label="Seções de Eleições">
-      <button class="aba-el" data-aba="resultados" type="button" role="tab" id="aba-resultados" aria-controls="painel-resultados" aria-selected="false" tabindex="-1">Resultados</button>
+      <button class="aba-el" data-aba="eleicoes" type="button" role="tab" id="aba-eleicoes" aria-controls="painel-eleicoes" aria-selected="false" tabindex="-1">Eleições</button>
       <button class="aba-el" data-aba="fiscais" type="button" role="tab" id="aba-fiscais" aria-controls="painel-fiscais" aria-selected="false" tabindex="-1">Fiscais</button>
       <button class="aba-el" data-aba="relatorio" type="button" role="tab" id="aba-relatorio" aria-controls="painel-relatorio" aria-selected="false" tabindex="-1">Relatório</button>
       <button class="aba-el" data-aba="cadastrados" type="button" role="tab" id="aba-cadastrados" aria-controls="painel-cadastrados" aria-selected="false" tabindex="-1">Cadastrados</button>
       <button class="aba-el" data-aba="boletins" type="button" role="tab" id="aba-boletins" aria-controls="painel-boletins" aria-selected="false" tabindex="-1">Boletins</button>
     </nav>
-
-    <div class="aba-conteudo" data-aba="resultados" role="tabpanel" id="painel-resultados" aria-labelledby="aba-resultados" tabindex="0">
-      <nav class="candidatos-resultados" role="tablist" aria-label="Candidato">
-        <button type="button" role="tab" class="cand-res ativa" data-cand="governo" aria-selected="true">Governo<small>Mailza Assis · 2026</small></button>
-        <button type="button" role="tab" class="cand-res" data-cand="tche" aria-selected="false">Deputado Estadual<small>Tchê · PDT 12123</small></button>
-        <button type="button" role="tab" class="cand-res" data-cand="felipe" aria-selected="false">Vereador<small>Felipe Tchê · Rio Branco</small></button>
-        <button type="button" role="tab" class="cand-res" data-cand="outro" aria-selected="false">Outro político<small>Escolha qualquer candidato · 2026</small></button>
-      </nav>
-      <div id="cand-tche" class="cand-painel" role="tabpanel" hidden>
-      <nav class="anos-resultados" role="tablist" aria-label="Ano da eleição"><button type="button" role="tab" class="ano-res" data-ano="2022" aria-selected="false">2022</button><button type="button" role="tab" class="ano-res ativa" data-ano="2026" aria-selected="true">2026</button><button type="button" role="tab" class="ano-res" data-ano="comparar" aria-selected="false">2022 × 2026</button></nav>
-      <div id="resultados2022" hidden></div>
-      <div id="resultados2026" hidden></div>
-      <div id="resultadosComparar" hidden></div>
-      <div class="resultados-wrap">
-        <nav class="municipios-lateral resultados-ranking" aria-label="Municípios por votos">
-          <h2>Municípios por votos</h2>
-          <div id="resultadosRanking"></div>
-        </nav>
-        <section class="resultados-card" aria-labelledby="resultados-titulo">
-          <div class="resultados-topo">
-            <h2 id="resultados-titulo">Votação por seção — José Luís Schafer (2022)</h2>
-            <p>Mapa por município, conforme os votos do candidato. Clique num município para ver o detalhe por zona e seção, incluindo as seções sem voto para ele.</p>
-            <p id="resultadosAvisoAno" class="resultados-aviso-ano" hidden>Eleição de 2026 ainda sem votos apurados: os valores estão zerados e todas as seções aparecem como sem voto.</p>
-          </div>
-          <p id="resultadosStatus" role="status">Carregando mapa…</p>
-          <svg id="mapaResultados" viewBox="0 0 1000 600" aria-label="Mapa de votos por município para José Luís Schafer"></svg>
-          <section id="resultadosBairrosSecao" class="resultados-bairros" hidden aria-label="Mapa dos bairros e locais de votação">
-            <div class="resultados-bairros-topo"><div><h3 id="resultadosBairrosTitulo">Bairros</h3><p id="resultadosBairrosResumo"></p></div><button id="resultadosBairrosVoltar" type="button">← Voltar ao Acre</button></div>
-            <div class="mapa-bairros-acoes resultados-mapa-acoes"><button id="resultadosZoomMenos" type="button" aria-label="Diminuir zoom">−</button><span id="resultadosZoomValor"></span><button id="resultadosZoomMais" type="button" aria-label="Aumentar zoom">+</button><button id="resultadosZoomReset" type="button">Enquadrar bairros</button><button id="resultadosTelaCheia" type="button" aria-pressed="false">Tela cheia</button></div>
-            <div id="resultadosBairrosMapa" class="resultados-bairros-mapa mapa-bairros-satelite" role="img" aria-label="Bairros com votos em verde e sem votos em vermelho"></div>
-            <p class="resultados-bairros-legenda"><span class="resultados-pin-amostra com-votos"></span> Com votos <span class="resultados-pin-amostra sem-votos"></span> Sem votos para o candidato. Bairros sem seção identificada ficam sem pin. Clique para ver zonas, seções e votos.</p>
-          </section>
-          <div id="mapaResultadosDica" class="mapa-dica" role="status" hidden></div>
-        </section>
-        <aside class="resultados-lateral" aria-label="Detalhe por município" id="resultadosDetalhe">
-          <p class="resultados-dica">Clique num município no mapa para ver o detalhe por zona e seção.</p>
-        </aside>
-      </div>
-      </div>
-      <div id="cand-felipe" class="cand-painel" role="tabpanel" hidden>
-        <div id="resultadosFelipe" hidden></div>
-      </div>
-      <div id="cand-outro" class="cand-painel" role="tabpanel" hidden>
-        <section class="t26-card outro-sel" id="outroSeletor" aria-label="Escolher político"></section>
-        <div id="outroPainel"></div>
-      </div>
-      <div id="cand-governo" class="cand-painel" role="tabpanel">
-        <div id="resultadosGoverno" hidden></div>
-      </div>
-    </div>
 
     <div class="aba-conteudo" data-aba="fiscais" role="tabpanel" id="painel-fiscais" aria-labelledby="aba-fiscais" tabindex="0">
       <section id="metaVotos" class="meta-votos meta-faixa" aria-labelledby="metaVotosTitulo">
@@ -355,6 +306,72 @@
     <div class="aba-conteudo" data-aba="boletins" role="tabpanel" id="painel-boletins" aria-labelledby="aba-boletins" tabindex="0">
       <section class="mapa-card relatorio" id="boletinsRaiz" aria-label="Boletins de urna"></section>
     </div>
+<div class="aba-conteudo" data-aba="eleicoes" role="tabpanel" id="painel-eleicoes" aria-labelledby="aba-eleicoes" tabindex="0">
+      <nav class="turnos-eleicao" role="tablist" aria-label="Turno da eleição">
+        <button type="button" role="tab" class="turno-el" id="turno-1" data-turno="1" aria-controls="painel-resultados" aria-selected="false">1º Turno<small>04/10/2026 · resultados completos</small></button>
+        <button type="button" role="tab" class="turno-el ativa" id="turno-2" data-turno="2" aria-controls="painel-turno2" aria-selected="true">2º Turno<small>25/10/2026 · apuração ao vivo</small></button>
+      </nav>
+    <div class="et-turno" data-turno="1" role="tabpanel" id="painel-resultados" aria-labelledby="turno-1" hidden>
+      <nav class="candidatos-resultados" role="tablist" aria-label="Candidato">
+        <button type="button" role="tab" class="cand-res ativa" data-cand="governo" aria-selected="true">Governo<small>Mailza Assis · 2026</small></button>
+        <button type="button" role="tab" class="cand-res" data-cand="tche" aria-selected="false">Deputado Estadual<small>Tchê · PDT 12123</small></button>
+        <button type="button" role="tab" class="cand-res" data-cand="felipe" aria-selected="false">Vereador<small>Felipe Tchê · Rio Branco</small></button>
+        <button type="button" role="tab" class="cand-res" data-cand="outro" aria-selected="false">Outro político<small>Escolha qualquer candidato · 2026</small></button>
+      </nav>
+      <div id="cand-tche" class="cand-painel" role="tabpanel" hidden>
+      <nav class="anos-resultados" role="tablist" aria-label="Ano da eleição"><button type="button" role="tab" class="ano-res" data-ano="2022" aria-selected="false">2022</button><button type="button" role="tab" class="ano-res ativa" data-ano="2026" aria-selected="true">2026</button><button type="button" role="tab" class="ano-res" data-ano="comparar" aria-selected="false">2022 × 2026</button></nav>
+      <div id="resultados2022" hidden></div>
+      <div id="resultados2026" hidden></div>
+      <div id="resultadosComparar" hidden></div>
+      <div class="resultados-wrap">
+        <nav class="municipios-lateral resultados-ranking" aria-label="Municípios por votos">
+          <h2>Municípios por votos</h2>
+          <div id="resultadosRanking"></div>
+        </nav>
+        <section class="resultados-card" aria-labelledby="resultados-titulo">
+          <div class="resultados-topo">
+            <h2 id="resultados-titulo">Votação por seção — José Luís Schafer (2022)</h2>
+            <p>Mapa por município, conforme os votos do candidato. Clique num município para ver o detalhe por zona e seção, incluindo as seções sem voto para ele.</p>
+            <p id="resultadosAvisoAno" class="resultados-aviso-ano" hidden>Eleição de 2026 ainda sem votos apurados: os valores estão zerados e todas as seções aparecem como sem voto.</p>
+          </div>
+          <p id="resultadosStatus" role="status">Carregando mapa…</p>
+          <svg id="mapaResultados" viewBox="0 0 1000 600" aria-label="Mapa de votos por município para José Luís Schafer"></svg>
+          <section id="resultadosBairrosSecao" class="resultados-bairros" hidden aria-label="Mapa dos bairros e locais de votação">
+            <div class="resultados-bairros-topo"><div><h3 id="resultadosBairrosTitulo">Bairros</h3><p id="resultadosBairrosResumo"></p></div><button id="resultadosBairrosVoltar" type="button">← Voltar ao Acre</button></div>
+            <div class="mapa-bairros-acoes resultados-mapa-acoes"><button id="resultadosZoomMenos" type="button" aria-label="Diminuir zoom">−</button><span id="resultadosZoomValor"></span><button id="resultadosZoomMais" type="button" aria-label="Aumentar zoom">+</button><button id="resultadosZoomReset" type="button">Enquadrar bairros</button><button id="resultadosTelaCheia" type="button" aria-pressed="false">Tela cheia</button></div>
+            <div id="resultadosBairrosMapa" class="resultados-bairros-mapa mapa-bairros-satelite" role="img" aria-label="Bairros com votos em verde e sem votos em vermelho"></div>
+            <p class="resultados-bairros-legenda"><span class="resultados-pin-amostra com-votos"></span> Com votos <span class="resultados-pin-amostra sem-votos"></span> Sem votos para o candidato. Bairros sem seção identificada ficam sem pin. Clique para ver zonas, seções e votos.</p>
+          </section>
+          <div id="mapaResultadosDica" class="mapa-dica" role="status" hidden></div>
+        </section>
+        <aside class="resultados-lateral" aria-label="Detalhe por município" id="resultadosDetalhe">
+          <p class="resultados-dica">Clique num município no mapa para ver o detalhe por zona e seção.</p>
+        </aside>
+      </div>
+      </div>
+      <div id="cand-felipe" class="cand-painel" role="tabpanel" hidden>
+        <div id="resultadosFelipe" hidden></div>
+      </div>
+      <div id="cand-outro" class="cand-painel" role="tabpanel" hidden>
+        <section class="t26-card outro-sel" id="outroSeletor" aria-label="Escolher político"></section>
+        <div id="outroPainel"></div>
+      </div>
+      <div id="cand-governo" class="cand-painel" role="tabpanel">
+        <div id="resultadosGoverno" hidden></div>
+      </div>
+    </div>
+      <div class="et-turno" data-turno="2" role="tabpanel" id="painel-turno2" aria-labelledby="turno-2">
+      <div class="et-barra" id="etBarra" role="region" aria-label="Atualização da apuração"></div>
+      <div class="et-geral" id="etGeral"></div>
+      <div class="et-pg" id="etPlacarGrande"></div>
+      <section class="mapa-card relatorio" id="eleicoes2tRaiz" aria-label="Apuração do 2º turno"></section>
+      <section class="et-detalhe" aria-label="Painel detalhado do 2º turno">
+        <h3 class="et-detalhe-tit">Painel detalhado · Mailza Assis × Alan Rick <small>aguardando o 2º turno (25/10/2026)</small></h3>
+        <p class="et-status" id="etDetStatus" role="status"></p>
+        <div id="resultadosGoverno2T" hidden></div>
+      </section>
+      </div>
+    </div>
   </main>
   <dialog id="cadastro-acoes-dialogo" class="cadastro-acoes-dialogo" aria-labelledby="cadastro-acoes-titulo">
     <h3 id="cadastro-acoes-titulo"></h3>
@@ -391,8 +408,11 @@
   <script src="../js/dados-tche-2026.js?v=2026100601"></script>
   <script src="../js/dados-felipe-2024.js?v=2026100801"></script>
   <script src="../js/dados-governo-2026.js?v=2026100601"></script>
+  <script src="../js/dados-governo-2turno-2026.js?v=2026101302"></script>
+  <script src="../js/dados-governo-1turno-secoes.js?v=2026101402"></script>
+  <script src="../js/dados-perfil-2026.js?v=2026101310"></script>
   <script src="../js/dados-boletins-2026.js?v=2026101101"></script>
-  <script src="../js/eleicao-painel.js?v=2026101201"></script>
+  <script src="../js/eleicao-painel.js?v=2026101429"></script>
   <script src="../js/eleicao-outro.js?v=2026101101"></script>
   <script src="../js/eleicao-exportar.js?v=2026101202"></script>
   <script src="../js/eleicoes-resultados.js?v=2026100902"></script>
@@ -403,7 +423,12 @@
   <script src="../js/eleicoes-relatorio.js?v=2026092201"></script>
   <script src="../js/eleicoes-cadastrados.js?v=2026100209"></script>
 <script src="../js/eleicoes-boletins.js?v=2026101106"></script>
-<script src="../js/eleicoes-abas.js?v=2026100601"></script>
+<script src="../js/apuracao-links.js?v=2026101429"></script>
+<script src="../js/tse-limite.js?v=2026101429"></script>
+<script src="../js/eleicoes-2turno.js?v=2026101429"></script>
+<script src="../js/eleicoes-2turno-secoes.js?v=2026101429"></script>
+<script src="../js/eleicoes-turnos.js?v=2026101301"></script>
+<script src="../js/eleicoes-abas.js?v=2026101301"></script>
   <script src="../js/select-busca.js?v=2026101203"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026100901"></script>

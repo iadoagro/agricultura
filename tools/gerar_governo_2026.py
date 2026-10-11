@@ -38,7 +38,7 @@ def posicao(votos_por_cand):
     return [1 + sum(1 for v in com_voto.values() if v > meu), len(com_voto)]
 
 
-def main(caminho):
+def main(caminho, turno='1', arquivo='dados-governo-2026.js', variavel='GOVERNO_2026'):
     tche = carregar_tche()
     locais, regional = tche['locais'], tche['regional']
 
@@ -46,7 +46,7 @@ def main(caminho):
     nomes = {}
     with open(caminho, encoding='latin-1', newline='') as f:
         for r in csv.DictReader(f, delimiter=';'):
-            if r['DS_CARGO'] != 'Governador' or r['NR_TURNO'] != '1':
+            if r['DS_CARGO'] != 'Governador' or r['NR_TURNO'] != turno:
                 continue
             chave = ('%05d' % int(r['CD_MUNICIPIO']), int(r['NR_ZONA']), int(r['NR_SECAO']))
             s = secoes.setdefault(chave, {'local': int(r['NR_LOCAL_VOTACAO']), 'v': defaultdict(int)})
@@ -95,22 +95,23 @@ def main(caminho):
         'cand': {'nome': NOME_FOCO, 'nome2022': '', 'numero': FOCO, 'partido': 'PP', 'numPartido': 11,
                  'cargo': 'Governador', 'vagas': 1, 'nomeCompleto': nomes[FOCO], 'eleito': False,
                  'majoritario': True, 'sem22': True, 'ano': 2026,
-                 'tag': '2º turno' if estado[FOCO] / validos <= 0.5 else 'Eleita'},
+                 'tag': ('2º turno' if turno == '1' else 'Apurado') if estado[FOCO] / validos <= 0.5 else 'Eleita'},
         'estado': {'q': estado[FOCO], 'apurado': apurado, 'brancos': brancos, 'nulos': nulos, 'validos': validos,
                    'pos': pos, 'nCand': len(cands), 'partidoNominais': 0, 'partidoLegenda': 0},
         'estado22': {'q': 0, 'qMapeado': 0, 'semCorresp': []},
         'secoes': linhas,
         'rk': rk,
         'candidatos': ranking,
+        'turno': int(turno),
     }
     corpo = json.dumps(saida, ensure_ascii=False, separators=(',', ':'))
-    cab = ('/* Gerado por tools/gerar_governo_2026.py a partir da votação por seção do 1º turno de 2026 '
-           '(Governador — Mailza Assis, PP 11) — TSE, Portal de Dados Abertos (votacao_secao_2026_AC).\n'
+    cab = ('/* Gerado por tools/gerar_governo_2026.py a partir da votação por seção de 2026 '
+           '(Governador — Mailza Assis, PP 11, turno ' + turno + ') — TSE, Portal de Dados Abertos (votacao_secao_2026_AC).\n'
            '   Municípios, regionais, locais, coordenadas e mapa vêm de js/dados-tche-2026.js (carregado antes deste arquivo).\n'
            '   secoes: [mun,zona,secao,local,aptos(0 = não informado),comparecimento(=total apurado),votos,totalApurado,brancos,nulos,0,foiOMaisVotado(0/1)] */\n')
-    ligacao = ('\n(function () {\n  var T = window.TCHE_2026, G = window.GOVERNO_2026;\n'
+    ligacao = ('\n(function () {\n  var T = window.TCHE_2026, G = window.' + variavel + ';\n'
                '  if (T) ["municipios", "regional", "locais", "coords", "mapa", "regionais"].forEach(function (k) { G[k] = T[k]; });\n})();\n')
-    (RAIZ / 'js' / 'dados-governo-2026.js').write_text(cab + 'window.GOVERNO_2026=' + corpo + ';' + ligacao, encoding='utf-8')
+    (RAIZ / 'js' / arquivo).write_text(cab + 'window.' + variavel + '=' + corpo + ';' + ligacao, encoding='utf-8')
 
     print('seções:', len(linhas), '| votos Mailza:', estado[FOCO], '| válidos:', validos,
           '| %.2f%%' % (estado[FOCO] / validos * 100), '| posição:', pos)
@@ -121,4 +122,8 @@ def main(caminho):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    # python tools/gerar_governo_2026.py votacao_secao_2026_AC.csv [turno]   (turno 2 grava js/dados-governo-2turno-2026.js)
+    if len(sys.argv) > 2 and sys.argv[2] == '2':
+        main(sys.argv[1], '2', 'dados-governo-2turno-2026.js', 'GOVERNO_2T_2026')
+    else:
+        main(sys.argv[1])

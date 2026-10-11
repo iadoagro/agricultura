@@ -179,3 +179,17 @@ Publique do mesmo jeito da `admin-usuarios` acima: nome da função
 
 Antes, confirme que `database/mecanizacao-lancamentos.sql` já rodou no SQL
 Editor (cria a tabela e o `grant` pra service_role).
+
+## Link público da apuração do 2º turno
+
+Na aba **Eleições > 2º Turno** o responsável vê o botão **🔗 Link público** (cabeçalho azul). O link é **fixo e único**:
+`https://iadoagro.github.io/agricultura/pages/publico` — quem abre acompanha a apuração **sem login**.
+
+- Rode `database/apuracao-links.sql` (cria `apuracao_links` e as funções `apuracao_publica_ativa`, `apuracao_link_gerar`,
+  `apuracao_link_revogar`; só o responsável lê/altera a tabela, o público só consegue perguntar "o link está ativo?").
+- No botão: **Ativar link público**, **Copiar link**, **Abrir** e **Revogar** (desliga o link na hora; quem abrir vê
+  "Acesso não autorizado").
+- A página pública (`pages/publico/index.html`) **não carrega** `admin-auth`, `admin-gate`, menu nem telas internas, tem
+  Content-Security-Policy própria (só fala com o TSE e com a verificação do link) e só mostra dados públicos do TSE.
+- As demais páginas continuam protegidas pelo login: o link não leva a elas.
+- Os endereços antigos (`apuracao.html?k=…`, `apuracao-publica.html?k=…`) redirecionam para `pages/publico/`.

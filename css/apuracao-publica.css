@@ -1,0 +1,10 @@
+/* pages/apuracao-publica.html — página pública (sem login) da apuração do 2º turno */
+html,body{height:auto}
+body.ap-publica{display:block;min-height:100vh;margin:0;padding:0;background:radial-gradient(1200px 500px at 50% -120px,#dfe9f7 0,#f4f6fa 60%) no-repeat,#f4f6fa}
+.ap-main{max-width:1500px;margin:0 auto;padding:16px 16px 28px}
+.ap-aviso{max-width:520px;margin:12vh auto 0;padding:28px;text-align:center;background:#fff;border:1px solid #d9e0ea;border-radius:16px;box-shadow:0 8px 30px rgba(11,36,71,.12);color:#344054}
+.ap-aviso h1{margin:0 0 8px;font-size:22px;color:#153e75}
+.ap-negado h1{color:#b42318}
+.ap-peq{font-size:13px;color:#667085}
+.ap-rodape{margin:22px 0 0;text-align:center;font-size:12px;color:#667085}
+.ap-main .aba-conteudo.ativa{display:block;overflow:visible}

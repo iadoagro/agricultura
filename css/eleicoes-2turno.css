@@ -1,0 +1,519 @@
+/* aba "Eleições" — js/eleicoes-2turno.js */
+.et-topo{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 20px;align-items:flex-end}
+.et-topo h2{margin:0 0 4px;color:#153e75}
+.et-topo p{margin:0;color:#667085;font-size:13px}
+.et-controles{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.et-controles label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:600;color:#153e75}
+.et-controles select{font-size:13.5px;padding:8px 10px;border-radius:10px}
+.et-controles .et-auto{flex-direction:row;align-items:center;gap:6px;padding-bottom:9px;font-weight:500}
+.et-controles .et-auto input{padding:0;width:auto}
+.et-aviso{margin:14px 0 0;padding:12px 14px;border-radius:10px;background:#fff7e6;border:1px solid #f5d28a;color:#6b4a00;font-size:13.5px;line-height:1.5}
+.et-erro{background:#fdecea;border-color:#f3b8b2;color:#8a1c12}
+.et-status{margin:14px 0 6px;font-size:13.5px;color:#344054}
+.et-selo{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;margin-right:6px;color:#fff}
+.et-vivo{background:#0f9d8a;animation:et-pulso 1.6s ease-in-out infinite}
+.et-fim{background:#153e75}
+@keyframes et-pulso{50%{opacity:.55}}
+.et-progresso{height:8px;background:#e8ecf2;border-radius:4px;overflow:hidden}
+.et-progresso i{display:block;height:100%;background:#0f9d8a;transition:width .6s}
+.et-cands{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:16px}
+.et-cand{background:#fff;border:1px solid #d9e0ea;border-top:5px solid var(--cor);border-radius:12px;padding:14px 16px;box-shadow:0 1px 6px rgba(21,62,117,.08);display:flex;flex-direction:column;gap:6px;min-width:0}
+.et-lider{box-shadow:0 2px 14px rgba(21,62,117,.2)}
+.et-cand-cab{display:flex;gap:10px;align-items:center}
+.et-cand h3{margin:0;font-size:17px;color:#1b2333}
+.et-cand-cab p{margin:2px 0 0;font-size:12.5px;color:#667085}
+.et-num{display:inline-grid;place-items:center;min-width:44px;height:44px;border-radius:10px;background:var(--cor);color:#fff;font-weight:800;font-size:18px}
+.et-tag{margin-left:auto;font-style:normal;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:#eef3fb;color:#153e75;white-space:nowrap}
+.et-eleito{background:#0f9d8a;color:#fff}
+.et-pct{font-size:38px;line-height:1.1;color:var(--cor)}
+.et-votos{font-size:14px;color:#344054;font-weight:600}
+.et-trilho{height:12px;background:#e8ecf2;border-radius:6px;overflow:hidden}
+.et-trilho i{display:block;height:100%;background:var(--cor);border-radius:6px;transition:width .6s}
+.et-cand small{color:#667085;font-size:11.5px}
+.et-duelo{margin-top:16px}
+.et-duelo-barra{display:flex;height:34px;border-radius:8px;overflow:hidden}
+.et-duelo-barra i{display:flex;align-items:center;justify-content:center;color:#fff;font-style:normal;font-weight:700;font-size:13px;min-width:0;transition:width .6s}
+.et-duelo p{margin:6px 0 0;font-size:13px;color:#475467;text-align:center}
+.et-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:16px 0}
+.et-kpi{background:#fff;border:1px solid #d9e0ea;border-left:5px solid #153e75;border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;box-shadow:0 1px 6px rgba(21,62,117,.08)}
+.et-kpi:nth-child(2){border-left-color:#667085}.et-kpi:nth-child(3){border-left-color:#b42318}.et-kpi:nth-child(4){border-left-color:#0f9d8a}.et-kpi:nth-child(5){border-left-color:#e08a00}
+.et-kpi span{font-size:12px;color:#667085;text-transform:uppercase;letter-spacing:.03em}
+.et-kpi b{font-size:24px;color:#1b2333}
+.et-kpi small{font-size:12px;color:#667085}
+.et-tabela-topo{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px;margin:22px 0 8px}
+.et-tabela-topo h3{margin:0;color:#153e75}
+.et-tabela-topo label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:600;color:#153e75}
+.et-tabela-topo select{font-size:13.5px;padding:7px 10px;border-radius:10px}
+.et-tab td.n,.et-tab th.n{text-align:right;white-space:nowrap}
+.et-tab small{color:#667085}
+.et-ganha{font-weight:700;background:#f1f7ff}
+.et-ponto{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.et-nota{margin:14px 0 0;font-size:12px;color:#667085}
+@media (max-width:640px){.et-pct{font-size:32px}.et-controles{width:100%}.et-controles label{flex:1 1 100%}}
+.et-detalhe{margin-top:22px}
+.et-detalhe-tit{margin:0 0 10px;color:#153e75;font-size:17px}
+.et-detalhe-tit small{font-weight:400;color:#667085;font-size:12.5px;margin-left:6px}
+
+/* sub-abas 1º / 2º turno dentro da aba Eleições */
+.turnos-eleicao{display:flex;gap:10px;margin:4px 0 14px}
+.turno-el{flex:1 1 0;max-width:340px;border:2px solid #cfd8e3;background:#fff;border-radius:12px;padding:10px 18px;font:inherit;font-size:17px;font-weight:800;color:#667085;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;transition:background .2s,border-color .2s,color .2s}
+.turno-el small{font-size:12px;font-weight:500;color:#667085}
+.turno-el:hover{border-color:#153e75;color:#153e75}
+.turno-el.ativa{background:#153e75;border-color:#153e75;color:#fff}
+.turno-el.ativa small{color:#cfe0f7}
+.et-turno[hidden]{display:none}
+@media (max-width:640px){.turnos-eleicao{gap:8px}.turno-el{padding:8px 12px;font-size:15px;max-width:none}.turno-el small{font-size:11px}}
+
+/* painel detalhado ao vivo: progresso da apuração, cor por candidato, unidades concluídas */
+.t26-ap{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.t26-apb{display:inline-block;width:70px;height:9px;background:#e8ecf2;border-radius:5px;overflow:hidden;vertical-align:middle}
+.t26-apb i{display:block;height:100%;background:#0f9d8a;border-radius:5px;transition:width .6s}
+.t26-ap.fim .t26-apb i{background:#0b6b3a}
+.t26-ap b{font-size:12px;color:#344054}.t26-ap.fim b{color:#0b6b3a}
+.t26-ap small{color:#667085;font-size:11px}
+.t26-tag.apur{background:#fff3d6;color:#8a5a00}
+.t26-fimrow>td:first-child{box-shadow:inset 4px 0 0 #0b6b3a}
+.t26-ldot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.t26-heat{display:inline-block;min-width:64px;padding:3px 8px;border-radius:6px;text-align:center;font-weight:600;font-size:12px;color:#1b2333}
+.t26-vgeral{margin:14px 0 4px;padding:12px 14px;background:#fff;border:1px solid #d9e0ea;border-left:6px solid #0f9d8a;border-radius:10px}
+.t26-vgeral.fim{border-left-color:#0b6b3a;background:#f1faf4}
+.t26-vg-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13.5px;color:#344054;margin-bottom:6px}
+.t26-vg-bar{height:14px;background:#e8ecf2;border-radius:7px;overflow:hidden}
+.t26-vg-bar i{display:block;height:100%;background:linear-gradient(90deg,#0f9d8a,#2a8c4c);transition:width .6s}
+.t26-vgeral.fim .t26-vg-bar i{background:#0b6b3a}
+.t26-duelo{display:flex;height:36px;border-radius:8px;overflow:hidden;margin:6px 0}
+.t26-duelo i{display:flex;align-items:center;justify-content:center;color:#fff;font-style:normal;font-weight:700;font-size:14px;transition:width .6s}
+.t26-concl{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.t26-cn{display:flex;flex-direction:column;gap:3px;padding:10px;border:1px solid #e3e8ef;border-radius:10px;background:#fafbfd}
+.t26-cn>span:first-child{font-size:12px;color:#667085;text-transform:uppercase;letter-spacing:.03em}
+.t26-cn b{font-size:20px;color:#1b2333}.t26-cn b small{font-size:12px;font-weight:400;color:#667085}
+.t26-cn .t26-apb{width:100%}.t26-cn small{color:#667085;font-size:11.5px}
+.t26-cn.fim{border-color:#0b6b3a;background:#f1faf4}.t26-cn.fim>small{color:#0b6b3a;font-weight:700}
+.t26-feed{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:280px;overflow:auto}
+.t26-feed li{padding:6px 8px;border-radius:8px;background:#f1faf4;font-size:13px}
+.t26-lista-ap{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.t26-la{padding:10px;border:1px solid #e3e8ef;border-radius:10px;background:#fff;display:flex;flex-direction:column;gap:6px}
+.t26-la.fim{border-color:#0b6b3a;background:#f1faf4}
+.t26-la-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.t26-la-ld{font-size:12.5px}
+.t26-chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.t26-chip{display:flex;flex-direction:column;gap:5px;padding:8px 10px;border:1px solid #e3e8ef;border-left:6px solid #c9ced6;border-radius:8px;background:#fff}
+.t26-chip.fim{background:#f1faf4;border-color:#b6dcc3}
+.t26-chip b{font-size:13px;color:#1b2333}
+
+/* aba Mapa ao vivo: "Detalhar por" numa barra acima; lista da unidade à esquerda, mapa no centro, informações à direita */
+.et-espera{color:#98a2b3!important}
+.t26-filtros-topo{padding:10px 12px;margin-bottom:12px}
+.t26-filtros-topo .t26-filtros{margin:0;padding:0;background:transparent}
+.t26-vivo-mapa{display:grid;grid-template-columns:290px minmax(0,1fr) 320px;grid-template-areas:"lista mapa info";gap:12px;align-items:start}
+.t26-vivo-mapa>.t26-card{min-width:0}
+.t26-area-lista{grid-area:lista;position:sticky;top:8px;max-height:calc(100vh - 20px);display:flex;flex-direction:column}
+.t26-area-mapa{grid-area:mapa}
+.t26-area-info{grid-area:info}
+@media(max-width:1300px){.t26-vivo-mapa{grid-template-columns:290px minmax(0,1fr);grid-template-areas:"lista mapa" "info info"}}
+@media(max-width:1000px){.t26-vivo-mapa{grid-template-columns:minmax(0,1fr);grid-template-areas:"mapa" "lista" "info"}.t26-area-lista{position:static;max-height:none}}
+.t26-unlista{display:flex;flex-direction:column;min-height:0}
+.t26-unlista .t26-topo{margin-bottom:4px}
+.t26-un-box{display:grid;gap:8px;overflow:auto;min-height:0;padding-right:2px}
+.t26-un{border:1px solid #e3e8ef;border-left:6px solid #c9ced6;border-radius:8px;padding:8px 10px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:5px}
+.t26-un:hover,.t26-un:focus-visible{background:#f4f8ff;outline:none;box-shadow:0 0 0 2px #9db8e6}
+.t26-un.fim{background:#f1faf4}
+.t26-un-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.t26-un-top b{font-size:13.5px;color:#1b2333}
+.t26-un-v{display:flex;justify-content:space-between;gap:8px;font-size:12px}
+
+/* abas Regional…Seção ao vivo: indicadores na lateral direita do mapa */
+.t26-nivel-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start;margin:10px 0}
+.t26-nivel-mapa{min-width:0}
+.t26-nivel-info .t26-kpis{display:grid;grid-template-columns:1fr;gap:10px;margin:0}
+@media(max-width:1000px){.t26-nivel-grid{grid-template-columns:1fr}.t26-nivel-info .t26-kpis{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
+
+/* Resumo ao vivo: primeira tela organizada */
+.t26-rv{display:grid;gap:14px}
+.t26-rv>.t26-card,.t26-rv-2>.t26-card{margin:0}
+.t26-rv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:0}
+.t26-rv-2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:start}
+@media(max-width:900px){.t26-rv-2{grid-template-columns:1fr}}
+.t26-disputa{padding:14px 16px}
+.t26-dp-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.t26-dp-top h3{margin:0}
+.t26-dp-cands{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center}
+.t26-dp{display:flex;flex-direction:column;gap:2px;border-left:6px solid var(--c);padding-left:12px}
+.t26-dp.dir{border-left:0;border-right:6px solid var(--c);padding-left:0;padding-right:12px;text-align:right;align-items:flex-end}
+.t26-dp span{font-size:15px;font-weight:700;color:#1b2333}
+.t26-dp b{font-size:34px;line-height:1.1;color:var(--c)}
+.t26-dp small{font-size:13px;color:#667085}
+.t26-dp-vs{font-size:20px;font-weight:700;color:#98a2b3}
+.t26-disputa .t26-duelo{height:30px;margin:12px 0 4px}
+.t26-disputa .t26-duelo.vazio{background:#e8ecf2}
+.t26-dp-dif{margin:4px 0 0;text-align:center}
+@media(max-width:560px){.t26-dp b{font-size:26px}.t26-dp span{font-size:13px}}
+.t26-concl{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:480px){.t26-concl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.t26-lista-ap{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.t26-feed{max-height:240px}
+
+.t26-duelo.t26-mini{height:12px;margin:0;min-width:120px;border-radius:6px;display:flex;background:#e8ecf2}
+.t26-duelo.t26-mini i{display:block;height:100%}
+
+/* Resumo ao vivo: lateral direita (feed) + histórico passo a passo + leitura da eleição */
+.t26-rv-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:14px;align-items:stretch}
+.t26-rv-lado{min-width:0}
+.t26-feedcard{height:100%}
+.t26-feed-in{position:sticky;top:8px;margin:0;display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
+.t26-feed-in .t26-feed{max-height:none;overflow:auto;flex:1;min-height:0}
+@media(max-width:1000px){.t26-rv-layout{grid-template-columns:1fr}.t26-feed-in{position:static;max-height:none}.t26-feed-in .t26-feed{max-height:260px}}
+.t26-hist{list-style:none;margin:10px 0 0;padding:0 6px 0 16px;display:grid;gap:0;max-height:460px;overflow:auto}
+.t26-he{position:relative;padding:8px 10px 8px 22px;border-left:3px solid #e3e8ef}
+.t26-he-ico{position:absolute;left:-15px;top:8px;width:27px;height:27px;border-radius:50%;background:var(--c);color:#fff;display:inline-grid;place-items:center;font-size:12px;font-weight:700;border:2px solid #fff}
+.t26-he-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.t26-he-top b{font-size:13.5px;color:#1b2333}.t26-he-top small{color:#667085;font-size:11.5px;white-space:nowrap}
+.t26-he p{margin:2px 0 0;font-size:12.5px;color:#475467;line-height:1.4}
+.t26-he-lider .t26-he-top b{color:var(--c)}
+.t26-he-fim,.t26-he-inicio{background:#f7f9fc;border-radius:0 8px 8px 0}
+.t26-analise p{margin:10px 0 0;font-size:13.5px;line-height:1.55;color:#344054}
+.t26-analise h3{margin-bottom:2px}
+
+/* pop-up do mapa ao vivo */
+.leaflet-tooltip:has(.t26-tt){white-space:normal;min-width:250px;max-width:320px;padding:8px 10px}
+.t26-tt{font-size:12.5px;line-height:1.35;color:#1b2333}
+.t26-tt small{color:#667085}
+.t26-tt-ld{display:block;margin:6px 0 4px;padding:4px 8px;border-left:4px solid #98a2b3;background:#f4f6fa;border-radius:0 6px 6px 0}
+.t26-tt-c{display:flex;justify-content:space-between;gap:10px;padding:2px 0;border-bottom:1px dashed #e3e8ef}
+.t26-tt-g{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:6px}
+.t26-tt-g div{display:flex;flex-direction:column}
+.t26-tt-g span{font-size:11px;color:#667085;text-transform:uppercase;letter-spacing:.02em}
+.t26-tt-g b{font-size:13px}
+.t26-tt-fim{margin-top:6px;color:#0b6b3a;font-weight:700}
+.t26-tt-pf{display:block;margin-top:6px}
+
+/* modo simulação */
+.et-simbtn{border:2px solid #7c3aed;background:#fff;color:#7c3aed;border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.et-simbtn:hover{background:#f5f0ff}
+.et-simbtn.ativo{background:#7c3aed;color:#fff}
+.et-simaviso{background:#f3ecff;border-color:#cdb6f6;color:#4b1d8f}
+.et-selo.et-sim{background:#7c3aed}
+
+/* barra fixa: contagem regressiva, última atualização, controles e tela cheia */
+.et-barra{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 12px;margin-bottom:12px;background:#fff;border:1px solid #d9e0ea;border-radius:12px;box-shadow:0 1px 6px rgba(21,62,117,.08)}
+.et-b-placar{font-size:14px;white-space:nowrap}
+.et-b-tempo{display:flex;flex-direction:column;line-height:1.25;margin-right:auto}
+.et-b-cont{font-size:15px;font-weight:700;color:#153e75;font-variant-numeric:tabular-nums}
+.et-b-ult{font-size:12px;color:#667085;font-variant-numeric:tabular-nums}
+.et-b-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.et-b-ctl label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#153e75}
+.et-b-ctl select{font-size:13px;padding:6px 8px;border-radius:8px}
+.et-b-ctl input[type=checkbox]{padding:0;width:auto}
+.t26-un-c{font-size:12px}
+.t26-cmp{display:flex;flex-direction:column;gap:2px;font-size:12.5px;white-space:nowrap}
+.t26-cmp small{color:#667085}
+.t26-tt-cmp{margin-top:6px;padding-top:6px;border-top:1px dashed #cfd8e3}
+.t26-comp .t26-analise-txt{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:#344054}
+
+/* tela cheia do sistema (não é o F11): esconde cabeçalho do sistema e abas; mantém o resumo do 2º turno e toda a apuração */
+html.et-fs,html.et-fs body{overflow:hidden}
+html.et-fs header.cab-padrao,html.et-fs .abas-eleicoes,html.et-fs .turnos-eleicao,html.et-fs .et-detalhe-tit,html.et-fs .menu-nav,html.et-fs nav.nav-principal{display:none!important}
+html.et-fs #painel-turno2{position:fixed;inset:0;z-index:99990;background:#f4f6fa;overflow:auto;padding:var(--et-barra-h,58px) 12px 16px;margin:0}
+html.et-fs #etDetStatus{display:none}
+html.et-fs .et-barra{position:fixed;top:0;left:0;right:0;z-index:99995;margin:0;border-radius:0;border-width:0 0 1px 0;padding:6px 12px}
+html.et-fs .t26-area-lista{max-height:calc(100vh - 150px)}
+
+/* contagem regressiva / última atualização: na linha do título, do lado direito, menor */
+.et-topo{align-items:flex-start}
+.et-tempo{display:flex;flex-direction:column;align-items:flex-end;line-height:1.3;text-align:right;margin-left:auto}
+.et-tempo .et-b-cont{font-size:13px}
+.et-tempo .et-b-ult{font-size:11.5px}
+.et-b-placar{margin-right:auto}
+
+/* cabeçalho institucional da aba (título, status, placar, tela cheia e atualização) */
+#etBarra.et-barra{position:relative;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:10px 22px;align-items:center;padding:18px 22px 20px;margin-bottom:14px;color:#fff;border:0;border-radius:14px;overflow:hidden;
+  background:linear-gradient(120deg,#0b2447 0%,#153e75 60%,#1d5fa8 100%);box-shadow:0 6px 22px rgba(11,36,71,.28)}
+.et-cab-fx{position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#d81b60 0 50%,#1f63d6 50% 100%)}
+.et-cab-esq{min-width:0}
+.et-cab-sel{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#bcd2f1;border-bottom:1px solid rgba(188,210,241,.4);padding-bottom:3px;margin-bottom:6px}
+#etBarra h2{margin:0;font-size:26px;line-height:1.15;color:#fff;letter-spacing:-.01em}
+#etBarra .et-cab-esq p{margin:5px 0 0;font-size:13px;color:#cfe0f7}
+.et-cab-centro{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.et-cab-status{display:inline-block;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.28)}
+.et-cab-status.vivo{background:#0f9d8a;border-color:#0f9d8a;animation:et-pulso 1.6s ease-in-out infinite}
+.et-cab-status.fim{background:#fff;color:#153e75;border-color:#fff}
+#etBarra .et-b-placar{margin:0;font-size:17px;font-weight:700;color:#fff;white-space:normal}
+#etBarra .et-b-placar b{filter:brightness(1.7) saturate(1.1)}
+.et-cab-dir{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.et-cab-btn{border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:9px 16px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .2s}
+.et-cab-btn:hover{background:rgba(255,255,255,.24)}
+#etBarra .et-tempo{align-items:flex-end;margin:0;padding-top:2px}
+#etBarra .et-b-cont{font-size:13.5px;font-weight:700;color:#fff}
+#etBarra .et-b-ult{font-size:11.5px;color:#bcd2f1}
+@media(max-width:900px){#etBarra.et-barra{grid-template-columns:1fr;padding:14px 16px 18px}.et-cab-centro{align-items:flex-start;text-align:left}.et-cab-dir{align-items:flex-start;flex-direction:row;flex-wrap:wrap;align-items:center}#etBarra h2{font-size:21px}}
+/* em tela cheia o cabeçalho fica fixo e mais baixo */
+html.et-fs #etBarra.et-barra{position:fixed;top:0;left:0;right:0;z-index:99995;margin:0;border-radius:0;padding:10px 18px 14px;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto}
+html.et-fs #etBarra h2{font-size:20px}
+html.et-fs #etBarra .et-cab-sel{margin-bottom:3px}
+html.et-fs #etBarra .et-cab-esq p{display:none}
+
+/* ===== botões do cabeçalho + modal do link público ===== */
+.et-cab-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.et-cab-btn[hidden]{display:none}
+.al-overlay{position:fixed;inset:0;z-index:100010;background:rgba(11,36,71,.55);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:6vh 14px;overflow:auto}
+.al-modal{width:min(760px,100%);background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:22px 24px;color:#1b2333}
+.al-cab{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.al-modal h3{margin:0;font-size:20px;color:#153e75}
+.al-modal h4{margin:20px 0 8px;font-size:14px;color:#344054;text-transform:uppercase;letter-spacing:.05em}
+.al-cab button{border:0;background:#eef2f7;border-radius:8px;width:34px;height:34px;font-size:22px;line-height:1;cursor:pointer;color:#475467}
+.al-intro{margin:6px 0 14px;font-size:13.5px;line-height:1.5;color:#475467}
+.al-form{display:grid;grid-template-columns:1fr 170px auto;gap:10px;align-items:end;padding:14px;background:#f4f7fb;border:1px solid #e1e8f2;border-radius:12px}
+.al-form label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:#153e75}
+.al-form input,.al-form select{font-size:14px;padding:9px 10px;border-radius:8px;width:100%;box-sizing:border-box}
+.al-prim{border:0;background:#153e75;color:#fff;border-radius:10px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}
+.al-prim:hover{background:#0f2f5c}.al-prim:disabled{opacity:.6;cursor:wait}
+.al-dica{margin:10px 0 0;font-size:13px;color:#667085}
+.al-ok{margin:10px 0 0;font-size:13px;color:#0b6b3a;font-weight:600}
+.al-ok input{margin-top:6px;width:100%;box-sizing:border-box;font-size:12.5px;padding:8px 10px;border-radius:8px;color:#1b2333}
+.al-erro{margin:10px 0 0;font-size:13px;color:#b42318;font-weight:600}
+.al-tab{overflow:auto;border:1px solid #e3e8ef;border-radius:12px}
+.al-tab table{width:100%;border-collapse:collapse;font-size:13px}
+.al-tab th{background:#f2f6fc;color:#4a5b73;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;white-space:nowrap}
+.al-tab td{padding:9px 10px;border-top:1px solid #eef1f5;vertical-align:top}
+.al-tab small{color:#667085}
+.al-tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700}
+.al-ok.al-tag,.al-tag.al-ok{background:#e4f6ee;color:#0b6b3a}
+.al-tag.al-exp{background:#fff3d6;color:#8a5a00}.al-tag.al-rev{background:#fdecea;color:#b42318}
+.al-acoes{white-space:nowrap}
+.al-acoes button{border:1px solid #cfd8e3;background:#fff;border-radius:8px;padding:5px 9px;font:inherit;font-size:12px;cursor:pointer;margin-right:4px}
+.al-acoes button:hover{background:#f4f8ff}.al-acoes .al-perigo{color:#b42318;border-color:#f0c4bf}
+@media(max-width:640px){.al-form{grid-template-columns:1fr}.al-modal{padding:16px}}
+
+/* ===== acabamento geral da página do 2º turno (também usado na página pública) ===== */
+#painel-turno2{--ap-radius:14px;--ap-borda:#dde4ee;--ap-sombra:0 1px 2px rgba(11,36,71,.05),0 6px 18px rgba(11,36,71,.06)}
+#painel-turno2 .t26-card,#painel-turno2 #eleicoes2tRaiz,#painel-turno2 .t26-vgeral,#painel-turno2 .t26-kpi,#painel-turno2 .et-cand,#painel-turno2 .et-kpi{border-color:var(--ap-borda);border-radius:var(--ap-radius);box-shadow:var(--ap-sombra)}
+#painel-turno2 .t26-card h3{position:relative;margin:0 0 10px;padding-left:12px;font-size:16px;letter-spacing:-.005em;color:#0f2f5c}
+#painel-turno2 .t26-card h3::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:4px;border-radius:2px;background:linear-gradient(180deg,#d81b60,#1f63d6)}
+#painel-turno2 .t26-sub{color:#667085}
+/* abas internas como controle segmentado */
+#painel-turno2 .t26-abas{display:flex;flex-wrap:wrap;gap:6px;padding:6px;margin:12px 0;background:#fff;border:1px solid var(--ap-borda);border-radius:var(--ap-radius);box-shadow:var(--ap-sombra)}
+#painel-turno2 .t26-abas button{border:0;background:transparent;border-radius:10px;padding:9px 14px;font:inherit;font-size:13.5px;font-weight:600;color:#475467;cursor:pointer;transition:background .15s,color .15s}
+#painel-turno2 .t26-abas button:hover{background:#eef3fb;color:#153e75}
+#painel-turno2 .t26-abas button[aria-selected="true"]{background:#153e75;color:#fff;box-shadow:0 2px 8px rgba(21,62,117,.35)}
+/* indicadores */
+#painel-turno2 .t26-kpi{border-top:3px solid #153e75;padding:12px 14px}
+#painel-turno2 .t26-kl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#667085}
+#painel-turno2 .t26-kpi b{font-size:24px;color:#0f2f5c;letter-spacing:-.01em}
+/* tabelas */
+#painel-turno2 .t26-tab table,#painel-turno2 .et-tab{border-collapse:separate;border-spacing:0}
+#painel-turno2 .t26-tab th,#painel-turno2 .relatorio-tabela th{background:#f2f6fc;color:#4a5b73;font-size:11px;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--ap-borda)}
+#painel-turno2 .t26-tab tbody tr:nth-child(even) td,#painel-turno2 .relatorio-tabela tbody tr:nth-child(even) td{background:#fafcff}
+#painel-turno2 .t26-tab tbody tr:hover td,#painel-turno2 .relatorio-tabela tbody tr:hover td{background:#eef4ff}
+/* seções da tela */
+#painel-turno2 .et-detalhe{margin-top:18px}
+#painel-turno2 .et-detalhe-tit{padding:0 2px;font-size:15px;color:#0f2f5c;text-transform:uppercase;letter-spacing:.06em}
+#painel-turno2 .et-aviso{border-radius:12px}
+#painel-turno2 #etDetStatus{margin:0 0 8px;padding:8px 12px;background:#fff;border:1px solid var(--ap-borda);border-radius:10px;font-size:12.5px;color:#475467}
+@media print{.et-barra .et-cab-btns,.al-overlay{display:none!important}}
+
+/* ===== placar + apuração geral (só em tela cheia / página pública) ===== */
+.et-geral,.et-pg{display:none}
+html.et-fs .et-geral{display:block}
+html.et-fs .et-pg{display:grid}
+.et-geral{margin:0;padding:10px 20px 12px;background:#fff;border-bottom:1px solid #dde4ee}
+.et-geral-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px;font-size:13.5px;color:#344054}
+.et-geral-top b{font-size:15px;color:#0f2f5c;letter-spacing:.01em}
+.et-geral-top strong{font-size:17px;color:#0f2f5c}
+.et-geral-bar{height:14px;background:#e3e9f2;border-radius:7px;overflow:hidden}
+.et-geral-bar i{display:block;height:100%;background:linear-gradient(90deg,#0f9d8a,#2a8c4c);transition:width .6s}
+.et-geral.fim .et-geral-bar i{background:#0b6b3a}
+.et-pg{grid-template-columns:minmax(0,1fr) minmax(280px,1.05fr) minmax(0,1fr);gap:14px;padding:12px 20px;align-items:stretch;background:#f4f6fa}
+.pg-cand{position:relative;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num id" "big big" "mini mini";gap:6px 12px;align-items:center;padding:12px 16px;background:#fff;border:1px solid #dde4ee;border-top:5px solid var(--c);border-radius:14px;box-shadow:0 1px 2px rgba(11,36,71,.05),0 6px 18px rgba(11,36,71,.06)}
+.pg-num{grid-area:num;display:grid;place-items:center;min-width:42px;height:42px;border-radius:10px;background:var(--c);color:#fff;font-weight:800;font-size:18px}
+.pg-id{grid-area:id;min-width:0}.pg-id b{display:block;font-size:18px;color:#1b2333;line-height:1.15}.pg-id small{color:#667085;font-size:12px}
+.pg-big{grid-area:big;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.pg-big strong{font-size:40px;line-height:1;color:var(--c);letter-spacing:-.02em}
+.pg-big span{font-size:14px;color:#475467;font-weight:600}
+.pg-mini{grid-area:mini;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:#667085}
+.pg-mini b{color:#1b2333}
+.pg-cand.c2{border-top-color:var(--c)}
+.pg-centro{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:6px 4px}
+.pg-duelo{display:flex;height:34px;border-radius:9px;overflow:hidden;background:#e3e9f2}
+.pg-duelo i{display:flex;align-items:center;justify-content:center;color:#fff;font-style:normal;font-weight:800;font-size:14px;transition:width .6s}
+.pg-dif{margin:0;text-align:center;font-size:13.5px;color:#344054}
+.pg-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.pg-stats span{display:flex;flex-direction:column;align-items:center;padding:6px 4px;background:#fff;border:1px solid #dde4ee;border-radius:10px}
+.pg-stats i{font-style:normal;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:#667085;text-align:center}
+.pg-stats b{font-size:15px;color:#0f2f5c}
+@media(max-width:1100px){.et-pg{grid-template-columns:1fr 1fr}.pg-centro{grid-column:1/-1;order:3}}
+@media(max-width:640px){.et-pg{grid-template-columns:1fr}.pg-big strong{font-size:32px}.pg-stats{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== tela cheia / página pública: título, apuração geral, placar e mapa na mesma tela, sem rolar ===== */
+html.et-fs #painel-turno2{position:fixed;inset:0;display:flex;flex-direction:column;height:100vh;padding:0!important;margin:0;overflow:hidden;background:#eef2f8;z-index:99990}
+html.et-fs #painel-turno2>.aba-conteudo{display:flex!important;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+html.et-fs #etBarra.et-barra{position:static;flex:none;border-radius:0;margin:0;padding:10px 20px 14px}
+html.et-fs #etBarra h2{font-size:21px}
+html.et-fs #etBarra .et-cab-esq p{display:none}
+html.et-fs .et-geral,html.et-fs .et-pg{flex:none}
+html.et-fs #eleicoes2tRaiz,html.et-fs .et-detalhe-tit,html.et-fs #etDetStatus,html.et-fs .ap-rodape{display:none!important}
+html.et-fs .et-detalhe{flex:1;min-height:0;display:flex;flex-direction:column;margin:0;padding:0 14px 10px}
+html.et-fs #resultadosGoverno2T:not([hidden]){flex:1;min-height:0;display:flex;flex-direction:column;margin:0}
+html.et-fs #resultadosGoverno2T .t26-cab,html.et-fs #resultadosGoverno2T>.t26-kpis,html.et-fs #resultadosGoverno2T>.t26-vgeral{display:none}
+html.et-fs #resultadosGoverno2T .t26-abas{flex:none;margin:8px 0;padding:4px}
+html.et-fs #resultadosGoverno2T .t26-abas button{padding:6px 11px;font-size:13px}
+html.et-fs #resultadosGoverno2T .t26-corpo{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:10px}
+html.et-fs .t26-filtros-topo{flex:none;margin:0;padding:8px 12px}
+html.et-fs .t26-vivo-mapa{flex:1;min-height:380px;grid-template-rows:minmax(0,1fr);align-items:stretch}
+html.et-fs .t26-area-mapa{display:flex;flex-direction:column;min-height:0;padding:10px}
+html.et-fs .t26-area-mapa .t26-mig{flex:none}
+html.et-fs .t26-area-mapa .t26-gm{flex:1;height:auto!important;min-height:260px}
+html.et-fs .t26-area-mapa>p.t26-sub{display:none}
+html.et-fs .t26-area-lista,html.et-fs .t26-area-info{max-height:none;min-height:0;overflow:auto;position:static}
+html.et-fs .t26-modo-cheia .t26-gm{height:auto}
+
+/* ===== tela cheia: compacta o topo para o mapa caber sem rolar (a partir de ~700 px de altura) ===== */
+html.et-fs #etBarra.et-barra{padding:7px 18px 11px;gap:6px 18px}
+html.et-fs #etBarra .et-cab-sel{display:none}
+html.et-fs #etBarra h2{font-size:19px}
+html.et-fs .et-cab-dir{flex-direction:row;align-items:center;gap:14px}
+html.et-fs .et-cab-btn{padding:6px 12px;font-size:12.5px}
+html.et-fs #etBarra .et-tempo{align-items:flex-start}
+html.et-fs .et-cab-status{padding:3px 12px;font-size:11px}
+html.et-fs #etBarra .et-b-placar{display:none}
+html.et-fs .et-geral{padding:6px 18px 8px}
+html.et-fs .et-geral-top{margin-bottom:4px;font-size:12.5px}
+html.et-fs .et-geral-bar{height:10px}
+html.et-fs .et-pg{padding:8px 18px;gap:10px}
+html.et-fs .pg-cand{padding:8px 12px;gap:2px 10px;border-top-width:4px}
+html.et-fs .pg-num{min-width:34px;height:34px;font-size:15px}
+html.et-fs .pg-id b{font-size:16px}
+html.et-fs .pg-big strong{font-size:30px}
+html.et-fs .pg-big span{font-size:13px}
+html.et-fs .pg-mini{font-size:12px}
+html.et-fs .pg-centro{gap:5px;padding:0}
+html.et-fs .pg-duelo{height:26px}
+html.et-fs .pg-dif{font-size:12.5px}
+html.et-fs .pg-stats span{padding:3px 4px}
+html.et-fs .pg-stats b{font-size:14px}
+html.et-fs #resultadosGoverno2T .t26-abas{margin:6px 0;padding:3px}
+html.et-fs #resultadosGoverno2T .t26-abas button{padding:5px 10px;font-size:12.5px}
+html.et-fs .t26-filtros-topo{padding:6px 10px}
+html.et-fs .t26-filtros-topo .t26-filtros{flex-wrap:nowrap;gap:6px 8px;align-items:flex-end}
+html.et-fs .t26-filtros-topo .t26-filtros b{display:none}
+html.et-fs .t26-filtros-topo .t26-filtros label{flex:1 1 0!important;min-width:0!important;font-size:10.5px;gap:2px}
+html.et-fs .t26-filtros-topo .t26-filtros select,html.et-fs .t26-filtros-topo .t26-filtros input{padding:4px 6px;font-size:12px;min-width:0}
+html.et-fs .t26-vivo-mapa{min-height:300px}
+html.et-fs .t26-area-mapa{padding:8px}
+@media(max-width:900px){html.et-fs .t26-filtros-topo .t26-filtros{flex-wrap:wrap}}
+
+/* cabeçalho: mensagem de status à esquerda, título no centro, botões e atualização à direita */
+#etBarra.et-barra{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+#etBarra .et-cab-esq{order:2;text-align:center}
+#etBarra .et-cab-centro{order:1;align-items:flex-start;text-align:left}
+#etBarra .et-cab-dir{order:3}
+html.et-fs #etBarra .et-cab-sel{display:inline-block;margin-bottom:2px;font-size:10px}
+html.et-fs #etBarra .et-cab-esq p{display:block;font-size:11.5px;margin-top:2px}
+html.et-fs #etBarra h2{font-size:20px}
+@media(max-width:900px){#etBarra.et-barra{grid-template-columns:1fr}#etBarra .et-cab-esq,#etBarra .et-cab-centro,#etBarra .et-cab-dir{order:0;text-align:left;align-items:flex-start}}
+/* "tem como virar?" */
+.t26-tt-vira{margin-top:6px;padding:5px 8px;border-radius:6px;background:#fff7e6;color:#8a5a00;font-weight:700;font-size:12.5px}
+.t26-tt-vira.def{background:#e4f6ee;color:#0b6b3a}
+.t26-vira{font-weight:700;color:#8a5a00}.t26-vira.def{color:#0b6b3a}
+.pg-vira{margin:0;text-align:center;font-size:12.5px;font-weight:700;color:#8a5a00}
+.pg-vira.def{color:#0b6b3a}
+
+/* apuração geral: centralizada, com respiro lateral e vertical, sem aumentar a altura além do necessário */
+.et-geral,html.et-fs .et-geral{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px max(28px,6vw) 14px;background:#fff;border-bottom:1px solid #dde4ee}
+html.et-fs .et-geral{display:flex}
+.et-geral-top,html.et-fs .et-geral-top{width:100%;max-width:1180px;justify-content:center;align-items:baseline;gap:6px 18px;margin:0;text-align:center;font-size:13.5px}
+.et-geral-top b,html.et-fs .et-geral-top b{font-size:15px;letter-spacing:.02em}
+.et-geral-bar,html.et-fs .et-geral-bar{width:100%;max-width:1180px;height:12px;border-radius:6px}
+html:not(.et-fs) .et-geral{display:none}
+html.et-fs .et-geral{padding-top:10px;padding-bottom:12px;gap:7px}
+html.et-fs .t26-vivo-mapa{min-height:200px}
+html.et-fs .t26-area-mapa .t26-gm{min-height:170px}
+html.et-fs .et-detalhe{padding-bottom:14px}
+html.et-fs .et-pg{padding-top:6px;padding-bottom:6px}
+
+/* link público: um único link, com código curto */
+.al-vazio{padding:18px;text-align:center;background:#f4f7fb;border:1px dashed #cfd8e3;border-radius:12px}
+.al-vazio p{margin:0 0 12px;color:#475467}
+.al-atual{display:flex;flex-direction:column;gap:8px;padding:16px;background:#f4f7fb;border:1px solid #e1e8f2;border-radius:12px}
+.al-atual label{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#4a5b73;margin-top:4px}
+.al-atual input[type=text]{width:100%;box-sizing:border-box;font-size:15px;font-weight:600;padding:11px 12px;border-radius:10px;color:#153e75;background:#fff}
+.al-cod{font-size:15px;color:#344054}.al-cod b{font-size:18px;letter-spacing:.04em;color:#0f2f5c}
+.al-meta{font-size:12.5px;color:#667085}
+.al-botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.al-botoes button{border:1px solid #cfd8e3;background:#fff;border-radius:10px;padding:9px 14px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.al-botoes button:hover{background:#f4f8ff}
+.al-botoes .al-prim{border:0;background:#153e75;color:#fff}.al-botoes .al-prim:hover{background:#0f2f5c}
+.al-botoes .al-perigo{color:#b42318;border-color:#f0c4bf;margin-left:auto}
+.al-vazio .al-prim{border:0;background:#153e75;color:#fff;border-radius:10px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}
+
+/* tela cheia: o título fica sempre no centro (colunas laterais iguais), em qualquer largura */
+html.et-fs #etBarra.et-barra{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+html.et-fs #etBarra .et-cab-esq{order:2;text-align:center;justify-self:center}
+html.et-fs #etBarra .et-cab-centro{order:1;justify-self:start;align-items:flex-start}
+html.et-fs #etBarra .et-cab-dir{order:3;justify-self:end}
+
+/* tela cheia em larguras menores: mantém lista | mapa | informações lado a lado (1001–1300 px) e empilha abaixo disso */
+@media (min-width:1001px) and (max-width:1300px){
+  html.et-fs .t26-vivo-mapa{grid-template-columns:225px minmax(0,1fr) 262px;grid-template-areas:"lista mapa info";grid-template-rows:minmax(0,1fr)}
+  html.et-fs .t26-filtros-topo .t26-filtros label{font-size:10px}
+}
+@media (max-width:1000px){
+  html.et-fs .t26-vivo-mapa{grid-template-columns:minmax(0,1fr);grid-template-areas:"mapa" "lista" "info";grid-template-rows:none;flex:none;min-height:0}
+  html.et-fs .t26-area-mapa{height:min(62vh,520px)}
+  html.et-fs .t26-area-lista,html.et-fs .t26-area-info{max-height:none;overflow:visible}
+  html.et-fs #etBarra.et-barra{grid-template-columns:1fr;gap:6px;text-align:center}
+  html.et-fs #etBarra .et-cab-centro,html.et-fs #etBarra .et-cab-esq,html.et-fs #etBarra .et-cab-dir{order:0;justify-self:center;align-items:center}
+}
+
+/* botão do modo apresentação, na linha das abas */
+#painel-turno2 .t26-abas .t26-apres{margin-left:auto;border:1px solid #cdd7e6;background:#fff;color:#153e75;font-weight:700}
+#painel-turno2 .t26-abas .t26-apres:hover{background:#eef3fb}
+#painel-turno2 .t26-abas .t26-apres.ativo{background:#d81b60;border-color:#d81b60;color:#fff;box-shadow:0 2px 8px rgba(216,27,96,.35)}
+
+/* placar mais baixo na tela cheia / página pública: sobra altura para o mapa */
+html.et-fs .et-pg{padding:6px 18px;gap:10px}
+html.et-fs .pg-cand{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"num id big" "mini mini mini";padding:6px 12px;gap:2px 10px;border-top-width:3px}
+html.et-fs .pg-num{min-width:30px;height:30px;font-size:14px;border-radius:8px}
+html.et-fs .pg-id b{font-size:15px}
+html.et-fs .pg-id small{font-size:11px}
+html.et-fs .pg-big{flex-direction:column;align-items:flex-end;gap:0}
+html.et-fs .pg-big strong{font-size:26px}
+html.et-fs .pg-big span{font-size:11px}
+html.et-fs .pg-mini{font-size:11px;gap:2px 12px}
+html.et-fs .pg-centro{gap:3px;padding:0}
+html.et-fs .pg-duelo{height:20px;border-radius:7px}
+html.et-fs .pg-duelo i{font-size:12px}
+html.et-fs .pg-dif,html.et-fs .pg-vira{font-size:11.5px;line-height:1.2}
+html.et-fs .pg-stats{gap:4px}
+html.et-fs .pg-stats span{flex-direction:row;gap:6px;justify-content:center;align-items:baseline;padding:2px 4px;border-radius:8px}
+html.et-fs .pg-stats i{font-size:9px}
+html.et-fs .pg-stats b{font-size:12.5px}
+html.et-fs .et-geral{padding-top:8px;padding-bottom:10px;gap:6px}
+html.et-fs #resultadosGoverno2T .t26-abas{margin:5px 0}
+
+/* botão Filtros (expande a seção "Detalhar por" abaixo da linha das abas) */
+#painel-turno2 .t26-abas .t26-fx{margin-left:auto;border:1px solid #cdd7e6;background:#fff;color:#153e75;font-weight:700}
+#painel-turno2 .t26-abas .t26-fx[hidden]{display:none}
+#painel-turno2 .t26-abas .t26-fx:hover{background:#eef3fb}
+#painel-turno2 .t26-abas .t26-fx.ativo{background:#153e75;color:#fff;border-color:#153e75}
+#painel-turno2 .t26-abas .t26-fx + .t26-apres{margin-left:6px}
+
+/* linha das abas: mais alta e com fontes maiores */
+#painel-turno2 .t26-abas{padding:7px;gap:6px}
+#painel-turno2 .t26-abas button{padding:12px 17px;font-size:15px;line-height:1.2}
+html.et-fs #resultadosGoverno2T .t26-abas{margin:6px 0;padding:6px}
+html.et-fs #resultadosGoverno2T .t26-abas button{padding:11px 16px;font-size:15px}
+@media(max-width:1300px){#painel-turno2 .t26-abas button,html.et-fs #resultadosGoverno2T .t26-abas button{padding:9px 12px;font-size:13.5px}}
+@media(max-width:900px){#painel-turno2 .t26-abas button,html.et-fs #resultadosGoverno2T .t26-abas button{padding:8px 10px;font-size:13px}}
+
+/* placar: nome (com o número) à esquerda do quadrado, percentual sempre no centro e informações à direita */
+.pg-cand,html.et-fs .pg-cand{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"l big mini";align-items:center;gap:6px 14px}
+.pg-l{grid-area:l;display:flex;align-items:center;gap:10px;min-width:0}
+.pg-l .pg-id{min-width:0}
+.pg-l .pg-id b{white-space:normal;overflow-wrap:anywhere}
+.pg-cand .pg-big,html.et-fs .pg-cand .pg-big{grid-area:big;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px}
+.pg-cand .pg-mini,html.et-fs .pg-cand .pg-mini{grid-area:mini;flex-direction:column;align-items:flex-end;justify-content:center;text-align:right;gap:1px}
+@media(max-width:640px){.pg-cand,html.et-fs .pg-cand{grid-template-columns:1fr;grid-template-areas:"l" "big" "mini"}.pg-cand .pg-mini{align-items:flex-start;text-align:left}}
+/* uma única linha de abas em 1080p: espaçamento horizontal mais enxuto, mantendo a altura e a fonte */
+#painel-turno2 .t26-abas{gap:4px}
+#painel-turno2 .t26-abas button,html.et-fs #resultadosGoverno2T .t26-abas button{padding:12px 11px}
+@media(max-width:1300px){#painel-turno2 .t26-abas button,html.et-fs #resultadosGoverno2T .t26-abas button{padding:9px 9px;font-size:13.5px}}
+@media(max-width:900px){#painel-turno2 .t26-abas button,html.et-fs #resultadosGoverno2T .t26-abas button{padding:8px 8px;font-size:12.5px}}
