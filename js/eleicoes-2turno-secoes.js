@@ -131,10 +131,14 @@
     itens.sort(function (a, b) { return a.t - b.t || (a.k < b.k ? -1 : 1); });
     var ev = [], q1 = 0, q2 = 0, n = 0, total = base.length, lider = 0, mudancas = 0, marcoI = 0, MARCOS = [10, 25, 50, 75, 90], limI = 0, ok = { reg: {}, mun: {}, zona: {} }, maior = { v: 0, quem: 0, hora: '' };
     var plac = function () { return nA + ' ' + mil(q1) + ' × ' + mil(q2) + ' ' + nB; };
+    var tempo = { 1: 0, 2: 0 }, vezes = { 1: 0, 2: 0 }, liderT = 0, desde = 0, primeiroT = itens.length ? itens[0].t : 0, ultimoT = itens.length ? itens[itens.length - 1].t : 0, prevT = 0, prevL = 0;
     itens.forEach(function (it) {
       var v1 = it.c.v[CFG.foco] || 0, v2 = it.c.v[CFG.rival] || 0, m = it.m;
+      if (prevL && it.t > prevT) tempo[prevL] += it.t - prevT;   // o líder do acumulado anterior ficou na frente até esta urna
       q1 += v1; q2 += v2; n++;
       var sal = q1 - q2, l = sal > 0 ? 1 : sal < 0 ? 2 : 0, pct = n / total * 100;
+      if (l && l !== prevL) { vezes[l]++; desde = it.t; }
+      prevT = it.t; prevL = l;
       var onde = 'seção ' + p4(m.sec) + ' (zona ' + p4(m.zona) + ', ' + m.mn + ')';
       var q = l === 1 ? nA : nB, quem = l;
       var push = function (tipo, cor, titulo, detalhe) { ev.push({ hora: it.hora, tipo: tipo, cor: cor, titulo: titulo, detalhe: detalhe, pct: pct, n: n }); };
@@ -164,7 +168,8 @@
       });
       if (n === total) push('fim', l, 'Apuração concluída', 'Todas as ' + mil(total) + ' seções apuradas. Resultado final: ' + plac() + (l ? ' — ' + q + ' vence por ' + mil(sal) + ' votos.' : ' — empate.'));
     });
-    return { eventos: ev, mudancas: mudancas, maior: maior, n: n, total: total, q1: q1, q2: q2 };
+    return { eventos: ev, mudancas: mudancas, maior: maior, n: n, total: total, q1: q1, q2: q2,
+      lideranca: { quem: prevL, desde: desde, ultimoT: ultimoT, primeiroT: primeiroT, tempo1: tempo[1], tempo2: tempo[2], vezes1: vezes[1], vezes2: vezes[2], mudancas: mudancas } };
   }
 
   /* ---------- montagem dos dados do painel ---------- */

@@ -517,3 +517,53 @@ html.et-fs #resultadosGoverno2T .t26-abas button{padding:11px 16px;font-size:15p
 #painel-turno2 .t26-abas button,html.et-fs #resultadosGoverno2T .t26-abas button{padding:12px 11px}
 @media(max-width:1300px){#painel-turno2 .t26-abas button,html.et-fs #resultadosGoverno2T .t26-abas button{padding:9px 9px;font-size:13.5px}}
 @media(max-width:900px){#painel-turno2 .t26-abas button,html.et-fs #resultadosGoverno2T .t26-abas button{padding:8px 8px;font-size:12.5px}}
+
+/* linha das abas: bem distribuída na largura e centralizada na vertical, com folga igual em cima e embaixo */
+#painel-turno2 .t26-abas{display:flex;flex-wrap:nowrap;justify-content:space-between;align-items:center;gap:2px;padding:8px 10px;margin:12px 0}
+#painel-turno2 .t26-abas button{display:inline-flex;align-items:center;justify-content:center;flex:0 1 auto;white-space:nowrap}
+#painel-turno2 .t26-abas .t26-fx,#painel-turno2 .t26-abas .t26-apres{margin-left:0}
+html.et-fs #resultadosGoverno2T .t26-abas{margin:12px 0;padding:8px 10px}
+@media(max-width:1300px){#painel-turno2 .t26-abas{flex-wrap:wrap;justify-content:flex-start}}
+.et-cab-ico{padding:6px 10px;font-size:15px;line-height:1}
+html.et-fs #painel-turno2 .et-detalhe{margin-top:0}
+html.et-fs #painel-turno2 .et-pg{padding-bottom:6px}
+
+/* centro do placar: quem ganha, há quanto tempo está na frente e as mudanças de liderança */
+.pg-vence{display:grid;grid-template-columns:1.1fr 1.2fr 1.3fr;gap:6px}
+.pg-vence span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 6px;background:#fff;border:1px solid #dde4ee;border-radius:10px;text-align:center;min-width:0}
+.pg-vence i{font-style:normal;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#667085}
+.pg-vence b{font-size:16px;color:#0f2f5c;line-height:1.15;overflow-wrap:anywhere}
+.pg-vence small{font-size:10.5px;color:#667085;line-height:1.2}
+.pg-vence .c1{border-top:3px solid #d81b60}.pg-vence .c1 b{color:#d81b60}
+.pg-vence .c2{border-top:3px solid #1f63d6}.pg-vence .c2 b{color:#1f63d6}
+.pg-duelo.vazio{height:8px}
+html.et-fs .pg-duelo{height:14px}
+html.et-fs .pg-duelo i{font-size:10px}
+html.et-fs .pg-vence span{padding:3px 5px}
+html.et-fs .pg-vence b{font-size:14.5px}
+html.et-fs .pg-vence small{font-size:10px}
+
+/* botão Tela cheia (F11), ao lado do Modo apresentação */
+#painel-turno2 .t26-abas .t26-fsbr{border:1px solid #cdd7e6;background:#fff;color:#153e75;font-weight:700}
+#painel-turno2 .t26-abas .t26-fsbr:hover{background:#eef3fb}
+#painel-turno2 .t26-abas .t26-fsbr.ativo{background:#153e75;border-color:#153e75;color:#fff}
+
+/* barra do placar: nome de quem está ganhando no centro e os percentuais nas pontas */
+.pg-duelo{position:relative;height:30px;border-radius:9px;overflow:hidden;background:#e3e9f2;display:flex}
+.pg-duelo i.e{justify-content:flex-start;padding-left:10px}
+.pg-duelo i.d{justify-content:flex-end;padding-right:10px}
+.pg-duelo i{box-sizing:border-box;white-space:nowrap}
+.pg-duelo .pg-nome{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 18%;font-size:12.5px;font-weight:800;letter-spacing:.04em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);text-align:center;pointer-events:none}
+.pg-duelo.vazio .pg-nome{color:#667085;text-shadow:none;font-size:18px}
+.pg-duelo.vazio{height:30px}
+html.et-fs .pg-duelo,html.et-fs .pg-duelo.vazio{height:28px}
+html.et-fs .pg-duelo i{font-size:12px}
+html.et-fs .pg-duelo .pg-nome{font-size:12px}
+
+/* linha das abas em dois grupos: lista de abas (quebra de linha se faltar largura) e ações sempre visíveis à direita */
+#painel-turno2 .t26-abas{display:flex;flex-wrap:nowrap;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;overflow:visible}
+#painel-turno2 .t26-abas-lista{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 2px}
+#painel-turno2 .t26-abas-acoes{flex:none;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin-left:6px;padding-left:10px;border-left:1px solid #e3e8ef}
+#painel-turno2 .t26-abas button{font-size:clamp(12.5px,.78vw,15px);padding:11px clamp(7px,.6vw,11px)}
+html.et-fs #resultadosGoverno2T .t26-abas button{font-size:clamp(12.5px,.78vw,15px);padding:10px clamp(7px,.6vw,11px)}
+@media(max-width:900px){#painel-turno2 .t26-abas{flex-wrap:wrap}#painel-turno2 .t26-abas-acoes{border-left:0;padding-left:0;margin-left:0;flex-wrap:wrap}}

@@ -215,13 +215,13 @@
         (a22 ? '<button type="button" class="t26-antigo" data-antigo>Mostrar visão anterior (mapa de 2022)</button>' : '') + '</div>' +
         '<section class="t26-kpis">' + kp + '</section>' + (VIVO && !cmp ? barraGeral() : '') +
         (cmp ? '<p class="t26-sub t26-nota">As seções de 2022 foram associadas às de 2026 pelo município, zona e número da seção (inclusive seções agregadas). ' + (E22.q - E22.qMapeado) + ' voto(s) de 2022 ficaram sem seção correspondente e não entram nas unidades.</p>' : '') +
-        '<div class="t26-abas" role="tablist">' + abasVisiveis().map(function (a) { return '<button type="button" role="tab" data-t26="' + a[0] + '" aria-selected="' + (a[0] === st.aba) + '">' + a[1] + '</button>'; }).join('') +
+        '<div class="t26-abas" role="tablist"><div class="t26-abas-lista">' + abasVisiveis().map(function (a) { return '<button type="button" role="tab" data-t26="' + a[0] + '" aria-selected="' + (a[0] === st.aba) + '">' + a[1] + '</button>'; }).join('') + '</div>' + (VIVO && !cmp ? '<div class="t26-abas-acoes">' : '') +
           (VIVO && !cmp ? '<button type="button" class="t26-fx' + (st.fx ? ' ativo' : '') + '" data-fx aria-expanded="' + (!!st.fx) + '"' + (st.aba === 'mapa' ? '' : ' hidden') + ' title="Mostrar ou esconder o filtro Detalhar por">⚙ Filtros ' + (st.fx ? '▴' : '▾') + '</button>' : '') +
-          (VIVO && !cmp ? '<button type="button" class="t26-apres' + (st.apres ? ' ativo' : '') + '" data-apres title="Alterna sozinho entre as abas e volta à Principal a cada atualização">' + (st.apres ? '⏸ Parar apresentação' : '▶ Modo apresentação') + '</button>' : '') + '</div>' +
+          (VIVO && !cmp ? '<button type="button" class="t26-apres' + (st.apres ? ' ativo' : '') + '" data-apres title="Alterna sozinho entre as abas e volta à Principal a cada atualização">' + (st.apres ? '⏸ Parar apresentação' : '▶ Modo apresentação') + '</button><button type="button" class="t26-fsbr" data-fsbr title="Tela cheia (igual ao F11)">⛶ Tela cheia</button></div>' : '') + '</div>' +
         '<div class="t26-corpo"></div>';
     }
     /* ----- modo apresentação: alterna sozinho entre as abas; a cada atualização volta à Principal ----- */
-    var apresTimer = null, APRES_MS = 15000;
+    var apresTimer = null, APRES_MS = 10000, apresRetorno = null;   // 10 s por aba; apresRetorno = aba interrompida por uma atualização
     function apresUI() {
       var b = root.querySelector('[data-apres]');
       if (b) { b.classList.toggle('ativo', !!st.apres); b.textContent = st.apres ? '⏸ Parar apresentação' : '▶ Modo apresentação'; }
@@ -229,14 +229,16 @@
     function apresProxima() {
       var l = abasVisiveis().map(function (a) { return a[0]; }).filter(function (k) { return k !== 'exportar'; });
       if (!l.length) return;
-      st.aba = l[(Math.max(0, l.indexOf(st.aba)) + 1) % l.length]; st.pag = 0; st.psec = 0;
+      if (apresRetorno && l.indexOf(apresRetorno) >= 0) { st.aba = apresRetorno; apresRetorno = null; }   // depois da Principal, volta de onde estava
+      else { apresRetorno = null; st.aba = l[(Math.max(0, l.indexOf(st.aba)) + 1) % l.length]; }
+      st.pag = 0; st.psec = 0;
       desenha();
     }
     function apresAgenda() {
       clearInterval(apresTimer); apresTimer = null;
       if (st.apres) apresTimer = setInterval(function () { if (root.hidden) return; apresProxima(); }, APRES_MS);
     }
-    function apresAlternar() { st.apres = !st.apres; apresAgenda(); apresUI(); }
+    function apresAlternar() { st.apres = !st.apres; apresRetorno = null; apresAgenda(); apresUI(); }
     function marcaAba() {
       root.querySelectorAll('[data-t26]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.t26 === st.aba)); });
       var fx = root.querySelector('[data-fx]');
@@ -1204,7 +1206,7 @@
         var ex = e.target.closest('[data-ex]'); if (ex) { exportarAcao(ex.dataset.ex, ex.dataset.tipo, ex); return; }
         if (e.target.closest('[data-apres]')) { apresAlternar(); return; }
         if (e.target.closest('[data-fx]')) { st.fx = !st.fx; desenha(); return; }
-        var t = e.target.closest('[data-t26]'); if (t) { if (st.apres) { st.apres = false; apresAgenda(); apresUI(); } st.aba = t.dataset.t26; st.pag = 0; st.psec = 0; st.cheia = false; root.classList.remove('t26-modo-cheia'); desenha(); return; }
+        var t = e.target.closest('[data-t26]'); if (t) { if (st.apres) { st.apres = false; apresRetorno = null; apresAgenda(); apresUI(); } st.aba = t.dataset.t26; st.pag = 0; st.psec = 0; st.cheia = false; root.classList.remove('t26-modo-cheia'); desenha(); return; }
         var an = e.target.closest('[data-antigo]');
         if (an) { var w = document.querySelector('#painel-resultados .resultados-wrap'); if (w) { var vis = w.style.display === 'none'; w.style.display = vis ? '' : 'none'; an.textContent = vis ? 'Ocultar visão anterior (mapa de 2022)' : 'Mostrar visão anterior (mapa de 2022)'; } return; }
         var cr = e.target.closest('[data-dr]');
@@ -1245,7 +1247,10 @@
       esconder: function () { root.hidden = true; },
       redesenhar: function () {   // dados novos (apuração ao vivo): refaz totais, cabeçalho e a aba aberta, mantendo filtros e rolagem
         if (!iniciado || root.hidden) return;
-        if (st.apres) { st.aba = 'mapa'; st.pag = 0; st.psec = 0; apresAgenda(); }   // atualização nova: mostra a Principal
+        if (st.apres) {   // atualização nova: mostra a Principal por 10 s e depois retoma de onde estava
+          if (st.aba !== 'mapa' && !apresRetorno) apresRetorno = st.aba;
+          st.aba = 'mapa'; st.pag = 0; st.psec = 0; apresAgenda();
+        }
         var sc = root.closest('.aba-conteudo'), topo = sc ? sc.scrollTop : 0, el = $('.t26-corpo'), interno = el ? el.scrollTop : 0;
         T22 = E22.q; T26 = E.q; TB = a22 ? T22 : T26; nome = C.nome;
         if (mapa) { try { mapa.stop(); mapa.off(); mapa.remove(); } catch (e) { } mapa = null; }

@@ -217,7 +217,9 @@
       '<div class="et-cab-esq"><span class="et-cab-sel">Eleições 2026 · Acre</span>' +
       '<h2>Governo do Acre — 2º turno</h2>' +
       '<p>Apuração oficial do TSE · votação em ' + esc(CFG.turnos['2'].data) + (st.sim ? ' · <b>dados de teste</b>' : '') + '</p></div>' +
-      '<div class="et-cab-dir"><div class="et-cab-btns">' + (window.APURACAO_PUBLICA ? '' : '<button type="button" id="etLink" class="et-cab-btn" hidden title="Gerar um link para acompanhar a apuração sem login">🔗 Link público</button>') + (window.APURACAO_PUBLICA ? '' : '<button type="button" id="etFs" class="et-cab-btn">⛶ Tela cheia</button>') + '</div>' +
+      '<div class="et-cab-dir"><div class="et-cab-btns"><button type="button" id="etLink" class="et-cab-btn" title="Copiar o link público da apuração">Link público</button>' +
+      (window.APURACAO_PUBLICA ? '' : '<button type="button" id="etLinkCfg" class="et-cab-btn et-cab-ico" hidden title="Gerenciar o link público (ativar / revogar)" aria-label="Gerenciar o link público">⚙</button>') +
+      '</div>' +
       '<div class="et-tempo"><span class="et-b-cont" id="etCont">—</span><span class="et-b-ult" id="etUlt">Atualizado pela última vez: —</span></div></div>';
   }
   /* barra de apuração geral + placar dos dois candidatos (aparecem na tela cheia e na página pública) */
@@ -238,7 +240,8 @@
     var ident = function (num) { var c = ids.filter(function (x) { return String(x.n) === String(num); })[0] || {}; return c; };
     var votos = function (num) { var c = (D && D.candidatos || []).filter(function (x) { return x.num === num; })[0]; return c ? c.votos : 0; };
     var v = e ? e.validos : 0, tem = v > 0, v1 = votos(11), v2 = votos(10);
-    var sig = [v1, v2, v, e ? e.brancos : 0, e ? e.nulos : 0, p ? p.munM + '|' + p.munA + '|' + p.secM + '|' + p.secA + '|' + p.munCom + '|' + p.ok + '|' + p.restAptos : '', ids.length].join(',');
+    var ld = D && D.vivo && D.vivo.historico && D.vivo.historico.lideranca;
+    var sig = [v1, v2, v, e ? e.brancos : 0, e ? e.nulos : 0, p ? p.munM + '|' + p.munA + '|' + p.secM + '|' + p.secA + '|' + p.munCom + '|' + p.ok + '|' + p.restAptos : '', ids.length, ld ? [ld.quem, ld.desde, ld.ultimoT, ld.tempo1, ld.tempo2, ld.vezes1, ld.vezes2, ld.mudancas].join('/') : ''].join(',');
     if (sig === sigPlacar) return; sigPlacar = sig;
     var lado = function (num, cor, cls, v, ml, sl, pos) {
       var c = ident(num), nome = (c.nome || (num === 11 ? 'Mailza Assis' : 'Alan Rick')), pct = tem ? v / votosTot() * 100 : null;
@@ -248,24 +251,38 @@
         '<div class="pg-mini">' + (tem ? '<span>' + pos + 'º lugar</span>' : '') + '<span>lidera em <b>' + ml + '</b> município' + (ml === 1 ? '' : 's') + '</span><span>e em <b>' + fmt(sl) + '</b> seç' + (sl === 1 ? 'ão' : 'ões') + '</span></div></div>';
     };
     function votosTot() { return v || 1; }
+    function dur(ms) {
+      if (!(ms > 0)) return '0 min';
+      if (ms < 60000) return 'menos de 1 min';
+      var m = Math.floor(ms / 60000), h = Math.floor(m / 60);
+      return h ? h + ' h ' + String(m % 60).padStart(2, '0') + ' min' : m + ' min';
+    }
+    function curto(nome) { return String(nome || '').split(' ').slice(0, 2).join(' '); }
     var pos1 = v1 >= v2 ? 1 : 2, pos2 = v2 > v1 ? 1 : 2, dif = Math.abs(v1 - v2), lid = v1 === v2 ? '' : (v1 > v2 ? (ident(11).nome || 'Mailza Assis') : (ident(10).nome || 'Alan Rick'));
     var pc1 = tem ? v1 / v * 100 : 0, pc2 = tem ? v2 / v * 100 : 0;
     // "tem como virar?": a diferença só é irreversível quando supera todos os votos que ainda podem entrar
     var rest = p ? p.restAptos : 0, completa = p && p.total > 0 && p.ok === p.total, nomeLid = lid ? lid.split(' ').slice(0, 2).join(' ') : '';
     var viraDef = !!(tem && lid && (completa || dif > rest));
     var viraMsg = !tem ? 'Ainda tem como virar' : !lid ? 'Empate: ainda tem como virar' : (completa ? 'Resultado final: ' + nomeLid + ' ganhou' : (viraDef ? 'Não tem como virar: ' + nomeLid + ' já ganhou' : 'Ainda tem como virar'));
+    // quem está ganhando, há quanto tempo está na frente e quantas vezes a liderança mudou ("—" enquanto não começou)
+    var n1 = curto(ident(11).nome || 'Mailza Assis'), n2 = curto(ident(10).nome || 'Alan Rick'), quemNome = ld && ld.quem === 1 ? n1 : ld && ld.quem === 2 ? n2 : '';
+    var atualMs = ld && ld.quem ? Math.max(0, ld.ultimoT - ld.desde) : 0;
+    var vence = '<div class="pg-vence">' +
+      '<span class="pg-vc ' + (tem && ld && ld.quem ? 'c' + ld.quem : '') + '"><i>Vantagem</i><b>' + (tem && lid ? '+' + fmt(dif) : '—') + '</b><small>' + (tem && lid ? 'votos sobre ' + esc(curto(v1 > v2 ? n2 : n1)) : '&nbsp;') + '</small></span>' +
+      '<span><i>Na frente há</i><b>' + (tem && ld && ld.quem ? dur(atualMs) : '—') + '</b><small>' + (tem && ld ? n1 + ' ' + dur(ld.tempo1) + ' · ' + n2 + ' ' + dur(ld.tempo2) : '&nbsp;') + '</small></span>' +
+      '<span><i>Mudanças de liderança</i><b>' + (tem && ld ? ld.mudancas : '—') + '</b><small>' + (tem && ld ? n1 + ' ' + ld.vezes1 + '× · ' + n2 + ' ' + ld.vezes2 + '× na frente' : '&nbsp;') + '</small></span></div>';
     el.innerHTML =
       lado(11, CORES[0], 'c1', v1, p ? p.munM : 0, p ? p.secM : 0, pos1) +
-      '<div class="pg-centro"><div class="pg-duelo' + (tem ? '' : ' vazio') + '">' + (tem ? '<i style="width:' + pc1.toFixed(2) + '%;background:' + CORES[0] + '">' + pf1(pc1) + '</i><i style="width:' + pc2.toFixed(2) + '%;background:' + CORES[1] + '">' + pf1(pc2) + '</i>' : '') + '</div>' +
+      '<div class="pg-centro"><div class="pg-duelo' + (tem ? '' : ' vazio') + '">' + (tem ? '<i class="e" style="width:' + pc1.toFixed(2) + '%;background:' + CORES[0] + '">' + pf1(pc1) + '</i><i class="d" style="width:' + pc2.toFixed(2) + '%;background:' + CORES[1] + '">' + pf1(pc2) + '</i>' : '') +
+        '<span class="pg-nome">' + (tem && lid ? '▲ ' + esc(curto(lid)).toUpperCase() + ' ESTÁ GANHANDO' : (tem ? 'EMPATE' : '—')) + '</span></div>' + vence +
       '<p class="pg-vira' + (viraDef ? ' def' : '') + '">' + esc(viraMsg) + '</p>' +
-      '<p class="pg-dif">' + (tem ? (lid ? '<b>' + esc(lid) + '</b> à frente por <b>' + fmt(dif) + '</b> votos' : 'Empate técnico') : 'A disputa aparece aqui assim que as primeiras urnas forem apuradas') + '</p>' +
       '<div class="pg-stats"><span><i>Votos válidos</i><b>' + fmt(v) + '</b></span><span><i>Brancos</i><b>' + fmt(e ? e.brancos : 0) + '</b></span><span><i>Nulos</i><b>' + fmt(e ? e.nulos : 0) + '</b></span>' +
       '<span><i>Municípios com voto</i><b>' + (p ? p.munCom : 0) + ' de ' + (p ? p.nMun : 22) + '</b></span></div></div>' +
       lado(10, CORES[1], 'c2', v2, p ? p.munA : 0, p ? p.secA : 0, pos2);
   }
   function tickBarra() {
     if (!barra) return;
-    renderGeral(); renderPlacar();
+    renderGeral(); renderPlacar(); rotulosFs();
     var cont = document.getElementById('etCont'), ult = document.getElementById('etUlt'), pl = document.getElementById('etPlacar');
     if (cont) {
       if (!st.auto) cont.textContent = 'Atualização automática desligada';
@@ -274,7 +291,7 @@
     }
     var ultimo = Math.max(st.ultimaData || 0, st.ultimaDetalhe || 0);
     if (ult) ult.textContent = 'Atualizado pela última vez: ' + (ultimo ? dataHora(ultimo) : '—');
-    var lk = document.getElementById('etLink');   // só o responsável, e nunca na página pública
+    var lk = document.getElementById('etLinkCfg');   // gerenciar o link: só o responsável, e nunca na página pública
     if (lk) lk.hidden = !(window.ApuracaoLinks && !window.APURACAO_PUBLICA && window.ApuracaoLinks.responsavel());
     var stt = document.getElementById('etStatus'), est = st.estado;
     if (stt) {
@@ -288,17 +305,53 @@
       pl.innerHTML = '<b style="color:' + (a.num === 11 ? CORES[0] : CORES[1]) + '">' + esc(a.nome.split(' ').slice(0, 2).join(' ')) + ' ' + (a.votos / v * 100).toFixed(1).replace('.', ',') + '%</b> × <b style="color:' + (b.num === 11 ? CORES[0] : CORES[1]) + '">' + (b.votos / v * 100).toFixed(1).replace('.', ',') + '% ' + esc(b.nome.split(' ').slice(0, 2).join(' ')) + '</b>';
     } else if (pl) pl.textContent = '';
   }
+  /* "Link público": só copia o endereço fixo para a área de transferência */
+  var PUBLICO_URL = 'https://iadoagro.github.io/agricultura/pages/publico', linkTimer = null;
+  function copiarLink(btn) {
+    function feito(ok) {
+      btn.textContent = ok ? 'Link copiado ✓' : 'Copie: ' + PUBLICO_URL;
+      clearTimeout(linkTimer); linkTimer = setTimeout(function () { btn.textContent = 'Link público'; }, 2200);
+    }
+    function reserva() {
+      var t = document.createElement('textarea'); t.value = PUBLICO_URL; t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (x) { /* sem permissão */ }
+      t.remove(); feito(ok);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(PUBLICO_URL).then(function () { feito(true); }, reserva); else reserva();
+  }
+  /* Tela cheia = o mesmo que F11: usa a API de tela cheia do navegador. No sistema (admin) também liga o layout
+     "só apuração"; na página pública esse layout já é permanente. */
+  function fsNavegador() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function pedeFsNavegador(on) {
+    var el = document.documentElement;
+    try {
+      if (on && !fsNavegador()) { var f = el.requestFullscreen || el.webkitRequestFullscreen; if (f) { var r = f.call(el); if (r && r.catch) r.catch(function () {}); } }
+      else if (!on && fsNavegador()) { var g = document.exitFullscreen || document.webkitExitFullscreen; if (g) { var q = g.call(document); if (q && q.catch) q.catch(function () {}); } }
+    } catch (e) { /* o navegador pode negar; o layout interno continua valendo */ }
+  }
+  function telaCheiaAtiva() { return window.APURACAO_PUBLICA ? fsNavegador() : (document.documentElement.classList.contains('et-fs') || fsNavegador()); }
+  function rotulosFs() {
+    var on = telaCheiaAtiva();
+    document.querySelectorAll('[data-fsbr]').forEach(function (b) { var t = on ? '✕ Sair da tela cheia' : '⛶ Tela cheia'; if (b.textContent !== t) b.textContent = t; b.classList.toggle('ativo', on); });
+  }
   function telaCheia(on) {
     var html = document.documentElement;
-    on = on == null ? !html.classList.contains('et-fs') : on;
-    html.classList.toggle('et-fs', on);
-    var b = document.getElementById('etFs'); if (b) b.textContent = on ? '✕ Sair da tela cheia' : '⛶ Tela cheia';
+    on = on == null ? !telaCheiaAtiva() : on;
+    if (!window.APURACAO_PUBLICA) html.classList.toggle('et-fs', on);
+    pedeFsNavegador(on);
+    rotulosFs();
     ajustaBarra();
     setTimeout(function () { ajustaBarra(); window.dispatchEvent(new Event('resize')); }, 60);   // mapas (Leaflet) recalculam o tamanho
   }
   function ajustaBarra() { if (barra) document.documentElement.style.setProperty('--et-barra-h', (barra.offsetHeight + 10) + 'px'); }
   window.addEventListener('resize', ajustaBarra);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.documentElement.classList.contains('et-fs') && !document.querySelector('.t26-cheia')) telaCheia(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !window.APURACAO_PUBLICA && document.documentElement.classList.contains('et-fs') && !document.querySelector('.t26-cheia')) telaCheia(false); });
+  // saiu da tela cheia do navegador (Esc/F11): no sistema volta também o layout normal
+  document.addEventListener('fullscreenchange', function () {
+    if (!fsNavegador() && !window.APURACAO_PUBLICA) document.documentElement.classList.remove('et-fs');
+    rotulosFs(); ajustaBarra(); setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
+  });
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-fsbr]')) telaCheia(); });
 
   function agenda() {
     st.proxima = Date.now() + st.seg * 1000;
@@ -320,7 +373,8 @@
     barra.addEventListener('change', aoMudar);
     barra.addEventListener('click', function (e) {
       if (e.target.id === 'etFs') telaCheia();
-      else if (e.target.id === 'etLink' && window.ApuracaoLinks) window.ApuracaoLinks.abrir();
+      else if (e.target.id === 'etLinkCfg' && window.ApuracaoLinks) window.ApuracaoLinks.abrir();
+      else if (e.target.id === 'etLink') copiarLink(e.target);
     });
   }
   window.addEventListener('et-atualizado', function (e) { st.ultimaDetalhe = e.detail || Date.now(); });
