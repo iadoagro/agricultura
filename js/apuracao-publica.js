@@ -1,4 +1,4 @@
-/* Página pública da apuração do 2º turno (pages/publico/index.html): sem login, sem menu, sem telas internas.
+/* Página pública da apuração do 2º turno (eleicoes/index.html): sem login, sem menu, sem telas internas.
    1) pergunta ao banco, pela única função aberta ao público
    (apuracao_publica_ativa), se o link está ativo; 2) só então carrega os scripts da apuração, um a um. Sem token válido
    nada da apuração é carregado. Os scripts abaixo são os únicos que esta página usa — não há admin-auth, admin-gate,
@@ -8,7 +8,8 @@
   window.APURACAO_PUBLICA = true;   // eleicoes-2turno.js: sem botão de gerar link
   window.MODO_PUBLICO = true;
   var aviso = document.getElementById('apPubAviso'), app = document.getElementById('apPubApp');
-  var BASE = '../../';   // esta página fica em pages/publico/
+  // raiz do site (…/agricultura/): calculada a partir deste próprio script, então vale em qualquer pasta
+  var BASE = new URL('../', document.currentScript ? document.currentScript.src : location.href).href;
   var SCRIPTS = [
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     BASE + 'js/tse-limite.js',
