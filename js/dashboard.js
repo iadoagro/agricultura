@@ -4001,6 +4001,10 @@
         var x = dataRef(a), y = dataRef(b);
         return x < y ? -1 : x > y ? 1 : 0;
       });
+    // nomes dos produtores sempre na mesma regra (João Silva de Souza), seja qual for a grafia da planilha
+    if (window.LANC_NOMES) TODOS.forEach(function (r) {
+      if (r.prod) r.prod = window.LANC_NOMES.formatar(r.prod, 'nome');
+    });
     META = pacote.meta || {};
     N_CORRENTE = pacote.registros.length;
     FONTE = fonte;

@@ -349,7 +349,7 @@
           '</tr></thead><tbody>' + lista.map(function (s, i) {
             return '<tr><td>' + esc(window.DATA_BR.dataHoraBr(s.criado_em)) + '</td>' +
               '<td><span class="lanc-selo ' + (s.tipo === 'excluir' ? 'lanc-selo-excluir' : 'lanc-selo-editar') + '">' + (s.tipo === 'excluir' ? 'Exclusão' : 'Edição') + '</span></td>' +
-              '<td>' + esc(s.nome_beneficiario || '—') + '</td>' +
+              '<td>' + esc(nomeFmt(s.nome_beneficiario) || '—') + '</td>' +
               '<td>' + esc(nomeDeEmail(s.solicitado_por_email)) + '</td>' +
               '<td class="lanc-motivo">' + esc(s.motivo) + '</td>' +
               '<td class="lanc-tabela-acoes">' +
@@ -879,6 +879,11 @@
       tam + botoes + '</span>';
   }
 
+  // nomes na mesma regra do formulário (João Silva de Souza), mesmo os de fichas antigas
+  function nomeFmt(n) {
+    return window.LANC_NOMES && n ? window.LANC_NOMES.formatar(String(n), 'nome') : (n || '');
+  }
+
   function dataBr(iso) {
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
     return m ? m[3] + '/' + m[2] + '/' + m[1] : '—';
@@ -961,7 +966,7 @@
             // Lançamento de outra pessoa: só visualizar (o servidor também barra).
             var meu = comPoder || meusEmails.indexOf(String(r.criado_por_email || '').toLowerCase()) >= 0;
             return '<tr><td>' + esc(window.DATA_BR.dataHoraBr(r.criado_em)) + '</td>' +
-              '<td>' + esc(r.tipo_servico || '—') + '</td><td>' + esc(r.nome_beneficiario) + selo + '</td>' +
+              '<td>' + esc(r.tipo_servico || '—') + '</td><td>' + esc(nomeFmt(r.nome_beneficiario)) + selo + '</td>' +
               '<td>' + esc(r.municipio || '—') + '</td><td>' + esc(r.escritorio_local || '—') + '</td>' +
               '<td>' + esc(dataBr(r.data_vistoria)) + '</td>' +
               '<td class="num">' + esc(medidaDe(r, 'ha')) + '</td>' +
