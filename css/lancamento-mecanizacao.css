@@ -294,9 +294,9 @@
 
 /* registros por página, ao lado do paginador */
 .lanc-pag-dir{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px 16px}
-.lanc-pag-por{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--tinta3);margin:0}
-.lanc-pag-por select{min-height:34px;padding:4px 28px 4px 10px;border:1px solid var(--linha-t);
-  border-radius:8px;background:var(--superficie);color:var(--tinta);font:inherit;font-size:13px;font-weight:600}
+.lanc-pag-tam{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:12.5px;color:var(--tinta3)}
+.lanc-pag-tam .btn{min-width:34px;padding:6px 10px;justify-content:center}
+.lanc-pag-tam .lanc-pag-atual{opacity:1;cursor:default;background:var(--acento-fundo);border-color:var(--acento-fundo);color:#fff}
 
 /* opções (máquinas, implementos…): sem fundo cinza — só o texto e a caixa de marcar */
 .lanc-caixas label{background:transparent}

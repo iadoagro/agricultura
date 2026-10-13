@@ -820,17 +820,18 @@
         paginaAtual = 1;
         carregarRecentes();
       });
-      el('lancPaginacao').addEventListener('change', function (e) {
-        if (e.target.id !== 'lancPorPagina') return;
-        var novo = +e.target.value;
-        if (OPCOES_POR_PAGINA.indexOf(novo) < 0) return;
-        var primeiro = (paginaAtual - 1) * POR_PAGINA;   // mantém o primeiro item à vista
-        POR_PAGINA = novo;
-        paginaAtual = Math.floor(primeiro / POR_PAGINA) + 1;
-        try { localStorage.setItem(CHAVE_POR_PAGINA, String(novo)); } catch (err) { /* sem armazenamento */ }
-        carregarRecentes();
-      });
       el('lancPaginacao').addEventListener('click', function (e) {
+        var t = e.target.closest('button[data-tam]');
+        if (t) {   // quantos registros por página
+          var novo = +t.getAttribute('data-tam');
+          if (OPCOES_POR_PAGINA.indexOf(novo) < 0 || novo === POR_PAGINA) return;
+          var primeiro = (paginaAtual - 1) * POR_PAGINA;   // mantém o primeiro item à vista
+          POR_PAGINA = novo;
+          paginaAtual = Math.floor(primeiro / POR_PAGINA) + 1;
+          try { localStorage.setItem(CHAVE_POR_PAGINA, String(novo)); } catch (err) { /* sem armazenamento */ }
+          carregarRecentes();
+          return;
+        }
         var b = e.target.closest('button[data-pagina]');
         if (!b || b.disabled) return;
         paginaAtual = +b.getAttribute('data-pagina');
@@ -863,9 +864,11 @@
     var de = Math.max(1, Math.min(paginaAtual - 2, paginas - 4)), ate = Math.min(paginas, de + 4);
     var nums = '';
     for (var p = de; p <= ate; p++) nums += bt(p, p, 'Página ' + p, p === paginaAtual);
-    var opcoes = OPCOES_POR_PAGINA.map(function (n) {
-      return '<option value="' + n + '"' + (n === POR_PAGINA ? ' selected' : '') + '>' + n + '</option>';
-    }).join('');
+    // "Por página: 10 20 50 100": botões ao lado do paginador (ficam mesmo com uma página só)
+    var tam = '<span class="lanc-pag-tam">Por página ' + OPCOES_POR_PAGINA.map(function (n) {
+      return '<button type="button" class="btn' + (n === POR_PAGINA ? ' lanc-pag-atual' : '') + '" data-tam="' + n + '"' +
+        ' aria-pressed="' + (n === POR_PAGINA ? 'true' : 'false') + '">' + n + '</button>';
+    }).join('') + '</span>';
     var botoes = paginas > 1
       ? '<span class="lanc-pag-botoes">' +
         bt(1, '«', 'Primeira página') + bt(paginaAtual - 1, '‹', 'Página anterior') + nums +
@@ -873,8 +876,7 @@
       : '';
     return '<span class="lanc-pag-info">' + ini.toLocaleString('pt-BR') + '–' + fim.toLocaleString('pt-BR') + ' de ' + totalLinhas.toLocaleString('pt-BR') + '</span>' +
       '<span class="lanc-pag-dir">' +
-      '<label class="lanc-pag-por">Registros por página<select id="lancPorPagina" aria-label="Registros por página">' + opcoes + '</select></label>' +
-      botoes + '</span>';
+      tam + botoes + '</span>';
   }
 
   function dataBr(iso) {
