@@ -936,3 +936,21 @@ body {
 .icon-button{width:36px}
 .tool-button:hover,.icon-button:hover{background:#f8fafc;border-color:#94a3b8}
 .zoom-label{color:#475569;font-weight:600}
+
+/* modo admin: caixas móveis e formulário de edição */
+body.org-admin .org-node{cursor:grab}
+body.org-arrastando,body.org-arrastando .org-node{cursor:grabbing!important;user-select:none}
+.org-edit-campo{display:grid;gap:4px;margin-bottom:10px;font-size:12px;font-weight:700;color:#42536e}
+.org-edit-campo input{padding:9px 10px;border:1.5px solid #cbd8e9;border-radius:8px;font:inherit;font-size:14px;font-weight:500;color:#172b4d}
+.org-edit-campo input:focus{outline:none;border-color:#256dd3;box-shadow:0 0 0 3px rgba(37,109,211,.18)}
+.org-edit-acoes{display:flex;gap:8px;flex-wrap:wrap}
+.org-edit-salvar{padding:9px 18px;border:none;border-radius:8px;background:#256dd3;color:#fff;font-weight:700;cursor:pointer}
+.org-edit-salvar:disabled{opacity:.6;cursor:wait}
+.org-edit-restaurar{padding:9px 14px;border:1px solid #cbd8e9;border-radius:8px;background:#fff;color:#42536e;font-weight:600;cursor:pointer}
+.org-edit-msg{min-height:18px;margin:8px 0 0;font-size:12.5px;font-weight:600;color:#15803d}
+.org-edit-msg.erro{color:#b91c1c}
+.org-edit-dica{margin:8px 0 0;font-size:12px;color:#62728a;line-height:1.4}
+.org-edit-previa{min-height:15px;font-size:12px;font-weight:600;color:#256dd3}
+.org-edit-ato{display:grid;grid-template-columns:1fr 1.3fr;gap:10px}
+.org-edit-campo select{padding:9px 10px;border:1.5px solid #cbd8e9;border-radius:8px;font:inherit;font-size:14px;font-weight:500;color:#172b4d;background:#fff}
+.org-edit-campo select:focus{outline:none;border-color:#256dd3;box-shadow:0 0 0 3px rgba(37,109,211,.18)}

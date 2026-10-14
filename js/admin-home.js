@@ -111,7 +111,10 @@
         return cartaoPend('dashboard.html#lancamento', (r.solicitacoes || []).length, 'solicitações de lançamentos', 'aviso');
       }));
       itens.push(auth.listarSolicitacoes().then(function (l) {
-        var n = (l || []).filter(function (x) { return x.status === 'pendente'; }).length;
+        // a conta do responsável não aparece na lista de usuários, então não entra na contagem
+        var n = (l || []).filter(function (x) {
+          return x.status === 'pendente' && String(x.email || '').toLowerCase() !== (auth.RESPONSAVEL_EMAIL || 'root@root.com');
+        }).length;
         return cartaoPend('admin-usuarios.html', n, 'cadastros de usuário para aprovar', 'aviso');
       }));
       itens.push(auth.listarPedidosReset().then(function (l) {

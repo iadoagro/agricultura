@@ -14,7 +14,7 @@
 <script src="../js/admin-gate.js?v=2026092530"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
 <script src="../js/nav.js?v=2026101201"></script>
-<link rel="stylesheet" href="../css/organograma.css?v=2026092539">
+<link rel="stylesheet" href="../css/organograma.css?v=2026101403">
 <script src="../js/dados-seagri.js?v=2026081307"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -337,6 +337,24 @@ function isVisible(n){if(hasCollapsedAncestor(n))return false;if(filterVisible==
 
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 
+// Na caixa só vai o nome e o primeiro sobrenome ("Eneide Thaumaturgo Motta" -> "Eneide
+// Thaumaturgo"); partículas ficam com o sobrenome ("Maria da Conceição Almeida" -> "Maria da
+// Conceição"). O nome inteiro continua no painel lateral e na busca.
+function orgNomeCurto(nome){
+  const p=String(nome||'').trim().split(/\s+/).filter(Boolean);
+  if(p.length<=2)return p.join(' ');
+  const PART=new Set(['da','de','do','das','dos','e']);
+  let i=1;
+  while(i<p.length-1&&PART.has(p[i].toLowerCase()))i++;
+  return p.slice(0,i+1).join(' ');
+}
+function orgTextoCaixa(holder){
+  if(!holder)return '—';
+  const linhas=String(holder).split('\n');
+  linhas[0]=orgNomeCurto(linhas[0]);
+  return linhas.join('\n');
+}
+
 function createNode(n){
   const r=rectFor(n);
   const el=document.createElement("button");
@@ -348,14 +366,15 @@ function createNode(n){
   const ttl=document.createElement("span");ttl.className="node-title";ttl.textContent=n.title;hdr.appendChild(ttl);
   const sg=document.createElement("span");sg.className="node-sigla";sg.textContent=n.sigla;hdr.appendChild(sg);
   if(n.children.length>0){const tg=document.createElement("span");tg.className="node-toggle";tg.textContent="−";hdr.appendChild(tg)}
-  const body=document.createElement("div");body.className="node-body";body.textContent=n.holder||"—";
+  const body=document.createElement("div");body.className="node-body";body.textContent=orgTextoCaixa(n.holder);
   el.append(hdr,body);
   const pdfPath=getPDFPath(n.holder);
   if(pdfPath)el.dataset.hasPdf="true";
   el.addEventListener("click",e=>{
+    if(window._orgMovido){window._orgMovido=false;e.stopPropagation();return}   // fim de um arrasto, não clique
     if(e.target.closest(".node-toggle")){e.stopPropagation();toggleNode(n);return}
     e.stopPropagation();
-    openDetailPanel(n,pdfPath);
+    openDetailPanel(n,getPDFPath(n.holder));
   });
   el.addEventListener("mouseenter",e=>showTip(e,n));
   el.addEventListener("mousemove",moveTip);
@@ -601,6 +620,8 @@ function openDetailPanel(n,pdfPath){
     }
     body.appendChild(sec);
   }
+
+  if(adminMode&&window.montarEdicaoNo)window.montarEdicaoNo(n,body);
 
   detailPanel.classList.add("open");
 }
@@ -1364,11 +1385,13 @@ fetch('../data/contatos.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).th
     CONTATOS_DATA=d;try{localStorage.setItem('seagri_contatos',JSON.stringify(d))}catch(e){}
   }
 }).catch(()=>{});
-function loadContatosAdmin(){return CONTATOS_DATA;}
+const TEL_AJUSTES={};   // telefones ajustados pelo modo admin (tabela organograma_ajustes)
+function loadContatosAdmin(){return Object.assign({},CONTATOS_DATA,TEL_AJUSTES);}
 function formatWALink(tel){const d=tel.replace(/\D/g,'');if(!d)return'#';return'https://wa.me/'+(d.startsWith('55')&&d.length>=12?d:'55'+d);}
 function formatTelDisplay(tel){const d=tel.replace(/\D/g,'');if(d.length===11)return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return tel;}
 
 function updateAdminBtn(){
+  document.body.classList.toggle('org-admin',adminMode);
   const btn=document.getElementById('btnAdmin');
   if(adminMode){btn.textContent='Admin ✓';btn.classList.add('admin-ativo')}
   else{btn.textContent='Admin';btn.classList.remove('admin-ativo')}
@@ -1403,7 +1426,7 @@ function submitAdminPwd(){
       sessionStorage.setItem('seagri_admin','1');
       updateAdminBtn();
       adminOverlay.classList.remove('show');
-      showToast('Modo admin ativado — clique em uma caixa para ver o contato');
+      showToast('Modo admin ativado — arraste as caixas para mover e clique para editar');
     }else{
       adminErr.textContent='Senha incorreta. Tente novamente.';
       adminPwdInput.value='';adminPwdInput.focus();
@@ -1416,6 +1439,244 @@ document.getElementById('adminOk').addEventListener('click',submitAdminPwd);
 document.getElementById('adminCancel').addEventListener('click',()=>adminOverlay.classList.remove('show'));
 adminPwdInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitAdminPwd();if(e.key==='Escape')adminOverlay.classList.remove('show');});
 adminOverlay.addEventListener('click',e=>{if(e.target===adminOverlay)adminOverlay.classList.remove('show');});
+
+// ===== Ajustes do organograma (modo Admin): mover caixas e editar o responsável =====
+// Gravados na tabela organograma_ajustes (database/organograma-ajustes.sql): todo
+// mundo lê; só a conta responsável grava (política do banco).
+const ORG_ORIGINAL=new Map();   // id -> valores do desenho original (para "restaurar")
+nodes.forEach(n=>ORG_ORIGINAL.set(n.id,{holder:n.holder,matricula:n.matricula,x:n.x,y:n.y}));
+
+function orgCfg(){return window.BANCO_CONFIG||{};}
+function orgUrl(){return (orgCfg().url||'').replace(/\/$/,'')+'/rest/v1/organograma_ajustes';}
+
+/** Cabeçalho com a sessão do login do site (só a conta responsável grava). */
+async function orgCabecalhoAuth(){
+  const auth=window.ADMIN_AUTH;
+  const sessao=auth&&auth.garantirSessao?await auth.garantirSessao().catch(()=>null):null;
+  if(!sessao||!sessao.access_token)throw new Error('Sua sessão expirou. Recarregue a página e entre de novo.');
+  return {apikey:orgCfg().chavePublica,Authorization:'Bearer '+sessao.access_token,'Content-Type':'application/json'};
+}
+
+async function orgGravar(id,campos){
+  const h=await orgCabecalhoAuth();
+  const email=(window.ADMIN_AUTH.sessaoAtual()?.user?.email)||'';
+  const r=await fetch(orgUrl()+'?on_conflict=id',{
+    method:'POST',
+    headers:{...h,Prefer:'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify([{id,...campos,atualizado_em:new Date().toISOString(),atualizado_por:email}])
+  });
+  if(r.status===401||r.status===403)throw new Error('Só a conta do responsável pode salvar alterações no organograma.');
+  if(!r.ok)throw new Error('Não foi possível salvar (HTTP '+r.status+'). O SQL database/organograma-ajustes.sql já foi executado?');
+}
+
+/** Texto da caixa sem estourar: reduz a fonte do corpo até caber. */
+function orgAjustarCorpo(n){
+  const el=rendered.get(n.id);if(!el)return;
+  const body=el.querySelector('.node-body');if(!body)return;
+  body.textContent=orgTextoCaixa(n.holder);
+  body.style.fontSize='';
+  let fs=parseFloat(getComputedStyle(body).fontSize)||7;
+  while(body.scrollHeight>body.clientHeight+1&&fs>4){fs-=.5;body.style.fontSize=fs+'px';}
+  el.dataset.hasPdf=getPDFPath(n.holder||'')?'true':'';
+  if(!el.dataset.hasPdf)delete el.dataset.hasPdf;
+}
+
+function orgPosicionar(n){
+  const el=rendered.get(n.id);if(!el)return;
+  const r=rectFor(n);el.style.left=r.x+'px';el.style.top=r.y+'px';
+}
+
+/** Posição de cada caixa depois do desenho automático (base dos deslocamentos). */
+const ORG_BASE=new Map();
+nodes.forEach(n=>ORG_BASE.set(n.id,{x:n.x,y:n.y}));
+
+function orgDeslocamento(n){
+  const b=ORG_BASE.get(n.id);
+  return {dx:Math.round(xPx(n.x-b.x)*10)/10,dy:Math.round(yPx(n.y-b.y)*10)/10};
+}
+
+// carrega os ajustes salvos (leitura pública)
+(function carregarAjustes(){
+  const c=orgCfg();if(!c.url||!c.chavePublica)return;
+  fetch(orgUrl()+'?select=id,holder,matricula,telefone,dx,dy',{headers:{apikey:c.chavePublica},cache:'no-store'})
+    .then(r=>r.ok?r.json():[]).then(linhas=>{
+      let mudouPos=false;
+      (linhas||[]).forEach(a=>{
+        const n=byId.get(a.id);if(!n)return;
+        if(a.holder!=null){n.holder=a.holder;}
+        if(a.matricula!=null){n.matricula=a.matricula;}
+        if(a.telefone!=null&&a.telefone!==''){TEL_AJUSTES[n.id]=a.telefone;}
+        if(a.holder!=null)orgAjustarCorpo(n);
+        if(a.dx!=null||a.dy!=null){
+          const b=ORG_BASE.get(n.id);
+          n.x=b.x+(Number(a.dx)||0)*SW/RW;
+          n.y=b.y+(Number(a.dy)||0)*SH/RH;
+          orgPosicionar(n);mudouPos=true;
+        }
+      });
+      if(mudouPos)drawLines();
+    }).catch(()=>{});
+})();
+
+// ---- mover caixas (só com o modo Admin ligado; Shift leva a subárvore junto)
+function orgSubarvore(n){
+  const out=[n];
+  n.children.forEach(id=>{const c=byId.get(id);if(c)out.push(...orgSubarvore(c));});
+  return out;
+}
+let orgArrasto=null;
+viewport.addEventListener('mousedown',e=>{
+  if(!adminMode||e.button!==0)return;
+  const el=e.target.closest('.org-node');
+  if(!el||e.target.closest('.node-toggle'))return;
+  const n=byId.get(el.dataset.id);if(!n)return;
+  const grupo=e.shiftKey?orgSubarvore(n):[n];
+  orgArrasto={n,sx:e.clientX,sy:e.clientY,moveu:false,grupo,orig:grupo.map(g=>({g,x:g.x,y:g.y}))};
+});
+window.addEventListener('mousemove',e=>{
+  if(!orgArrasto)return;
+  const dxs=e.clientX-orgArrasto.sx,dys=e.clientY-orgArrasto.sy;
+  if(!orgArrasto.moveu){
+    if(Math.hypot(dxs,dys)<5)return;
+    orgArrasto.moveu=true;hideTip();
+    document.body.classList.add('org-arrastando');
+  }
+  const dx=dxs/scale*SW/RW,dy=dys/scale*SH/RH;
+  orgArrasto.orig.forEach(o=>{o.g.x=o.x+dx;o.g.y=o.y+dy;orgPosicionar(o.g);});
+  drawLines();
+});
+window.addEventListener('mouseup',()=>{
+  const a=orgArrasto;orgArrasto=null;
+  document.body.classList.remove('org-arrastando');
+  if(!a||!a.moveu)return;
+  window._orgMovido=true;                 // o "click" que vem logo depois não abre o painel
+  setTimeout(()=>{window._orgMovido=false;},0);
+  Promise.all(a.grupo.map(g=>orgGravar(g.id,orgDeslocamento(g))))
+    .then(()=>showToast(a.grupo.length>1?'Posições salvas':'Posição salva'))
+    .catch(err=>showToast(err.message));
+});
+
+// "416" ou "416/2026" vira "Portaria Nº 416/2026" (ano atual quando não digitado).
+// "Decreto 1.855-P/2023" e textos já completos ficam como estão, só com o "Nº" padronizado.
+function orgFormatarAto(v){
+  let t=String(v||'').trim().replace(/\s+/g,' ');
+  if(!t)return '';
+  const ano=String(new Date().getFullYear());
+  let m=/^(\d{1,4})$/.exec(t);
+  if(m)return 'Portaria Nº '+m[1]+'/'+ano;
+  m=/^(\d{1,4})\s*\/\s*(\d{2}|\d{4})$/.exec(t);
+  if(m)return 'Portaria Nº '+m[1]+'/'+(m[2].length===2?'20'+m[2]:m[2]);
+  m=/^(portaria|decreto)\s*(?:n[ºo°.]*)?\s*(.+)$/i.exec(t);
+  if(m){
+    let resto=m[2].trim();
+    const so=/^(\d{1,4})$/.exec(resto);
+    if(so)resto=so[1]+'/'+ano;
+    const tipo=m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase();
+    return tipo+' Nº '+resto;
+  }
+  return t;
+}
+
+// ---- formulário de edição no painel lateral
+window.montarEdicaoNo=function(n,body){
+  const sec=makeDetailSection('Editar (modo admin)','✏️');
+  const linhas=(n.holder||'').split('\n');
+  const campo=(rot,valor,ph)=>{
+    const l=document.createElement('label');l.className='org-edit-campo';
+    const t=document.createElement('span');t.textContent=rot;
+    const i=document.createElement('input');i.type='text';i.value=valor||'';i.placeholder=ph||'';i.autocomplete='off';
+    l.append(t,i);sec.appendChild(l);return i;
+  };
+  const iNome=campo('Servidor responsável',linhas[0]||'','Nome completo');
+  // Nome + tipo do ato (Portaria/Decreto) + número: a caixa mostra "Portaria Nº 416/2026"
+  const atoAtual=(linhas.slice(1).join(' ').trim());
+  const mAto=/^(portaria|decreto)\s*(?:n[ºo°.]*)?\s*(.*)$/i.exec(atoAtual);
+  const rowAto=document.createElement('div');rowAto.className='org-edit-ato';
+  const lTipo=document.createElement('label');lTipo.className='org-edit-campo';
+  const tTipo=document.createElement('span');tTipo.textContent='Tipo do ato';
+  const iTipo=document.createElement('select');
+  ['Portaria','Decreto'].forEach(t=>{const o=document.createElement('option');o.textContent=t;iTipo.appendChild(o);});
+  iTipo.value=mAto&&/^decreto$/i.test(mAto[1])?'Decreto':'Portaria';
+  lTipo.append(tTipo,iTipo);
+  const lNum=document.createElement('label');lNum.className='org-edit-campo';
+  const tNum=document.createElement('span');tNum.textContent='Número';
+  const iAto=document.createElement('input');iAto.type='text';iAto.autocomplete='off';
+  iAto.value=mAto?mAto[2].trim():atoAtual;
+  iAto.placeholder='Ex.: 416 ou 416/2026';
+  lNum.append(tNum,iAto);
+  rowAto.append(lTipo,lNum);
+  sec.appendChild(rowAto);
+  const prevAto=document.createElement('small');prevAto.className='org-edit-previa';
+  sec.appendChild(prevAto);
+  const montarAto=()=>{
+    const n0=iAto.value.trim().replace(/\s+/g,' ');
+    if(!n0)return '';
+    const f=orgFormatarAto(iTipo.value+' '+n0);   // "Portaria 416" -> "Portaria Nº 416/2026"
+    return f;
+  };
+  const atualizarPrevia=()=>{
+    const nome=iNome.value.trim();
+    const ato=montarAto();
+    prevAto.textContent=(nome||ato)?'Na caixa: '+[nome,ato].filter(Boolean).join(' — '):'';
+  };
+  iAto.addEventListener('input',atualizarPrevia);
+  iNome.addEventListener('input',atualizarPrevia);
+  iTipo.addEventListener('change',atualizarPrevia);
+  iAto.addEventListener('blur',()=>{
+    const f=montarAto();
+    if(f){const m=/^(?:Portaria|Decreto)\s+Nº\s+(.+)$/i.exec(f);if(m)iAto.value=m[1];}
+    atualizarPrevia();
+  });
+  atualizarPrevia();
+  const iMat=campo('Matrícula',n.matricula||'','');
+  const iTel=campo('Telefone (WhatsApp)',(loadContatosAdmin())[n.id]||'','(68) 90000-0000');
+  const msg=document.createElement('p');msg.className='org-edit-msg';
+  const acoes=document.createElement('div');acoes.className='org-edit-acoes';
+  const bSalvar=document.createElement('button');bSalvar.type='button';bSalvar.className='org-edit-salvar';bSalvar.textContent='Salvar';
+  const bRest=document.createElement('button');bRest.type='button';bRest.className='org-edit-restaurar';bRest.textContent='Restaurar original';
+  acoes.append(bSalvar,bRest);
+  sec.append(acoes,msg);
+  const dica=document.createElement('p');dica.className='org-edit-dica';
+  dica.textContent='Arraste a caixa para mudá-la de lugar (Shift leva as caixas ligadas a ela junto).';
+  sec.appendChild(dica);
+  body.insertBefore(sec,body.firstChild);
+
+  bSalvar.addEventListener('click',async()=>{
+    const nome=iNome.value.trim().replace(/\s+/g,' ');
+    const ato=montarAto();
+    const holder=nome?(nome+(ato?'\n'+ato:'')):'';
+    const tel=iTel.value.trim();
+    bSalvar.disabled=true;msg.textContent='Salvando…';msg.className='org-edit-msg';
+    try{
+      await orgGravar(n.id,{holder,matricula:iMat.value.trim(),telefone:tel});
+      n.holder=holder;n.matricula=iMat.value.trim();
+      if(tel)TEL_AJUSTES[n.id]=tel;else delete TEL_AJUSTES[n.id];
+      orgAjustarCorpo(n);drawLines();
+      showToast('Alterações salvas');
+      openDetailPanel(n,getPDFPath(n.holder));
+    }catch(err){
+      msg.textContent=err.message;msg.className='org-edit-msg erro';
+      bSalvar.disabled=false;
+    }
+  });
+  bRest.addEventListener('click',async()=>{
+    const o=ORG_ORIGINAL.get(n.id),b=ORG_BASE.get(n.id);
+    bRest.disabled=true;msg.textContent='Restaurando…';msg.className='org-edit-msg';
+    try{
+      const h=await orgCabecalhoAuth();
+      const r=await fetch(orgUrl()+'?id=eq.'+encodeURIComponent(n.id),{method:'DELETE',headers:h});
+      if(r.status===401||r.status===403)throw new Error('Só a conta do responsável pode restaurar.');
+      if(!r.ok)throw new Error('Não foi possível restaurar (HTTP '+r.status+').');
+      n.holder=o.holder;n.matricula=o.matricula;n.x=b.x;n.y=b.y;delete TEL_AJUSTES[n.id];
+      orgAjustarCorpo(n);orgPosicionar(n);drawLines();
+      showToast('Caixa restaurada ao original');
+      openDetailPanel(n,getPDFPath(n.holder));
+    }catch(err){
+      msg.textContent=err.message;msg.className='org-edit-msg erro';
+      bRest.disabled=false;
+    }
+  });
+};
 
 // ===== PDF Overlay Viewer =====
 let _pdfPath='',_pdfZoom=100;
