@@ -14,6 +14,8 @@ declare(strict_types=1);
  *   listar   — uma página de lançamentos, com filtros (campos "f_*"). Por
  *              padrão só os da própria pessoa (login + e-mails da planilha
  *              ligados a ele); "Lançado por" mostra os de outras pessoas.
+ *   tecnicos — técnicos já relacionados a cada município/escritório (conta nos lançamentos).
+ *   pdf      — link temporário do PDF anexado a um lançamento.
  *   carregar — devolve UM lançamento completo, para abrir na edição/visualização.
  *   editar   — root@root.com grava as alterações direto; qualquer outra
  *              pessoa (dona do lançamento) gera um PEDIDO de edição, com
@@ -209,7 +211,6 @@ function lerRegistroDoPost(string $emailConfirmado): array
         'horas_maquina' => $num('horas_maquina'),
         'quantidade_acudes' => $inteiro('quantidade_acudes'),
         'pontos_geo' => $json('pontos_geo', []),
-        'tipo_trator' => $txt('tipo_trator'),
         'maquinas' => $lista('maquinas'),
         'implementos' => $lista('implementos'),
         'tipo_uso' => $txt('tipo_uso'),
@@ -229,8 +230,92 @@ function lerRegistroDoPost(string $emailConfirmado): array
     if ($registro['tipo_servico'] === 'Açudagem' && (int) ($registro['quantidade_acudes'] ?? 0) < 1) {
         responder(400, ['ok' => false, 'erro' => 'Informe pelo menos 1 tanque/açude para um lançamento de Açudagem.']);
     }
+    if ($registro['tipo_servico'] === 'Açudagem' && (float) ($registro['horas_maquina'] ?? 0) <= 0) {
+        responder(400, ['ok' => false, 'erro' => 'Informe as horas de máquina para um lançamento de Açudagem.']);
+    }
+    if (in_array($registro['tipo_servico'], ['Mecanização', 'Açudagem'], true) && count($registro['maquinas']) < 1) {
+        responder(400, ['ok' => false, 'erro' => 'Marque pelo menos uma máquina utilizada.']);
+    }
 
     return $registro;
+}
+
+const BUCKET_PDF = 'mecanizacao-formularios';
+const PDF_MAX_BYTES = 3 * 1024 * 1024;
+
+/** Lê e valida o PDF anexado (campo "pdf"): no máximo 1 arquivo, só PDF, até
+ *  3 MB. Devolve o conteúdo ou null quando nada foi anexado. Confere o
+ *  começo do arquivo ("%PDF-"), não só a extensão que o navegador mandou. */
+function lerPdfDoPost(): ?string
+{
+    if (!isset($_FILES['pdf']) || !is_array($_FILES['pdf']) || is_array($_FILES['pdf']['error'])) {
+        return null;
+    }
+    $f = $_FILES['pdf'];
+    if ($f['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    if ($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE || (int) $f['size'] > PDF_MAX_BYTES) {
+        responder(400, ['ok' => false, 'erro' => 'O PDF deve ter no máximo 3 MB.']);
+    }
+    if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
+        responder(400, ['ok' => false, 'erro' => 'Não foi possível receber o PDF. Tente anexar de novo.']);
+    }
+    $conteudo = (string) file_get_contents($f['tmp_name']);
+    if (strncmp($conteudo, '%PDF-', 5) !== 0) {
+        responder(400, ['ok' => false, 'erro' => 'Anexe somente arquivo PDF.']);
+    }
+    return $conteudo;
+}
+
+/** Envia o PDF para o Storage e devolve o caminho gravado (ano/uuid.pdf). */
+function enviarPdf(string $supabaseUrl, string $serviceRole, string $conteudo): string
+{
+    $caminho = date('Y') . '/' . bin2hex(random_bytes(16)) . '.pdf';
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'POST',
+        '/storage/v1/object/' . BUCKET_PDF . '/' . $caminho,
+        $conteudo, ['Content-Type: application/pdf']
+    );
+    if ($status < 200 || $status >= 300) {
+        responder(502, ['ok' => false, 'erro' => 'Não foi possível guardar o PDF: ' . (string) ($corpo['message'] ?? $corpo['error'] ?? 'erro no armazenamento') . '.']);
+    }
+    return $caminho;
+}
+
+/** Já existe lançamento do mesmo CPF, do mesmo serviço e na mesma data de
+ *  vistoria? Um produtor pode ter vários lançamentos de Mecanização ou
+ *  Açudagem; só é repetido quando os três coincidem. $idIgnorar é o próprio
+ *  lançamento, na edição. Devolve o lançamento encontrado ou null. */
+function lancamentoIgual(string $supabaseUrl, string $serviceRole, string $cpf, string $tipo, string $data, string $idIgnorar = ''): ?array
+{
+    $digitos = preg_replace('/\D/', '', $cpf);
+    $formatado = strlen($digitos) === 11
+        ? substr($digitos, 0, 3) . '.' . substr($digitos, 3, 3) . '.' . substr($digitos, 6, 3) . '-' . substr($digitos, 9, 2)
+        : $cpf;
+    $caminho = '/rest/v1/mecanizacao_lancamentos?select=id,tipo_servico,data_vistoria,nome_beneficiario' .
+        '&cpf=in.(' . urlencode('"' . $formatado . '","' . $digitos . '"') . ')' .
+        '&tipo_servico=eq.' . urlencode($tipo) . '&data_vistoria=eq.' . urlencode($data) . '&limit=1';
+    if ($idIgnorar !== '') {
+        $caminho .= '&id=neq.' . urlencode($idIgnorar);
+    }
+    [$st, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'GET', $caminho);
+    return ($st >= 200 && $st < 300 && is_array($corpo) && count($corpo)) ? $corpo[0] : null;
+}
+
+/** Barra o lançamento repetido (mesmo CPF + serviço + data da vistoria). */
+function recusarSeRepetido(string $supabaseUrl, string $serviceRole, array $registro, string $idIgnorar = ''): void
+{
+    $cpf = (string) ($registro['cpf'] ?? '');
+    $tipo = (string) ($registro['tipo_servico'] ?? '');
+    $data = (string) ($registro['data_vistoria'] ?? '');
+    if ($cpf === '' || $tipo === '' || $data === '') {
+        return;
+    }
+    if (lancamentoIgual($supabaseUrl, $serviceRole, $cpf, $tipo, $data, $idIgnorar) !== null) {
+        responder(409, ['ok' => false, 'erro' => 'Já existe um lançamento de ' . $tipo . ' deste CPF com a mesma data de vistoria (' .
+            date('d/m/Y', strtotime($data)) . '). Confira para não duplicar.']);
+    }
 }
 
 /** Confere se quem está confirmado (por emailAutenticado) pode ler/editar o
@@ -478,6 +563,13 @@ if ($acao === 'salvar') {
     }
 
     $registro = lerRegistroDoPost($emailConfirmado);
+    recusarSeRepetido($supabaseUrl, $serviceRole, $registro);
+
+    // PDF opcional da ficha: validado antes de gravar o lançamento.
+    $pdf = lerPdfDoPost();
+    if ($pdf !== null) {
+        $registro['pdf_arquivo'] = enviarPdf($supabaseUrl, $serviceRole, $pdf);
+    }
 
     [$status, $corpo] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'POST', '/rest/v1/mecanizacao_lancamentos',
@@ -485,6 +577,10 @@ if ($acao === 'salvar') {
     );
     if ($status >= 200 && $status < 300) {
         responder(200, ['ok' => true, 'registro' => $corpo[0] ?? $registro]);
+    }
+    // o lançamento não entrou: não deixa o PDF órfão no Storage
+    if (isset($registro['pdf_arquivo'])) {
+        chamarSupabase($supabaseUrl, $serviceRole, 'DELETE', '/storage/v1/object/' . BUCKET_PDF . '/' . $registro['pdf_arquivo']);
     }
     responder(502, ['ok' => false, 'erro' => (string) ($corpo['message'] ?? $corpo['msg'] ?? 'O banco não aceitou o lançamento.')]);
 }
@@ -545,6 +641,89 @@ if ($acao === 'listar') {
     responder(502, ['ok' => false, 'erro' => 'Não foi possível carregar os lançamentos recentes.']);
 }
 
+/* =========================================================== duplicado === */
+if ($acao === 'duplicado') {
+    if (emailAutenticado($supabaseUrl, $serviceRole) === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    $cpf = trim((string) ($_POST['cpf'] ?? ''));
+    $tipo = trim((string) ($_POST['tipo_servico'] ?? ''));
+    $data = trim((string) ($_POST['data_vistoria'] ?? ''));
+    if (!preg_match('/^\d{3}\.\d{3}\.\d{3}-\d{2}$/', $cpf) || $tipo === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $data)) {
+        responder(400, ['ok' => false, 'erro' => 'Informe CPF, serviço e data da vistoria.']);
+    }
+    $igual = lancamentoIgual($supabaseUrl, $serviceRole, $cpf, $tipo, $data, (string) ($_POST['id'] ?? ''));
+    responder(200, ['ok' => true, 'itens' => $igual === null ? [] : [$igual]]);
+}
+
+/* ============================================================ tecnicos === */
+if ($acao === 'tecnicos') {
+    if (emailAutenticado($supabaseUrl, $serviceRole) === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    // técnico x município x escritório, contados nos lançamentos do banco
+    $contagem = [];
+    $maquinas = $implementos = [];   // nome => quantos lançamentos usaram
+    $tam = 1000;
+    for ($pagina = 0; $pagina < 100; $pagina++) {
+        [$st, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'GET',
+            '/rest/v1/mecanizacao_lancamentos?select=municipio,escritorio_local,responsavel_tecnico,maquinas,implementos' .
+            '&order=id.asc&limit=' . $tam . '&offset=' . ($pagina * $tam));
+        if ($st < 200 || $st >= 300 || !is_array($corpo)) {
+            responder(502, ['ok' => false, 'erro' => 'Não foi possível ler os técnicos.']);
+        }
+        foreach ($corpo as $l) {
+            foreach (['maquinas' => &$maquinas, 'implementos' => &$implementos] as $campo => &$destino) {
+                foreach ((is_array($l[$campo] ?? null) ? $l[$campo] : []) as $nome) {
+                    $nome = trim((string) $nome);
+                    if ($nome !== '') $destino[$nome] = ($destino[$nome] ?? 0) + 1;
+                }
+            }
+            unset($destino);
+            $m = trim((string) ($l['municipio'] ?? ''));
+            $e = trim((string) ($l['escritorio_local'] ?? ''));
+            $t = trim(preg_replace('/\s+/', ' ', (string) ($l['responsavel_tecnico'] ?? '')));
+            if ($m === '' || $t === '') continue;
+            $k = $m . "\x1f" . $e . "\x1f" . $t;
+            $contagem[$k] = ($contagem[$k] ?? 0) + 1;
+        }
+        if (count($corpo) < $tam) break;
+    }
+    $itens = [];
+    foreach ($contagem as $k => $n) {
+        [$m, $e, $t] = explode("\x1f", $k);
+        $itens[] = ['m' => $m, 'e' => $e, 't' => $t, 'n' => $n];
+    }
+    responder(200, ['ok' => true, 'itens' => $itens, 'maquinas' => $maquinas, 'implementos' => $implementos]);
+}
+
+/* ================================================================== pdf === */
+if ($acao === 'pdf') {
+    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
+    if ($emailConfirmado === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    $id = (string) ($_POST['id'] ?? '');
+    if ($id === '') {
+        responder(400, ['ok' => false, 'erro' => 'Informe o lançamento.']);
+    }
+    $linha = buscarLancamento($supabaseUrl, $serviceRole, $id, 'id,pdf_arquivo');
+    $arquivo = (string) ($linha['pdf_arquivo'] ?? '');
+    if ($arquivo === '') {
+        responder(404, ['ok' => false, 'erro' => 'Este lançamento não tem PDF anexado.']);
+    }
+    // link temporário (5 min): o bucket é privado
+    [$st, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'POST',
+        '/storage/v1/object/sign/' . BUCKET_PDF . '/' . $arquivo, ['expiresIn' => 300]
+    );
+    $assinado = (string) ($corpo['signedURL'] ?? $corpo['signedUrl'] ?? '');
+    if ($st < 200 || $st >= 300 || $assinado === '') {
+        responder(502, ['ok' => false, 'erro' => 'Não foi possível abrir o PDF.']);
+    }
+    responder(200, ['ok' => true, 'url' => $supabaseUrl . '/storage/v1' . $assinado]);
+}
+
 /* ============================================================= carregar === */
 if ($acao === 'carregar') {
     $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
@@ -585,6 +764,7 @@ if ($acao === 'editar') {
     // só serve pra validar o acesso acima, lerRegistroDoPost recebe o dono
     // de antes.
     $registro = lerRegistroDoPost((string) $atual['criado_por_email']);
+    recusarSeRepetido($supabaseUrl, $serviceRole, $registro, $id);
 
     // Quem não é o responsável não grava direto: vira pedido pendente.
     if ($emailConfirmado !== RESPONSAVEL_EMAIL) {

@@ -517,6 +517,8 @@
   }
   async function excluirUsuario(id) { await chamarAdminPHP('excluir', { id }); }
   async function editarEmail(id, email) { await chamarAdminPHP('editar_email', { id, email }); }
+  // Cadeado da lista de usuários: confere o PIN no servidor e diz se a conta ainda está na senha padrão.
+  async function verSenha(id, pin) { return chamarAdminPHP('ver_senha', { id, pin }); }
   // Redefine para a senha padrão e, se a conta estava bloqueada por tentativas, libera o bloqueio e fecha o pedido.
   async function redefinirSenhaPadrao(id) {
     await chamarAdminPHP('redefinir_senha', { id });
@@ -527,7 +529,7 @@
   window.ADMIN_AUTH = {
     online, RESPONSAVEL_EMAIL, PAGINAS_PADRAO, SEMPRE_LIBERADAS, SENHA_PADRAO,
     cadastrarConta, entrar, sair, listarSolicitacoes, decidir, definirPaginas, definirAtivo, previewLogin,
-    cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, alterarPropriaSenha,
+    cadastrarUsuario, redefinirSenha, redefinirSenhaPadrao, excluirUsuario, editarEmail, verSenha, alterarPropriaSenha,
     registrarEvento, listarEventos, resumirEventos, localizarIPs,
     listarAlertas, contarAlertasNaoVistos, marcarAlertasVistos,
     listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinSituacao, loginStatus, loginFalhou, listarPedidosReset, liberarConta, pinRegistrarEntrada, pinRecusar, listarPinBloqueados, pinReexibir, MAX_RECUSAS_PIN,

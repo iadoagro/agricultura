@@ -122,4 +122,9 @@ insert into storage.buckets (id, name, public)
 values ('mecanizacao-formularios', 'mecanizacao-formularios', false)
 on conflict (id) do nothing;
 
+-- O servidor já confere, mas o bucket também recusa: só PDF, até 3 MB.
+update storage.buckets
+set file_size_limit = 3145728, allowed_mime_types = array['application/pdf']
+where id = 'mecanizacao-formularios';
+
 commit;

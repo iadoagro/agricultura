@@ -127,18 +127,20 @@
 .permissoes-salvar:disabled{background:#e2e8f0;border-color:#cbd5e1;color:#94a3b8;box-shadow:none}
 
 /* Usuários: formulário à esquerda, lista à direita */
-.usuarios-grade{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:20px;align-items:start}
-.usuarios-grade > .permissoes-novo{grid-template-columns:1fr;gap:14px;padding:20px;margin:0;position:sticky;top:12px}
+.usuarios-grade{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start}
+/* cadastro acima da listagem: título à esquerda, campos e botão na mesma linha */
+.usuarios-grade > .permissoes-novo{grid-template-columns:minmax(220px,1.3fr) repeat(3,minmax(150px,1fr)) auto;gap:14px 16px;align-items:end;padding:20px;margin:0}
 .usuarios-grade .permissoes-novo-tit strong{font-size:17px;font-weight:800;color:var(--pd-titulo)}
 .usuarios-grade .permissoes-novo-tit span{font-size:12.5px;color:var(--pd-mudo)}
-.usuarios-grade .permissoes-cadastrar{width:100%}
+.usuarios-grade .permissoes-cadastrar{width:auto;min-height:44px;padding:0 22px;white-space:nowrap}
 .usuarios-lista{background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra);padding:20px;min-width:0}
 .usuarios-lista .permissoes-filtros{margin-bottom:12px}
 .usuarios-lista .permissoes-tabela{border:0;box-shadow:none;border-radius:0;background:none;overflow:visible}
 .usuarios-lista .usuarios-tabela .permissoes-colunas,.usuarios-lista .usuarios-tabela .lista-solicitacoes li{
   grid-template-columns:minmax(150px,1.2fr) minmax(110px,.7fr) minmax(240px,2fr);gap:14px}
 .usuarios-lista .permissoes-colunas,.usuarios-lista .usuarios-tabela .lista-solicitacoes li{padding-left:6px;padding-right:6px}
-@media(max-width:1000px){.usuarios-grade{grid-template-columns:1fr}.usuarios-grade > .permissoes-novo{position:static}}
+@media(max-width:1100px){.usuarios-grade > .permissoes-novo{grid-template-columns:1fr 1fr}.usuarios-grade .permissoes-novo-tit{grid-column:1/-1}}
+@media(max-width:560px){.usuarios-grade > .permissoes-novo{grid-template-columns:1fr}.usuarios-grade .permissoes-cadastrar{width:100%}}
 
 /* Eventos: filtros e lista em cartões separados, com o mesmo acabamento */
 .logs-aba-num{background:#e2e8f0;color:var(--pd-suave)}

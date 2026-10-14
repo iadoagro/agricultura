@@ -201,6 +201,23 @@ Deno.serve(async (req) => {
     return responder(502, { ok: false, erro: mensagem(corpo, 'O Supabase não concluiu a exclusão.') });
   }
 
+  if (acao === 'ver_senha') {
+    // Nenhuma senha é guardada (o Supabase só tem o hash): o que se sabe é se
+    // a conta ainda está na senha padrão (a pessoa não trocou desde a
+    // redefinição). O PIN de acesso fica só aqui, no segredo PIN_VER_SENHA.
+    const pinCerto = Deno.env.get('PIN_VER_SENHA') ?? '';
+    if (pinCerto === '') return responder(500, { ok: false, erro: 'O PIN de consulta não está configurado no servidor.' });
+    const pin = String(entrada.pin ?? '');
+    let dif = pin.length ^ pinCerto.length;
+    for (let i = 0; i < pinCerto.length; i++) dif |= (pin.charCodeAt(i) || 0) ^ pinCerto.charCodeAt(i);
+    if (dif !== 0) return responder(403, { ok: false, erro: 'PIN incorreto.' });
+    const [st, corpo] = await chamarSupabase('GET', '/rest/v1/admin_solicitacoes?select=deve_trocar_senha&id=eq.' + id);
+    const linhas = corpo as unknown as Array<Record<string, unknown>>;
+    if (st < 200 || st >= 300) return responder(502, { ok: false, erro: 'Não foi possível consultar a conta.' });
+    const padrao = Array.isArray(linhas) && linhas[0]?.deve_trocar_senha === true;
+    return responder(200, { ok: true, padrao, senha: padrao ? SENHA_PADRAO : null });
+  }
+
   if (acao === 'redefinir_senha') {
     // Volta a senha pra padrão e obriga a trocar no próximo acesso.
     const [status, corpo] = await chamarSupabase('PUT', '/auth/v1/admin/users/' + id, { password: SENHA_PADRAO });

@@ -72,10 +72,20 @@
 
   function salvar(e) {
     e.preventDefault();
-    // qual botão enviou: "outro" fica no formulário (com o lote mantido); o resto volta para a lista
-    var depois = (e.submitter && e.submitter.getAttribute('data-depois')) || 'lista';
     if (!form.reportValidity()) return;
     if (!ajuda.validarServico()) return;
+
+    // PDF opcional: 1 arquivo, só PDF, até 3 MB (o servidor confere de novo)
+    var pdfInput = el('lancPdf');
+    var pdf = pdfInput && pdfInput.files && pdfInput.files[0];
+    if (pdf) {
+      if (!/\.pdf$/i.test(pdf.name) || (pdf.type && pdf.type !== 'application/pdf')) {
+        aviso('lancSalvarStatus', 'erro', 'Anexe somente arquivo PDF.'); return;
+      }
+      if (pdf.size > 3 * 1024 * 1024) {
+        aviso('lancSalvarStatus', 'erro', 'O PDF deve ter no máximo 3 MB.'); return;
+      }
+    }
 
     var fd = new FormData(form);
     fd.set('acao', 'salvar');
@@ -114,22 +124,7 @@
         CAMPOS_MANTIDOS_APOS_SALVAR.forEach(function (c) { loteAnterior[c] = form.elements[c].value; });
         var nome = form.elements['nome_beneficiario'].value;
         window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('criar', 'mecanizacao', 'Cadastrou o lançamento de mecanização de "' + nome + '"');
-        if (depois === 'outro') {
-          // segue no formulário: serviço, data, município, escritório e técnico ficam; o resto zera
-          limparFormulario(true);
-          aviso('lancSalvarStatus', 'ok', 'Lançamento salvo para <b>' + esc(nome) + '</b>. Pode lançar o próximo.');
-          setTimeout(function () {
-            var s = el('lancSalvarStatus');
-            if (s && /Pode lançar o próximo/.test(s.textContent)) aviso('lancSalvarStatus', '', '');
-          }, 7000);
-          form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          if (ux) { ux.atualizar(); setTimeout(ux.focarPrimeiro, 250); }
-          return;
-        }
-        limparFormulario(false);
-        aviso('lancSalvarStatus', '', '');
-        mostrarLista();
-        aviso('lancListaAviso', 'ok', 'Lançamento salvo para <b>' + esc(nome) + '</b>.');
+        perguntarOutro(res.corpo.registro || {}, nome);
       })
       .catch(function () {
         botao.disabled = false;
@@ -1029,6 +1024,108 @@
       });
   }
 
+  /* ------------------------------------------------- depois de salvar */
+  var CONTAGEM_SEGUNDOS = 10;
+  var relogioSucesso = null;
+
+  /** Confirma o cadastro com os principais dados e pergunta se quer lançar
+      outro. Sem resposta em 10 s, volta para a lista de lançamentos. */
+  function perguntarOutro(reg, nome) {
+    var dlg = el('lancSucessoDialogo');
+    var d = window.DATA_BR;
+    var itens = [
+      ['Beneficiário', reg.nome_beneficiario || nome],
+      ['Serviço', reg.tipo_servico],
+      ['Município', reg.municipio],
+      ['Data da vistoria', reg.data_vistoria ? d.isoParaBr(reg.data_vistoria) : ''],
+      ['Responsável técnico', reg.responsavel_tecnico],
+      reg.tipo_servico === 'Açudagem'
+        ? ['Tanques/açudes', reg.quantidade_acudes]
+        : ['Área total', reg.area_total_ha != null ? String(reg.area_total_ha).replace('.', ',') + ' ha' : ''],
+      ['PDF anexado', reg.pdf_arquivo ? 'Sim' : '']
+    ].filter(function (i) { return i[1] !== '' && i[1] != null; });
+    el('lancSucessoInfo').innerHTML = itens.map(function (i) {
+      return '<div><dt>' + esc(i[0]) + '</dt><dd>' + esc(i[1]) + '</dd></div>';
+    }).join('');
+
+    var restante = CONTAGEM_SEGUNDOS;
+    function texto() {
+      el('lancSucessoContagem').textContent = 'Sem resposta, volto para a lista em ' + restante + ' s.';
+    }
+    function encerrar() {
+      clearInterval(relogioSucesso);
+      relogioSucesso = null;
+      if (dlg.open) dlg.close();
+    }
+    function sim() {
+      encerrar();
+      // segue no formulário: serviço, data, município, escritório e técnico ficam; o resto zera
+      limparFormulario(true);
+      aviso('lancSalvarStatus', '', '');
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (ux) { ux.atualizar(); setTimeout(ux.focarPrimeiro, 250); }
+    }
+    function nao() {
+      encerrar();
+      limparFormulario(false);
+      aviso('lancSalvarStatus', '', '');
+      mostrarLista();
+      aviso('lancListaAviso', 'ok', 'Lançamento salvo para <b>' + esc(nome) + '</b>.');
+    }
+    el('lancSucessoSim').onclick = sim;
+    el('lancSucessoNao').onclick = nao;
+    dlg.oncancel = function (ev) { ev.preventDefault(); nao(); };   // Esc = não
+    texto();
+    clearInterval(relogioSucesso);
+    relogioSucesso = setInterval(function () {
+      restante--;
+      if (restante <= 0) { nao(); return; }
+      texto();
+    }, 1000);
+    if (!dlg.open) dlg.showModal();
+    el('lancSucessoSim').focus();
+  }
+
+  /* ----------------------------------------------------------------- anexo */
+  /** Área de soltar do PDF: mostra o arquivo escolhido (nome e tamanho), valida
+      na hora (só PDF, até 3 MB) e deixa remover. O <input> continua sendo o
+      dono do arquivo, então o FormData do envio não muda. */
+  function ligarAnexo() {
+    var raiz = el('lancAnexo'), input = el('lancPdf');
+    if (!raiz || !input) return;
+    var MAX = 3 * 1024 * 1024;
+    function tamanho(b) { return b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+    function erro(msg) { var e = el('lancAnexoErro'); e.textContent = msg || ''; e.hidden = !msg; }
+    function mostrar() {
+      var f = input.files && input.files[0];
+      el('lancAnexoZona').hidden = !!f;
+      el('lancAnexoArquivo').hidden = !f;
+      if (f) { el('lancAnexoNome').textContent = f.name; el('lancAnexoTam').textContent = tamanho(f.size) + ' · PDF'; }
+    }
+    function escolher(f) {
+      erro('');
+      if (f && (!/\.pdf$/i.test(f.name) || (f.type && f.type !== 'application/pdf'))) { erro('Anexe somente arquivo PDF.'); input.value = ''; }
+      else if (f && f.size > MAX) { erro('O PDF deve ter no máximo 3 MB (este tem ' + tamanho(f.size) + ').'); input.value = ''; }
+      mostrar();
+    }
+    input.addEventListener('change', function () { escolher(input.files && input.files[0]); });
+    el('lancAnexoRemover').addEventListener('click', function () { input.value = ''; erro(''); mostrar(); });
+    form.addEventListener('reset', function () { setTimeout(function () { erro(''); mostrar(); }, 0); });
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      raiz.addEventListener(ev, function (e) { e.preventDefault(); raiz.classList.add('lanc-arrastando'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      raiz.addEventListener(ev, function (e) { e.preventDefault(); raiz.classList.remove('lanc-arrastando'); });
+    });
+    raiz.addEventListener('drop', function (e) {
+      var arqs = e.dataTransfer && e.dataTransfer.files;
+      if (!arqs || !arqs.length) return;
+      if (arqs.length > 1) { erro('Anexe apenas 1 arquivo.'); return; }
+      try { input.files = arqs; } catch (er) { return; }
+      escolher(arqs[0]);
+    });
+  }
+
   /* --------------------------------------------------------------- montagem */
   function montar() {
     form = el('lancForm');
@@ -1040,8 +1137,9 @@
     ajuda.alternarAssociacao();
     ajuda.atualizarBotoesAdicionar();
     ajuda.ligarEventosComuns();
-    if (window.LANCAMENTO_UX) ux = window.LANCAMENTO_UX.ligar(form, { salvarOutro: true });
+    if (window.LANCAMENTO_UX) ux = window.LANCAMENTO_UX.ligar(form, {});
 
+    ligarAnexo();
     form.addEventListener('submit', salvar);
     el('lancLimpar').addEventListener('click', function () { limparFormulario(false); aviso('lancSalvarStatus', '', ''); });
     el('lancVoltarLista').addEventListener('click', mostrarLista);

@@ -254,8 +254,7 @@
 
     secao('6. Maquinário');
     pares([
-      ['Tipo de trator', d.tipo_trator], ['Uso', d.tipo_uso],
-      ['Nº identificação', d.num_identificacao_patrimonio], ['', ''],
+      ['Uso', d.tipo_uso], ['Nº identificação', d.num_identificacao_patrimonio],
       ['Máquinas', lista(d.maquinas)], ['Implementos', lista(d.implementos)]
     ]);
 

@@ -10,4 +10,6 @@
 return [
     'url' => 'https://SEU-PROJETO.supabase.co',
     'service_role' => 'COLE_AQUI_A_CHAVE_SERVICE_ROLE',
+    // PIN pedido pelo cadeado da tela de usuários (admin-usuarios.html)
+    'pin_ver_senha' => '',
 ];

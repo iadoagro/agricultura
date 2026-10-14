@@ -201,6 +201,24 @@ if ($acao === 'excluir') {
     responder(502, ['ok' => false, 'erro' => $corpo['msg'] ?? 'O Supabase não concluiu a exclusão.']);
 }
 
+if ($acao === 'ver_senha') {
+    // Nenhuma senha é guardada (o Supabase só tem o hash): o que se sabe é se
+    // a conta ainda está na senha padrão. PIN em admin_config.php ("pin_ver_senha").
+    $pinCerto = (string) ($config['pin_ver_senha'] ?? '');
+    if ($pinCerto === '') {
+        responder(500, ['ok' => false, 'erro' => 'O PIN de consulta não está configurado (pin_ver_senha em admin_config.php).']);
+    }
+    if (!hash_equals($pinCerto, (string) ($entrada['pin'] ?? ''))) {
+        responder(403, ['ok' => false, 'erro' => 'PIN incorreto.']);
+    }
+    [$status, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'GET', '/rest/v1/admin_solicitacoes?select=deve_trocar_senha&id=eq.' . $id);
+    if ($status < 200 || $status >= 300) {
+        responder(502, ['ok' => false, 'erro' => 'Não foi possível consultar a conta.']);
+    }
+    $padrao = isset($corpo[0]['deve_trocar_senha']) && $corpo[0]['deve_trocar_senha'] === true;
+    responder(200, ['ok' => true, 'padrao' => $padrao, 'senha' => $padrao ? SENHA_PADRAO : null]);
+}
+
 if ($acao === 'redefinir_senha') {
     // Volta a senha pra padrão e obriga a trocar no próximo acesso.
     // ban_duration 'none' também tira o bloqueio por 3 senhas erradas (banned_until), direto com a service role.

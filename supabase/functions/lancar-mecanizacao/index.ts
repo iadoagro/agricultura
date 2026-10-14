@@ -54,6 +54,61 @@ const mensagem = (corpo: unknown, padrao: string) => {
   return typeof c.message === 'string' ? c.message : typeof c.msg === 'string' ? c.msg : padrao;
 };
 
+const BUCKET_PDF = 'mecanizacao-formularios';
+const PDF_MAX_BYTES = 3 * 1024 * 1024;
+
+/** PDF opcional da ficha (campo "pdf"): no máximo 1 arquivo, só PDF, até 3 MB.
+    Confere o começo do arquivo ("%PDF-"), não só o que o navegador declarou. */
+async function lerPdf(fd: FormData): Promise<Uint8Array | null> {
+  const f = fd.get('pdf');
+  if (!(f instanceof File) || f.size === 0) return null;
+  if (f.size > PDF_MAX_BYTES) responder(400, { ok: false, erro: 'O PDF deve ter no máximo 3 MB.' });
+  const bytes = new Uint8Array(await f.arrayBuffer());
+  if (new TextDecoder().decode(bytes.slice(0, 5)) !== '%PDF-') responder(400, { ok: false, erro: 'Anexe somente arquivo PDF.' });
+  return bytes;
+}
+
+async function enviarPdf(bytes: Uint8Array): Promise<string> {
+  const caminho = `${new Date().getFullYear()}/${crypto.randomUUID().replace(/-/g, '')}.pdf`;
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET_PDF}/${caminho}`, {
+    method: 'POST',
+    headers: { apikey: SERVICE_ROLE, Authorization: 'Bearer ' + SERVICE_ROLE, 'Content-Type': 'application/pdf' },
+    body: bytes,
+  });
+  if (!r.ok) {
+    const c = await r.json().catch(() => null);
+    responder(502, { ok: false, erro: 'Não foi possível guardar o PDF: ' + mensagem(c, 'erro no armazenamento') + '.' });
+  }
+  return caminho;
+}
+
+/** Já existe lançamento do mesmo CPF, do mesmo serviço e na mesma data de
+    vistoria? Um produtor pode ter vários de Mecanização ou Açudagem; só é
+    repetido quando os três coincidem. idIgnorar é o próprio lançamento (edição). */
+async function lancamentoIgual(cpf: string, tipo: string, data: string, idIgnorar = ''): Promise<Record<string, unknown> | null> {
+  const digitos = cpf.replace(/\D/g, '');
+  const formatado = digitos.length === 11
+    ? `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`
+    : cpf;
+  let caminho = `${TABELA}?select=id,tipo_servico,data_vistoria,nome_beneficiario` +
+    `&cpf=in.(${encodeURIComponent(`"${formatado}","${digitos}"`)})` +
+    `&tipo_servico=eq.${encodeURIComponent(tipo)}&data_vistoria=eq.${encodeURIComponent(data)}&limit=1`;
+  if (idIgnorar) caminho += `&id=neq.${encodeURIComponent(idIgnorar)}`;
+  const [st, corpo] = await chamarSupabase('GET', caminho);
+  return st >= 200 && st < 300 && Array.isArray(corpo) && corpo.length ? corpo[0] as Record<string, unknown> : null;
+}
+
+async function recusarSeRepetido(registro: Record<string, unknown>, idIgnorar = ''): Promise<void> {
+  const cpf = String(registro.cpf ?? '');
+  const tipo = String(registro.tipo_servico ?? '');
+  const data = String(registro.data_vistoria ?? '');
+  if (cpf === '' || tipo === '' || data === '') return;
+  if (await lancamentoIgual(cpf, tipo, data, idIgnorar)) {
+    const [a, m, d] = data.split('-');
+    responder(409, { ok: false, erro: `Já existe um lançamento de ${tipo} deste CPF com a mesma data de vistoria (${d}/${m}/${a}). Confira para não duplicar.` });
+  }
+}
+
 /** Confirma no próprio Supabase quem é o dono do token de sessão do site e
     devolve o e-mail de verdade — nunca o que o navegador afirma sozinho. */
 async function emailAutenticado(token: string): Promise<string | null> {
@@ -129,7 +184,6 @@ function lerRegistro(fd: FormData, emailDono: string): Record<string, unknown> {
     horas_maquina: num('horas_maquina'),
     quantidade_acudes: inteiro('quantidade_acudes'),
     pontos_geo: arr('pontos_geo'),
-    tipo_trator: txt('tipo_trator'),
     maquinas: lista('maquinas'),
     implementos: lista('implementos'),
     tipo_uso: txt('tipo_uso'),
@@ -143,6 +197,12 @@ function lerRegistro(fd: FormData, emailDono: string): Record<string, unknown> {
   }
   if (registro.tipo_servico === 'Açudagem' && (registro.quantidade_acudes ?? 0) < 1) {
     responder(400, { ok: false, erro: 'Informe pelo menos 1 tanque/açude para um lançamento de Açudagem.' });
+  }
+  if (registro.tipo_servico === 'Açudagem' && !(Number(registro.horas_maquina ?? 0) > 0)) {
+    responder(400, { ok: false, erro: 'Informe as horas de máquina para um lançamento de Açudagem.' });
+  }
+  if ((registro.tipo_servico === 'Mecanização' || registro.tipo_servico === 'Açudagem') && (registro.maquinas as unknown[]).length < 1) {
+    responder(400, { ok: false, erro: 'Marque pelo menos uma máquina utilizada.' });
   }
   return registro;
 }
@@ -368,8 +428,14 @@ async function tratar(fd: FormData): Promise<never> {
   if (acao === 'salvar') {
     const email = await exigirSessao(fd);
     const registro = lerRegistro(fd, email);
+    await recusarSeRepetido(registro);
+    // PDF opcional da ficha: validado antes de gravar o lançamento.
+    const pdf = await lerPdf(fd);
+    if (pdf) registro.pdf_arquivo = await enviarPdf(pdf);
     const [status, corpo] = await chamarSupabase('POST', TABELA, registro, { Prefer: 'return=representation' });
     if (status >= 200 && status < 300) responder(200, { ok: true, registro: Array.isArray(corpo) ? corpo[0] ?? registro : registro });
+    // o lançamento não entrou: não deixa o PDF órfão no Storage
+    if (registro.pdf_arquivo) await chamarSupabase('DELETE', `/storage/v1/object/${BUCKET_PDF}/${registro.pdf_arquivo}`);
     responder(502, { ok: false, erro: mensagem(corpo, 'O banco não aceitou o lançamento.') });
   }
 
@@ -409,6 +475,65 @@ async function tratar(fd: FormData): Promise<never> {
     responder(502, { ok: false, erro: 'Não foi possível carregar os lançamentos recentes.' });
   }
 
+  if (acao === 'duplicado') {
+    await exigirSessao(fd);
+    const cpf = String(fd.get('cpf') ?? '').trim();
+    const tipo = String(fd.get('tipo_servico') ?? '').trim();
+    const data = String(fd.get('data_vistoria') ?? '').trim();
+    if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf) || tipo === '' || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      responder(400, { ok: false, erro: 'Informe CPF, serviço e data da vistoria.' });
+    }
+    const igual = await lancamentoIgual(cpf, tipo, data, String(fd.get('id') ?? ''));
+    responder(200, { ok: true, itens: igual ? [igual] : [] });
+  }
+
+  if (acao === 'tecnicos') {
+    await exigirSessao(fd);
+    // técnico x município x escritório, contados nos lançamentos do banco
+    const contagem = new Map<string, { m: string; e: string; t: string; n: number }>();
+    const maquinas: Record<string, number> = {};
+    const implementos: Record<string, number> = {};
+    const tam = 1000;
+    for (let pagina = 0; pagina < 100; pagina++) {
+      const [st, corpo] = await chamarSupabase('GET',
+        `${TABELA}?select=municipio,escritorio_local,responsavel_tecnico,maquinas,implementos&order=id.asc&limit=${tam}&offset=${pagina * tam}`);
+      if (st < 200 || st >= 300 || !Array.isArray(corpo)) responder(502, { ok: false, erro: 'Não foi possível ler os técnicos.' });
+      for (const l of corpo as Record<string, unknown>[]) {
+        for (const [campo, destino] of [['maquinas', maquinas], ['implementos', implementos]] as const) {
+          const valores = l[campo];
+          if (!Array.isArray(valores)) continue;
+          for (const v of valores) {
+            const nome = String(v ?? '').trim();
+            if (nome !== '') destino[nome] = (destino[nome] ?? 0) + 1;
+          }
+        }
+        const m = String(l.municipio ?? '').trim();
+        const e = String(l.escritorio_local ?? '').trim();
+        const t = String(l.responsavel_tecnico ?? '').replace(/\s+/g, ' ').trim();
+        if (m === '' || t === '') continue;
+        const k = `${m}\x1f${e}\x1f${t}`;
+        const atual = contagem.get(k);
+        if (atual) atual.n++; else contagem.set(k, { m, e, t, n: 1 });
+      }
+      if (corpo.length < tam) break;
+    }
+    responder(200, { ok: true, itens: [...contagem.values()], maquinas, implementos });
+  }
+
+  if (acao === 'pdf') {
+    await exigirSessao(fd);
+    const id = exigirId(fd, 'Informe o lançamento.');
+    const linha = await buscarLancamento(id, 'id,pdf_arquivo');
+    const arquivo = String(linha.pdf_arquivo ?? '');
+    if (arquivo === '') responder(404, { ok: false, erro: 'Este lançamento não tem PDF anexado.' });
+    // link temporário (5 min): o bucket é privado
+    const [st, corpo] = await chamarSupabase('POST', `/storage/v1/object/sign/${BUCKET_PDF}/${arquivo}`, { expiresIn: 300 });
+    const c = (corpo && typeof corpo === 'object' ? corpo : {}) as Record<string, unknown>;
+    const assinado = String(c.signedURL ?? c.signedUrl ?? '');
+    if (st < 200 || st >= 300 || assinado === '') responder(502, { ok: false, erro: 'Não foi possível abrir o PDF.' });
+    responder(200, { ok: true, url: `${SUPABASE_URL}/storage/v1${assinado}` });
+  }
+
   if (acao === 'carregar') {
     const email = await exigirSessao(fd);
     const id = exigirId(fd, 'Informe o lançamento a abrir.');
@@ -429,6 +554,7 @@ async function tratar(fd: FormData): Promise<never> {
     if (!(await podeAcessar(email, atual.criado_por_email))) responder(403, { ok: false, erro: 'Você só pode editar os lançamentos que você mesmo fez.' });
     // Edição não troca quem lançou originalmente.
     const registro = lerRegistro(fd, String(atual.criado_por_email ?? ''));
+    await recusarSeRepetido(registro, id);
     // Quem não é o responsável não grava direto: vira pedido pendente.
     if (email !== RESPONSAVEL_EMAIL) await criarSolicitacao(atual, 'editar', lerMotivo(fd), email, registro);
     const [status, corpo] = await chamarSupabase('PATCH', `${TABELA}?id=eq.${encodeURIComponent(id)}`, registro, { Prefer: 'return=representation' });

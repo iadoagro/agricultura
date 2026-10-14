@@ -24,7 +24,7 @@
   var CAMPOS_DIRETOS = [
     'data_vistoria', 'responsavel_tecnico', 'nome_beneficiario', 'cpf', 'data_nascimento',
     'estado_civil', 'sexo', 'possui_dap', 'telefone', 'endereco', 'nome_propriedade',
-    'tipo_trator', 'num_identificacao_patrimonio', 'tipo_uso', 'observacao',
+    'num_identificacao_patrimonio', 'tipo_uso', 'observacao',
     'horas_maquina', 'quantidade_acudes', 'area_total_ha'
   ];
 
@@ -286,6 +286,20 @@
           a.href = registroOriginal.formulario_url; a.target = '_blank'; a.rel = 'noopener';
           a.textContent = ' Abrir formulário digitalizado ↗';
           el('lancEditarContexto').appendChild(a);
+        }
+        if (registroOriginal.pdf_arquivo) {
+          var b = document.createElement('a');
+          b.href = '#'; b.textContent = ' Abrir PDF anexado ↗';
+          b.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            var f = new FormData();
+            f.append('acao', 'pdf'); f.append('token', sessaoSite().access_token); f.append('id', id);
+            window.LANCAMENTO_CAMPOS.enviar(f).then(function (r) {
+              if (r.corpo.ok && r.corpo.url) window.open(r.corpo.url, '_blank', 'noopener');
+              else aviso('lancEditarAviso', 'erro', esc(r.corpo.erro || 'Não foi possível abrir o PDF.'));
+            });
+          });
+          el('lancEditarContexto').appendChild(b);
         }
         mostrarAlteracoesSolicitadas(res.corpo.pendente, registroOriginal);
         preencherFormulario(registroOriginal);

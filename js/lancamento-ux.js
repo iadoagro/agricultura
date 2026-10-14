@@ -4,8 +4,6 @@
 
    - Barra de ações fixa no rodapé, com o progresso dos campos obrigatórios e a
      lista do que falta (cada item leva ao campo);
-   - "Salvar e lançar outro": segue no formulário, com serviço, data, município,
-     escritório e técnico mantidos, e o cursor já no nome do próximo beneficiário;
    - Enter passa para o próximo campo (não envia o formulário sem querer) e
      Ctrl+Enter salva;
    - máscara do telefone;
@@ -45,22 +43,51 @@
           itens.push({ campo: c, rotulo: 'Tipo de serviço', ok: !!form.elements[c.name].value, secao: c.closest('section') });
           return;
         }
-        var ok = String(c.value).trim() !== '' && !(c.validity && c.validity.customError);
+        // preenchido de verdade: não vazio, válido para o navegador (data
+        // incompleta, número fora do mínimo...) e, no CPF, com os 11 dígitos
+        var ok = String(c.value).trim() !== '' && !(c.validity && !c.validity.valid);
+        if (ok && c.name === 'cpf') ok = c.value.replace(/\D/g, '').length === 11;
         itens.push({ campo: c, rotulo: rotuloDe(c), ok: ok, secao: c.closest('section') });
       });
       var tipo = form.elements['tipo_servico'] ? form.elements['tipo_servico'].value : '';
       if (tipo === 'Mecanização') {
-        var cult = form.querySelector('.lc-cultura');
-        var temCultura = Array.prototype.some.call(form.querySelectorAll('.lc-cultura'), function (s) { return s.value; });
-        if (cult) itens.push({ campo: cult, rotulo: 'Cultura', ok: temCultura, secao: cult.closest('section') });
+        // ao menos uma cultura com área e sistema de cultivo preenchidos
+        var linhas = Array.prototype.slice.call(form.querySelectorAll('.lanc-cultura-linha'));
+        var completa = function (l) {
+          return !!l.querySelector('.lc-cultura').value && parseFloat(l.querySelector('.lc-area').value) > 0 && !!l.querySelector('.lc-sistema').value;
+        };
+        var alvo = linhas.filter(completa)[0] || linhas[0];
+        if (alvo) {
+          var faltaCampo = ['.lc-cultura', '.lc-area', '.lc-sistema'].map(function (q) { return alvo.querySelector(q); })
+            .filter(function (c) { return !c.value || (c.classList.contains('lc-area') && !(parseFloat(c.value) > 0)); })[0];
+          itens.push({ campo: faltaCampo || alvo.querySelector('.lc-cultura'), rotulo: 'Cultura, área e sistema de cultivo',
+            ok: linhas.some(completa), secao: alvo.closest('section') });
+        }
       } else if (tipo === 'Açudagem' && form.elements['quantidade_acudes']) {
         var q = form.elements['quantidade_acudes'];
         itens.push({ campo: q, rotulo: 'Quantidade de tanques/açudes', ok: parseInt(q.value, 10) >= 1, secao: q.closest('section') });
+        var h = form.elements['horas_maquina'];
+        if (h) itens.push({ campo: h, rotulo: 'Horas de máquina', ok: parseFloat(String(h.value).replace(',', '.')) > 0, secao: h.closest('section') });
+      }
+      // máquina utilizada: obrigatória nos dois serviços
+      var hostMaq = el('lancMaquinas');
+      if (tipo && hostMaq && !hostMaq.closest('[hidden]')) {
+        var marcada = Array.prototype.some.call(hostMaq.querySelectorAll('input[type=checkbox]:checked'), function (i) {
+          if (!i.classList.contains('lc-outra-check')) return true;
+          var t = hostMaq.querySelector('.lc-outra-texto');
+          return !!(t && t.value.trim());
+        });
+        itens.push({ campo: hostMaq.querySelector('input[type=checkbox]') || hostMaq, rotulo: 'Máquina utilizada', ok: marcada, secao: hostMaq.closest('section') });
       }
       return itens;
     }
 
     function irPara(campo) {
+      // seção bloqueada não recebe foco: leva ao primeiro pendente já liberado
+      if (campo.closest && campo.closest('.lanc-bloqueada')) {
+        var livre = pendencias().filter(function (i) { return !i.ok && !(i.campo.closest && i.campo.closest('.lanc-bloqueada')); })[0];
+        if (livre) campo = livre.campo;
+      }
       var alvo = campo;
       // select virou botões: o foco vai para o primeiro botão do grupo
       if (campo.classList && campo.classList.contains('lanc-seg-oculto')) {
@@ -71,9 +98,33 @@
       try { alvo.focus({ preventScroll: true }); } catch (e) { /* sem foco */ }
     }
 
+    /* Libera as seções em ordem: cada uma só abre quando os obrigatórios da
+       anterior estão preenchidos (seção sem obrigatório não trava a próxima). */
+    function bloquearSecoes(itens) {
+      var porSecao = new Map();
+      itens.forEach(function (i) {
+        if (!i.secao) return;
+        var r = porSecao.get(i.secao) || { n: 0, ok: 0 };
+        r.n++; if (i.ok) r.ok++;
+        porSecao.set(i.secao, r);
+      });
+      var liberada = true;
+      Array.prototype.forEach.call(form.querySelectorAll('section.painel'), function (s) {
+        if (s.hidden) return;
+        s.classList.toggle('lanc-bloqueada', !liberada);
+        if (liberada) s.removeAttribute('inert'); else s.setAttribute('inert', '');
+        var r = porSecao.get(s);
+        var completa = !(r && r.ok !== r.n);
+        // rótulo no cabeçalho: bloqueada, em preenchimento, concluída ou opcional
+        s.setAttribute('data-estado', !liberada ? 'bloqueada' : !completa ? 'atual' : (r ? 'ok' : 'opcional'));
+        if (!completa) liberada = false;
+      });
+    }
+
     var ultimoResumo = '';
     function atualizar() {
       var itens = pendencias();
+      bloquearSecoes(itens);
       var feitos = itens.filter(function (i) { return i.ok; }).length;
       var faltam = itens.filter(function (i) { return !i.ok; });
       var total = itens.length;
@@ -139,28 +190,12 @@
       });
     }
 
-    /* --------------------------------------------- "salvar e lançar outro" */
-    if (opc.salvarOutro && barra) {
-      var salvar = el('lancSalvar');
-      if (salvar) {
-        salvar.textContent = 'Salvar e voltar';
-        salvar.setAttribute('data-depois', 'lista');
-        var outro = document.createElement('button');
-        outro.type = 'submit';
-        outro.id = 'lancSalvarOutro';
-        outro.className = 'btn btn-verde lanc-primario';
-        outro.setAttribute('data-depois', 'outro');
-        outro.textContent = 'Salvar e lançar outro';
-        salvar.parentNode.insertBefore(outro, salvar.nextSibling);
-      }
-    }
-
     /* -------------------------------------------- Enter → próximo campo */
     function focaveis() {
       return Array.prototype.filter.call(
         form.querySelectorAll('input, select, textarea, button.lanc-seg-op, button.lanc-add-mais'),
         function (c) {
-          if (c.disabled || c.tabIndex < 0 && !c.classList.contains('lanc-seg-op')) return false;
+          if (c.disabled || c.closest('[inert]') || c.tabIndex < 0 && !c.classList.contains('lanc-seg-op')) return false;
           if (c.type === 'hidden' || c.type === 'radio' || c.type === 'checkbox') return false;
           if (c.classList.contains('lanc-seg-oculto')) return false;
           return !!(c.offsetWidth || c.offsetHeight || c.getClientRects().length);
@@ -171,7 +206,7 @@
       var t = e.target;
       if (e.ctrlKey || e.metaKey) {           // Ctrl+Enter: salva
         e.preventDefault();
-        var padrao = el('lancSalvarOutro') || el('lancSalvar');
+        var padrao = el('lancSalvar');
         if (padrao && !padrao.disabled && form.requestSubmit) form.requestSubmit(padrao);
         return;
       }

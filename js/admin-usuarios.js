@@ -68,6 +68,8 @@
       }
       if (bloqueadaPorSenha(l.id)) botoes.unshift('<button type="button" class="aprovar" data-acao="redefinir" title="Aprova o pedido: a senha volta a ser ' + escapar(auth.SENHA_PADRAO) + ' e a conta é liberada">Aprovar redefinição</button>');
       if (pinBloqueados[l.id] != null) botoes.push('<button type="button" class="redefinir" data-acao="reexibirpin" title="Volta a oferecer o cadastro de PIN no login">Reexibir PIN</button>');
+      botoes.push('<button type="button" class="cadeado" data-acao="versenha" title="Ver a senha (pede o PIN)" aria-label="Ver a senha de ' + escapar(mostrarLogin(l.email)) + '">' +
+        '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></button>');
       botoes.push('<button type="button" class="redefinir" data-acao="redefinir">Redefinir senha</button>');
       botoes.push('<button type="button" class="editar" data-acao="editar">Editar login/e-mail</button>');
       botoes.push('<button type="button" class="excluir" data-acao="excluir">Excluir</button>');
@@ -168,6 +170,62 @@
     return painel;
   }
 
+  /* Cadeado: pede o PIN (conferido no servidor) e mostra a senha só quando
+     ela é conhecida — a padrão, de conta que ainda não trocou. Senha que a
+     pessoa definiu não existe em lugar nenhum (só o hash), então não dá para ver. */
+  function abrirSenha(id, email) {
+    var dlg = document.createElement('dialog');
+    dlg.className = 'senha-dialogo';
+    dlg.innerHTML =
+      '<form method="dialog" class="senha-conteudo">' +
+      '<h3>Senha de ' + escapar(mostrarLogin(email)) + '</h3>' +
+      '<div class="senha-etapa-pin">' +
+        '<label>Digite o PIN para continuar<input type="password" inputmode="numeric" autocomplete="off" maxlength="12" class="senha-pin"></label>' +
+        '<p class="senha-erro" hidden></p>' +
+      '</div>' +
+      '<div class="senha-etapa-resultado" hidden></div>' +
+      '<div class="senha-acoes"><button type="button" class="senha-fechar">Fechar</button>' +
+      '<button type="submit" class="senha-confirmar aprovar">Confirmar</button></div>' +
+      '</form>';
+    document.body.appendChild(dlg);
+    var pin = dlg.querySelector('.senha-pin'), erro = dlg.querySelector('.senha-erro');
+    var etapaPin = dlg.querySelector('.senha-etapa-pin'), resultado = dlg.querySelector('.senha-etapa-resultado');
+    var confirmar = dlg.querySelector('.senha-confirmar');
+    function fechar() { dlg.close(); dlg.remove(); }
+    dlg.querySelector('.senha-fechar').addEventListener('click', fechar);
+    dlg.addEventListener('cancel', function (e) { e.preventDefault(); fechar(); });
+    dlg.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!pin.value) { erro.textContent = 'Digite o PIN.'; erro.hidden = false; return; }
+      confirmar.disabled = true; erro.hidden = true;
+      auth.verSenha(id, pin.value).then(function (r) {
+        pin.value = '';
+        etapaPin.hidden = true; confirmar.hidden = true; resultado.hidden = false;
+        if (r.padrao && r.senha) {
+          resultado.innerHTML =
+            '<p>Esta conta ainda está com a <b>senha padrão</b> (a pessoa não trocou desde a última redefinição).</p>' +
+            '<div class="senha-valor"><input type="password" readonly value="' + escapar(r.senha) + '" aria-label="Senha">' +
+            '<button type="button" class="senha-olho" title="Mostrar/ocultar" aria-label="Mostrar ou ocultar a senha">' +
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>';
+          var campo = resultado.querySelector('input');
+          resultado.querySelector('.senha-olho').addEventListener('click', function () {
+            campo.type = campo.type === 'password' ? 'text' : 'password';
+          });
+          auth.registrarEvento('consultar', 'usuarios', 'Consultou a senha padrão de ' + mostrarLogin(email));
+        } else {
+          resultado.innerHTML = '<p>A senha desta conta foi <b>definida pela própria pessoa</b> e não fica guardada em lugar nenhum, então não é possível vê-la.</p>' +
+            '<p>Se ela esqueceu, use <b>Redefinir senha</b>: a senha volta a ser ' + escapar(auth.SENHA_PADRAO) + ' e ela troca no próximo acesso.</p>';
+        }
+      }).catch(function (err) {
+        confirmar.disabled = false;
+        erro.textContent = err.message; erro.hidden = false;
+        pin.select();
+      });
+    });
+    dlg.showModal();
+    pin.focus();
+  }
+
   function executar(bloco, botao) {
     var id = bloco.dataset.id, email = bloco.dataset.email, acao = botao.dataset.acao;
     var tarefa;
@@ -176,6 +234,7 @@
     else if (acao === 'ativar') tarefa = function () { return auth.definirAtivo(id, true).then(function () { return 'Usuário reativado.'; }); };
     else if (acao === 'desativar') tarefa = function () { return auth.definirAtivo(id, false).then(function () { return 'Usuário desativado.'; }); };
     else if (acao === 'reexibirpin') tarefa = function () { return auth.pinReexibir(id).then(function () { return 'O convite de PIN volta a aparecer para ' + mostrarLogin(email) + '.'; }); };
+    else if (acao === 'versenha') { return abrirSenha(id, email); }
     else if (acao === 'redefinir') {
       return window.Modal.confirmar({
         titulo: 'Redefinir senha',

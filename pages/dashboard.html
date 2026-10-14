@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/dashboard.css?v=2026100805">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=2026100922">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101301">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101412">
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
      sem login, sem menu lateral e sem Registros, lançamento ou administração. Precisa vir antes dos
@@ -30,7 +30,7 @@
 </script>
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
-<script src="../js/admin-auth.js?v=2026101101"></script>
+<script src="../js/admin-auth.js?v=2026101401"></script>
 <script src="../js/admin-gate.js?v=2026092530"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
 <script src="../js/nav.js?v=2026101201"></script>
@@ -989,10 +989,10 @@
         <section class="painel duplo" id="lancSecAcudagem" hidden>
           <div class="painel-cab"><div class="painel-cab-tit"><h2>5. Açudagem</h2></div></div>
           <div class="lanc-campos">
-            <label>Horas de máquina<input type="number" step="0.01" min="0" name="horas_maquina"></label>
             <label>Quantidade de tanques/açudes<span class="lanc-obrig">*</span><input type="number" step="1" min="0" name="quantidade_acudes"></label>
+            <label>Horas de máquina<span class="lanc-obrig">*</span><input type="number" step="0.01" min="0" name="horas_maquina"></label>
           </div>
-          <p id="lancAcudeErro" class="lanc-erro" hidden>Informe pelo menos 1 tanque/açude.</p>
+          <p id="lancAcudeErro" class="lanc-erro" hidden>Para Açudagem, informe pelo menos 1 tanque/açude e as horas de máquina.</p>
         </section>
 
         <section class="painel duplo lanc-sec-servico" hidden>
@@ -1007,15 +1007,15 @@
         <section class="painel duplo lanc-sec-servico" hidden>
           <div class="painel-cab"><div class="painel-cab-tit"><h2>7. Maquinário (3.2)</h2></div></div>
           <div class="lanc-campos">
-            <label>Tipo de trator<input type="text" name="tipo_trator" autocomplete="off"></label>
             <label>Nº de identificação/patrimônio<input type="text" name="num_identificacao_patrimonio" autocomplete="off"></label>
             <label>Uso
               <select name="tipo_uso"><option value="">Não informado</option><option>Agrícola</option><option>Não agrícola</option></select>
             </label>
           </div>
           <fieldset class="lanc-fieldset">
-            <legend>Máquinas utilizadas</legend>
+            <legend>Máquinas utilizadas<span class="lanc-obrig">*</span></legend>
             <div class="lanc-caixas" id="lancMaquinas"></div>
+            <p id="lancMaquinaErro" class="lanc-erro" hidden>Marque pelo menos uma máquina utilizada.</p>
           </fieldset>
           <fieldset class="lanc-fieldset" id="lancFieldsetImplementos">
             <legend>Tipo de implemento</legend>
@@ -1040,13 +1040,44 @@
           </div>
         </section>
 
+        <section class="painel duplo lanc-sec-servico" hidden>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>10. Anexo</h2></div></div>
+          <div class="lanc-anexo" id="lancAnexo">
+            <input type="file" name="pdf" id="lancPdf" accept="application/pdf,.pdf" class="lanc-anexo-input">
+            <label for="lancPdf" class="lanc-anexo-zona" id="lancAnexoZona">
+              <span class="lanc-anexo-icone" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-5"/><path d="M9.5 14.5L12 12l2.5 2.5"/></svg></span>
+              <span class="lanc-anexo-texto"><b>Clique para escolher o PDF</b> ou arraste o arquivo para c&aacute;<small>Ficha digitalizada &middot; somente PDF &middot; at&eacute; 3 MB &middot; 1 arquivo</small></span>
+            </label>
+            <div class="lanc-anexo-arquivo" id="lancAnexoArquivo" hidden>
+              <span class="lanc-anexo-icone" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg></span>
+              <span class="lanc-anexo-info"><b id="lancAnexoNome"></b><small id="lancAnexoTam"></small></span>
+              <button type="button" class="lanc-anexo-trocar" id="lancAnexoRemover" title="Remover arquivo" aria-label="Remover arquivo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
+            </div>
+            <p class="lanc-erro" id="lancAnexoErro" hidden></p>
+          </div>
+        </section>
+
         <div id="lancSalvarStatus"></div>
         <div class="upload-acoes">
-          <button class="btn btn-verde" id="lancSalvar" type="submit">Salvar lançamento</button>
+          <button class="btn btn-verde" id="lancSalvar" type="submit">Cadastrar relatório</button>
           <button class="btn" id="lancLimpar" type="button">Limpar formulário</button>
           <button class="btn" id="lancVoltarLista" type="button">&larr; Voltar para a lista</button>
         </div>
       </form>
+
+        <dialog class="lanc-dialogo lanc-sucesso" id="lancSucessoDialogo" aria-labelledby="lancSucessoTitulo">
+          <div class="lanc-dialogo-conteudo">
+            <div class="lanc-sucesso-marca" aria-hidden="true"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+            <h3 id="lancSucessoTitulo">Cadastro realizado com sucesso!</h3>
+            <dl class="lanc-sucesso-info" id="lancSucessoInfo"></dl>
+            <p class="lanc-sucesso-pergunta"><b>Deseja lan&ccedil;ar outro relat&oacute;rio?</b></p>
+            <p class="lanc-sucesso-contagem" id="lancSucessoContagem"></p>
+            <div class="lanc-dialogo-acoes">
+              <button class="btn" type="button" id="lancSucessoNao">N&atilde;o, voltar para a lista</button>
+              <button class="btn btn-verde" type="button" id="lancSucessoSim">Sim, lan&ccedil;ar outro</button>
+            </div>
+          </div>
+        </dialog>
 
       </div><!-- /lancFormView -->
 
@@ -1117,11 +1148,12 @@
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
 <script src="../js/data-br.js?v=2026101207"></script>
 <script src="../js/select-busca.js?v=2026101203" defer></script>
-<script src="../js/lancamento-campos.js?v=2026101212"></script>
+<script src="../js/lancamento-campos.js?v=2026101413"></script>
 <script src="../js/lancamento-nomes.js?v=2026101301"></script>
-<script src="../js/lancamento-ux.js?v=2026101002"></script>
-<script src="../js/lancamento-pdf.js?v=2026100904"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026101302"></script>
+<script src="../js/lancamento-ux.js?v=2026101413"></script>
+<script src="../js/lancamento-validacao.js?v=2026101414"></script>
+<script src="../js/lancamento-pdf.js?v=2026101404"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026101411"></script>
 <script src="../js/dashboard.js?v=2026101302"></script>
 <script src="../js/assistente-dados.js?v=2026100923"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>

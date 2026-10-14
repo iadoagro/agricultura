@@ -151,3 +151,21 @@ header p{font-size:13px;opacity:.9}
 .admin-submit.admin-submit-sec,.login-page .admin-submit.admin-submit-sec{margin-top:10px;background:#fff;color:#2563eb;border:1px solid #cbd8e9;box-shadow:none}
 .admin-submit.admin-submit-sec:hover,.login-page .admin-submit.admin-submit-sec:hover{background:#eef4ff}
 .login-pin-nunca{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;font-weight:400;color:#42536e;cursor:pointer}
+
+/* cadeado: ver a senha (pede o PIN) */
+.sol-acoes .cadeado{display:inline-flex;align-items:center;justify-content:center;padding:6px 9px;background:#fff;border:1px solid var(--borda,#cfd6df);color:var(--tinta2,#475569)}
+.sol-acoes .cadeado:hover{border-color:var(--verde);color:var(--verde)}
+.senha-dialogo{width:min(420px,calc(100vw - 32px));border:1px solid #cfd6df;border-radius:14px;padding:0;box-shadow:0 18px 48px rgba(0,0,0,.25)}
+.senha-dialogo::backdrop{background:rgba(15,30,20,.45)}
+.senha-conteudo{display:grid;gap:14px;padding:20px 22px}
+.senha-conteudo h3{margin:0;font-size:17px}
+.senha-conteudo p{margin:0;font-size:13.5px;line-height:1.5;color:#475569}
+.senha-conteudo label{display:block;font-size:14px;font-weight:600}
+.senha-pin,.senha-valor input{display:block;width:100%;margin-top:6px;padding:10px 12px;border:1.5px solid #cfd6df;border-radius:10px;font-size:16px;letter-spacing:.15em}
+.senha-erro{color:#b91c1c!important;font-weight:600}
+.senha-valor{display:flex;gap:8px;align-items:center}
+.senha-valor input{margin-top:0;font-weight:700}
+.senha-olho{flex:none;display:grid;place-items:center;width:42px;height:42px;border:1px solid #cfd6df;border-radius:10px;background:#fff;cursor:pointer}
+.senha-acoes{display:flex;justify-content:flex-end;gap:8px}
+.senha-acoes button{padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;border:1px solid #cfd6df;background:#fff}
+.senha-acoes .aprovar{background:#eff6ff;border-color:var(--verde);color:var(--verde)}

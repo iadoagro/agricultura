@@ -488,3 +488,60 @@
   .lanc-progresso{flex:1 1 100%;margin-right:0}
   .lanc-form .upload-acoes .btn{flex:1 1 auto}
 }
+
+/* seção ainda não liberada: a anterior precisa estar preenchida */
+.lanc-form section.painel.lanc-bloqueada{opacity:.5;filter:grayscale(.6);user-select:none}
+
+/* anexo (PDF da ficha): área de soltar + cartão do arquivo escolhido */
+.lanc-anexo{position:relative}
+.lanc-anexo-input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.lanc-anexo-zona{display:flex;align-items:center;gap:16px;padding:22px 20px;border:2px dashed var(--linha-t);border-radius:14px;
+  background:var(--superficie2);cursor:pointer;transition:border-color .15s,background .15s}
+.lanc-anexo-zona:hover,.lanc-anexo.lanc-arrastando .lanc-anexo-zona{border-color:var(--acento-fundo);background:var(--acento-suave)}
+.lanc-anexo-input:focus-visible + .lanc-anexo-zona{outline:2px solid var(--acento-fundo);outline-offset:2px}
+.lanc-anexo-icone{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:12px;background:var(--acento-suave);color:var(--acento-fundo)}
+.lanc-anexo-texto{display:flex;flex-direction:column;gap:4px;color:var(--tinta2);font-size:.95rem}
+.lanc-anexo-texto b{color:var(--acento-fundo)}
+.lanc-anexo-texto small,.lanc-anexo-info small{color:var(--tinta3);font-size:.8rem}
+.lanc-anexo-arquivo{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--acento-fundo);border-radius:14px;background:var(--acento-suave)}
+.lanc-anexo-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.lanc-anexo-info b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tinta)}
+.lanc-anexo-trocar{flex:none;border:1px solid var(--linha-t);background:var(--superficie);color:var(--tinta2);border-radius:999px;padding:6px 14px;cursor:pointer;font:inherit;font-size:.85rem}
+.lanc-anexo-trocar:hover{border-color:#c0392b;color:#c0392b}
+.lanc-anexo-zona{flex-direction:column;justify-content:center;text-align:center;gap:10px;padding:28px 20px}
+.lanc-anexo-texto{align-items:center}
+.lanc-anexo-trocar{display:grid;place-items:center;width:38px;height:38px;padding:0;border-radius:10px}
+
+/* confirmação depois de salvar */
+.lanc-sucesso{width:min(480px,calc(100vw - 32px));text-align:center}
+.lanc-sucesso-marca{width:60px;height:60px;margin:0 auto;border-radius:50%;display:grid;place-items:center;background:var(--acento-suave);color:var(--acento-fundo)}
+.lanc-sucesso h3{font-size:19px}
+.lanc-sucesso-info{margin:0;display:grid;gap:6px;text-align:left;padding:12px 14px;border-radius:12px;background:var(--superficie2);font-size:13.5px}
+.lanc-sucesso-info div{display:flex;gap:8px;justify-content:space-between}
+.lanc-sucesso-info dt{color:var(--tinta3)}
+.lanc-sucesso-info dd{margin:0;font-weight:600;color:var(--tinta);text-align:right}
+.lanc-sucesso-pergunta{font-size:15px;color:var(--tinta)}
+.lanc-sucesso-contagem{font-size:12.5px;color:var(--tinta3)}
+.lanc-sucesso .lanc-dialogo-acoes{justify-content:center}
+
+/* ---- orientação: estado de cada seção e conferência dos campos ---- */
+.lanc-form section.painel > .painel-cab{position:relative}
+.lanc-form section.painel[data-estado] > .painel-cab::after{position:absolute;right:0;top:0;font-size:11.5px;font-weight:700;
+  line-height:1;padding:6px 11px;border-radius:999px;white-space:nowrap}
+.lanc-form section.painel[data-estado="atual"] > .painel-cab::after{content:'Preencha esta seção';background:var(--acento-suave);color:var(--acento-fundo)}
+.lanc-form section.painel[data-estado="ok"] > .painel-cab::after{content:'Concluída';background:#dcfce7;color:#15803d}
+.lanc-form section.painel[data-estado="opcional"] > .painel-cab::after{content:'Opcional';background:var(--superficie2);color:var(--tinta3)}
+.lanc-form section.painel[data-estado="bloqueada"] > .painel-cab::after{content:'Aguardando a seção anterior';background:var(--superficie2);color:var(--tinta3)}
+.lanc-form section.painel[data-estado="atual"]{border-color:var(--acento-fundo);box-shadow:0 0 0 3px var(--acento-suave),0 10px 30px -18px rgba(21,62,117,.45)}
+.lanc-form section.painel.lanc-ok .painel-cab-tit h2::after{display:none}
+@media (max-width:640px){
+  .lanc-form section.painel[data-estado] > .painel-cab::after{position:static;display:inline-block;margin-top:8px}
+}
+
+.lanc-msg{display:block;margin-top:6px;font-size:12.5px;font-weight:600;line-height:1.35}
+.lanc-msg[hidden]{display:none}
+.lanc-msg-erro{color:#b91c1c}
+.lanc-msg-aviso{color:#b45309}
+.lanc-msg-ok{color:#15803d}
+.lanc-campos input.lanc-campo-erro,.lanc-campos select.lanc-campo-erro{border-color:#dc2626;box-shadow:0 0 0 3px rgba(220,38,38,.14)}
+.lanc-campos input.lanc-campo-aviso,.lanc-form .lc-area.lanc-campo-aviso{border-color:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.16)}

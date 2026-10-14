@@ -168,14 +168,73 @@
     // campos de data em dd/mm/aaaa em qualquer navegador (js/data-br.js)
     if (window.DATA_BR) window.DATA_BR.aplicarTodos(form);
 
-    /** Preenche o select de responsável técnico. */
+    /* Técnicos já relacionados a cada município/escritório nos lançamentos do
+       banco (ação "tecnicos"): [{m: município, e: escritório, t: técnico, n: quantos}]. */
+    var tecnicosBanco = [];
+    var usoMaquinas = {}, usoImplementos = {};   // nome => quantos lançamentos usaram (ação "tecnicos")
+
+    function chaveTexto(v) {
+      return String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
+    /** Técnicos do município escolhido, os do mesmo escritório primeiro e,
+        dentro de cada grupo, quem mais lançou ali. */
+    function tecnicosDoMunicipio() {
+      var mun = chaveTexto(form.elements['municipio'] && form.elements['municipio'].value);
+      var esc2 = chaveTexto(form.elements['escritorio_local'] && form.elements['escritorio_local'].value);
+      if (!mun) return [];
+      var porNome = {};
+      tecnicosBanco.forEach(function (r) {
+        if (chaveTexto(r.m) !== mun) return;
+        var g = porNome[r.t] || (porNome[r.t] = { nome: r.t, n: 0, mesmoEsc: false });
+        g.n += r.n;
+        if (esc2 && chaveTexto(r.e) === esc2) g.mesmoEsc = true;
+      });
+      return Object.keys(porNome).map(function (k) { return porNome[k]; })
+        .sort(function (a, b) { return (b.mesmoEsc - a.mesmoEsc) || (b.n - a.n) || a.nome.localeCompare(b.nome); })
+        .map(function (g) { return g.nome; });
+    }
+
+    /** Preenche o select de responsável técnico: primeiro os já relacionados
+        ao município (e escritório) escolhidos, depois os demais. */
     function montarTecnicos() {
       var sel = form.elements['responsavel_tecnico'];
       if (!sel || sel.tagName !== 'SELECT') return;
       var atual = sel.value;
-      sel.innerHTML = '<option value="">Selecione…</option>' +
-        TECNICOS.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('');
+      var doMun = tecnicosDoMunicipio();
+      var todos = TECNICOS.slice();
+      tecnicosBanco.forEach(function (r) { if (r.t && todos.indexOf(r.t) < 0) todos.push(r.t); });
+      var outros = todos.filter(function (n) { return doMun.indexOf(n) < 0; });
+      var opcoes = function (lista) { return lista.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join(''); };
+      sel.innerHTML = '<option value="">Selecione…</option>' + (doMun.length
+        ? '<optgroup label="Já atuaram neste município">' + opcoes(doMun) + '</optgroup>' +
+          '<optgroup label="Outros técnicos">' + opcoes(outros) + '</optgroup>'
+        : opcoes(outros));
+      if (atual && !Array.prototype.some.call(sel.options, function (o) { return o.value === atual; })) {
+        var o = document.createElement('option');
+        o.textContent = atual;
+        sel.appendChild(o);
+      }
       sel.value = atual;
+    }
+
+    /** Busca no banco quem já atuou em cada município (uma vez por formulário). */
+    function carregarTecnicosDoBanco() {
+      var auth = window.ADMIN_AUTH, sessao = null;
+      try { sessao = auth && auth.sessaoAtual && auth.sessaoAtual(); } catch (e) { /* sem sessão */ }
+      if (!sessao || !sessao.access_token) return;
+      var fd = new FormData();
+      fd.append('acao', 'tecnicos');
+      fd.append('token', sessao.access_token);
+      enviar(fd).then(function (res) {
+        if (!res.corpo.ok || !Array.isArray(res.corpo.itens)) return;
+        tecnicosBanco = res.corpo.itens;
+        usoMaquinas = res.corpo.maquinas || {};
+        usoImplementos = res.corpo.implementos || {};
+        montarCaixasVazias();
+        montarTecnicos();
+        sugerirTecnico(form.elements['municipio'].value);
+      }, function () { /* sem banco: fica a lista fixa */ });
     }
 
     /** Lançamentos antigos podem trazer um nome que não está na lista: ele entra
@@ -192,6 +251,7 @@
       sel.value = nome;
     }
     montarTecnicos();
+    carregarTecnicosDoBanco();
 
 
     /* ---- Menos cliques: selects de poucas opções viram botões lado a lado ----
@@ -291,7 +351,8 @@
       // s\u00f3 mexe se estiver vazio ou se ainda for o que a pr\u00f3pria sugest\u00e3o escolheu
       if (sel.value && sel.value !== tecnicoSugerido) return;
       var chave = String(mun || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-      var nome = TECNICO_DO_MUNICIPIO[chave] || '';
+      // o que o banco mais relaciona ao município vale mais que a lista fixa
+      var nome = tecnicosDoMunicipio()[0] || TECNICO_DO_MUNICIPIO[chave] || '';
       sel.value = nome;
       tecnicoSugerido = nome;
     }
@@ -339,17 +400,19 @@
     function sincronizarEscritorioPorMunicipio() {
       var mun = form.elements['municipio'].value;
       atualizarZona(form.elements['municipio'].value);
-      sugerirTecnico(form.elements['municipio'].value);
       var escSel = form.elements['escritorio_local'];
       var atual = escSel.value;
       montarEscritorios(mun);
       if (mun === 'Rio Branco') {
         escSel.disabled = false;
         escSel.value = (atual === 'Escritório Local de Rio Branco' || atual === 'Escritório Local da Transacreana') ? atual : '';
-        return;
+      } else {
+        escSel.disabled = true;
+        escSel.value = mun ? 'Escritório Local de ' + mun : '';
       }
-      escSel.disabled = true;
-      escSel.value = mun ? 'Escritório Local de ' + mun : '';
+      // depois do escritório definido: a lista de técnicos depende dos dois
+      montarTecnicos();
+      sugerirTecnico(mun);
     }
 
     /** Data e hora (nessa ordem) de quando o formulário foi aberto — só
@@ -473,7 +536,9 @@
       var v = form.elements['tipo_servico'].value;   // RadioNodeList: '' quando nenhum marcado
       el('lancSecMecanizacao').hidden = v !== 'Mecanização';
       el('lancSecAcudagem').hidden = v !== 'Açudagem';
-      // Maquinário, DAE e Observações só aparecem depois de escolher o serviço
+      // Georreferenciamento, Maquinário, DAE, Observações e Anexo só aparecem
+      // depois de escolher o serviço; aí cada uma fica bloqueada até a
+      // anterior estar preenchida (js/lancamento-ux.js).
       Array.prototype.forEach.call(form.querySelectorAll('.lanc-sec-servico'), function (sec) { sec.hidden = !v; });
       // Tipo de implemento só faz sentido em Mecanização (Açudagem não usa
       // implemento de máquina). Some tanto por padrão quanto fora dela, e
@@ -510,22 +575,57 @@
       var tipo = form.elements['tipo_servico'].value;
       el('lancCulturaErro').hidden = true;
       el('lancAcudeErro').hidden = true;
+      var erroMaq = el('lancMaquinaErro');
+      if (erroMaq) erroMaq.hidden = true;
       if (tipo === 'Mecanização' && culturasAtuais().length < 1) {
         el('lancCulturaErro').hidden = false;
         el('lancCulturaErro').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return false;
       }
-      if (tipo === 'Açudagem' && !(parseInt(form.elements['quantidade_acudes'].value, 10) >= 1)) {
-        el('lancAcudeErro').hidden = false;
-        form.elements['quantidade_acudes'].focus();
+      if (tipo === 'Açudagem') {
+        var tanques = parseInt(form.elements['quantidade_acudes'].value, 10);
+        var horas = parseFloat(String(form.elements['horas_maquina'].value).replace(',', '.'));
+        if (!(tanques >= 1)) {
+          el('lancAcudeErro').hidden = false;
+          form.elements['quantidade_acudes'].focus();
+          return false;
+        }
+        if (!(horas > 0)) {
+          el('lancAcudeErro').hidden = false;
+          form.elements['horas_maquina'].focus();
+          return false;
+        }
+      }
+      if (tipo && coletarMarcados(el('lancMaquinas')).length < 1) {
+        if (erroMaq) erroMaq.hidden = false;
+        el('lancMaquinas').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return false;
       }
       return true;
     }
 
+    /** Os 5 mais usados nos lançamentos do banco vêm primeiro, em ordem
+        alfabética; depois os demais, também em ordem alfabética. Sem dado do
+        banco, fica só a ordem alfabética. */
+    function ordenarPorUso(opcoes, uso) {
+      var alfa = function (a, b) { return a.localeCompare(b, 'pt-BR'); };
+      var porUso = {};
+      Object.keys(uso || {}).forEach(function (k) { porUso[chaveTexto(k)] = (porUso[chaveTexto(k)] || 0) + uso[k]; });
+      var usado = function (o) { return porUso[chaveTexto(o)] || 0; };
+      var frequentes = opcoes.filter(function (o) { return usado(o) > 0; })
+        .sort(function (a, b) { return (usado(b) - usado(a)) || alfa(a, b); }).slice(0, 5);
+      var resto = opcoes.filter(function (o) { return frequentes.indexOf(o) < 0; }).sort(alfa);
+      return frequentes.sort(alfa).concat(resto);
+    }
+
     function montarCaixasVazias() {
-      caixasDeOpcoes(el('lancMaquinas'), MAQUINAS_OPCOES, 'lancMaq');
-      caixasDeOpcoes(el('lancImplementos'), IMPLEMENTOS_OPCOES, 'lancImpl');
+      // refaz as caixas mantendo o que já estava marcado (quando o banco responde depois)
+      var maq = el('lancMaquinas'), impl = el('lancImplementos');
+      var marcadasMaq = coletarMarcados(maq), marcadasImpl = coletarMarcados(impl);
+      caixasDeOpcoes(maq, ordenarPorUso(MAQUINAS_OPCOES, usoMaquinas), 'lancMaq');
+      caixasDeOpcoes(impl, ordenarPorUso(IMPLEMENTOS_OPCOES, usoImplementos), 'lancImpl');
+      if (marcadasMaq.length) marcarCaixas(maq, marcadasMaq);
+      if (marcadasImpl.length) marcarCaixas(impl, marcadasImpl);
     }
 
     /** Zera as linhas dinâmicas e reconstrói a partir de "dados" — usado
@@ -573,6 +673,8 @@
         if (e.target.closest('.lanc-cultura-linha, .lanc-dae-linha')) atualizarBotoesAdicionar();
         if (e.target.classList && e.target.classList.contains('lc-area')) recalcularAreaTotal();
         if (e.target.name === 'quantidade_acudes') el('lancAcudeErro').hidden = true;
+        if (e.target.closest && e.target.closest('#lancMaquinas') && el('lancMaquinaErro')) el('lancMaquinaErro').hidden = true;
+        if (e.target.name === 'horas_maquina') el('lancAcudeErro').hidden = true;
       });
       // barreira no clique: com campo anterior em branco o serviço nem chega a ser marcado
       form.addEventListener('click', function (e) {
@@ -601,6 +703,8 @@
         if (e.target.name === 'quantidade_acudes') el('lancAcudeErro').hidden = true;
       });
       form.elements['municipio'].addEventListener('change', sincronizarEscritorioPorMunicipio);
+      // Rio Branco tem dois escritórios: trocar o escritório reordena os técnicos
+      form.elements['escritorio_local'].addEventListener('change', function () { montarTecnicos(); });
     }
 
     return {
