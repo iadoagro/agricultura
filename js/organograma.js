@@ -1434,13 +1434,27 @@ async function orgGravarLote(linhas,descricao){
     if(e.status!==404)throw e;
   }
   const agora=new Date().toISOString();
-  const r=await fetch(orgUrl()+'?on_conflict=id',{
-    method:'POST',
-    headers:{...h,Prefer:'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify(linhas.map(l=>({...l,atualizado_em:agora,atualizado_por:email})))
+  // O banco só aceita um envio em lote quando todas as linhas têm os mesmos campos (senão responde
+  // 400 "All object keys must match"). Por isso o lote é separado em grupos de linhas com os mesmos campos.
+  const grupos=new Map();
+  linhas.forEach(l=>{
+    const chave=Object.keys(l).sort().join('|');
+    if(!grupos.has(chave))grupos.set(chave,[]);
+    grupos.get(chave).push(l);
   });
-  if(r.status===401||r.status===403)throw new Error('Só a conta do responsável pode salvar alterações no organograma.');
-  if(!r.ok)throw new Error('Não foi possível salvar (HTTP '+r.status+').');
+  for(const grupo of grupos.values()){
+    const r=await fetch(orgUrl()+'?on_conflict=id',{
+      method:'POST',
+      headers:{...h,Prefer:'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify(grupo.map(l=>({...l,atualizado_em:agora,atualizado_por:email})))
+    });
+    if(r.status===401||r.status===403)throw new Error('Só a conta do responsável pode salvar alterações no organograma.');
+    if(!r.ok){
+      let detalhe='';
+      try{const j=await r.json();detalhe=j.message||j.hint||'';}catch(e){}
+      throw new Error('Não foi possível salvar (HTTP '+r.status+')'+(detalhe?': '+detalhe:'.'));
+    }
+  }
   orgCacheMesclar(linhas);
 }
 
