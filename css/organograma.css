@@ -954,3 +954,120 @@ body.org-arrastando,body.org-arrastando .org-node{cursor:grabbing!important;user
 .org-edit-ato{display:grid;grid-template-columns:1fr 1.3fr;gap:10px}
 .org-edit-campo select{padding:9px 10px;border:1.5px solid #cbd8e9;border-radius:8px;font:inherit;font-size:14px;font-weight:500;color:#172b4d;background:#fff}
 .org-edit-campo select:focus{outline:none;border-color:#256dd3;box-shadow:0 0 0 3px rgba(37,109,211,.18)}
+.org-edit-cores{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.org-cor{width:28px;height:28px;border-radius:8px;border:2px solid #fff;box-shadow:0 0 0 1px #cbd8e9;cursor:pointer;padding:0}
+.org-cor.on{box-shadow:0 0 0 2px #256dd3}
+.org-cor-custom{width:34px;height:30px;padding:0;border:1px solid #cbd8e9;border-radius:8px;background:#fff;cursor:pointer}
+.org-cor-custom.on{box-shadow:0 0 0 2px #256dd3}
+.org-edit-remover{padding:9px 14px;border:1px solid #f1b4b4;border-radius:8px;background:#fff;color:#b91c1c;font-weight:600;cursor:pointer}
+.org-edit-remover:hover{background:#fef2f2}
+
+
+
+/* versões anteriores */
+.versoes-box{max-width:560px}
+.versoes-lista{max-height:52vh;overflow:auto;margin-bottom:14px;border:1px solid #e2e8f0;border-radius:10px}
+.versao-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid #eef2f7}
+.versao-item:last-child{border-bottom:none}
+.versao-info{flex:1;min-width:0;display:grid;gap:2px}
+.versao-info b{font-size:13px;color:#172b4d;overflow:hidden;text-overflow:ellipsis}
+.versao-info small{font-size:11.5px;color:#62728a}
+.versao-voltar{flex:none;padding:7px 12px;border:1px solid #cbd8e9;border-radius:8px;background:#fff;color:#256dd3;font-weight:600;font-size:12.5px;cursor:pointer}
+.versao-voltar:hover{background:#eff6ff}
+.versao-voltar:disabled{opacity:.6;cursor:wait}
+.search-node-results{z-index:3000}
+.timeline-baixar{margin-left:8px;font-size:11.5px;font-weight:700;color:#256dd3;text-decoration:none;white-space:nowrap}
+.timeline-baixar:hover{text-decoration:underline}
+
+/* =====================================================================
+   Visual minimalista: bordas finas e cantos suaves, linhas em cinza-azulado,
+   página limpa. As cores dos setores NÃO mudam (cabeçalho cheio, igual ao
+   desenho original); a hierarquia e as ligações são as mesmas.
+   ===================================================================== */
+.canvas{background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.08),0 12px 32px rgba(15,23,42,.06);border-radius:4px}
+.viewport{background:#f6f8fb}
+
+.line-layer path{stroke:#9aa7b8;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:1}
+
+.org-node{
+  font-family:system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  border:1px solid #dbe2ea;border-radius:7px;background:#fff;color:#0f172a;
+  box-shadow:0 1px 2px rgba(15,23,42,.06);
+}
+.org-node:hover{border-color:var(--node-bg,#94a3b8);box-shadow:0 6px 18px rgba(15,23,42,.14)}
+
+/* cores dos setores: as mesmas de sempre (roxo, amarelo, azul, azul-aço, laranja), cabeçalho cheio —
+   assim se vê de relance a que grupo cada caixa pertence */
+.org-node .node-header,
+.org-node[data-color] .node-header{
+  background-color:var(--node-bg,#4472c4);background-image:none;
+  color:#fff;box-shadow:none;
+  border-bottom:1px solid rgba(15,23,42,.18);
+  font-weight:700;letter-spacing:.1px;
+}
+.org-node .node-body{color:#334155;background:#fff;font-weight:500}
+
+/* sigla: etiqueta branca, como no desenho original, só mais arredondada */
+.org-node .node-sigla{
+  background:#fff;color:#111827;border:0;border-radius:999px;
+  padding:1px 7px;font-weight:800;letter-spacing:.5px;
+}
+
+.node-toggle{background:#fff;border:1px solid #cbd5e1;color:#475569;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.org-node[data-kind="secretaria"] .node-toggle{background:rgba(255,255,255,.9);color:#4c1d95}
+
+.source-note,.update-note{color:#94a3b8;font-weight:600;letter-spacing:.2px}
+
+/* barra de ferramentas mais leve */
+.tool-button,.icon-button{border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#334155;box-shadow:none;font-weight:600}
+.tool-button:hover,.icon-button:hover{background:#f8fafc;border-color:#cbd5e1}
+.tool-button.admin-ativo{background:#0f172a;border-color:#0f172a;color:#fff}
+.topbar{box-shadow:none;border-bottom:1px solid #e8edf3}
+
+/* ===== contraste ===== */
+/* texto escuro nos cabeçalhos claros (amarelo e laranja) — branco sobre eles não passa de 3:1 */
+.org-node[data-color="yellow"] .node-header,
+.org-node[data-color="orange"] .node-header{color:#111827;text-shadow:none}
+.org-node[data-color="yellow"] .node-toggle,
+.org-node[data-color="orange"] .node-toggle{border-color:#111827}
+
+/* corpo, bordas e linhas mais firmes */
+.org-node{border-color:#aab5c3}
+.org-node .node-body{color:#0f172a;font-weight:600}
+.org-node .node-header{border-bottom-color:rgba(15,23,42,.35)}
+.line-layer path{stroke:#5b6b80;stroke-width:1.6}
+.org-node .node-sigla{color:#0b1220;box-shadow:0 0 0 1px rgba(15,23,42,.18)}
+
+/* anotações do rodapé do quadro */
+.source-note,.update-note{color:#5b6b80}
+
+/* ===== legibilidade: fundo branco e cores dos cabeçalhos com contraste >= 7:1 ===== */
+body{background:#fff}
+.viewport{background:#fff}
+.canvas{background:#fff;box-shadow:none;outline:1px solid #e5e7eb;border-radius:0}
+
+/* mesmos tons, só um pouco mais profundos (azul, azul-aço) e o laranja um pouco mais claro,
+   para o texto (branco ou escuro) passar de 7:1 mesmo em corpo pequeno */
+:root{--blue:#345897;--green:#385989;--orange:#f28a3f}
+.org-node .node-header,
+.org-node[data-color] .node-header{font-weight:800;letter-spacing:.15px}
+.org-cor{position:relative}
+.org-cor.on::after{content:'\2713';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:15px;font-weight:800;text-shadow:0 0 2px rgba(0,0,0,.6)}
+
+/* ===== título das caixas: letra branca em todos os grupos, exceto o amarelo (que fica com
+   texto escuro, pois branco sobre amarelo não se lê) ===== */
+:root{--orange:#b8430a}
+.org-node[data-color="orange"] .node-header{color:#fff}
+.org-node[data-color="orange"] .node-toggle{border-color:rgba(15,23,42,.35)}
+.org-node .node-header,
+.org-node[data-color] .node-header{font-weight:700;letter-spacing:.2px;-webkit-font-smoothing:antialiased}
+.org-node:not([data-color="yellow"]) .node-header{text-shadow:0 1px 1px rgba(0,0,0,.28)}
+.org-node[data-color="yellow"] .node-header{text-shadow:none;color:#1a1300}
+
+/* ===== tons mais leves: de volta às cores originais (azul e azul-aço), verde e laranja
+   mais claros que antes; branco sobre todos eles segue acima de 4:1, em negrito ===== */
+:root{--blue:#4472c4;--green:#4771ad;--orange:#c95c14}
+.org-cor-texto{width:26px;height:26px;border-radius:50%}
+.org-cor-auto{display:grid;place-items:center;background:#fff;color:#475569;font-size:11px;font-weight:800;border:1px dashed #94a3b8}
+.org-cor.on.org-cor-auto::after{content:none}
+.org-cor.on.org-cor-auto{box-shadow:0 0 0 2px #256dd3}
