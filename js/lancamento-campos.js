@@ -748,16 +748,96 @@
     var pronto = auth && auth.garantirSessao
       ? auth.garantirSessao().then(function (s) { if (s && s.access_token && fd.has('token')) fd.set('token', s.access_token); }, function () {})
       : Promise.resolve();
-    return pronto.then(function () { return enviarAgora(fd, cfg, lerJson); }).then(function (res) {
-      // 401 com token que parecia válido (relógio do computador atrasado, token invalidado):
-      // força a renovação e tenta de novo uma vez antes de pedir pra entrar de novo
-      if (res.status !== 401 || !fd.has('token') || !auth || !auth.renovarSessao) return res;
-      return auth.renovarSessao().then(function (s) {
-        if (!s || !s.access_token || s.access_token === fd.get('token')) return res;
+    function sessaoExpirou(res) {
+      return res.status === 401 && /sess[ãa]o do site expirou/i.test((res.corpo && res.corpo.erro) || '');
+    }
+    // 503 = o servidor não conseguiu confirmar a sessão agora (banco instável): espera e repete
+    function enviarComRepeticao(tentativa) {
+      return enviarAgora(fd, cfg, lerJson).then(function (res) {
+        if (res.status === 503 && tentativa < 2) {
+          return new Promise(function (ok) { setTimeout(ok, 1500 * (tentativa + 1)); })
+            .then(function () { return enviarComRepeticao(tentativa + 1); });
+        }
+        return res;
+      });
+    }
+    return pronto.then(function () { return enviarComRepeticao(0); }).then(function (res) {
+      if (!sessaoExpirou(res) || !auth) return res;
+      // 401: primeiro força a renovação silenciosa e repete uma vez
+      var renovada = auth.renovarSessao && fd.has('token')
+        ? auth.renovarSessao().then(function (s) {
+            if (!s || !s.access_token || s.access_token === fd.get('token')) return null;
+            return s;
+          }, function () { return null; })
+        : Promise.resolve(null);
+      return renovada.then(function (s) {
+        if (!s) return null;
         fd.set('token', s.access_token);
-        return enviarAgora(fd, cfg, lerJson);
-      }, function () { return res; });
+        return enviarComRepeticao(0);
+      }).then(function (res2) {
+        if (res2 && !sessaoExpirou(res2)) return res2;
+        // não deu para renovar sozinho: pede a senha aqui mesmo, sem perder a ficha
+        return reentrarComSenha(auth).then(function (s) {
+          if (!s || !s.access_token) return res2 || res;
+          fd.set('token', s.access_token);
+          return enviarComRepeticao(0);
+        });
+      });
     });
+  }
+
+  var reentradaEmCurso = null;
+  /** Janela pedindo a senha de novo (a sessão não pôde ser renovada). A página
+      não recarrega, então o que foi digitado fica. Resolve com a sessão nova
+      ou null se a pessoa cancelar. Várias chamadas ao mesmo tempo dividem a
+      mesma janela. */
+  function reentrarComSenha(auth) {
+    if (!auth || !auth.reautenticar) return Promise.resolve(null);
+    if (reentradaEmCurso) return reentradaEmCurso;
+    var email = (auth.emailLembrado && auth.emailLembrado()) || '';
+    if (!email) return Promise.resolve(null);
+    reentradaEmCurso = new Promise(function (resolve) {
+      var dlg = document.createElement('dialog');
+      dlg.className = 'lanc-dialogo';
+      dlg.innerHTML =
+        '<form method="dialog">' +
+          '<h3>Sua sessão expirou</h3>' +
+          '<p>Digite sua senha para continuar. O que você preencheu <b>não será perdido</b>.</p>' +
+          '<label>Senha<input type="password" autocomplete="current-password" required></label>' +
+          '<p class="lanc-erro" hidden></p>' +
+          '<div class="lanc-dialogo-acoes">' +
+            '<button class="btn" type="button" data-cancelar>Cancelar</button>' +
+            '<button class="btn btn-verde" type="submit">Continuar</button>' +
+          '</div>' +
+        '</form>';
+      document.body.appendChild(dlg);
+      var form = dlg.querySelector('form'), campo = dlg.querySelector('input'), erro = dlg.querySelector('.lanc-erro');
+      var botao = dlg.querySelector('[type=submit]');
+      var encerrado = false;
+      function fim(valor) {
+        if (encerrado) return;
+        encerrado = true;
+        try { if (dlg.open) dlg.close(); } catch (e) {}
+        dlg.remove();
+        reentradaEmCurso = null;
+        resolve(valor);
+      }
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        botao.disabled = true; erro.hidden = true;
+        auth.reautenticar(campo.value).then(fim, function (e) {
+          botao.disabled = false;
+          erro.textContent = (e && e.message) || 'Não foi possível entrar. Tente novamente.';
+          erro.hidden = false;
+          campo.select();
+        });
+      });
+      dlg.querySelector('[data-cancelar]').addEventListener('click', function () { fim(null); });
+      dlg.addEventListener('cancel', function (ev) { ev.preventDefault(); fim(null); });
+      try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); }
+      campo.focus();
+    });
+    return reentradaEmCurso;
   }
 
   function enviarAgora(fd, cfg, lerJson) {

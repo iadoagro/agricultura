@@ -115,9 +115,12 @@ async function emailAutenticado(token: string): Promise<string | null> {
   if (!token) return null;
   try {
     const r = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: SERVICE_ROLE, Authorization: 'Bearer ' + token } });
+    // banco instável / limite de requisições: não é sessão vencida — 503 faz o navegador tentar de novo
+    if (r.status === 429 || r.status >= 500) throw new Error('indisponivel');
     const usuario = r.ok ? await r.json().catch(() => null) : null;
     return usuario && usuario.email ? String(usuario.email).toLowerCase() : null;
   } catch {
+    responder(503, { ok: false, erro: 'Não foi possível confirmar sua sessão agora (o banco não respondeu). Tente novamente em instantes.' });
     return null;
   }
 }

@@ -66,12 +66,14 @@
   function configurar() {
     if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(cfg.url || '') || !/^sb_publishable_/.test(cfg.chavePublica || '')) throw new Error('A configuração do banco online está incompleta.');
   }
+  const chaveEmail = 'seagri_ultimo_email:' + cfg.url;
   function limpar() {
     clearTimeout(timerRenovar);
+    if (sessao && sessao.user && sessao.user.email) { try { sessionStorage.setItem(chaveEmail, sessao.user.email); } catch (e) {} }
     sessao = null;
     sessionStorage.removeItem(sessionKey); avisar();
   }
-  async function requisicao(caminho, options = {}, autenticada = true) {
+  async function requisicao(caminho, options = {}, autenticada = true, jaRenovou = false) {
     configurar();
     if (autenticada && sessao && venceEmBreve()) await renovar().catch(() => {});
     if (autenticada && (!sessao || sessao.expires_at * 1000 <= Date.now())) {
@@ -88,7 +90,17 @@
       });
     } catch (e) { throw new Error('Sem conexão com o banco. Tente novamente.'); }
     if (!resposta.ok) {
-      if (resposta.status === 401 && autenticada) limpar();
+      if (resposta.status === 401 && autenticada) {
+        // token recusado (vencido, relógio atrasado): renova e repete uma vez antes de derrubar a sessão
+        if (!jaRenovou && sessao && sessao.refresh_token) {
+          try {
+            sessao.expires_at = 0;   // força a troca mesmo que o relógio ache o token válido
+            await renovar();
+            return requisicao(caminho, options, autenticada, true);
+          } catch (e) { /* cai no limpar() abaixo */ }
+        }
+        limpar();
+      }
       let corpo = null;
       try { corpo = await resposta.json(); } catch (e) {}
       const motivo = (corpo && (corpo.msg || corpo.message)) || '';
@@ -149,14 +161,20 @@
     if (!sessao.refresh_token) throw new Error('Entre novamente para continuar.');   // login feito antes desta versão
     if (!renovando) {
       renovando = (async () => {
-        let resposta;
-        try {
-          resposta = await fetch(cfg.url.replace(/\/$/, '') + '/auth/v1/token?grant_type=refresh_token', {
-            method: 'POST', signal: sinalTimeout(20000),
-            headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: sessao.refresh_token })
-          });
-        } catch (e) { throw new Error('Sem conexão com o banco. Tente novamente.'); }
+        let resposta = null;
+        // rede que acabou de voltar (computador acordando, Wi-Fi caindo): tenta até 3 vezes
+        for (let t = 0; t < 3 && !resposta; t++) {
+          try {
+            resposta = await fetch(cfg.url.replace(/\/$/, '') + '/auth/v1/token?grant_type=refresh_token', {
+              method: 'POST', signal: sinalTimeout(20000),
+              headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh_token: sessao.refresh_token })
+            });
+          } catch (e) {
+            if (t < 2) await new Promise(function (ok) { setTimeout(ok, 1500 * (t + 1)); });
+          }
+        }
+        if (!resposta) throw new Error('Sem conexão com o banco. Tente novamente.');
         const r = await resposta.json().catch(() => null);
         if (!resposta.ok || !r || !r.access_token) {
           // outra aba pode ter acabado de usar este refresh_token
@@ -188,6 +206,35 @@
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && venceEmBreve()) renovar().catch(() => {});
   });
+  window.addEventListener('online', () => { if (venceEmBreve()) renovar().catch(() => {}); });
+
+  /** Último recurso quando a renovação não é possível (refresh_token revogado
+      ou vencido): entra de novo com a senha, SEM recarregar a página, para a
+      ficha preenchida não se perder. Devolve a sessão nova. */
+  async function reautenticar(senha) {
+    configurar();
+    let email = sessao && sessao.user && sessao.user.email;
+    if (!email) { try { email = sessionStorage.getItem(chaveEmail); } catch (e) {} }
+    if (!email) throw new Error('Entre novamente para continuar.');
+    let r;
+    try { r = await requisicao('/auth/v1/token?grant_type=password', { method: 'POST', body: JSON.stringify({ email, password: senha }) }, false); }
+    catch (e) { throw new Error(e.message === 'Confira o e-mail e a senha.' ? 'Senha incorreta.' : e.message); }
+    const anterior = sessao || {};
+    sessao = Object.assign({}, anterior, {
+      access_token: r.access_token, refresh_token: r.refresh_token,
+      expires_at: r.expires_at || Math.floor(Date.now() / 1000) + r.expires_in,
+      user: { id: r.user.id, email: r.user.email }
+    });
+    gravarSessao();
+    agendarRenovacao();
+    if (!anterior.papel) { try { await atualizarStatus(); } catch (e) {} }
+    avisar();
+    return sessao;
+  }
+  function emailLembrado() {
+    if (sessao && sessao.user && sessao.user.email) return sessao.user.email;
+    try { return sessionStorage.getItem(chaveEmail) || ''; } catch (e) { return ''; }
+  }
 
   function ehResponsavel(email) {
     return (email || '').toLowerCase() === RESPONSAVEL_EMAIL;
@@ -518,12 +565,17 @@
   async function alterarPropriaSenha(novaSenha) {
     exigirSenhaForte(novaSenha);
     await chamarAdminPHP('trocar_propria_senha', { senha: novaSenha });
+    // trocar a senha encerra as sessões antigas no Supabase (token e refresh_token deixam de valer):
+    // entra de novo com a senha nova, senão o próximo salvamento volta "sessão expirou"
+    try { await reautenticar(novaSenha); } catch (e) { /* o fluxo de senha pede de novo se precisar */ }
     try { await requisicao('/rest/v1/rpc/confirmar_troca_senha', { method: 'POST', body: '{}' }); } catch (e) {}
     if (sessao) { sessao.deveTrocarSenha = false; sessionStorage.setItem(sessionKey, JSON.stringify(sessao)); avisar(); }
     registrarEvento('trocar_senha', 'usuarios', 'Alterou a própria senha');
   }
 
   async function chamarAdminPHP(acao, dados) {
+    if (!sessao) throw new Error('Entre novamente para continuar.');
+    await garantirSessao();
     if (!sessao) throw new Error('Entre novamente para continuar.');
     return chamarServidor(acao, dados, sessao.access_token);
   }
@@ -546,7 +598,7 @@
     listarAlertas, contarAlertasNaoVistos, marcarAlertasVistos,
     listarNomesIP, salvarNomeIP, removerNomeIP, statusPin, pinSituacao, loginStatus, loginFalhou, listarPedidosReset, liberarConta, pinRegistrarEntrada, pinRecusar, listarPinBloqueados, pinReexibir, MAX_RECUSAS_PIN,
     sessaoAtual: () => sessao,
-    garantirSessao, renovarSessao: renovar,
+    garantirSessao, renovarSessao: renovar, reautenticar, emailLembrado,
     papel: () => sessao ? sessao.papel : null,
     liberado: () => Boolean(sessao) && (sessao.papel === 'responsavel' || (sessao.papel === 'aprovado' && sessao.ativo !== false)),
     deveTrocarSenha: () => Boolean(sessao) && Boolean(sessao.deveTrocarSenha),

@@ -227,7 +227,7 @@
     fd.set('maquinas', JSON.stringify(ajuda.marcadosDe(el('lancMaquinas'))));
     fd.set('implementos', JSON.stringify(ajuda.marcadosDe(el('lancImplementos'))));
     var sessao = sessaoSite();
-    if (sessao && sessao.access_token) fd.set('token', sessao.access_token);
+    fd.set('token', (sessao && sessao.access_token) || '');
     fd.delete('geo_x'); fd.delete('geo_y'); fd.delete('geo_zona');
 
     var botao = el('lancSalvar');
@@ -263,13 +263,9 @@
       return;
     }
     var sessao = sessaoSite();
-    if (!sessao || !sessao.access_token) {
-      aviso('lancEditarAviso', 'erro', 'Sua sessão do site expirou. Recarregue a página e entre de novo.');
-      return;
-    }
     var fd = new FormData();
     fd.append('acao', 'carregar');
-    fd.append('token', sessao.access_token);
+    fd.append('token', (sessao && sessao.access_token) || '');
     fd.append('id', id);
     window.LANCAMENTO_CAMPOS.enviar(fd)
       .then(function (res) {
@@ -293,7 +289,7 @@
           b.addEventListener('click', function (ev) {
             ev.preventDefault();
             var f = new FormData();
-            f.append('acao', 'pdf'); f.append('token', sessaoSite().access_token); f.append('id', id);
+            f.append('acao', 'pdf'); f.append('token', (sessaoSite() || {}).access_token || ''); f.append('id', id);
             window.LANCAMENTO_CAMPOS.enviar(f).then(function (r) {
               if (r.corpo.ok && r.corpo.url) window.open(r.corpo.url, '_blank', 'noopener');
               else aviso('lancEditarAviso', 'erro', esc(r.corpo.erro || 'Não foi possível abrir o PDF.'));
