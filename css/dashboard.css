@@ -271,6 +271,13 @@ button.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12
   display:flex;flex-direction:column}
 .painel.largo{grid-column:1 / -1}
 .painel.duplo{grid-column:span 2}
+/* dá pra perceber que um clique lá em cima mudou algo aqui embaixo (ex.: abrir
+   os lançamentos de um dia) — pisca a borda em vez de só rolar a tela */
+.painel-piscar{animation:painel-piscar 1.2s ease-out}
+@keyframes painel-piscar{
+  0%,100%{box-shadow:var(--sombra-p)}
+  15%,45%{box-shadow:0 0 0 3px var(--acento)}
+}
 /* painéis de destaque da tela inicial */
 .painel.destaque{border-top:3px solid var(--acento)}
 /* o corpo do gráfico ocupa a sobra de altura da linha */
@@ -443,6 +450,10 @@ table.dados tr.ben-lin{cursor:pointer}
 table.dados tr.ben-lin:hover{background:var(--acento-suave)}
 table.dados tr.ben-lin:hover td.forte{color:var(--acento)}
 table.dados tr.ben-lin:focus-visible{outline:2px solid var(--acento);outline-offset:-2px}
+table.dados tr.ins-dia-lin{cursor:pointer}
+table.dados tr.ins-dia-lin:hover{background:var(--acento-suave)}
+table.dados tr.ins-dia-lin:hover td.forte{color:var(--acento)}
+table.dados tr.ins-dia-lin:focus-visible{outline:2px solid var(--acento);outline-offset:-2px}
 .tabela-scroll{overflow-x:auto;border:1px solid var(--linha-t);border-radius:8px;-webkit-overflow-scrolling:touch}
 table.dados{width:100%;border-collapse:collapse;font-size:12.5px}
 table.dados th{background:var(--superficie2);text-align:left;padding:9px 12px;font-size:11px;font-weight:700;

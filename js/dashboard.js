@@ -2471,10 +2471,11 @@
       var quem = r.alim || NI, onde = r.mun || NI, ym = r.d.slice(0, 7);
 
       var dia = dias.get(r.d);
-      if (!dia) dias.set(r.d, dia = { n: 0, alim: new Map(), mun: new Map() });
+      if (!dia) dias.set(r.d, dia = { n: 0, alim: new Map(), mun: new Map(), registros: [] });
       dia.n++;
       dia.alim.set(quem, (dia.alim.get(quem) || 0) + 1);
       dia.mun.set(onde, (dia.mun.get(onde) || 0) + 1);
+      dia.registros.push(r);
 
       var p = pessoas.get(quem);
       if (!p) pessoas.set(quem, p = { n: 0, dias: new Set(), ini: r.d, fim: r.d, mun: new Map(), mes: new Map() });
@@ -2501,7 +2502,8 @@
         alim: top.rot,
         // participação do maior inseridor no dia: 100% = o dia foi de um só
         part: d.n ? top.val / d.n * 100 : 0,
-        vari: variacao(d.n, i ? dias.get(todos[i - 1]).n : null)
+        vari: variacao(d.n, i ? dias.get(todos[i - 1]).n : null),
+        registros: d.registros
       };
     });
 
@@ -2620,6 +2622,24 @@
 
   /* ---------------------------------------------- ABA: INSERÇÕES POR DIA */
   var buscaDia = '';
+  // 'YYYY-MM' do mês aberto no gráfico "Lançamentos por dia", ou null para
+  // a visão agrupada por mês (e por ano, no rótulo, quando há mais de um
+  // exercício). Clicar numa coluna do agrupado abre o mês; o link "voltar"
+  // (ou clicar de novo) fecha e volta para o agrupado.
+  var insDiaFocoMes = null;
+  // ISO ('YYYY-MM-DD') do dia aberto na tabela "Dia a dia", mostrando os
+  // lançamentos daquele dia em vez da lista de dias. Só faz sentido com um
+  // mês já aberto (insDiaFocoMes).
+  var insDiaFocoDia = null;
+
+  function tituloPainelDe(id, h2, sub) {
+    var div = el(id);
+    var cab = div && div.closest('.painel').querySelector('.painel-cab-tit');
+    if (!cab) return;
+    if (h2 != null) cab.querySelector('h2').textContent = h2;
+    var p = cab.querySelector('.sub');
+    if (p && sub != null) p.innerHTML = sub;
+  }
 
   function abaInsDia(C) {
     var I = insercoes(C);
@@ -2647,8 +2667,7 @@
         sub: G.num(diaSemanaTop(I).val) + ' lançamentos' }
     ]);
 
-    pintarSerie('gInsDiaSerie', I.dias.map(function (d) { return I.rotuloDia(d.iso); }),
-      [{ nome: 'Lançamentos', slot: 0, valores: I.dias.map(function (d) { return d.n; }) }]);
+    pintarGraficoInsDia(I);
 
     var semana = new Map();
     DIAS_SEMANA.forEach(function (s) { semana.set(s, 0); });
@@ -2671,6 +2690,52 @@
       .filter(function (d) { return d.val > 0; }), { cor: 'var(--s3)' });
 
     tabelaInsDia(I);
+  }
+
+  /** Gráfico "Lançamentos por dia": agrupado por mês (e por ano, no rótulo,
+      quando há mais de um exercício na seleção) — um dia a dia direto teria
+      colunas demais pra ler. Clicar num mês abre o dia a dia daquele mês;
+      clicar de novo (ou no link "voltar") fecha e volta pro agrupado. */
+  function pintarGraficoInsDia(I) {
+    // o mês aberto pode ter saído da seleção atual (filtro mudou): aí volta pro agrupado
+    if (insDiaFocoMes && I.mesesChave.indexOf(insDiaFocoMes) < 0) insDiaFocoMes = null;
+
+    if (!insDiaFocoMes) {
+      insDiaFocoDia = null;
+      tituloPainelDe('gInsDiaSerie', 'Lançamentos por mês',
+        'Só os dias que tiveram inserção aparecem no gráfico. Clique num mês para ver os dias dele.');
+      var rotParaYm = {};
+      I.meses.forEach(function (m, i) { rotParaYm[I.rotulosMes[i]] = m.ym; });
+      pintarSerie('gInsDiaSerie', I.rotulosMes,
+        [{ nome: 'Lançamentos', slot: 0, valores: I.meses.map(function (m) { return m.n; }) }],
+        { aoClicar: function (rot) {
+          if (!rotParaYm[rot]) return;
+          insDiaFocoMes = rotParaYm[rot];
+          if (CTX) abaInsDia(CTX);
+        } });
+      return;
+    }
+
+    var diasDoMes = I.dias.filter(function (d) { return d.iso.slice(0, 7) === insDiaFocoMes; });
+    var rotuloMes = mesLongo(insDiaFocoMes) + (I.multiAno ? ' de ' + insDiaFocoMes.slice(0, 4) : '');
+    tituloPainelDe('gInsDiaSerie', 'Lançamentos em ' + rotuloMes,
+      '<button type="button" class="painel-link" id="insDiaVoltar">&larr; voltar para os meses</button>' +
+      ' · clique num dia abaixo (ou na tabela) para ver os lançamentos dele.');
+    var rotParaIso = {};
+    diasDoMes.forEach(function (d) { rotParaIso[I.rotuloDia(d.iso)] = d.iso; });
+    pintarSerie('gInsDiaSerie', diasDoMes.map(function (d) { return I.rotuloDia(d.iso); }),
+      [{ nome: 'Lançamentos', slot: 0, valores: diasDoMes.map(function (d) { return d.n; }) }],
+      { aoClicar: function (rot) {
+        var iso = rotParaIso[rot];
+        if (!iso) return;
+        insDiaFocoDia = insDiaFocoDia === iso ? null : iso;
+        tabelaInsDia(I);
+        // o resultado aparece no painel "Dia a dia", mais abaixo — sem isso
+        // quem clica numa linha do topo não percebe que algo mudou
+        mostrarResultadoInsDia();
+      } });
+    var voltar = el('insDiaVoltar');
+    if (voltar) voltar.addEventListener('click', function () { insDiaFocoMes = null; if (CTX) abaInsDia(CTX); });
   }
 
   /** Maior sequência de dias ÚTEIS seguidos com inserção. Um fim de semana no
@@ -2708,8 +2773,10 @@
 
   function tabelaInsDia(I) {
     if (!el('tInsDia')) return;
+    if (insDiaFocoDia) return tabelaInsDiaRegistros(I);
     var busca = buscaDia.toLowerCase();
     var linhas = I.dias.slice().reverse().filter(function (d) {
+      if (insDiaFocoMes && d.iso.slice(0, 7) !== insDiaFocoMes) return false;
       if (!busca) return true;
       return (dataBR(d.iso) + ' ' + mesLongo(d.iso.slice(0, 7)) + ' ' + d.mun + ' ' + d.alim)
         .toLowerCase().indexOf(busca) >= 0;
@@ -2721,7 +2788,7 @@
       '</tr></thead><tbody>' +
       linhas.map(function (d) {
         var pico = I.pico && d.iso === I.pico.iso;
-        return '<tr' + (pico ? ' class="destaque-linha"' : '') + '>' +
+        return '<tr class="ins-dia-lin' + (pico ? ' destaque-linha' : '') + '" data-iso="' + d.iso + '" tabindex="0">' +
           '<td>' + mesLongo(d.iso.slice(0, 7)) + '</td>' +
           '<td class="num forte">' + dataBR(d.iso) + '</td>' +
           '<td>' + DIAS_SEMANA[d.semana] + '</td>' +
@@ -2732,7 +2799,69 @@
           '<td class="num">' + G.num(d.part, 0) + '%</td></tr>';
       }).join('') + '</tbody></table></div>' +
       '<p class="nota">' + G.num(linhas.length) + ' dias com inserção' +
-      (busca ? ' na busca' : '') + ' · o dia de pico aparece destacado.</p>';
+      (busca ? ' na busca' : '') + ' · o dia de pico aparece destacado. Clique num dia pra ver os lançamentos.</p>';
+    ligarCliqueDiasInsDia(I);
+  }
+
+  /** Rola até o painel "Dia a dia" e pisca a borda — quem clica num dia lá em
+      cima (no gráfico ou na sua tabela) precisa perceber que o resultado
+      apareceu aqui embaixo, fora da vista no primeiro clique. */
+  function mostrarResultadoInsDia() {
+    var painel = el('tInsDia') && el('tInsDia').closest('.painel');
+    if (!painel) return;
+    painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    painel.classList.remove('painel-piscar');
+    void painel.offsetWidth;   // reinicia a animação se já tinha piscado antes
+    painel.classList.add('painel-piscar');
+    setTimeout(function () { painel.classList.remove('painel-piscar'); }, 1200);
+  }
+
+  /** Clicar numa linha do "Dia a dia" abre os lançamentos daquele dia — mesmo
+      destino de clicar na coluna do dia no gráfico, só que direto da tabela. */
+  function ligarCliqueDiasInsDia(I) {
+    var host = el('tInsDia');
+    if (!host) return;
+    var abrir = function (iso) {
+      insDiaFocoDia = insDiaFocoDia === iso ? null : iso;
+      tabelaInsDia(I);
+    };
+    host.querySelectorAll('tr[data-iso]').forEach(function (tr) {
+      tr.addEventListener('click', function () { abrir(tr.getAttribute('data-iso')); });
+      tr.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        abrir(tr.getAttribute('data-iso'));
+      });
+    });
+  }
+
+  /** Lançamentos individuais do dia aberto (insDiaFocoDia), no lugar da lista
+      de dias — "voltar" fecha e devolve a lista. */
+  function tabelaInsDiaRegistros(I) {
+    var dia = I.dias.filter(function (d) { return d.iso === insDiaFocoDia; })[0];
+    if (!dia || !dia.registros || !dia.registros.length) {
+      insDiaFocoDia = null;
+      return tabelaInsDia(I);
+    }
+    var linhas = dia.registros;
+    el('tInsDia').innerHTML =
+      '<p class="nota"><button type="button" class="painel-link" id="insDiaRegVoltar">&larr; voltar para os dias</button></p>' +
+      '<div class="tabela-scroll"><table class="dados"><thead><tr>' +
+      '<th>Serviço</th><th>Produtor</th><th>Município</th><th>Escritório</th><th>Técnico</th><th>Detalhe</th>' +
+      '</tr></thead><tbody>' +
+      linhas.map(function (r) {
+        var det = r.pc === MEC ? (r.ha ? G.num(r.ha, 1) + ' ha' : '—')
+          : r.pc === ACU ? (r.hrs ? G.num(r.hrs, 1) + ' h' : '—') : '—';
+        return '<tr><td><span class="tag ' + tagServico(r.pc) + '">' + G.esc(r.pc || '—') + '</span></td>' +
+          '<td class="forte">' + G.esc(r.prod || '—') + '</td>' +
+          '<td>' + G.esc(r.mun || '—') + '</td>' +
+          '<td>' + G.esc(r.esc || '—') + '</td>' +
+          '<td>' + G.esc(r.rt || '—') + '</td>' +
+          '<td class="num">' + det + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="nota">' + G.num(linhas.length) + ' lançamento(s) em ' + dataBR(insDiaFocoDia) + '.</p>';
+    var voltar = el('insDiaRegVoltar');
+    if (voltar) voltar.addEventListener('click', function () { insDiaFocoDia = null; tabelaInsDia(I); });
   }
 
   /* ---------------------------------------------- ABA: INSERÇÕES POR MÊS */
