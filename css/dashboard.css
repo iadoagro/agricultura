@@ -864,6 +864,12 @@ html.modo-publico #adminBtn,
 html.modo-publico .link-deagro,
 html.modo-publico .link-publico{display:none!important}
 
+/* Sem login nem menu lateral no modo público (js/nav.js se desliga), então o
+   alternar de tema claro/escuro — que ali vive só na gaveta do menu — ganha
+   este único botão visível no cabeçalho. #adminBtn e .link-deagro continuam
+   escondidos pela regra acima. */
+html.modo-publico .header-acoes{display:flex!important}
+
 /* item de ação dentro de "Mostrar mais" (ex.: Pessoas, dos lançamentos) */
 .aba-mais-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:0;border-radius:8px;background:none;
   font-family:inherit;font-size:13px;font-weight:600;color:var(--tinta3);text-align:left;cursor:pointer}

@@ -10,7 +10,7 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026101517">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026101518">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=2026100922">
 <link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101415">
 <script>
@@ -39,7 +39,9 @@
   (function () {
     try {
       var t = localStorage.getItem('seagri_tema');
-      if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro';
+      // no link público o padrão é sempre claro — só a preferência do
+      // sistema (prefers-color-scheme) decide sozinha fora dele
+      if (!t) t = (!window.MODO_PUBLICO && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'escuro' : 'claro';
       document.documentElement.setAttribute('data-tema', t);
     } catch (e) { document.documentElement.setAttribute('data-tema', 'claro'); }
   })();
