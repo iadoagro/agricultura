@@ -553,6 +553,9 @@
   async function alterarPropriaSenha(novaSenha) {
     exigirSenhaForte(novaSenha);
     await chamarAdminPHP('trocar_propria_senha', { senha: novaSenha });
+    // trocar a senha encerra as sessões antigas no Supabase (token e refresh_token deixam de valer):
+    // entra de novo com a senha nova, senão o próximo salvamento volta "sessão expirou"
+    try { await reautenticar(novaSenha); } catch (e) { /* o fluxo de senha pede de novo se precisar */ }
     try { await requisicao('/rest/v1/rpc/confirmar_troca_senha', { method: 'POST', body: '{}' }); } catch (e) {}
     if (sessao) { sessao.deveTrocarSenha = false; sessionStorage.setItem(sessionKey, JSON.stringify(sessao)); avisar(); }
     registrarEvento('trocar_senha', 'usuarios', 'Alterou a própria senha');
