@@ -132,6 +132,11 @@ function emailAutenticado(string $supabaseUrl, string $serviceRole): ?string
     $resposta = curl_exec($ch);
     $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    // banco fora do ar / limite de requisições: não é sessão vencida — 503
+    // faz o navegador esperar e tentar de novo em vez de pedir novo login
+    if ($status === 0 || $status === 429 || $status >= 500) {
+        responder(503, ['ok' => false, 'erro' => 'Não foi possível confirmar sua sessão agora (o banco não respondeu). Tente novamente em instantes.']);
+    }
     $usuario = json_decode((string) $resposta, true);
     if ($status !== 200 || !is_array($usuario) || empty($usuario['email'])) {
         return null;

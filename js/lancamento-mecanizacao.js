@@ -102,7 +102,7 @@
     fd.set('maquinas', JSON.stringify(ajuda.marcadosDe(el('lancMaquinas'))));
     fd.set('implementos', JSON.stringify(ajuda.marcadosDe(el('lancImplementos'))));
     var sessao = sessaoSite();
-    if (sessao && sessao.access_token) fd.set('token', sessao.access_token);
+    fd.set('token', (sessao && sessao.access_token) || '');
     if (sessao && sessao.user && sessao.user.email) fd.set('criado_por_email', sessao.user.email);
     // remove os campos auxiliares (não existem na tabela): evita confundir
     // com colunas de verdade quando o PHP monta o registro.
@@ -197,13 +197,10 @@
   }
 
   function enviarAcao(campos) {
+    // sem token na mão, o enviar() renova ou pede a senha (sem recarregar a página)
     var sessao = sessaoSite();
-    if (!sessao || !sessao.access_token) {
-      aviso('lancListaAviso', 'erro', 'Sua sessão do site expirou. Recarregue a página e entre de novo.');
-      return Promise.reject(null);
-    }
     var fd = new FormData();
-    fd.append('token', sessao.access_token);
+    fd.append('token', (sessao && sessao.access_token) || '');
     Object.keys(campos).forEach(function (c) { fd.append(c, campos[c]); });
     return window.LANCAMENTO_CAMPOS.enviar(fd);
   }
@@ -903,13 +900,9 @@
     }
     el('lancRecentes').innerHTML = '<p class="nota">Carregando…</p>';
     var sessao = sessaoSite();
-    if (!sessao || !sessao.access_token) {
-      el('lancRecentes').innerHTML = '<p class="nota">Sua sessão do site expirou. Recarregue a página e entre de novo.</p>';
-      return;
-    }
     var fd = new FormData();
     fd.append('acao', 'listar');
-    fd.append('token', sessao.access_token);
+    fd.append('token', (sessao && sessao.access_token) || '');
     fd.append('limite', String(POR_PAGINA));
     fd.append('pagina', String(paginaAtual));
     var filtros = el('lancFiltros').elements;
