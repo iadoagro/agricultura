@@ -278,7 +278,7 @@ async function criarSolicitacao(
 
 /** Filtros da lista (campos "f_*") no formato do PostgREST — mesma regra de
     filtrosDaLista() em lancar_mecanizacao.php. */
-function filtrosDaLista(fd: FormData, emailsDoLogin: string[]): string {
+function filtrosDaLista(fd: FormData, emailsDoLogin: string[], veTodos = false): string {
   const f = (c: string) => String(fd.get(c) ?? '').trim();
   const livre = (v: string) => v.replace(/[,()*:"\\]/g, ' ').trim();
   let q = '';
@@ -296,8 +296,8 @@ function filtrosDaLista(fd: FormData, emailsDoLogin: string[]): string {
     const ano = parseInt(f('f_ano'), 10);
     q += `&criado_em=gte.${encodeURIComponent(ano + '-01-01T00:00:00-05:00')}&criado_em=lt.${encodeURIComponent((ano + 1) + '-01-01T00:00:00-05:00')}`;
   }
-  // "Lançado por": vazio = só os meus (padrão); "todos"; ou os e-mails de uma pessoa.
-  const pessoa = f('f_pessoa');
+  // "Lançado por": só o responsável (root) escolhe "todos" ou outra pessoa; os demais veem só os próprios.
+  const pessoa = veTodos ? f('f_pessoa') : '';
   if (pessoa === '') q += filtroEmails(emailsDoLogin);
   else if (pessoa !== 'todos') q += filtroEmails(pessoa.split(',').map((e) => e.trim().toLowerCase()));
   return q;
@@ -446,10 +446,9 @@ async function tratar(fd: FormData): Promise<never> {
     const email = await exigirSessao(fd);
     const limite = Math.max(1, Math.min(100, parseInt(String(fd.get('limite') ?? '20'), 10) || 20));
     const pagina = Math.max(1, parseInt(String(fd.get('pagina') ?? '1'), 10) || 1);
-    // Qualquer pessoa logada pode ver os dos outros pelo filtro "Lançado
-    // por"; editar/excluir continua só do dono (ou root).
+    // Cada pessoa vê só os próprios lançamentos; só o responsável (root) vê os dos outros.
     const meusEmails = await emailsDoUsuario(email);
-    const filtro = filtrosDaLista(fd, meusEmails);
+    const filtro = filtrosDaLista(fd, meusEmails, email === RESPONSAVEL_EMAIL);
     // Mais recente primeiro (2026 no topo); o primeiro lançado fica por último.
     let [status, corpo, headersResp] = await chamarSupabase('GET',
       `${TABELA}?select=id,criado_em,criado_por_email,tipo_servico,nome_beneficiario,` +
@@ -564,8 +563,9 @@ async function tratar(fd: FormData): Promise<never> {
   if (acao === 'carregar') {
     const email = await exigirSessao(fd);
     const id = exigirId(fd, 'Informe o lançamento a abrir.');
-    // Ver: qualquer pessoa logada. Editar: só o dono ou o responsável.
+    // Ver e editar: só o dono ou o responsável.
     const linha = await buscarLancamento(id);
+    if (!(await podeAcessar(email, linha.criado_por_email))) responder(403, { ok: false, erro: 'Você só pode ver os lançamentos que você mesmo fez.' });
     responder(200, {
       ok: true, lancamento: linha,
       eh_responsavel: email === RESPONSAVEL_EMAIL,

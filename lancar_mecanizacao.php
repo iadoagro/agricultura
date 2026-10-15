@@ -427,7 +427,7 @@ function criarSolicitacao(string $supabaseUrl, string $serviceRole, array $lanca
 /** Filtros da lista (campos "f_*" do POST) no formato de query do
  *  PostgREST. Texto livre perde os caracteres que o PostgREST usa como
  *  sintaxe (vírgula, parênteses, asterisco) antes de entrar no filtro. */
-function filtrosDaLista(array $emailsDoLogin): string
+function filtrosDaLista(array $emailsDoLogin, bool $veTodos = false): string
 {
     $f = function (string $c) { return trim((string) ($_POST[$c] ?? '')); };
     $livre = function (string $v) { return trim(preg_replace('/[,()*:"\\\\]/u', ' ', $v)); };
@@ -445,9 +445,10 @@ function filtrosDaLista(array $emailsDoLogin): string
         $ano = (int) $f('f_ano');
         $q .= '&criado_em=gte.' . urlencode($ano . '-01-01T00:00:00-05:00') . '&criado_em=lt.' . urlencode(($ano + 1) . '-01-01T00:00:00-05:00');
     }
-    // "Lançado por": vazio = só os meus (padrão); "todos"; ou a lista de
-    // e-mails de uma pessoa (vários e-mails podem ter o mesmo nome).
-    $pessoa = $f('f_pessoa');
+    // "Lançado por": só o responsável (root) escolhe "todos" ou outra pessoa
+    // (vários e-mails podem ter o mesmo nome). Todos os demais veem apenas os
+    // próprios lançamentos, seja qual for o valor enviado.
+    $pessoa = $veTodos ? $f('f_pessoa') : '';
     if ($pessoa === '') {
         $q .= filtroEmails($emailsDoLogin);
     } elseif ($pessoa !== 'todos') {
@@ -599,10 +600,10 @@ if ($acao === 'listar') {
 
     $limite = max(1, min(100, (int) ($_POST['limite'] ?? 20)));
     $pagina = max(1, (int) ($_POST['pagina'] ?? 1));
-    // Qualquer pessoa logada pode ver os lançamentos dos outros escolhendo
-    // no filtro "Lançado por"; editar/excluir continua só do dono (ou root).
+    // Cada pessoa vê apenas os lançamentos que ela mesma fez; só o
+    // responsável (root) enxerga os dos outros.
     $meusEmails = emailsDoUsuario($emailConfirmado);
-    $filtro = filtrosDaLista($meusEmails);
+    $filtro = filtrosDaLista($meusEmails, $emailConfirmado === RESPONSAVEL_EMAIL);
     // Mais recente primeiro (2026 no topo); o primeiro lançado fica por último.
     [$status, $corpo, $headersResp] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'GET',
@@ -761,9 +762,11 @@ if ($acao === 'carregar') {
     if ($id === '') {
         responder(400, ['ok' => false, 'erro' => 'Informe o lançamento a abrir.']);
     }
-    // Ver: qualquer pessoa logada (a lista também mostra os dos outros).
-    // Editar: só o dono ou o responsável — "pode_editar" avisa a tela.
+    // Ver e editar: só o dono ou o responsável.
     $linha = buscarLancamento($supabaseUrl, $serviceRole, $id);
+    if (!podeAcessarLancamento($emailConfirmado, $linha['criado_por_email'] ?? null)) {
+        responder(403, ['ok' => false, 'erro' => 'Você só pode ver os lançamentos que você mesmo fez.']);
+    }
     responder(200, [
         'ok' => true, 'lancamento' => $linha,
         'eh_responsavel' => $emailConfirmado === RESPONSAVEL_EMAIL,

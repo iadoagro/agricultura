@@ -930,6 +930,7 @@
         meusEmails = res.corpo.meus_emails || meusEmails;
         el('lancPessoasBtn').hidden = !ehResponsavel;
         el('lancVerComoRotulo').hidden = !ehResponsavel;
+        el('lancFiltroPessoa').closest('label').hidden = !ehResponsavel;   // cada pessoa vê só os próprios
         var simulado = ehResponsavel && !!verComo;
         if (simulado) meusEmails = verComo.split(',').map(function (e) { return e.trim().toLowerCase(); });
         var comPoder = ehResponsavel && !simulado;   // root de verdade (fora do "Ver como")
