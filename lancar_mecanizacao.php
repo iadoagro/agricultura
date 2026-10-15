@@ -672,10 +672,13 @@ if ($acao === 'tecnicos') {
     // cultura => sistema de cultivo => quantos lançamentos usaram essa combinação
     // (sugere o sistema de cultivo sozinho quando a pessoa escolhe a cultura)
     $culturas = [];
+    // máquina => uso (Agrícola/Não agrícola) => quantos lançamentos com essa
+    // máquina marcaram esse uso (sugere o uso sozinho ao marcar a máquina)
+    $usoMaquinas = [];
     $tam = 1000;
     for ($pagina = 0; $pagina < 100; $pagina++) {
         [$st, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'GET',
-            '/rest/v1/mecanizacao_lancamentos?select=municipio,escritorio_local,responsavel_tecnico,maquinas,implementos,culturas' .
+            '/rest/v1/mecanizacao_lancamentos?select=municipio,escritorio_local,responsavel_tecnico,maquinas,implementos,culturas,tipo_uso' .
             '&order=id.asc&limit=' . $tam . '&offset=' . ($pagina * $tam));
         if ($st < 200 || $st >= 300 || !is_array($corpo)) {
             responder(502, ['ok' => false, 'erro' => 'Não foi possível ler os técnicos.']);
@@ -695,6 +698,15 @@ if ($acao === 'tecnicos') {
                 if (!isset($culturas[$nome])) $culturas[$nome] = [];
                 $culturas[$nome][$sistema] = ($culturas[$nome][$sistema] ?? 0) + 1;
             }
+            $uso = trim((string) ($l['tipo_uso'] ?? ''));
+            if ($uso !== '') {
+                foreach ((is_array($l['maquinas'] ?? null) ? $l['maquinas'] : []) as $nomeMaq) {
+                    $nomeMaq = trim((string) $nomeMaq);
+                    if ($nomeMaq === '') continue;
+                    if (!isset($usoMaquinas[$nomeMaq])) $usoMaquinas[$nomeMaq] = [];
+                    $usoMaquinas[$nomeMaq][$uso] = ($usoMaquinas[$nomeMaq][$uso] ?? 0) + 1;
+                }
+            }
             $m = trim((string) ($l['municipio'] ?? ''));
             $e = trim((string) ($l['escritorio_local'] ?? ''));
             $t = trim(preg_replace('/\s+/', ' ', (string) ($l['responsavel_tecnico'] ?? '')));
@@ -709,7 +721,7 @@ if ($acao === 'tecnicos') {
         [$m, $e, $t] = explode("\x1f", $k);
         $itens[] = ['m' => $m, 'e' => $e, 't' => $t, 'n' => $n];
     }
-    responder(200, ['ok' => true, 'itens' => $itens, 'maquinas' => $maquinas, 'implementos' => $implementos, 'culturas' => $culturas]);
+    responder(200, ['ok' => true, 'itens' => $itens, 'maquinas' => $maquinas, 'implementos' => $implementos, 'culturas' => $culturas, 'uso_maquinas' => $usoMaquinas]);
 }
 
 /* ================================================================== pdf === */

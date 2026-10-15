@@ -193,6 +193,7 @@
     var tecnicosBanco = [];
     var usoMaquinas = {}, usoImplementos = {};   // nome => quantos lançamentos usaram (ação "tecnicos")
     var usoCulturas = {};   // cultura => {sistema => quantos lançamentos usaram essa combinação}
+    var usoPorMaquina = {};   // máquina => {uso (Agrícola/Não agrícola) => quantos lançamentos usaram essa combinação}
 
     function chaveTexto(v) {
       return String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -253,6 +254,7 @@
         usoMaquinas = res.corpo.maquinas || {};
         usoImplementos = res.corpo.implementos || {};
         usoCulturas = res.corpo.culturas || {};
+        usoPorMaquina = res.corpo.uso_maquinas || {};
         montarCaixasVazias();
         montarTecnicos();
         sugerirTecnico(form.elements['municipio'].value);
@@ -479,6 +481,26 @@
       if (!melhor) return;
       selSistema.value = melhor;
       selSistema.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    /** Uso (Agrícola/Não agrícola) mais registrado nos lançamentos do banco
+        para as máquinas marcadas — preenche sozinho, somando as máquinas
+        marcadas, mas só quando o campo ainda está vazio (não troca o que a
+        pessoa já escolheu). */
+    function sugerirUso() {
+      var campo = form.elements['tipo_uso'];
+      var hostMaq = el('lancMaquinas');
+      if (!campo || campo.value || !hostMaq) return;
+      var somas = {};
+      coletarMarcados(hostMaq).forEach(function (nome) {
+        var uso = usoPorMaquina[nome];
+        if (!uso) return;
+        Object.keys(uso).forEach(function (u) { somas[u] = (somas[u] || 0) + uso[u]; });
+      });
+      var melhor = Object.keys(somas).sort(function (a, b) { return somas[b] - somas[a]; })[0];
+      if (!melhor) return;
+      campo.value = melhor;
+      campo.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     /* Soma automática das áreas das culturas em "Área total (ha)" — o campo
@@ -745,6 +767,7 @@
           }
         }
         if (e.target.name === 'quantidade_acudes') el('lancAcudeErro').hidden = true;
+        if (e.target.type === 'checkbox' && e.target.closest('#lancMaquinas')) sugerirUso();
       });
       form.elements['municipio'].addEventListener('change', sincronizarEscritorioPorMunicipio);
       // Rio Branco tem dois escritórios: trocar o escritório reordena os técnicos
