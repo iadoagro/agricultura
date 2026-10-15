@@ -73,7 +73,7 @@
     linha.innerHTML =
       '<button type="button" class="lanc-cultura-remover" title="Remover" aria-label="Remover DAE">&times;</button>' +
       '<input class="ld-numero" type="text" placeholder="Nº da DAE" value="' + esc(valores.numero || '') + '">' +
-      '<input class="ld-valor" type="number" step="0.01" min="0" placeholder="Valor (R$)" value="' + esc(valores.valor != null ? valores.valor : '') + '">' +
+      '<input class="ld-valor" type="text" inputmode="numeric" placeholder="R$ 0,00" value="' + esc(formatarMoedaValor(valores.valor)) + '">' +
       '<span class="lanc-add-slot"></span>';
     return linha;
   }
@@ -106,6 +106,26 @@
     'Wilker Nazareno da Silva',
     'Wilson de Brito Amorim'
   ];
+
+  /** Máscara de moeda (R$) pro valor da DAE: digita só números, os 2 últimos
+      viram centavos — igual caixa eletrônico/app de banco (ex.: "25000" →
+      "R$ 250,00"). formatarMoeda mascara o que a pessoa está digitando;
+      moedaParaNumero lê de volta (daqui ou de um valor já carregado por
+      formatarMoedaValor) pro que é gravado no banco. */
+  function formatarMoeda(v) {
+    var d = String(v || '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    if (!d) return '';
+    while (d.length < 3) d = '0' + d;
+    var centavos = d.slice(-2), inteiro = d.slice(0, -2).replace(/^0+(?=\d)/, '');
+    return 'R$ ' + inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + centavos;
+  }
+  function formatarMoedaValor(n) {
+    return (n == null || isNaN(n)) ? '' : formatarMoeda(String(Math.round(Number(n) * 100)));
+  }
+  function moedaParaNumero(v) {
+    var d = String(v || '').replace(/\D/g, '');
+    return d ? parseInt(d, 10) / 100 : null;
+  }
 
   /** 02330777230 → 023.307.772-30 (aceita digitação parcial: só números, até 11). */
   function formatarCpf(v) {
@@ -439,8 +459,7 @@
     function daesAtuais() {
       return Array.prototype.slice.call(el('lancDaes').querySelectorAll('.lanc-dae-linha')).map(function (linha) {
         var numero = linha.querySelector('.ld-numero').value.trim();
-        var valorTxt = linha.querySelector('.ld-valor').value;
-        return { numero: numero, valor: valorTxt === '' ? null : parseFloat(valorTxt) };
+        return { numero: numero, valor: moedaParaNumero(linha.querySelector('.ld-valor').value) };
       }).filter(function (d) { return d.numero || d.valor != null; });
     }
 
@@ -687,6 +706,10 @@
         if (e.target.name === 'cpf') {
           var formatado = formatarCpf(e.target.value);
           if (e.target.value !== formatado) e.target.value = formatado;
+        }
+        if (e.target.classList && e.target.classList.contains('ld-valor')) {
+          var moeda = formatarMoeda(e.target.value);
+          if (e.target.value !== moeda) e.target.value = moeda;
         }
         if (e.target.closest('.lanc-cultura-linha, .lanc-dae-linha')) atualizarBotoesAdicionar();
         if (e.target.classList && e.target.classList.contains('lc-area')) recalcularAreaTotal();
