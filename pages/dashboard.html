@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/dashboard.css?v=2026100805">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=2026100922">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101412">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101415">
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
      sem login, sem menu lateral e sem Registros, lançamento ou administração. Precisa vir antes dos
@@ -987,10 +987,13 @@
         </section>
 
         <section class="painel duplo" id="lancSecAcudagem" hidden>
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>5. Açudagem</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit">
+            <h2>5. Açudagem</h2>
+            <p class="sub">Informe o total de tanques/açudes feitos e as horas de máquina usadas neste serviço.</p>
+          </div></div>
           <div class="lanc-campos">
-            <label>Quantidade de tanques/açudes<span class="lanc-obrig">*</span><input type="number" step="1" min="0" name="quantidade_acudes"></label>
-            <label>Horas de máquina<span class="lanc-obrig">*</span><input type="number" step="0.01" min="0" name="horas_maquina"></label>
+            <label>Quantidade de tanques/açudes<span class="lanc-obrig">*</span><input type="number" step="1" min="1" name="quantidade_acudes" placeholder="Ex.: 1"></label>
+            <label>Horas de máquina<span class="lanc-obrig">*</span><input type="number" step="0.01" min="0.01" name="horas_maquina" placeholder="Ex.: 8"></label>
           </div>
           <p id="lancAcudeErro" class="lanc-erro" hidden>Para Açudagem, informe pelo menos 1 tanque/açude e as horas de máquina.</p>
         </section>
@@ -1025,7 +1028,7 @@
 
         <section class="painel duplo lanc-sec-servico" hidden>
           <div class="painel-cab"><div class="painel-cab-tit">
-            <h2>8. Documento de Arrecadação Estadual — DAE (3.3)</h2>
+            <h2>8. Documento de Arrecadação Estadual — DAE (3.3) <small class="lanc-opcional">(opcional)</small></h2>
             <p class="sub">Adicione um número e valor por DAE emitida, e só depois vai liberar para adicionar
                a próxima (até 10).</p>
           </div></div>
@@ -1034,14 +1037,14 @@
         </section>
 
         <section class="painel duplo lanc-sec-servico" hidden>
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>9. Observações</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>9. Observações <small class="lanc-opcional">(opcional)</small></h2></div></div>
           <div class="lanc-campos">
             <label class="lanc-larga">Observação<textarea name="observacao" rows="3"></textarea></label>
           </div>
         </section>
 
         <section class="painel duplo lanc-sec-servico" hidden>
-          <div class="painel-cab"><div class="painel-cab-tit"><h2>10. Anexo</h2></div></div>
+          <div class="painel-cab"><div class="painel-cab-tit"><h2>10. Anexo <small class="lanc-opcional">(opcional)</small></h2></div></div>
           <div class="lanc-anexo" id="lancAnexo">
             <input type="file" name="pdf" id="lancPdf" accept="application/pdf,.pdf" class="lanc-anexo-input">
             <label for="lancPdf" class="lanc-anexo-zona" id="lancAnexoZona">
@@ -1148,7 +1151,7 @@
 <script src="../js/mapa-municipios.js?v=2026091402"></script>
 <script src="../js/data-br.js?v=2026101207"></script>
 <script src="../js/select-busca.js?v=2026101203" defer></script>
-<script src="../js/lancamento-campos.js?v=2026101413"></script>
+<script src="../js/lancamento-campos.js?v=2026101416"></script>
 <script src="../js/lancamento-nomes.js?v=2026101301"></script>
 <script src="../js/lancamento-ux.js?v=2026101413"></script>
 <script src="../js/lancamento-validacao.js?v=2026101414"></script>

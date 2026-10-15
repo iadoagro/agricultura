@@ -325,6 +325,7 @@
 .lanc-form .painel-cab{margin-bottom:6px}
 .lanc-form .painel h2{font-size:17px;font-weight:700;line-height:1.3;margin:0 0 6px}
 .lanc-form .painel .sub{font-size:13px;margin:0 0 14px}
+.lanc-opcional{font-size:13px;font-weight:400;color:var(--tinta3)}
 .lanc-campos{gap:20px 22px;margin-top:10px}
 .lanc-campos label{font-size:14.5px;font-weight:600;line-height:1.3}
 .lanc-campos input,.lanc-campos select,.lanc-campos textarea{

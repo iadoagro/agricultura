@@ -496,10 +496,13 @@ async function tratar(fd: FormData): Promise<never> {
     const contagem = new Map<string, { m: string; e: string; t: string; n: number }>();
     const maquinas: Record<string, number> = {};
     const implementos: Record<string, number> = {};
+    // cultura → sistema de cultivo → quantos lançamentos usaram essa combinação
+    // (sugere o sistema de cultivo sozinho quando a pessoa escolhe a cultura)
+    const culturas: Record<string, Record<string, number>> = {};
     const tam = 1000;
     for (let pagina = 0; pagina < 100; pagina++) {
       const [st, corpo] = await chamarSupabase('GET',
-        `${TABELA}?select=municipio,escritorio_local,responsavel_tecnico,maquinas,implementos&order=id.asc&limit=${tam}&offset=${pagina * tam}`);
+        `${TABELA}?select=municipio,escritorio_local,responsavel_tecnico,maquinas,implementos,culturas&order=id.asc&limit=${tam}&offset=${pagina * tam}`);
       if (st < 200 || st >= 300 || !Array.isArray(corpo)) responder(502, { ok: false, erro: 'Não foi possível ler os técnicos.' });
       for (const l of corpo as Record<string, unknown>[]) {
         for (const [campo, destino] of [['maquinas', maquinas], ['implementos', implementos]] as const) {
@@ -508,6 +511,15 @@ async function tratar(fd: FormData): Promise<never> {
           for (const v of valores) {
             const nome = String(v ?? '').trim();
             if (nome !== '') destino[nome] = (destino[nome] ?? 0) + 1;
+          }
+        }
+        if (Array.isArray(l.culturas)) {
+          for (const c of l.culturas as Record<string, unknown>[]) {
+            const nome = String((c && c.cultura) ?? '').trim();
+            const sistema = String((c && c.sistema_cultivo) ?? '').trim();
+            if (nome === '' || sistema === '') continue;
+            const destino = culturas[nome] ?? (culturas[nome] = {});
+            destino[sistema] = (destino[sistema] ?? 0) + 1;
           }
         }
         const m = String(l.municipio ?? '').trim();
@@ -520,7 +532,7 @@ async function tratar(fd: FormData): Promise<never> {
       }
       if (corpo.length < tam) break;
     }
-    responder(200, { ok: true, itens: [...contagem.values()], maquinas, implementos });
+    responder(200, { ok: true, itens: [...contagem.values()], maquinas, implementos, culturas });
   }
 
   if (acao === 'pdf') {

@@ -669,10 +669,13 @@ if ($acao === 'tecnicos') {
     // técnico x município x escritório, contados nos lançamentos do banco
     $contagem = [];
     $maquinas = $implementos = [];   // nome => quantos lançamentos usaram
+    // cultura => sistema de cultivo => quantos lançamentos usaram essa combinação
+    // (sugere o sistema de cultivo sozinho quando a pessoa escolhe a cultura)
+    $culturas = [];
     $tam = 1000;
     for ($pagina = 0; $pagina < 100; $pagina++) {
         [$st, $corpo] = chamarSupabase($supabaseUrl, $serviceRole, 'GET',
-            '/rest/v1/mecanizacao_lancamentos?select=municipio,escritorio_local,responsavel_tecnico,maquinas,implementos' .
+            '/rest/v1/mecanizacao_lancamentos?select=municipio,escritorio_local,responsavel_tecnico,maquinas,implementos,culturas' .
             '&order=id.asc&limit=' . $tam . '&offset=' . ($pagina * $tam));
         if ($st < 200 || $st >= 300 || !is_array($corpo)) {
             responder(502, ['ok' => false, 'erro' => 'Não foi possível ler os técnicos.']);
@@ -685,6 +688,13 @@ if ($acao === 'tecnicos') {
                 }
             }
             unset($destino);
+            foreach ((is_array($l['culturas'] ?? null) ? $l['culturas'] : []) as $c) {
+                $nome = trim((string) ($c['cultura'] ?? ''));
+                $sistema = trim((string) ($c['sistema_cultivo'] ?? ''));
+                if ($nome === '' || $sistema === '') continue;
+                if (!isset($culturas[$nome])) $culturas[$nome] = [];
+                $culturas[$nome][$sistema] = ($culturas[$nome][$sistema] ?? 0) + 1;
+            }
             $m = trim((string) ($l['municipio'] ?? ''));
             $e = trim((string) ($l['escritorio_local'] ?? ''));
             $t = trim(preg_replace('/\s+/', ' ', (string) ($l['responsavel_tecnico'] ?? '')));
@@ -699,7 +709,7 @@ if ($acao === 'tecnicos') {
         [$m, $e, $t] = explode("\x1f", $k);
         $itens[] = ['m' => $m, 'e' => $e, 't' => $t, 'n' => $n];
     }
-    responder(200, ['ok' => true, 'itens' => $itens, 'maquinas' => $maquinas, 'implementos' => $implementos]);
+    responder(200, ['ok' => true, 'itens' => $itens, 'maquinas' => $maquinas, 'implementos' => $implementos, 'culturas' => $culturas]);
 }
 
 /* ================================================================== pdf === */

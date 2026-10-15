@@ -172,6 +172,7 @@
        banco (ação "tecnicos"): [{m: município, e: escritório, t: técnico, n: quantos}]. */
     var tecnicosBanco = [];
     var usoMaquinas = {}, usoImplementos = {};   // nome => quantos lançamentos usaram (ação "tecnicos")
+    var usoCulturas = {};   // cultura => {sistema => quantos lançamentos usaram essa combinação}
 
     function chaveTexto(v) {
       return String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -231,6 +232,7 @@
         tecnicosBanco = res.corpo.itens;
         usoMaquinas = res.corpo.maquinas || {};
         usoImplementos = res.corpo.implementos || {};
+        usoCulturas = res.corpo.culturas || {};
         montarCaixasVazias();
         montarTecnicos();
         sugerirTecnico(form.elements['municipio'].value);
@@ -443,6 +445,22 @@
     }
 
     function marcadosDe(host) { return coletarMarcados(host); }
+
+    /** Sistema de cultivo mais usado nos lançamentos do banco para a cultura
+        escolhida nessa linha — preenche sozinho, mas só quando o campo ainda
+        está vazio (não troca o que a pessoa já escolheu). */
+    function sugerirSistemaCultivo(linha) {
+      if (!linha) return;
+      var selCultura = linha.querySelector('.lc-cultura');
+      var selSistema = linha.querySelector('.lc-sistema');
+      if (!selCultura || !selSistema || selSistema.value || !selCultura.value) return;
+      var uso = usoCulturas[selCultura.value];
+      if (!uso) return;
+      var melhor = Object.keys(uso).sort(function (a, b) { return uso[b] - uso[a]; })[0];
+      if (!melhor) return;
+      selSistema.value = melhor;
+      selSistema.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 
     /* Soma automática das áreas das culturas em "Área total (ha)" — o campo
        continua um <input> normal, então a pessoa pode digitar outro valor
@@ -698,7 +716,10 @@
         if (e.target.id === 'lancPossuiAssociacao') alternarAssociacao();
         if (e.target.closest('.lanc-cultura-linha, .lanc-dae-linha')) {
           atualizarBotoesAdicionar();
-          if (e.target.classList.contains('lc-cultura')) el('lancCulturaErro').hidden = true;
+          if (e.target.classList.contains('lc-cultura')) {
+            el('lancCulturaErro').hidden = true;
+            sugerirSistemaCultivo(e.target.closest('.lanc-cultura-linha'));
+          }
         }
         if (e.target.name === 'quantidade_acudes') el('lancAcudeErro').hidden = true;
       });
