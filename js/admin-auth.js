@@ -12,6 +12,18 @@
   const SENHA_PADRAO = '123456';
   const DOMINIO_USUARIO = 'sistema.local';
   const online = Boolean(cfg.url || cfg.chavePublica);
+  // AbortSignal.timeout não existe em navegadores mais antigos (iOS Safari <16,
+  // Android/Samsung Internet mais velhos): nesses aparelhos a chamada quebrava
+  // na hora de montar o fetch e caía no catch como "Sem conexão", mesmo com
+  // internet normal. AbortController sozinho tem suporte bem mais antigo.
+  function sinalTimeout(ms) {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      try { return AbortSignal.timeout(ms); } catch (e) {}
+    }
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), ms);
+    return ctrl.signal;
+  }
   const sessionKey = 'seagri_admin_sessao:' + cfg.url;
   let sessao = null;
   const avisar = () => window.dispatchEvent(new Event('admin-auth-atualizado'));
@@ -68,7 +80,7 @@
     let resposta;
     try {
       resposta = await fetch(cfg.url.replace(/\/$/, '') + caminho, {
-        ...options, signal: AbortSignal.timeout(20000),
+        ...options, signal: sinalTimeout(20000),
         headers: {
           apikey: cfg.chavePublica, 'Content-Type': 'application/json',
           ...(autenticada ? { Authorization: 'Bearer ' + sessao.access_token } : {}), ...options.headers
@@ -140,7 +152,7 @@
         let resposta;
         try {
           resposta = await fetch(cfg.url.replace(/\/$/, '') + '/auth/v1/token?grant_type=refresh_token', {
-            method: 'POST', signal: AbortSignal.timeout(20000),
+            method: 'POST', signal: sinalTimeout(20000),
             headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json' },
             body: JSON.stringify({ refresh_token: sessao.refresh_token })
           });
@@ -435,7 +447,7 @@
     try {
       configurar();
       resposta = await fetch(cfg.url.replace(/\/$/, '') + '/functions/v1/admin-usuarios', {
-        method: 'POST', signal: AbortSignal.timeout(20000),
+        method: 'POST', signal: sinalTimeout(20000),
         headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
         body: corpoEnvio
       });
@@ -444,7 +456,7 @@
     if (!resposta) {
       try {
         resposta = await fetch('../admin_usuarios.php', {
-          method: 'POST', signal: AbortSignal.timeout(20000),
+          method: 'POST', signal: sinalTimeout(20000),
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
           body: corpoEnvio
         });

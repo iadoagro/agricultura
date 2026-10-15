@@ -10,6 +10,18 @@
   'use strict';
   var cfg = window.BANCO_CONFIG || {};
   var online = Boolean(cfg.url || cfg.chavePublica);
+  // AbortSignal.timeout não existe em navegadores mais antigos (iOS Safari <16,
+  // Android/Samsung Internet mais velhos): nesses aparelhos a chamada quebrava
+  // na hora de montar o fetch e caía no catch como "Sem conexão", mesmo com
+  // internet normal. AbortController sozinho tem suporte bem mais antigo.
+  function sinalTimeout(ms) {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      try { return AbortSignal.timeout(ms); } catch (e) {}
+    }
+    var ctrl = new AbortController();
+    setTimeout(function () { ctrl.abort(); }, ms);
+    return ctrl.signal;
+  }
   var LOCAL = 'seagri_chamados_v1';
   var MEUS = 'seagri_chamados_meus';
   var AUXKEY = 'seagri_chamados_aux_v1';
@@ -83,7 +95,7 @@
     var resposta;
     try {
       resposta = await fetch(cfg.url.replace(/\/$/, '') + caminho, Object.assign({}, opcoes, {
-        signal: AbortSignal.timeout(20000),
+        signal: sinalTimeout(20000),
         headers: Object.assign(headers, (opcoes && opcoes.headers) || {})
       }));
     } catch (e) { throw ErroChamado('Sem conexão com o servidor. Tente novamente; o que você digitou foi mantido.'); }

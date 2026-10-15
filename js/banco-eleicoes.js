@@ -6,6 +6,18 @@
   'use strict';
   const cfg = window.BANCO_CONFIG || {};
   const online = Boolean(cfg.url || cfg.chavePublica);
+  // AbortSignal.timeout não existe em navegadores mais antigos (iOS Safari <16,
+  // Android/Samsung Internet mais velhos): nesses aparelhos a chamada quebrava
+  // na hora de montar o fetch e caía no catch como "Sem conexão", mesmo com
+  // internet normal. AbortController sozinho tem suporte bem mais antigo.
+  function sinalTimeout(ms) {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      try { return AbortSignal.timeout(ms); } catch (e) {}
+    }
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), ms);
+    return ctrl.signal;
+  }
   const localKey = 'seagri_eleicoes_v1';
   const localSnapKey = 'seagri_eleicoes_instantaneo_v1';
   let sessao = null, cache = [], carregado = false;
@@ -64,7 +76,7 @@
     let resposta;
     try {
       resposta = await fetch(cfg.url.replace(/\/$/, '') + caminho, {
-        ...options, signal: AbortSignal.timeout(20000),
+        ...options, signal: sinalTimeout(20000),
         headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json', Authorization: 'Bearer ' + sessao.access_token, ...options.headers }
       });
     } catch (e) { throw new Error('Sem conexão com o banco. Tente novamente; os campos foram mantidos.'); }
