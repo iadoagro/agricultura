@@ -10,7 +10,7 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026101518">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026101622">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=2026100922">
 <link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101415">
 <script>
@@ -117,43 +117,14 @@
     </button>
     <!-- Só na versão pública: leva ao login e, depois dele, direto para "Lan&ccedil;ar relat&oacute;rios"
          (destino lido por js/admin-login.js). Fora do .aba de prop&oacute;sito: n&atilde;o &eacute; uma aba. -->
-    <a class="aba-lancar-publico" href="admin-login.html?destino=dashboard.html%23lancamento">
+    <a class="aba-lancar-publico" href="login.html?destino=dashboard.html%23lancamento">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       Lan&ccedil;ar relat&oacute;rio
     </a>
-    <!-- "Mostrar mais": Registros e as abas de administra&ccedil;&atilde;o. As de Admin reproduzem as
-         planilhas "Inser&ccedil;&otilde;es por pessoa", "por dia", "por mes" e "culturas", contam
-         LAN&Ccedil;AMENTOS e nomeiam quem lan&ccedil;ou: s&oacute; aparecem para a conta respons&aacute;vel
-         (ou com a senha), por aplicarAdmin(). O menu abre em posi&ccedil;&atilde;o fixa, pra n&atilde;o ser
-         cortado pela rolagem horizontal da barra. -->
-    <div class="aba-mais" id="abaMais">
-      <button class="aba-mais-btn" id="abaMaisBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="abaMaisMenu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
-        <span>Mostrar mais</span>
-        <svg class="aba-mais-seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    <button class="aba aba-admin" data-aba="insercoes" type="button" role="tab" id="aba-insercoes" aria-controls="painel-insercoes" aria-selected="false" tabindex="-1" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h.01a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h.01a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v.01a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Mostrar mais
       </button>
-      <div class="aba-mais-menu" id="abaMaisMenu" hidden>
-        <!-- Pessoas que lançaram (só root@root.com): js/lancamento-mecanizacao.js mostra o
-             botão e o contador depois de carregar a lista de lançamentos. -->
-        <button class="aba-mais-item" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lançou e ligar ao login do sistema">Pessoas</button>
-      <button class="aba" data-aba="registros" type="button" role="tab" id="aba-registros" aria-controls="painel-registros" aria-selected="false" tabindex="-1">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Registros
-      </button>
-      <button class="aba aba-admin" data-aba="ins-pessoa" type="button" role="tab" id="aba-ins-pessoa" aria-controls="painel-ins-pessoa" aria-selected="false" tabindex="-1" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>
-        Inser&ccedil;&otilde;es por pessoa
-      </button>
-      <button class="aba aba-admin" data-aba="ins-dia" type="button" role="tab" id="aba-ins-dia" aria-controls="painel-ins-dia" aria-selected="false" tabindex="-1" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/><rect x="7" y="13" width="3" height="3" rx=".5" fill="currentColor" stroke="none"/></svg>
-        Inser&ccedil;&otilde;es por dia
-      </button>
-      <button class="aba aba-admin" data-aba="ins-mes" type="button" role="tab" id="aba-ins-mes" aria-controls="painel-ins-mes" aria-selected="false" tabindex="-1" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/><path d="M7 17l3-3 3 2 4-4"/></svg>
-        Inser&ccedil;&otilde;es por m&ecirc;s
-      </button>
-      </div>
-    </div>
   </div>
 </nav>
 
@@ -579,8 +550,41 @@
     </div>
   </div>
 
-  <!-- ====================================================== ABA: REGISTROS -->
-  <div class="aba-conteudo" data-aba="registros" role="tabpanel" id="painel-registros" aria-labelledby="aba-registros" tabindex="0">
+  <!-- ======================================================== ABA: RELATÓRIO -->
+  <div class="aba-conteudo" data-aba="relatorio" role="tabpanel" id="painel-relatorio" aria-labelledby="aba-relatorio" tabindex="0">
+    <section class="kpis" id="kpisRel" aria-label="Indicadores do relat&oacute;rio"></section>
+    <div class="relatorio-cab">
+      <input type="search" class="busca" id="relatorBusca" placeholder="Buscar munic&iacute;pio&hellip;" aria-label="Buscar munic&iacute;pio">
+      <div class="relatorio-vis" id="relatorioVis" role="group" aria-label="Modo de visualiza&ccedil;&atilde;o">
+        <button type="button" class="ativa" data-vis="lista" aria-label="Ver em lista">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Lista
+        </button>
+        <button type="button" data-vis="quadros" aria-label="Ver em grade">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Grade
+        </button>
+      </div>
+    </div>
+    <!-- só aparece com mais de um município na seleção (js/dashboard.js) -->
+    <div class="relatorio-geral" id="relatorioGeral" hidden>
+      <span class="relatorio-geral-rot">Relat&oacute;rio geral de todos os munic&iacute;pios</span>
+      <div class="relatorio-geral-acoes">
+        <button class="btn btn-verde" type="button" data-geral="geral">Completo (PDF)</button>
+        <button class="btn" type="button" data-geral="resumo">Resumido (PDF)</button>
+      </div>
+    </div>
+    <div class="relatorio-grid" id="relatorioGrid"></div>
+  </div>
+
+  <!-- ============================== ABA: INSERÇÕES POR PESSOA (admin) ----->
+  <!-- Aqui a unidade &eacute; o LAN&Ccedil;AMENTO (uma linha da planilha) e a data &eacute; a de
+       INSER&Ccedil;&Atilde;O (Carimbo de data/hora) &mdash; nunca a da vistoria. -->
+  <div class="aba-conteudo" data-aba="insercoes" role="tabpanel" id="painel-insercoes" aria-labelledby="aba-insercoes" tabindex="0">
+    <nav class="ins-nav" id="insNav" aria-label="Escolher visão">
+      <button type="button" data-sec="registros">Registros</button><button type="button" data-sec="pessoa">Por pessoa</button><button type="button" data-sec="dia">Por dia</button><button type="button" data-sec="semana">Por semana</button><button type="button" data-sec="mes">Por m&ecirc;s</button><button class="ins-nav-pessoas" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lan&ccedil;ou e ligar ao login do sistema">Pessoas</button>
+    </nav>
+    <div class="ins-bloco" data-sec="registros">
     <section class="kpis" id="kpisReg" aria-label="Indicadores dos registros"></section>
     <div class="painel-grid">
       <section class="painel largo">
@@ -631,41 +635,17 @@
       </section>
     </div>
     <p class="nota" id="nota"></p>
-  </div>
-
-  <!-- ======================================================== ABA: RELATÓRIO -->
-  <div class="aba-conteudo" data-aba="relatorio" role="tabpanel" id="painel-relatorio" aria-labelledby="aba-relatorio" tabindex="0">
-    <section class="kpis" id="kpisRel" aria-label="Indicadores do relat&oacute;rio"></section>
-    <div class="relatorio-cab">
-      <input type="search" class="busca" id="relatorBusca" placeholder="Buscar munic&iacute;pio&hellip;" aria-label="Buscar munic&iacute;pio">
-      <div class="relatorio-vis" id="relatorioVis" role="group" aria-label="Modo de visualiza&ccedil;&atilde;o">
-        <button type="button" class="ativa" data-vis="lista" aria-label="Ver em lista">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          Lista
-        </button>
-        <button type="button" data-vis="quadros" aria-label="Ver em grade">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Grade
-        </button>
-      </div>
     </div>
-    <!-- só aparece com mais de um município na seleção (js/dashboard.js) -->
-    <div class="relatorio-geral" id="relatorioGeral" hidden>
-      <span class="relatorio-geral-rot">Relat&oacute;rio geral de todos os munic&iacute;pios</span>
-      <div class="relatorio-geral-acoes">
-        <button class="btn btn-verde" type="button" data-geral="geral">Completo (PDF)</button>
-        <button class="btn" type="button" data-geral="resumo">Resumido (PDF)</button>
-      </div>
-    </div>
-    <div class="relatorio-grid" id="relatorioGrid"></div>
-  </div>
-
-  <!-- ============================== ABA: INSERÇÕES POR PESSOA (admin) ----->
-  <!-- Aqui a unidade &eacute; o LAN&Ccedil;AMENTO (uma linha da planilha) e a data &eacute; a de
-       INSER&Ccedil;&Atilde;O (Carimbo de data/hora) &mdash; nunca a da vistoria. -->
-  <div class="aba-conteudo" data-aba="ins-pessoa" role="tabpanel" id="painel-ins-pessoa" aria-labelledby="aba-ins-pessoa" tabindex="0">
+    <div class="ins-bloco" data-sec="pessoa">
     <section class="kpis" id="kpisInsPessoa" aria-label="Indicadores de inser&ccedil;&atilde;o por pessoa"></section>
     <div class="painel-grid">
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Calend&aacute;rio por pessoa</h2>
+          <p class="sub">Escolha uma pessoa: em verde os dias em que ela lan&ccedil;ou, em vermelho os dias &uacute;teis sem lan&ccedil;amento dela.</p>
+        </div></div>
+        <div id="gCalPessoa"></div>
+      </section>
       <section class="painel duplo destaque">
         <div class="painel-cab"><div class="painel-cab-tit">
           <h2>Ranking de inseridores</h2>
@@ -695,12 +675,18 @@
         <div id="tInsPessoa"></div>
       </section>
     </div>
-  </div>
+    </div>
 
-  <!-- ================================= ABA: INSERÇÕES POR DIA (admin) ----->
-  <div class="aba-conteudo" data-aba="ins-dia" role="tabpanel" id="painel-ins-dia" aria-labelledby="aba-ins-dia" tabindex="0">
+    <div class="ins-bloco" data-sec="dia">
     <section class="kpis" id="kpisInsDia" aria-label="Indicadores de inser&ccedil;&atilde;o por dia"></section>
     <div class="painel-grid">
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Calend&aacute;rio de inser&ccedil;&otilde;es</h2>
+          <p class="sub">Dia a dia: quando teve e quando n&atilde;o teve inser&ccedil;&atilde;o, e quem inseriu em cada dia.</p>
+        </div></div>
+        <div id="gCalDia"></div>
+      </section>
       <section class="painel largo destaque">
         <div class="painel-cab"><div class="painel-cab-tit">
           <h2>Lan&ccedil;amentos por m&ecirc;s</h2>
@@ -733,12 +719,52 @@
         <div id="tInsDia"></div>
       </section>
     </div>
-  </div>
+    </div>
 
-  <!-- ================================= ABA: INSERÇÕES POR MÊS (admin) ----->
-  <div class="aba-conteudo" data-aba="ins-mes" role="tabpanel" id="painel-ins-mes" aria-labelledby="aba-ins-mes" tabindex="0">
+    <div class="ins-bloco" data-sec="semana">
+    <section class="kpis" id="kpisInsSemana" aria-label="Indicadores de inser&ccedil;&atilde;o por semana"></section>
+    <div class="painel-grid">
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Calend&aacute;rio por semana</h2>
+          <p class="sub">Cada linha &eacute; uma semana; a coluna &ldquo;Semana&rdquo; soma os lan&ccedil;amentos e mostra quem inseriu.</p>
+        </div></div>
+        <div id="gCalSemana"></div>
+      </section>
+      <section class="painel largo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Lan&ccedil;amentos por semana</h2>
+          <p class="sub">Semanas de segunda a domingo, pela data de inser&ccedil;&atilde;o. O r&oacute;tulo &eacute; a segunda-feira.</p>
+        </div></div>
+        <div id="gInsSemanaSerie" data-tipos="colunas,linha,area,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Semana a semana por inseridor</h2>
+          <p class="sub">Os cinco maiores do per&iacute;odo.</p>
+        </div></div>
+        <div id="gInsSemanaPessoa" data-tipos="colunas,linha,area,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Detalhe semana a semana</h2>
+          <p class="sub">Da mais recente para a mais antiga.</p>
+        </div></div>
+        <div id="tInsSemana"></div>
+      </section>
+    </div>
+    </div>
+
+    <div class="ins-bloco" data-sec="mes">
     <section class="kpis" id="kpisInsMes" aria-label="Indicadores de inser&ccedil;&atilde;o por m&ecirc;s"></section>
     <div class="painel-grid">
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Calend&aacute;rio por m&ecirc;s</h2>
+          <p class="sub">Todos os meses do per&iacute;odo, inclusive os sem inser&ccedil;&atilde;o, com quem mais lan&ccedil;ou.</p>
+        </div></div>
+        <div id="gCalMes"></div>
+      </section>
       <section class="painel largo destaque">
         <div class="painel-cab"><div class="painel-cab-tit">
           <h2>Lan&ccedil;amentos por m&ecirc;s</h2>
@@ -760,6 +786,7 @@
         </div></div>
         <div id="tInsMes"></div>
       </section>
+    </div>
     </div>
   </div>
 
@@ -1159,7 +1186,8 @@
 <script src="../js/lancamento-validacao.js?v=2026101414"></script>
 <script src="../js/lancamento-pdf.js?v=2026101404"></script>
 <script src="../js/lancamento-mecanizacao.js?v=2026101411"></script>
-<script src="../js/dashboard.js?v=2026101516"></script>
+<script src="../js/tabela-ferramentas.js?v=2026101621"></script>
+<script src="../js/dashboard.js?v=2026101622"></script>
 <script src="../js/assistente-dados.js?v=2026100923"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026100901"></script>

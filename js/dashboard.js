@@ -2351,7 +2351,6 @@
       { rot: 'Sem serviço informado', val: G.num(C.semServico),
         sub: C.semServico ? 'não entram em mecanização nem açudagem' : 'todos classificados' },
       { rot: 'Meses com vistoria', val: G.num(C.nMeses), sub: 'em ' + rotuloAno() },
-      { rot: 'Registros por mês', val: G.num(C.nMeses ? D.length / C.nMeses : 0, 1) },
 
       { _sec: 'Conteúdo dos registros' },
       { rot: 'Hectares mecanizados', val: G.num(C.ha, 1), un: 'ha', cls: 'mec', ir: 'mecanizacao' },
@@ -2434,6 +2433,13 @@
       Acre, a data volta um dia — 25/01/2026 saía sábado em vez de domingo. */
   function diaSemana(iso) { return new Date(iso + 'T12:00:00Z').getUTCDay(); }
   function fimDeSemana(iso) { var s = diaSemana(iso); return s === 0 || s === 6; }
+  function somarDias(iso, n) {
+    var d = new Date(iso + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+  /** Segunda-feira da semana de uma data ISO (a semana vai de segunda a domingo). */
+  function segundaDaSemana(iso) { return somarDias(iso, -((diaSemana(iso) + 6) % 7)); }
   function diasNoMes(ano, mes) { return new Date(Date.UTC(ano, mes, 0)).getUTCDate(); }
   function iso2(v) { return String(v).padStart(2, '0'); }
   function mesLongo(ym) { return MESES_LONGO[+ym.slice(5, 7) - 1]; }
@@ -2464,11 +2470,19 @@
     var dias = new Map();      // 'YYYY-MM-DD' -> { n, alim, mun }
     var pessoas = new Map();   // inseridor    -> { n, dias, ini, fim, mun, mes }
     var meses = new Map();     // 'YYYY-MM'    -> { n, dias }
+    var semanas = new Map();   // segunda 'YYYY-MM-DD' -> { n, dias, alim }
     var ultimo = '';
 
     C.D.forEach(function (r) {
       if (!r.d) return;
       var quem = r.alim || NI, onde = r.mun || NI, ym = r.d.slice(0, 7);
+
+      var seg = segundaDaSemana(r.d);
+      var sem = semanas.get(seg);
+      if (!sem) semanas.set(seg, sem = { n: 0, dias: new Set(), alim: new Map() });
+      sem.n++;
+      sem.dias.add(r.d);
+      sem.alim.set(quem, (sem.alim.get(quem) || 0) + 1);
 
       var dia = dias.get(r.d);
       if (!dia) dias.set(r.d, dia = { n: 0, alim: new Map(), mun: new Map(), registros: [] });
@@ -2540,8 +2554,25 @@
        saber de que ano era cada coluna. */
     var multiAno = new Set(mesesOrd.map(function (m) { return m.ano; })).size > 1;
     var mesesChave = mesesOrd.map(function (m) { return m.ym; });
+
+    // semanas de segunda a domingo; a semana que cruza dois meses fica inteira
+    // na segunda-feira que a abre
+    var semanasOrd = Array.from(semanas.keys()).sort().map(function (seg, i, todas) {
+      var s = semanas.get(seg), top = maisFrequente(s.alim);
+      return {
+        ini: seg, fim: somarDias(seg, 6), n: s.n, dias: s.dias.size,
+        inseridores: s.alim.size, alim: top.rot,
+        part: s.n ? top.val / s.n * 100 : 0,
+        vari: variacao(s.n, i ? semanas.get(todas[i - 1]).n : null)
+      };
+    });
+
     C._ins = {
       dias: diasOrd, pessoas: pessoasOrd, meses: mesesOrd, mesesChave: mesesChave,
+      semanas: semanasOrd,
+      rotulosSemana: semanasOrd.map(function (s) {
+        return s.ini.slice(8) + '/' + s.ini.slice(5, 7) + (multiAno ? '/' + s.ini.slice(2, 4) : '');
+      }),
       multiAno: multiAno,
       rotulosMes: mesesOrd.map(function (m) {
         return multiAno ? MESES[m.mes - 1] + '/' + m.ym.slice(2, 4) : mesLongo(m.ym);
@@ -2568,12 +2599,8 @@
 
     tiles('kpisInsPessoa', [
       { _sec: 'Quem alimenta o formulário' },
-      { rot: 'Lançamentos no período', val: G.num(I.total), ir: 'registros' },
       { rot: 'Inseridores', val: G.num(I.pessoas.length) },
       { rot: 'Lançamentos por inseridor', val: G.num(I.pessoas.length ? I.total / I.pessoas.length : 0, 1) },
-      { rot: 'Dias com inserção', val: G.num(I.dias.length), ir: 'ins-dia' },
-      { rot: 'Lançamentos por dia ativo', val: G.num(I.dias.length ? I.total / I.dias.length : 0, 1) },
-      { rot: 'Meses com inserção', val: G.num(I.meses.length), ir: 'ins-mes' },
 
       { _sec: 'Destaques' },
       { rot: 'Mais lançamentos', val: top ? G.esc(top.rot) : '—', cls: 'texto',
@@ -2608,7 +2635,7 @@
       '<th>Por dia ativo</th><th>Primeiro</th><th>Último</th><th>Município que mais lançou</th>' +
       '</tr></thead><tbody>' +
       I.pessoas.map(function (p, i) {
-        return '<tr><td class="num">' + (i + 1) + '</td><td class="forte">' + G.esc(p.rot) + '</td>' +
+        return '<tr class="cal-link" data-cal-t="pessoa" data-cal-k="' + G.esc(p.rot) + '"><td class="num">' + (i + 1) + '</td><td class="forte">' + G.esc(p.rot) + '</td>' +
           '<td class="num">' + G.num(p.n) + '</td><td class="num">' + G.num(p.pct, 1) + '%</td>' +
           '<td class="num">' + G.num(p.dias) + '</td><td class="num">' + G.num(p.ritmo, 1) + '</td>' +
           '<td class="num">' + dataBR(p.ini) + '</td><td class="num">' + dataBR(p.fim) + '</td>' +
@@ -2648,13 +2675,9 @@
 
     tiles('kpisInsDia', [
       { _sec: 'Ritmo diário' },
-      { rot: 'Lançamentos no período', val: G.num(I.total), ir: 'registros' },
       { rot: 'Dias com inserção', val: G.num(I.dias.length) },
       { rot: 'Lançamentos por dia ativo', val: G.num(I.dias.length ? I.total / I.dias.length : 0, 1) },
-      { rot: 'Dias úteis sem inserção', val: G.num(I.semInsercao), ir: 'ins-mes',
-        sub: 'sábados e domingos não contam' },
       { rot: 'Maior sequência de dias úteis', val: G.num(maiorSeq), sub: 'dias úteis seguidos com inserção' },
-      { rot: 'Inseridores ativos', val: G.num(I.pessoas.length), ir: 'ins-pessoa' },
 
       { _sec: 'Destaques' },
       { rot: 'Dia de pico', val: I.pico ? dataBR(I.pico.iso) : '—', cls: 'texto',
@@ -2872,12 +2895,10 @@
 
     tiles('kpisInsMes', [
       { _sec: 'Volume mensal' },
-      { rot: 'Lançamentos no período', val: G.num(I.total), ir: 'registros' },
       { rot: 'Meses com inserção', val: G.num(I.meses.length) },
       { rot: 'Média por mês', val: G.num(I.meses.length ? I.total / I.meses.length : 0, 1) },
-      { rot: 'Dias úteis com inserção', val: G.num(diasCom), ir: 'ins-dia' },
-      { rot: 'Dias úteis sem inserção', val: G.num(I.semInsercao) },
-      { rot: 'Inseridores ativos', val: G.num(I.pessoas.length), ir: 'ins-pessoa' },
+      { rot: 'Dias úteis com inserção', val: G.num(diasCom) },
+      { rot: 'Dias úteis sem inserção', val: G.num(I.semInsercao), sub: 'sábados e domingos não contam' },
 
       { _sec: 'Destaques' },
       { rot: 'Mês de pico', val: I.picoMes ? G.esc(mesLongo(I.picoMes.ym)) : '—', cls: 'texto',
@@ -2889,8 +2910,7 @@
           ? (ultimoMes.vari.pct > 0 ? '+' : '') + G.num(ultimoMes.vari.pct, 0) : '—',
         un: ultimoMes && ultimoMes.vari && ultimoMes.vari.pct != null ? '%' : '',
         cls: ultimoMes && ultimoMes.vari && ultimoMes.vari.dif < 0 ? 'acu' : 'mec',
-        sub: 'sobre o mês anterior' },
-      { rot: 'Média por dia com inserção', val: G.num(diasCom ? I.total / diasCom : 0, 1) }
+        sub: 'sobre o mês anterior' }
     ]);
 
     pintarSerie('gInsMesSerie', I.rotulosMes,
@@ -2914,7 +2934,7 @@
       '<th>Dias com inserção</th><th>Dias úteis sem inserção</th>' +
       '</tr></thead><tbody>' +
       I.meses.map(function (m) {
-        return '<tr><td class="num">' + m.ano + '</td><td class="forte">' + mesLongo(m.ym) + '</td>' +
+        return '<tr class="cal-link" data-cal-t="mes" data-cal-k="' + m.ym + '"><td class="num">' + m.ano + '</td><td class="forte">' + mesLongo(m.ym) + '</td>' +
           '<td class="num">' + G.num(m.n) + '</td>' + celVariacao(m.vari) +
           '<td class="num">' + G.num(m.com.length) + '</td>' +
           '<td class="num">' + G.num(m.sem.length) + '</td>' +
@@ -2925,6 +2945,666 @@
       '<td class="num forte">' + G.num(I.meses.reduce(function (a, m) { return a + m.com.length; }, 0)) + '</td>' +
       '<td class="num forte">' + G.num(I.semInsercao) + '</td><td colspan="2"></td></tr>' +
       '</tbody></table></div>';
+  }
+
+  /* --------------------------------------------- INSERÇÕES POR SEMANA */
+  function abaInsSemana(C) {
+    var I = insercoes(C);
+    var S = I.semanas;
+    var ultima = S[S.length - 1];
+    var pico = S.reduce(function (a, s) { return !a || s.n > a.n ? s : a; }, null);
+    var faixa = function (s) { return dataBR(s.ini) + ' a ' + dataBR(s.fim); };
+
+    tiles('kpisInsSemana', [
+      { _sec: 'Volume semanal (segunda a domingo)' },
+      { rot: 'Semanas com inserção', val: G.num(S.length) },
+      { rot: 'Média por semana', val: G.num(S.length ? I.total / S.length : 0, 1) },
+      { rot: 'Semana de pico', val: pico ? dataBR(pico.ini) : '—', cls: 'texto',
+        sub: pico ? G.num(pico.n) + ' lançamentos' : '' },
+      { rot: 'Última semana', val: ultima ? dataBR(ultima.ini) : '—', cls: 'texto',
+        sub: ultima ? G.num(ultima.n) + ' lançamentos · ' + faixa(ultima) : '' }
+    ]);
+
+    pintarSerie('gInsSemanaSerie', I.rotulosSemana,
+      [{ nome: 'Lançamentos', slot: 0, valores: S.map(function (s) { return s.n; }) }]);
+
+    // uma série por inseridor do topo, como no gráfico por mês
+    var porPessoa = I.pessoas.slice(0, 5).map(function (p, i) {
+      var k = {};
+      I.dias.forEach(function (d) {
+        d.registros.forEach(function (r) {
+          if ((r.alim || NI) !== p.rot) return;
+          var seg = segundaDaSemana(d.iso);
+          k[seg] = (k[seg] || 0) + 1;
+        });
+      });
+      return { nome: p.rot, slot: i, valores: S.map(function (s) { return k[s.ini] || null; }) };
+    });
+    pintarSerie('gInsSemanaPessoa', I.rotulosSemana, porPessoa);
+
+    if (!el('tInsSemana')) return;
+    if (!S.length) return G.vazio(el('tInsSemana'));
+    el('tInsSemana').innerHTML = '<div class="tabela-scroll"><table class="dados"><thead><tr>' +
+      '<th>Semana</th><th>Lançamentos</th><th>Variação</th><th>Dias com inserção</th>' +
+      '<th>Inseridores</th><th>Inseridor que mais lançou</th><th>Participação</th>' +
+      '</tr></thead><tbody>' +
+      S.slice().reverse().map(function (s) {
+        return '<tr class="cal-link' + (pico && s.ini === pico.ini ? ' destaque-linha' : '') + '" data-cal-t="semana" data-cal-k="' + s.ini + '">' +
+          '<td class="forte">' + faixa(s) + '</td><td class="num">' + G.num(s.n) + '</td>' +
+          celVariacao(s.vari) +
+          '<td class="num">' + G.num(s.dias) + '</td><td class="num">' + G.num(s.inseridores) + '</td>' +
+          '<td>' + G.esc(s.alim || '—') + '</td><td class="num">' + G.num(s.part, 0) + '%</td></tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  }
+
+  /* ----------------------------------------------- CALENDÁRIOS DE INSERÇÃO
+     Um mesmo desenho de mês, em quatro leituras: por dia (quem inseriu em
+     cada dia), por semana (coluna com o total e os nomes da semana), por
+     mês (cartões-resumo) e por pessoa (só os dias de uma pessoa).
+     Verde = teve inserção (mais escuro = mais lançamentos); vermelho = dia
+     útil sem inserção; cinza = sábado/domingo; vazio = depois do último
+     lançamento. */
+  var calPessoa = '';
+
+  /** Quem inseriu em cada dia: iso -> Map(nome -> n). Guardado no agregado. */
+  function quemPorDia(I) {
+    if (I._quem) return I._quem;
+    var m = new Map();
+    I.dias.forEach(function (d) {
+      var q = new Map();
+      d.registros.forEach(function (r) {
+        var k = r.alim || NI;
+        q.set(k, (q.get(k) || 0) + 1);
+      });
+      m.set(d.iso, q);
+    });
+    I._quem = m;
+    return m;
+  }
+
+  /* Sigla de cada inseridor: iniciais do primeiro e do último nome ("Rosilene
+     Cavalcante" -> RC). Repetida entre duas pessoas, ganha a inicial do meio
+     ou um número, para a sigla nunca apontar para duas pessoas. */
+  var SIG = {};
+  function montarSiglas(I) {
+    var usadas = {};
+    SIG = {};
+    I.pessoas.forEach(function (p) {
+      var ps = String(p.rot).split(/[\s@._-]+/).filter(function (w) {
+        return w && !/^(de|da|do|das|dos|e)$/i.test(w);
+      });
+      var sg;
+      if (ps.length >= 2) sg = ps[0][0] + ps[ps.length - 1][0];
+      else sg = (ps[0] || '?').slice(0, 2);
+      sg = sg.toUpperCase();
+      if (usadas[sg] && ps.length > 2) sg = (ps[0][0] + ps[1][0] + ps[ps.length - 1][0]).toUpperCase();
+      var base = sg, i = 2;
+      while (usadas[sg]) sg = base + (i++);
+      usadas[sg] = true;
+      SIG[p.rot] = sg;
+    });
+  }
+  function sigla(n) { return SIG[n] || String(n).slice(0, 2).toUpperCase(); }
+
+  /** Lista "Ana 3, Bia 1" ordenada por quantidade (curta: só 2 primeiros nomes). */
+  function listaQuem(q, curto) {
+    var arr = Array.from(q, function (e) { return { n: e[0], v: e[1] }; })
+      .sort(function (a, b) { return b.v - a.v || a.n.localeCompare(b.n, 'pt-BR'); });
+    if (!curto) return arr.map(function (e) { return e.n + ' (' + e.v + ')'; }).join(', ');
+    var t = arr.slice(0, 3).map(function (e) { return sigla(e.n); }).join(' ');
+    return t + (arr.length > 3 ? ' +' + (arr.length - 3) : '');
+  }
+
+  /** Meses contínuos do primeiro ao último lançamento (inclusive os vazios). */
+  function mesesDoCalendario(I) {
+    if (!I.dias.length) return [];
+    var fim = I.ultimo.slice(0, 7), out = [], ym = I.dias[0].iso.slice(0, 7);
+    while (ym <= fim && out.length < 60) {
+      out.push(ym);
+      var a = +ym.slice(0, 4), m = +ym.slice(5, 7) + 1;
+      if (m > 12) { m = 1; a++; }
+      ym = a + '-' + iso2(m);
+    }
+    return out;
+  }
+
+  /** Grade de um mês. opc.pessoa: só os dias dessa pessoa; opc.semana: coluna
+      com o resumo de cada semana. */
+  function htmlMesCalendario(ym, I, opc) {
+    var quem = quemPorDia(I), ano = +ym.slice(0, 4), mes = +ym.slice(5, 7);
+    var nDias = diasNoMes(ano, mes), pessoa = opc.pessoa || '';
+    var max = I._calMax || 1;
+    var offset = (diaSemana(ym + '-01') + 6) % 7;   // a semana começa na segunda
+    var cab = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    var h = '<div class="cal-mes"><h4 class="cal-link" data-cal-t="mes" data-cal-k="' + ym + '"' +
+      (pessoa ? ' data-cal-p="' + G.esc(pessoa) + '"' : '') + '>' + mesLongo(ym) + ' de ' + ano + '</h4>' +
+      '<div class="cal-grade' + (opc.semana ? ' cal-com-semana' : '') + '">' +
+      cab.map(function (c) { return '<span class="cal-cab">' + c + '</span>'; }).join('') +
+      (opc.semana ? '<span class="cal-cab">Semana</span>' : '');
+    var col = 0, semN = 0, semQ = new Map(), semDias = 0;
+    var fechaSemana = function (isoFim) {
+      if (!opc.semana) return '';
+      var t = semN
+        ? '<b>' + G.num(semN) + '</b><small>' + G.esc(listaQuem(semQ, true)) + '</small>'
+        : (semDias ? '<small class="cal-nada">sem inserção</small>' : '');
+      var r = '<span class="cal-sem-res' + (semN ? ' cal-ok cal-link' : '') + '" data-cal-t="semana" data-cal-k="' +
+        segundaDaSemana(isoFim) + '"' + (pessoa ? ' data-cal-p="' + G.esc(pessoa) + '"' : '') + '>' + t + '</span>';
+      semN = 0; semQ = new Map(); semDias = 0;
+      return r;
+    };
+    for (var v = 0; v < offset; v++) { h += '<span class="cal-dia cal-fora"></span>'; col++; }
+    for (var d = 1; d <= nDias; d++) {
+      var iso = ym + '-' + iso2(d), q = quem.get(iso), fds = fimDeSemana(iso), futuro = iso > I.ultimo;
+      var n = 0, mostra = null;
+      if (q) {
+        if (pessoa) { n = q.get(pessoa) || 0; mostra = n ? new Map([[pessoa, n]]) : null; }
+        else { q.forEach(function (x) { n += x; }); mostra = q; }
+      }
+      var cls = 'cal-dia', attr = '', conteudo = '<i>' + d + '</i>';
+      var pAttr = pessoa ? ' data-cal-p="' + G.esc(pessoa) + '"' : '';
+      if (n) {
+        var nivel = Math.max(1, Math.min(4, Math.ceil(n / max * 4)));
+        cls += ' cal-ok cal-n' + nivel;
+        conteudo += '<b>' + G.num(n) + '</b>' + (pessoa ? '<small>' + G.esc(sigla(pessoa)) + '</small>'
+          : '<small>' + G.esc(listaQuem(mostra, true)) + '</small>');
+        attr = ' data-cal-t="dia" data-cal-k="' + iso + '"' + pAttr; cls += ' cal-link';
+        semN += n;
+        mostra.forEach(function (x, k) { semQ.set(k, (semQ.get(k) || 0) + x); });
+      } else if (futuro) {
+        cls += ' cal-fora';
+      } else if (fds) {
+        cls += ' cal-fds'; attr = ' data-cal-t="vazio" data-cal-k="' + iso + '" data-cal-m="fds"' + pAttr;
+      } else {
+        cls += ' cal-sem'; attr = ' data-cal-t="vazio" data-cal-k="' + iso + '"' + pAttr;
+        conteudo += '<small>—</small>';
+      }
+      if (!fds && !futuro) semDias++;
+      h += '<span class="' + cls + '"' + attr + '>' + conteudo + '</span>';
+      col++;
+      if (col % 7 === 0) h += fechaSemana(iso);
+    }
+    if (col % 7) {
+      while (col % 7) { h += '<span class="cal-dia cal-fora"></span>'; col++; }
+      h += fechaSemana(ym + '-' + iso2(nDias));
+    }
+    return h + '</div></div>';
+  }
+
+  function legendaCalendario() {
+    return '<p class="cal-leg"><span><span class="cal-chip cal-ok cal-n3"></span>teve inserção</span>' +
+      '<span><span class="cal-chip cal-sem"></span>dia útil sem inserção</span>' +
+      '<span><span class="cal-chip cal-fds"></span>fim de semana</span></p>';
+  }
+
+  function pintarCalendarios(I) {
+    var meses = mesesDoCalendario(I);
+    if (!meses.length) {
+      ['gCalDia', 'gCalSemana', 'gCalMes', 'gCalPessoa'].forEach(function (id) {
+        if (el(id)) G.vazio(el(id));
+      });
+      return;
+    }
+    var quem = quemPorDia(I);
+    // intensidade relativa ao maior dia (ou ao maior dia da pessoa escolhida)
+    var maxDia = I.dias.reduce(function (a, d) { return Math.max(a, d.n); }, 1);
+    /* Mais de um exercício na seleção: os meses se separam por ano, cada ano
+       com o seu título — senão janeiro de 2025 e de 2026 ficam lado a lado. */
+    var porAno = function (classe, fn, opc) {
+      var anos = [];
+      meses.forEach(function (ym) {
+        var a = ym.slice(0, 4);
+        if (!anos.length || anos[anos.length - 1].ano !== a) anos.push({ ano: a, ms: [] });
+        anos[anos.length - 1].ms.push(ym);
+      });
+      return anos.map(function (g) {
+        var corpo = '<div class="' + classe + '">' + g.ms.map(fn).join('') + '</div>';
+        if (anos.length < 2) return corpo;
+        var n = 0;
+        g.ms.forEach(function (ym) { n += (I.meses.filter(function (m) { return m.ym === ym; })[0] || { n: 0 }).n; });
+        return '<h3 class="cal-ano cal-link" data-cal-t="ano" data-cal-k="' + g.ano + '"' +
+          (opc && opc.pessoa ? ' data-cal-p="' + G.esc(opc.pessoa) + '"' : '') + '>' + g.ano +
+          ' <small>' + G.num(n) + ' lançamentos · ver detalhes</small></h3>' + corpo;
+      }).join('');
+    };
+    var grade = function (opc) {
+      return legendaCalendario() + porAno('cal-meses', function (ym) { return htmlMesCalendario(ym, I, opc); }, opc);
+    };
+
+    montarSiglas(I);
+    I._calMax = maxDia;
+    if (el('gCalDia')) el('gCalDia').innerHTML = grade({});
+    if (el('gCalSemana')) el('gCalSemana').innerHTML = grade({ semana: true });
+
+    if (el('gCalMes')) {
+      I._calMax = maxDia;
+      var maxMes = I.meses.reduce(function (a, m) { return Math.max(a, m.n); }, 1);
+      var porMes = new Map(I.meses.map(function (m) { return [m.ym, m]; }));
+      el('gCalMes').innerHTML = legendaCalendario() + porAno('cal-resumo', function (ym) {
+        var m = porMes.get(ym), q = new Map(), nome = mesLongo(ym) + ' ' + ym.slice(0, 4);
+        if (!m) return '<div class="cal-card cal-sem"><h4>' + nome + '</h4><p class="cal-nada">Nenhuma inserção</p></div>';
+        I.dias.forEach(function (d) {
+          if (d.iso.slice(0, 7) !== ym) return;
+          quem.get(d.iso).forEach(function (v, k) { q.set(k, (q.get(k) || 0) + v); });
+        });
+        var nivel = Math.max(1, Math.min(4, Math.ceil(m.n / maxMes * 4)));
+        var top = Array.from(q, function (e) { return { n: e[0], v: e[1] }; })
+          .sort(function (a, b) { return b.v - a.v; });
+        return '<div class="cal-card cal-ok cal-n' + nivel + '"><h4 class="cal-link" data-cal-t="mes" data-cal-k="' + ym + '">' + nome + ' &rsaquo;</h4>' +
+          '<p><b>' + G.num(m.n) + '</b> lançamentos</p>' +
+          '<p class="cal-sub">' + G.num(m.com.length) + ' dias com inserção · ' +
+          G.num(m.sem.length) + ' dias úteis sem</p><ul>' +
+          top.slice(0, 4).map(function (t) {
+            return '<li><span class="cal-sig">' + G.esc(sigla(t.n)) + '</span> ' + G.esc(t.n) + ' <b>' + G.num(t.v) + '</b></li>';
+          }).join('') +
+          (top.length > 4 ? '<li class="cal-sub">+ ' + (top.length - 4) + ' pessoa(s)</li>' : '') +
+          '</ul>' + htmlMesCalendario(ym, I, {}) + '</div>';
+      });
+    }
+
+    if (el('gCalPessoa')) {
+      var nomes = I.pessoas.map(function (p) { return p.rot; });
+      if (nomes.indexOf(calPessoa) < 0) calPessoa = '';   // ninguém de cara: só quando escolherem
+      var meu = I.pessoas.filter(function (p) { return p.rot === calPessoa; })[0];
+      var maxP = 1;
+      I.dias.forEach(function (d) { maxP = Math.max(maxP, quem.get(d.iso).get(calPessoa) || 0); });
+      I._calMax = maxP;
+      el('gCalPessoa').innerHTML =
+        '<div class="tf-bar"><label class="tf-campo">Pessoa <select id="calPessoaSel">' +
+        '<option value=""' + (calPessoa ? '' : ' selected') + '>Selecione uma pessoa&hellip;</option>' +
+        nomes.map(function (n) {
+          return '<option value="' + G.esc(n) + '"' + (n === calPessoa ? ' selected' : '') + '>' + G.esc(sigla(n)) + ' — ' + G.esc(n) + '</option>';
+        }).join('') + '</select></label>' +
+        '<span class="tf-cont">' + (meu ? G.num(meu.n) + ' lançamentos em ' + G.num(meu.dias) + ' dias' : '') +
+        '</span>' + (meu ? '<button type="button" class="tf-dir cal-link" data-cal-t="pessoa" data-cal-k="' +
+          G.esc(calPessoa) + '">Ver tudo de ' + G.esc(sigla(calPessoa)) + ' &rsaquo;</button>' : '') +
+        '</div>' + (calPessoa ? grade({ pessoa: calPessoa })
+          : '<p class="nota">Escolha uma pessoa para ver em que dias ela lançou e em quais não.</p>');
+      I._calMax = maxDia;
+      var sel = el('calPessoaSel');
+      if (sel) sel.addEventListener('change', function () { calPessoa = sel.value; pintarCalendarios(I); });
+    }
+  }
+
+  /* ------------------------------------- POPUP E DETALHE DOS CALENDÁRIOS
+     Passar o mouse numa data, semana, mês, ano ou pessoa abre um resumo;
+     clicar abre uma janela com os lançamentos, que podem ser agrupados por
+     dia, semana, mês, pessoa, município, serviço ou escritório (dois níveis). */
+  function registrosDe(I, t, k, p) {
+    var out = [];
+    I.dias.forEach(function (d) {
+      var ok = t === 'dia' ? d.iso === k
+        : t === 'semana' ? segundaDaSemana(d.iso) === k
+        : t === 'mes' ? d.iso.slice(0, 7) === k
+        : t === 'ano' ? d.iso.slice(0, 4) === k
+        : t === 'pessoa';
+      if (!ok) return;
+      d.registros.forEach(function (r) {
+        var quem = r.alim || NI;
+        if (t === 'pessoa' ? quem === k : (!p || quem === p)) out.push(r);
+      });
+    });
+    return out;
+  }
+
+  function tituloDe(t, k, p) {
+    var sufixo = p && t !== 'pessoa' ? ' — ' + p : '';
+    if (t === 'dia') return DIAS_SEMANA[diaSemana(k)] + ', ' + dataBR(k) + sufixo;
+    if (t === 'semana') return 'Semana de ' + dataBR(k) + ' a ' + dataBR(somarDias(k, 6)) + sufixo;
+    if (t === 'mes') return mesLongo(k) + ' de ' + k.slice(0, 4) + sufixo;
+    if (t === 'ano') return 'Ano ' + k + sufixo;
+    if (t === 'pessoa') return k;
+    if (t === 'vazio') return dataBR(k) + sufixo;
+    return '';
+  }
+
+  function contarPor(regs, f) {
+    var m = new Map();
+    regs.forEach(function (r) { var c = f(r); m.set(c, (m.get(c) || 0) + 1); });
+    return Array.from(m, function (e) { return { n: e[0], v: e[1] }; })
+      .sort(function (a, b) { return b.v - a.v || a.n.localeCompare(b.n, 'pt-BR'); });
+  }
+
+  var CAL_POP = null;
+  function popCalendario(alvo, e) {
+    if (!CTX) return;
+    var I = insercoes(CTX);
+    var t = alvo.getAttribute('data-cal-t'), k = alvo.getAttribute('data-cal-k'),
+        p = alvo.getAttribute('data-cal-p') || '';
+    if (!CAL_POP) {
+      CAL_POP = document.createElement('div');
+      CAL_POP.className = 'cal-pop';
+      CAL_POP.setAttribute('role', 'tooltip');
+      document.body.appendChild(CAL_POP);
+    }
+    var h;
+    if (t === 'vazio') {
+      var fds = alvo.getAttribute('data-cal-m') === 'fds';
+      h = '<h5>' + G.esc(tituloDe('vazio', k, p)) + '</h5><p>' +
+        (fds ? 'Fim de semana' : 'Dia útil <b>sem inserção</b>') + (p ? ' de ' + G.esc(p) : '') + '.</p>';
+    } else {
+      var regs = registrosDe(I, t, k, p);
+      var dias = new Set(regs.map(function (r) { return r.d; }));
+      var pess = contarPor(regs, function (r) { return r.alim || NI; });
+      var serv = contarPor(regs, function (r) { return r.pc || 'Sem serviço'; });
+      var mun = contarPor(regs, function (r) { return r.mun || NI; });
+      h = '<h5>' + G.esc(tituloDe(t, k, p)) + '</h5>' +
+        '<p><b>' + G.num(regs.length) + '</b> lançamentos em <b>' + G.num(dias.size) + '</b> dia(s)</p>' +
+        (t === 'pessoa' ? '' : '<p class="cal-pop-t">Quem inseriu</p><ul>' + pess.slice(0, 6).map(function (x) {
+          return '<li><span class="cal-sig">' + G.esc(sigla(x.n)) + '</span> ' + G.esc(x.n) + ' <b>' + G.num(x.v) + '</b></li>';
+        }).join('') + (pess.length > 6 ? '<li>+ ' + (pess.length - 6) + ' pessoa(s)</li>' : '') + '</ul>') +
+        '<p class="cal-pop-t">Serviço</p><p>' + serv.map(function (x) {
+          return G.esc(x.n) + ' <b>' + G.num(x.v) + '</b>';
+        }).join(' · ') + '</p>' +
+        '<p class="cal-pop-t">Municípios</p><p>' + mun.slice(0, 3).map(function (x) {
+          return G.esc(x.n) + ' <b>' + G.num(x.v) + '</b>';
+        }).join(' · ') + (mun.length > 3 ? ' · +' + (mun.length - 3) : '') + '</p>' +
+        '<p class="cal-pop-dica">Clique para ver os lançamentos</p>';
+    }
+    CAL_POP.innerHTML = h;
+    CAL_POP.style.display = 'block';
+    var w = CAL_POP.offsetWidth, hh = CAL_POP.offsetHeight;
+    var x = Math.min(e.clientX + 14, window.innerWidth - w - 8);
+    var y = e.clientY + 16 + hh > window.innerHeight ? e.clientY - hh - 12 : e.clientY + 16;
+    CAL_POP.style.left = Math.max(8, x) + 'px';
+    CAL_POP.style.top = Math.max(8, y) + 'px';
+  }
+  function fecharPopCalendario() { if (CAL_POP) CAL_POP.style.display = 'none'; }
+
+  var CAL_AGRUPAR = {
+    dia: { rot: 'Dia', chave: function (r) { return r.d; },
+      nome: function (k) { return DIAS_SEMANA[diaSemana(k)] + ', ' + dataBR(k); }, ordem: 'asc' },
+    semana: { rot: 'Semana', chave: function (r) { return segundaDaSemana(r.d); },
+      nome: function (k) { return 'Semana de ' + dataBR(k) + ' a ' + dataBR(somarDias(k, 6)); }, ordem: 'asc' },
+    mes: { rot: 'Mês', chave: function (r) { return r.d.slice(0, 7); },
+      nome: function (k) { return mesLongo(k) + ' de ' + k.slice(0, 4); }, ordem: 'asc' },
+    pessoa: { rot: 'Pessoa', chave: function (r) { return r.alim || NI; },
+      nome: function (k) { return k + ' (' + sigla(k) + ')'; }, ordem: 'qtd' },
+    mun: { rot: 'Município', chave: function (r) { return r.mun || NI; },
+      nome: function (k) { return k; }, ordem: 'qtd' },
+    pc: { rot: 'Serviço', chave: function (r) { return r.pc || 'Sem serviço'; },
+      nome: function (k) { return k; }, ordem: 'qtd' },
+    esc: { rot: 'Escritório', chave: function (r) { return r.esc || NI; },
+      nome: function (k) { return k; }, ordem: 'qtd' }
+  };
+  var CAL_PADRAO = { dia: ['pessoa', 'nada'], semana: ['dia', 'pessoa'], mes: ['dia', 'pessoa'],
+    ano: ['mes', 'pessoa'], pessoa: ['mes', 'dia'] };
+
+  function grupos(regs, tipo) {
+    var def = CAL_AGRUPAR[tipo], m = new Map();
+    regs.forEach(function (r) {
+      var k = def.chave(r);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(r);
+    });
+    var lista = Array.from(m, function (e) { return { k: e[0], regs: e[1] }; });
+    lista.sort(def.ordem === 'asc'
+      ? function (a, b) { return a.k < b.k ? -1 : a.k > b.k ? 1 : 0; }
+      : function (a, b) { return b.regs.length - a.regs.length || a.k.localeCompare(b.k, 'pt-BR'); });
+    return lista;
+  }
+
+  function tabelaRegistrosDetalhe(regs) {
+    return '<div class="tabela-scroll"><table class="dados"><thead><tr>' +
+      '<th>Inserção</th><th>Serviço</th><th>Produtor</th><th>Município</th><th>Escritório</th>' +
+      '<th>Técnico</th><th>Inseridor</th><th>Detalhe</th></tr></thead><tbody>' +
+      regs.map(function (r) {
+        var det = r.pc === MEC ? (r.ha ? G.num(r.ha, 1) + ' ha' : '—')
+          : r.pc === ACU ? (r.hrs ? G.num(r.hrs, 1) + ' h' : '—') : '—';
+        return '<tr><td class="num">' + dataBR(r.d) + '</td>' +
+          '<td><span class="tag ' + tagServico(r.pc) + '">' + G.esc(r.pc || '—') + '</span></td>' +
+          '<td class="forte">' + G.esc(r.prod || '—') + '</td><td>' + G.esc(r.mun || '—') + '</td>' +
+          '<td>' + G.esc(r.esc || '—') + '</td><td>' + G.esc(r.rt || '—') + '</td>' +
+          '<td><span class="cal-sig">' + G.esc(sigla(r.alim || NI)) + '</span> ' + G.esc(r.alim || NI) + '</td>' +
+          '<td class="num">' + det + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  /** PDF A4 dos lançamentos abertos na janela de detalhes, no mesmo padrão do
+      relatório geral: faixa azul com a seleção, cartões de indicadores,
+      tabelas com grade e rodapé paginado. */
+  function baixarPdfDetalhe(est) {
+    var regs = est.regs;
+    if (!regs.length) return Promise.resolve();
+    return carregarPdf().then(function () {
+      var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+      var PW = 210, M = 14, CW = PW - 2 * M;
+      var AZUL = [46, 79, 125], CINZA = [107, 120, 133], TINTA = [27, 36, 48];
+      var y;
+      var ha = soma(regs.filter(function (r) { return r.pc === MEC; }), function (r) { return r.ha; });
+      var hrs = soma(regs.filter(function (r) { return r.pc === ACU; }), function (r) { return r.hrs; });
+      var dias = new Set(regs.map(function (r) { return r.d; })).size;
+      var pess = new Set(regs.map(function (r) { return r.alim || NI; })).size;
+      var muns = new Set(regs.map(function (r) { return r.mun || NI; })).size;
+
+      var datas = regs.map(function (r) { return r.d; }).filter(Boolean).sort();
+      var linhasCab = [];
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      var cab = cabecalhoRelatorio(regs);
+      cab.itens.forEach(function (it) {
+        linhasCab = linhasCab.concat(doc.splitTextToSize(it[0] + ': ' + it[1], CW));
+      });
+      linhasCab.push('Inserções de ' + (datas.length ? dataBR(datas[0]) + ' a ' + dataBR(datas[datas.length - 1]) : '—'));
+      var agr = CAL_AGRUPAR[est.g1].rot +
+        (est.g2 && est.g2 !== 'nada' && est.g2 !== est.g1 ? ' > ' + CAL_AGRUPAR[est.g2].rot : '');
+      linhasCab.push('Agrupado por: ' + agr + (est.termo ? '  |  Filtro: "' + est.termo + '"' : ''));
+      var altCab = 18 + linhasCab.length * 4.6 + 3;
+      doc.setFillColor.apply(doc, AZUL);
+      doc.rect(0, 0, PW, altCab, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+      doc.text(doc.splitTextToSize('Lançamentos - ' + est.titulo, CW)[0], M, 12);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      linhasCab.forEach(function (l, i) { doc.text(l, M, 19 + i * 4.6); });
+      y = altCab + 8;
+
+      var kpis = [['Lançamentos', G.num(regs.length)], ['Dias com inserção', G.num(dias)],
+        ['Pessoas', G.num(pess)], ['Municípios', G.num(muns)],
+        ['Hectares', G.num(ha, 1) + ' ha'], ['Horas de máquina', G.num(hrs, 1) + ' h']];
+      var kw = (CW - 9) / 4, kh = 15;
+      kpis.forEach(function (k, i) {
+        var x = M + (i % 4) * (kw + 3), yy = y + Math.floor(i / 4) * (kh + 3);
+        doc.setFillColor(247, 249, 250); doc.setDrawColor(216, 222, 229); doc.setLineWidth(0.2);
+        doc.roundedRect(x, yy, kw, kh, 1.5, 1.5, 'FD');
+        doc.setTextColor.apply(doc, CINZA); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+        doc.text(k[0].toUpperCase(), x + 2.5, yy + 5);
+        doc.setTextColor.apply(doc, TINTA); doc.setFontSize(10.5);
+        doc.text(String(k[1]), x + 2.5, yy + 11.5, { maxWidth: kw - 4 });
+      });
+      y += Math.ceil(kpis.length / 4) * (kh + 3) + 6;
+
+      function secao(txt, sub) {
+        if (y > 262) { doc.addPage(); y = 18; }
+        doc.setTextColor.apply(doc, sub ? TINTA : AZUL);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(sub ? 9.5 : 12);
+        doc.text(doc.splitTextToSize(txt, CW)[0], M, y);
+        if (!sub) {
+          doc.setDrawColor.apply(doc, AZUL); doc.setLineWidth(0.4);
+          doc.line(M, y + 1.8, M + CW, y + 1.8);
+        }
+        y += sub ? 4.5 : 6;
+      }
+      function tabela(lista) {
+        doc.autoTable({
+          startY: y, margin: { left: M, right: M, top: 16, bottom: 16 },
+          head: [['Inserção', 'Serviço', 'Produtor', 'Município', 'Técnico', 'Inseridor', 'Detalhe']],
+          body: lista.map(function (r) {
+            var det = r.pc === MEC ? (r.ha ? G.num(r.ha, 1) + ' ha' : '-')
+              : r.pc === ACU ? (r.hrs ? G.num(r.hrs, 1) + ' h' : '-') : '-';
+            return [dataBR(r.d), r.pc || '-', r.prod || '-', r.mun || '-', r.rt || '-',
+              sigla(r.alim || NI) + ' ' + (r.alim || NI), det];
+          }),
+          theme: 'grid',
+          styles: { font: 'helvetica', fontSize: 7, cellPadding: 1.5, textColor: TINTA,
+                    lineColor: [216, 222, 229], lineWidth: 0.15, overflow: 'linebreak' },
+          headStyles: { fillColor: [238, 242, 244], textColor: [74, 85, 97], fontStyle: 'bold', fontSize: 7 },
+          alternateRowStyles: { fillColor: [250, 251, 252] },
+          columnStyles: { 6: { halign: 'right' } }
+        });
+        y = doc.lastAutoTable.finalY + 6;
+      }
+
+      grupos(regs, est.g1).forEach(function (g) {
+        secao(CAL_AGRUPAR[est.g1].nome(g.k) + '  (' + g.regs.length + ' lançamentos)');
+        if (!est.g2 || est.g2 === 'nada' || est.g2 === est.g1) tabela(g.regs);
+        else {
+          grupos(g.regs, est.g2).forEach(function (g2) {
+            secao(CAL_AGRUPAR[est.g2].nome(g2.k) + '  (' + g2.regs.length + ')', true);
+            tabela(g2.regs);
+          });
+        }
+      });
+
+      var n = doc.internal.getNumberOfPages();
+      var hoje = new Date().toLocaleDateString('pt-BR');
+      for (var p = 1; p <= n; p++) {
+        doc.setPage(p);
+        doc.setTextColor.apply(doc, CINZA); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+        doc.text('Gerado em ' + hoje + ' | Sistema de gestão', M, 289);
+        doc.text('Página ' + p + ' de ' + n, PW - M, 289, { align: 'right' });
+      }
+      doc.save('lancamentos-' + String(est.titulo).normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^\w-]+/g, '_').toLowerCase() + '.pdf');
+    });
+  }
+
+  function abrirDetalheCalendario(t, k, p) {
+    if (!CTX) return;
+    var I = insercoes(CTX);
+    var regs = registrosDe(I, t, k, p);
+    if (!regs.length) return;
+    var dlg = el('calDetalhe');
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = 'calDetalhe';
+      dlg.className = 'cal-det';
+      dlg.innerHTML = '<div class="cal-det-cab"><h3></h3>' +
+        '<span class="cal-det-acoes"><button type="button" class="tf-dir" data-pdf>Exportar PDF</button>' +
+        '<button type="button" class="tf-dir" data-fechar>Fechar &times;</button></span></div>' +
+        '<div class="cal-det-kpis"></div>' +
+        '<div class="tf-bar cal-det-ctrl">' +
+        '<label class="tf-campo">Agrupar por <select data-g="1"></select></label>' +
+        '<label class="tf-campo">depois por <select data-g="2"></select></label>' +
+        '<input type="search" class="tf-busca" placeholder="Filtrar lançamentos&hellip;" data-q></div>' +
+        '<div class="cal-det-corpo"></div>';
+      document.body.appendChild(dlg);
+      dlg.addEventListener('click', function (e) {
+        if (e.target === dlg || e.target.closest('[data-fechar]')) { dlg.close(); return; }
+        var b = e.target.closest('[data-pdf]');
+        if (!b || !dlg._estado) return;
+        b.disabled = true;
+        var rot = b.textContent;
+        b.textContent = 'Gerando PDF…';
+        baixarPdfDetalhe(dlg._estado).catch(function (er) {
+          alert(er && er.message ? er.message : 'Não foi possível gerar o PDF.');
+        }).then(function () { b.disabled = false; b.textContent = rot; });
+      });
+    }
+    var s1 = dlg.querySelector('[data-g="1"]'), s2 = dlg.querySelector('[data-g="2"]'),
+        q = dlg.querySelector('[data-q]');
+    var chaves = Object.keys(CAL_AGRUPAR);
+    var ops = chaves.map(function (o) { return '<option value="' + o + '">' + CAL_AGRUPAR[o].rot + '</option>'; }).join('');
+    s1.innerHTML = ops;
+    s2.innerHTML = '<option value="nada">Sem subgrupo</option>' + ops;
+    var pad = CAL_PADRAO[t] || ['dia', 'pessoa'];
+    s1.value = pad[0];
+    s2.value = pad[1];
+    q.value = '';
+    dlg.querySelector('h3').textContent = tituloDe(t, k, p);
+
+    var pessoas = new Set(regs.map(function (r) { return r.alim || NI; }));
+    var dias = new Set(regs.map(function (r) { return r.d; }));
+    var muns = new Set(regs.map(function (r) { return r.mun || NI; }));
+    var ha = regs.reduce(function (a, r) { return a + (r.pc === MEC ? (r.ha || 0) : 0); }, 0);
+    var hrs = regs.reduce(function (a, r) { return a + (r.pc === ACU ? (r.hrs || 0) : 0); }, 0);
+    dlg.querySelector('.cal-det-kpis').innerHTML = [
+      ['Lançamentos', G.num(regs.length)], ['Dias com inserção', G.num(dias.size)],
+      ['Pessoas', G.num(pessoas.size)], ['Municípios', G.num(muns.size)],
+      ['Hectares', G.num(ha, 1) + ' ha'], ['Horas de máquina', G.num(hrs, 1) + ' h']
+    ].map(function (c) { return '<div><span>' + c[0] + '</span><b>' + c[1] + '</b></div>'; }).join('');
+
+    function pintar() {
+      var termo = q.value.trim().toLowerCase();
+      var base = !termo ? regs : regs.filter(function (r) {
+        return [r.prod, r.mun, r.esc, r.rt, r.alim, r.pc, r.d].join(' ').toLowerCase().indexOf(termo) >= 0;
+      });
+      var corpo = dlg.querySelector('.cal-det-corpo');
+      dlg._estado = { titulo: tituloDe(t, k, p), regs: base, g1: s1.value, g2: s2.value, termo: q.value.trim() };
+      if (!base.length) { corpo.innerHTML = '<p class="nota">Nenhum lançamento nessa busca.</p>'; return; }
+      var abertos = base.length <= 150;
+      corpo.innerHTML = grupos(base, s1.value).map(function (g) {
+        var inner;
+        if (s2.value === 'nada' || s2.value === s1.value) inner = tabelaRegistrosDetalhe(g.regs);
+        else {
+          inner = grupos(g.regs, s2.value).map(function (g2) {
+            return '<details class="cal-sub-grupo" open><summary>' +
+              G.esc(CAL_AGRUPAR[s2.value].nome(g2.k)) + ' <span class="tf-n">(' + g2.regs.length + ')</span></summary>' +
+              tabelaRegistrosDetalhe(g2.regs) + '</details>';
+          }).join('');
+        }
+        return '<details class="cal-grupo"' + (abertos ? ' open' : '') + '><summary>' +
+          G.esc(CAL_AGRUPAR[s1.value].nome(g.k)) + ' <span class="tf-n">(' + g.regs.length + ' lançamentos)</span></summary>' +
+          inner + '</details>';
+      }).join('');
+    }
+    s1.onchange = pintar;
+    s2.onchange = pintar;
+    var tm;
+    q.oninput = function () { clearTimeout(tm); tm = setTimeout(pintar, 160); };
+    pintar();
+    if (!dlg.open) dlg.showModal();
+  }
+
+  function ligarCalendarios() {
+    document.addEventListener('mouseover', function (e) {
+      var a = e.target.closest && e.target.closest('[data-cal-t]');
+      if (a) popCalendario(a, e); else fecharPopCalendario();
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (!CAL_POP || CAL_POP.style.display !== 'block') return;
+      var a = e.target.closest && e.target.closest('[data-cal-t]');
+      if (a) popCalendario(a, e);
+    });
+    document.addEventListener('scroll', fecharPopCalendario, true);
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('[data-cal-t]');
+      if (!a) return;
+      var t = a.getAttribute('data-cal-t');
+      if (t === 'vazio') return;
+      fecharPopCalendario();
+      abrirDetalheCalendario(t, a.getAttribute('data-cal-k'), a.getAttribute('data-cal-p') || '');
+    });
+  }
+
+
+  /** Visão aberta dentro da aba "Inserções": registros, pessoa, dia, semana
+      ou mes. Só ela fica visível; a barra de opções fica fixa no topo. */
+  var insSecao = 'pessoa';
+  function escolherInsSecao(sec) {
+    if (['registros', 'pessoa', 'dia', 'semana', 'mes'].indexOf(sec) < 0) sec = 'pessoa';
+    insSecao = sec;
+    document.querySelectorAll('#insNav button').forEach(function (b) {
+      var ativa = b.getAttribute('data-sec') === sec;
+      b.classList.toggle('ativa', ativa);
+      b.setAttribute('aria-pressed', ativa ? 'true' : 'false');
+    });
+    document.querySelectorAll('.ins-bloco').forEach(function (b) {
+      b.hidden = b.getAttribute('data-sec') !== sec;
+    });
+    // a barra fica colada logo abaixo das abas: mede a altura delas
+    var abas = document.querySelector('.abas'), nav = el('insNav');
+    if (abas && nav) nav.style.top = abas.offsetHeight + 'px';
+  }
+
+  /** Aba única "Inserções": registros, por pessoa, por dia, por semana e por mês no
+      mesmo lugar, lendo o mesmo agregado (insercoes). */
+  function abaInsercoes(C) {
+    abaRegistros(C);
+    abaInsPessoa(C);
+    abaInsDia(C);
+    abaInsSemana(C);
+    abaInsMes(C);
+    pintarCalendarios(insercoes(C));
   }
 
   /* --------------------------------------------------- ABA: CULTURAS ---- */
@@ -3016,7 +3696,7 @@
     // lançamento abre sem senha (só salvar/ler PDF pede); as quatro abaixo e
     // "admin" só aparecem com a senha (ver aplicarAdmin)
     lancamento: abaLancamento,
-    'ins-pessoa': abaInsPessoa, 'ins-dia': abaInsDia, 'ins-mes': abaInsMes,
+    insercoes: abaInsercoes,
     'ins-cultura': abaInsCultura
   };
 
@@ -3871,8 +4551,9 @@
 
   /* Versão pública: estas abas não existem (registros linha a linha,
      lançamento e administração). */
-  var ABAS_FORA_DO_PUBLICO = ['registros', 'lancamento', 'ins-pessoa', 'ins-dia', 'ins-mes', 'ins-cultura'];
+  var ABAS_FORA_DO_PUBLICO = ['registros', 'lancamento', 'insercoes', 'ins-cultura', 'beneficiario'];
   function abaValida(nome) {
+    if (nome === 'registros') nome = 'insercoes';
     if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) return false;
     return botoes.some(function (b) { return b.getAttribute('data-aba') === nome && !b.hidden; });
   }
@@ -3923,6 +4604,8 @@
   var botoes = [];
   function abrirAba(nome, opc) {
     opc = opc || {};
+    // "Registros" virou uma visão dentro de "Inserções"
+    if (nome === 'registros') { insSecao = 'registros'; nome = 'insercoes'; }
     // um cartão de "Ver detalhes" pode apontar para uma aba que o público não tem
     if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) nome = 'geral';
     abaAtiva = nome;
@@ -3947,6 +4630,7 @@
     // tomavam espaço da tela.
     var filtros = el('filtros');
     if (filtros) filtros.hidden = nome === 'lancamento';
+    if (nome === 'insercoes') escolherInsSecao(insSecao);
     if (!opc.semUrl) gravarUrl(true);
     // desenha só se esta aba está desatualizada; voltar a uma já pronta é grátis
     if (TODOS.length && SUJAS[nome] !== false) render();
@@ -4099,7 +4783,7 @@
       } catch (e) { /* privado */ }
       el('admOverlay').classList.remove('show');
       aplicarAdmin();
-      abrirAba('ins-pessoa');
+      abrirAba('insercoes');
     });
   }
 
@@ -4401,6 +5085,19 @@
   /* Busca do dia a dia: só a tabela é refeita, não a aba inteira — os
      gráficos ao lado mostram o período todo, e piscar a cada tecla seria
      trabalho jogado fora. */
+  ligarCalendarios();
+  el('insNav').addEventListener('click', function (e) {
+    // "Pessoas" abre uma janela que mora na aba de lançamentos: a aba precisa
+    // estar aberta antes (captura: roda antes do clique do próprio botão)
+    if (e.target.closest('#lancPessoasBtn')) {
+      if (abaAtiva !== 'lancamento') abrirAba('lancamento');
+      return;
+    }
+    var b = e.target.closest('button[data-sec]');
+    if (!b) return;
+    escolherInsSecao(b.getAttribute('data-sec'));
+    window.scrollTo(0, 0);
+  }, true);
   el('buscaInsDia').addEventListener('input', atrasar(function (e) {
     buscaDia = e.target.value.trim();
     if (CTX) tabelaInsDia(insercoes(CTX));
