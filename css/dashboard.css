@@ -1011,3 +1011,68 @@ dialog.cal-det::backdrop{background:rgba(0,0,0,.45)}
 /* janela de detalhes: centralizada (o reset de dialog do base.css a colava no canto) */
 dialog.cal-det{position:fixed;inset:0;margin:auto;height:fit-content;overflow:hidden}
 .cal-det-acoes{display:flex;gap:8px}
+
+
+/* ---- Fase 1: período livre, visões salvas, atualização, exportação ---- */
+.filtros-extra{display:contents}
+.periodo-livre{display:flex;align-items:center;gap:6px}
+.periodo-livre input[type=date]{flex:1;min-width:0;height:34px;padding:0 8px;border:1px solid var(--linha-t,#cbd5e1);border-radius:8px;background:var(--fundo-card,#fff);color:inherit;font:inherit;font-size:12.5px}
+.fav-linha{display:flex;gap:6px;align-items:center}
+.fav-linha select{flex:1;min-width:0;height:34px;border:1px solid var(--linha-t,#cbd5e1);border-radius:8px;background:var(--fundo-card,#fff);color:inherit;font:inherit;font-size:12.5px;padding:0 8px}
+.fav-linha .btn{flex:none;white-space:nowrap}
+.tf-exp-grupo{display:inline-flex;gap:6px;margin-left:auto}
+.tf-exp{height:30px;padding:0 12px;border:1px solid var(--linha-t,#cbd5e1);border-radius:8px;background:var(--fundo-card,#fff);color:inherit;font:600 12px inherit;cursor:pointer}
+.tf-exp:hover{border-color:var(--acento,#2563eb);color:var(--acento,#2563eb)}
+.tabela-cab{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tabela-cab .busca{flex:1;min-width:200px}
+@media print{
+  .filtros-extra,.tf-exp-grupo,.tf-bar,.paginacao{display:none!important}
+}
+
+/* ---- Fase 2: comparativo e metas ---- */
+.cmp-controles{padding:14px 16px}
+.cmp-linha{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.cmp-linha label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--tinta2,#475569)}
+.cmp-linha select{height:36px;min-width:140px;padding:0 10px;border:1px solid var(--linha-t,#cbd5e1);border-radius:8px;background:var(--fundo-card,#fff);color:inherit;font:inherit;font-size:13px}
+.cmp-nota{margin:10px 0 0;font-size:12.5px;color:var(--tinta2,#64748b)}
+.cmp-sobe{color:#15803d;font-weight:700}
+.cmp-desce{color:#b91c1c;font-weight:700}
+.metas-form{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding:4px 16px 16px}
+.metas-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--tinta2,#475569)}
+.metas-form select,.metas-form input{height:36px;min-width:130px;padding:0 10px;border:1px solid var(--linha-t,#cbd5e1);border-radius:8px;background:var(--fundo-card,#fff);color:inherit;font:inherit;font-size:13px}
+.meta-msg{font-size:12.5px;font-weight:600;color:#15803d}
+.meta-msg.erro{color:#b91c1c}
+.meta-barra{height:8px;border-radius:99px;background:rgba(100,116,139,.22);overflow:hidden;margin-bottom:3px;min-width:90px}
+.meta-barra span{display:block;height:100%;border-radius:99px}
+.meta-ok{background:#16a34a}.meta-atencao{background:#d97706}.meta-ruim{background:#dc2626}.meta-nd{background:#64748b}
+.meta-sem{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle}
+.kpi.meta-kpi-ok{border-left:4px solid #16a34a}
+.kpi.meta-kpi-atencao{border-left:4px solid #d97706}
+.kpi.meta-kpi-ruim{border-left:4px solid #dc2626}
+
+/* ---- Fase 3: pontos e linha do tempo ---- */
+.pontos-barra{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:0 16px 10px}
+.pontos-barra label{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:700;color:var(--tinta2,#475569)}
+.pontos-barra select{height:34px;padding:0 10px;border:1px solid var(--linha-t,#cbd5e1);border-radius:8px;background:var(--fundo-card,#fff);color:inherit;font:inherit;font-size:13px}
+.pontos-legenda{display:flex;gap:12px;flex-wrap:wrap;list-style:none;margin:0;padding:0;font-size:12px}
+.pontos-legenda i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.mapa-pontos{height:min(70vh,640px);min-height:380px;border-radius:10px;overflow:hidden;margin:0 16px 16px;border:1px solid var(--linha-t,#cbd5e1)}
+.linha-tempo{list-style:none;margin:6px 0 18px;padding:0 0 0 6px;border-left:2px solid var(--linha-t,#cbd5e1)}
+.linha-tempo li{position:relative;display:flex;gap:12px;padding:6px 0 10px 16px}
+.linha-tempo li::before{content:"";position:absolute;left:-9px;top:11px;width:12px;height:12px;border-radius:50%;background:#2563eb;border:2px solid var(--fundo-card,#fff)}
+.linha-tempo li.lt-acu::before{background:#0d9488}
+.lt-data{flex:none;width:84px;font-weight:700;font-variant-numeric:tabular-nums}
+.linha-tempo small{margin-left:6px;color:var(--tinta2,#64748b)}
+.linha-tempo em{display:block;font-size:11.5px;color:var(--tinta2,#64748b);font-style:normal}
+
+/* ---- Fase 4: link público configurável ---- */
+.pub-senha-ov{position:fixed;inset:0;z-index:5000;display:grid;place-items:center;background:rgba(15,23,42,.6);padding:16px}
+.pub-senha-box{width:min(420px,100%);background:var(--fundo-card,#fff);color:var(--tinta,#0f172a);border-radius:14px;padding:22px;box-shadow:0 24px 60px rgba(15,23,42,.35);display:grid;gap:12px}
+.pub-senha-box h2{margin:0;font-size:18px}
+.pub-senha-box p{margin:0;font-size:13.5px}
+.pub-senha-box input[type=password]{height:40px;padding:0 12px;border:1px solid var(--linha-t,#cbd5e1);border-radius:8px;font:inherit;background:var(--fundo-card,#fff);color:inherit}
+.pub-senha-erro{color:#b91c1c;min-height:18px;font-size:12.5px;font-weight:600}
+.pub-cfg-abas{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px}
+.pub-cfg-abas label,.pub-cfg-rm{display:flex;gap:6px;align-items:center;cursor:pointer}
+.pub-cfg-campo{display:grid;gap:4px;font-size:12px;font-weight:700}
+.pub-cfg-acoes{display:flex;gap:8px;justify-content:flex-end}

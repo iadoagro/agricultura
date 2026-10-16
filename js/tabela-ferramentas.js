@@ -18,6 +18,45 @@
 
   function txt(c) { return (c.textContent || '').replace(/\s+/g, ' ').trim(); }
 
+  /* ---- exportação: CSV (;, UTF-8 com BOM, abre direto no Excel pt-BR) e Excel (.xls em HTML) ---- */
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function nomeArquivo(base) {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    var b = String(base || 'painel').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+    return (b || 'painel') + '-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+  }
+  function baixarArquivo(conteudo, tipo, nome) {
+    var blob = new Blob([conteudo], { type: tipo });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  /** cabecalhos: [texto]; linhas: [[valor]]; formato: 'csv' | 'xls' */
+  function baixarTabela(base, cabecalhos, linhas, formato) {
+    var nome = nomeArquivo(base);
+    // auditoria: quem baixou o quê (o painel registra, se houver login)
+    try { if (window.PainelExport && typeof window.PainelExport.aoBaixar === 'function') window.PainelExport.aoBaixar(base, linhas.length, formato); } catch (e) { /* opcional */ }
+    if (formato === 'xls') {
+      var h = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><thead><tr>' +
+        cabecalhos.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        linhas.map(function (l) { return '<tr>' + l.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; }).join('') +
+        '</tbody></table></body></html>';
+      baixarArquivo(h, 'application/vnd.ms-excel;charset=utf-8', nome + '.xls');
+      return;
+    }
+    var q = function (v) {
+      var s = String(v == null ? '' : v);
+      if (/^[=+\-@]/.test(s)) s = "'" + s;   // evita fórmula ao abrir no Excel
+      return '"' + s.replace(/"/g, '""') + '"';
+    };
+    var csv = [cabecalhos].concat(linhas).map(function (l) { return l.map(q).join(';'); }).join('\r\n');
+    baixarArquivo('\ufeff' + csv, 'text/csv;charset=utf-8', nome + '.csv');
+  }
+  window.PainelExport = { baixar: baixarTabela, nomeArquivo: nomeArquivo };
+
   /** Número de uma célula pt-BR ("1.234,5", "12%", "▲ +7 (47%)"), ou null. */
   function numero(s) {
     var m = /^[▲▼=\s+]*(-?\d{1,3}(?:\.\d{3})*(?:,\d+)?|-?\d+(?:,\d+)?)/.exec(s);
@@ -111,6 +150,8 @@
       h += '</select></label>';
     }
     h += '<span class="tf-cont" aria-live="polite"></span>';
+    h += '<span class="tf-exp-grupo"><button type="button" class="tf-exp" data-f="csv" title="Baixar a tabela como CSV">CSV</button>' +
+      '<button type="button" class="tf-exp" data-f="xls" title="Baixar a tabela como Excel">Excel</button></span>';
     bar.innerHTML = h;
     var alvo = t.closest('.tabela-scroll') || t;
     alvo.parentNode.insertBefore(bar, alvo);
@@ -197,6 +238,17 @@
         tm = setTimeout(function () { estado.q = inBusca.value.trim(); desenhar(); }, 140);
       });
     }
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('.tf-exp');
+      if (!b) return;
+      var cab = ths.map(txt);
+      var linhas = Array.prototype.slice.call(corpo.rows)
+        .filter(function (r) { return !r.classList.contains('tf-grupo'); })
+        .map(function (r) { return Array.prototype.map.call(r.cells, txt); });
+      var painel = t.closest('.painel');
+      var titulo = painel && painel.querySelector('h2') ? txt(painel.querySelector('h2')) : 'tabela';
+      baixarTabela(titulo, cab, linhas, b.getAttribute('data-f'));
+    });
     selOrd.addEventListener('change', function () { estado.col = +selOrd.value; desenhar(); });
     btnDir.addEventListener('click', function () { estado.dir = -estado.dir; desenhar(); });
     if (selGrp) selGrp.addEventListener('change', function () { estado.grupo = +selGrp.value; desenhar(); });

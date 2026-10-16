@@ -147,3 +147,13 @@
 .ia-prev-tit{display:block;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
   color:var(--tinta3);margin:0 0 6px}
 .ia-sug.recente::before{content:"\21BB  ";color:var(--tinta3)}
+
+/* ---- Fase 4: usar filtros e perguntas fixadas ---- */
+.ia-filtros{display:flex;gap:8px;align-items:center;margin:8px 2px 0;font-size:12px;opacity:.9;cursor:pointer}
+.ia-fixas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.ia-fixa{display:inline-flex;align-items:center}
+.ia-fixa .ia-sug{border-top-right-radius:0;border-bottom-right-radius:0}
+.ia-fixa-x{height:100%;border:1px solid currentColor;border-left:0;border-radius:0 8px 8px 0;background:transparent;color:inherit;cursor:pointer;padding:0 7px;opacity:.7}
+.ia-fixar{margin-left:auto;border:0;background:transparent;color:inherit;font:inherit;font-size:11.5px;cursor:pointer;opacity:.75}
+.ia-fixar:hover{opacity:1}
+.ia-pergunta{display:flex;gap:4px;align-items:baseline}

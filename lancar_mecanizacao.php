@@ -521,6 +521,15 @@ if ($acao === 'painel') {
             $prod = $ou($l['nome_beneficiario'] ?? null);
             $form = $logado && is_string($l['formulario_url'] ?? null) ? $l['formulario_url'] : '';
             if (empty($l['pontos_geo'])) $semGeo++;
+            // coordenadas (UTM WGS84) só para quem está logado: é a localização da propriedade
+            $geo = [];
+            if ($logado && is_array($l['pontos_geo'] ?? null)) {
+                foreach ($l['pontos_geo'] as $pt) {
+                    if (!is_array($pt)) continue;
+                    $gx = $numero($pt['x'] ?? 0); $gy = $numero($pt['y'] ?? 0); $gz = (int) $numero($pt['zona'] ?? 0);
+                    if ($gx > 0 && $gy > 0) $geo[] = [$gx, $gy, $gz];
+                }
+            }
             if ($form === '' && $logado) $semForm++;
             if ($dv !== '' && substr($dv, 0, 4) !== substr($d, 0, 4)) $outroAno++;
             $produtores[mb_strtolower(preg_replace('/\s+/', ' ', trim($prod)))] = true;
@@ -540,7 +549,7 @@ if ($acao === 'painel') {
                 'tt' => $ou($l['tipo_uso'] ?? null),
                 'maq' => $listaTxt($l['maquinas'] ?? null), 'impl' => $listaTxt($l['implementos'] ?? null),
                 'dae' => $dae, 'form' => $form, 'obs' => $ou($l['observacao'] ?? null, ''),
-            ];
+            ] + ($geo ? ['geo' => $geo] : []);
         }
         if (count($corpo) < $tam) break;
     }

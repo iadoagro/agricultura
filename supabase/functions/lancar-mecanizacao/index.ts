@@ -326,6 +326,17 @@ function nomeSugeridoDoEmail(email: string): string {
   return u.replace(/\S+/g, (p) => p.charAt(0).toUpperCase() + p.slice(1)) || email;
 }
 
+/** pontos_geo [{ponto, x, y, zona}] -> { geo: [[x, y, zona], ...] } (ou nada, se não houver ponto válido). */
+function geoPontos(v: unknown): Record<string, unknown> {
+  if (!Array.isArray(v)) return {};
+  const pts: number[][] = [];
+  for (const p of v as Record<string, unknown>[]) {
+    const x = Number(p?.x), y = Number(p?.y), z = Math.trunc(Number(p?.zona));
+    if (isFinite(x) && isFinite(y) && x > 0 && y > 0) pts.push([x, y, isFinite(z) ? z : 0]);
+  }
+  return pts.length ? { geo: pts } : {};
+}
+
 function paraRegistroPainel(l: Record<string, unknown>, nomes: Map<string, string>, logado: boolean): Record<string, unknown> {
   const ou = (v: unknown, padrao = NAO_INFORMADO) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : padrao);
   const numero = (v: unknown) => { const n = Number(v); return isFinite(n) ? n : 0; };
@@ -367,6 +378,8 @@ function paraRegistroPainel(l: Record<string, unknown>, nomes: Map<string, strin
     form: logado && typeof l.formulario_url === 'string' ? l.formulario_url : '',
     obs: ou(l.observacao, ''),
     _geo: Array.isArray(l.pontos_geo) && l.pontos_geo.length > 0,
+    // coordenadas UTM [x, y, zona]: só para quem está logado (localização da propriedade)
+    ...(logado ? geoPontos(l.pontos_geo) : {}),
   };
 }
 

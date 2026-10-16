@@ -795,7 +795,12 @@
     var unidade = R.principal === 1 ? rm[0] : rm[1];
     var dec = (I.metrica === 'ha' || I.metrica === 'hrs') ? 1 : 0;
     var h = '<article class="ia-resp">';
-    h += '<div class="ia-pergunta"><span aria-hidden="true">&ldquo;</span>' + esc(texto) + '<span aria-hidden="true">&rdquo;</span></div>';
+    h += '<div class="ia-pergunta"><span aria-hidden="true">&ldquo;</span>' + esc(texto) + '<span aria-hidden="true">&rdquo;</span>' +
+      '<button type="button" class="ia-fixar" data-q="' + esc(texto) + '" title="Guardar esta pergunta para refazer com um clique">&#9734; Fixar</button></div>';
+    if (C.comFiltros) {
+      var rs = document.getElementById('resumo');
+      h += '<p class="ia-nota">Com os filtros da lateral: ' + esc(rs ? rs.textContent.trim() : 'seleção atual') + '</p>';
+    }
     h += entendi(I, R);
 
     if (!R.tot.n) {
@@ -992,12 +997,16 @@
   function montarContexto() {
     var P = window.PAINEL_DADOS;
     if (!P) return null;
-    var reg = P.registros();
+    var caixaFiltros = document.getElementById('iaUsarFiltros');
+    var comFiltros = !!(caixaFiltros && caixaFiltros.checked && P.registrosFiltrados);
+    var reg = comFiltros ? P.registrosFiltrados() : P.registros();
+    var chaveBase = reg.length + '|' + (comFiltros ? P.chaveSelecao() : '');
     var C = {
       registros: reg, MEC: P.MEC, ACU: P.ACU, dataRef: P.dataRef, regionalDe: P.regionalDe,
       chaveProdutor: P.chaveProdutor, regionais: P.regionais ? P.regionais() : [], publico: !!window.MODO_PUBLICO, hoje: new Date(), data: null
     };
-    if (CACHE && CACHE.n === reg.length) {
+    C.comFiltros = comFiltros;
+    if (CACHE && CACHE.n === chaveBase) {
       Object.keys(CACHE.c).forEach(function (k) { C[k] = CACHE.c[k]; });
       return C;
     }
@@ -1023,7 +1032,7 @@
     });
     C.primeirosNomes = nomes;
     C.ultimoD = reg.reduce(function (a, r) { return r.d && r.d > a ? r.d : a; }, '');
-    CACHE = { n: reg.length, c: {
+    CACHE = { n: chaveBase, c: {
       idxMun: C.idxMun, idxEsc: C.idxEsc, idxCult: C.idxCult, setMun: C.setMun,
       primeirosNomes: C.primeirosNomes, ultimoD: C.ultimoD } };
     return C;
@@ -1140,8 +1149,53 @@
 
     saida.addEventListener('click', function (e) {
       var b = e.target.closest('.ia-ancora');
-      if (b) perguntar(b.getAttribute('data-q'), b.getAttribute('data-ancora'));
+      if (b) { perguntar(b.getAttribute('data-q'), b.getAttribute('data-ancora')); return; }
+      var f = e.target.closest('.ia-fixar');
+      if (f) { fixar(f.getAttribute('data-q')); f.textContent = '★ Fixada'; }
     });
+
+    /* Perguntas fixadas: ficam no navegador e voltam com um clique */
+    var CHAVE_FIXAS = 'seagri_assistente_fixas';
+    var caixaFixas = raiz.querySelector('.ia-fixas');
+    function lerFixas() {
+      try { var v = JSON.parse(localStorage.getItem(CHAVE_FIXAS) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+    }
+    function pintarFixas() {
+      if (!caixaFixas) return;
+      var l = lerFixas();
+      caixaFixas.hidden = !l.length;
+      caixaFixas.innerHTML = l.length ? '<span class="ia-prev-tit">Fixadas</span>' + l.map(function (q) {
+        return '<span class="ia-fixa"><button type="button" class="ia-sug" data-q="' + esc(q) + '">' + esc(q) + '</button>' +
+          '<button type="button" class="ia-fixa-x" data-x="' + esc(q) + '" aria-label="Remover" title="Remover">&times;</button></span>';
+      }).join('') : '';
+    }
+    function fixar(q) {
+      var l = lerFixas().filter(function (x) { return x !== q; });
+      l.unshift(q);
+      try { localStorage.setItem(CHAVE_FIXAS, JSON.stringify(l.slice(0, 8))); } catch (e) { /* modo privado */ }
+      pintarFixas();
+    }
+    if (caixaFixas) caixaFixas.addEventListener('click', function (e) {
+      var x = e.target.closest('.ia-fixa-x');
+      if (x) {
+        var q = x.getAttribute('data-x');
+        try { localStorage.setItem(CHAVE_FIXAS, JSON.stringify(lerFixas().filter(function (y) { return y !== q; }))); } catch (er) { /* privado */ }
+        pintarFixas();
+        return;
+      }
+      var b = e.target.closest('.ia-sug');
+      if (b) perguntar(b.getAttribute('data-q'));
+    });
+    pintarFixas();
+    var cbFiltros = document.getElementById('iaUsarFiltros');
+    if (cbFiltros) {
+      try { cbFiltros.checked = localStorage.getItem('seagri_assistente_filtros') === '1'; } catch (e) { /* privado */ }
+      cbFiltros.addEventListener('change', function () {
+        try { localStorage.setItem('seagri_assistente_filtros', cbFiltros.checked ? '1' : '0'); } catch (e) { /* privado */ }
+        PREV_CACHE = null;
+        mostrarPrevisoes();
+      });
+    }
 
     limpar.addEventListener('click', function () {
       saida.innerHTML = '';

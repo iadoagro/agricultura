@@ -70,31 +70,28 @@
      é plausível (ocorreu até o lançamento e no máximo 18 meses antes), senão a
      data de lançamento. Só que ela tem digitação errada — anos como 1949 ou
      0023, datas futuras —, e nesses casos a listagem marca a célula. */
-  var JANELA_VISTORIA = 18;   // meses
 
-  function difMeses(a, b) {
-    return (+b.slice(0, 4) - +a.slice(0, 4)) * 12 + (+b.slice(5, 7) - +a.slice(5, 7));
-  }
+  /* Regras de cálculo puras (datas de referência, exercício, somas, ranking, identidade do produtor):
+     js/painel-calculos.js, testadas por tools/testar_painel.cjs. */
+  var PC = window.PainelCalculos;
+  var difMeses = PC.difMeses,
+      vistoriaValida = PC.vistoriaValida,
+      dataRef = PC.dataRef,
+      anoDe = PC.anoDe,
+      mesChave = PC.mesChave,
+      soma = PC.soma,
+      contar = PC.contar,
+      somarPor = PC.somarPor,
+      distintosPor = PC.distintosPor,
+      ranking = PC.ranking,
+      faixas = PC.faixas,
+      chaveBusca = PC.chaveBusca,
+      chaveProdutor = PC.chaveProdutor,
+      nProdutores = PC.nProdutores;
 
-  function vistoriaValida(r) {
-    if (!r.dv || !r.d) return false;
-    if (r.dv > r.d) return false;                       // serviço "no futuro"
-    return difMeses(r.dv, r.d) <= JANELA_VISTORIA;      // ou velho demais
-  }
 
-  /** Data do serviço. Manda no mês, na ordenação e no período exibido — não no
-      exercício, que é o da planilha (ver anoDe). */
-  function dataRef(r) { return vistoriaValida(r) ? r.dv : r.d; }
 
-  /** Exercício: a planilha a que a linha pertence. No pacote do ano corrente
-      `ex` é o ano do lançamento; no histórico vem da coluna "Ano". */
-  function anoDe(r) { return r.ex || r.d.slice(0, 4); }
 
-  /** Mês do registro dentro do seu exercício ("2026-11"). O ano vem do
-      EXERCÍCIO, não da vistoria: senão um serviço de novembro/2025 lançado na
-      planilha de 2026 contaria como um mês à parte de novembro/2026, e o
-      contador "Meses com vistoria" passaria dos 12 dentro de um único ano. */
-  function mesChave(r) { return anoDe(r) + '-' + dataRef(r).slice(5, 7); }
 
   /* -------------------------------------------------------------- utilidades */
   function el(id) { return document.getElementById(id); }
@@ -111,63 +108,6 @@
   function unicos(arr) {
     return Array.from(new Set(arr)).filter(function (v) { return v && v !== NI; })
       .sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
-  }
-  function soma(arr, f) { return arr.reduce(function (a, r) { return a + (f(r) || 0); }, 0); }
-  function contar(arr, f) {
-    var m = new Map();
-    arr.forEach(function (r) {
-      var vs = f(r);
-      (Array.isArray(vs) ? vs : [vs]).forEach(function (v) {
-        if (v == null || v === '') return;
-        m.set(v, (m.get(v) || 0) + 1);
-      });
-    });
-    return m;
-  }
-  function somarPor(arr, chave, valor) {
-    var m = new Map();
-    arr.forEach(function (r) {
-      var k = chave(r);
-      if (k == null || k === '') return;
-      m.set(k, (m.get(k) || 0) + (valor(r) || 0));
-    });
-    return m;
-  }
-  function distintosPor(arr, chave, valor) {
-    var m = new Map();
-    arr.forEach(function (r) {
-      var k = chave(r), v = valor(r);
-      if (k == null || k === '' || v == null || v === '' || v < 0) return;
-      if (!m.has(k)) m.set(k, new Set());
-      m.get(k).add(v);
-    });
-    var out = new Map();
-    m.forEach(function (s, k) { out.set(k, s.size); });
-    return out;
-  }
-  function ranking(m, lim, agrupar) {
-    var l = Array.from(m, function (e) { return { rot: e[0], val: e[1] }; })
-      .filter(function (d) { return d.val > 0; })
-      .sort(function (a, b) { return b.val - a.val || a.rot.localeCompare(b.rot, 'pt-BR'); });
-    if (lim && l.length > lim) {
-      var resto = l.slice(lim - (agrupar ? 1 : 0));
-      l = l.slice(0, lim - (agrupar ? 1 : 0));
-      if (agrupar) l.push({ rot: 'Outros', val: resto.reduce(function (a, d) { return a + d.val; }, 0) });
-    }
-    return l;
-  }
-  function faixas(D, valor, cortes) {
-    var m = new Map();
-    cortes.forEach(function (c) { m.set(c.rot, 0); });
-    D.forEach(function (r) {
-      var v = valor(r);
-      if (!v) return;
-      for (var i = 0; i < cortes.length; i++) {
-        if (v <= cortes[i].max) { m.set(cortes[i].rot, m.get(cortes[i].rot) + 1); break; }
-      }
-    });
-    return Array.from(m, function (e) { return { rot: e[0], val: e[1] }; })
-      .filter(function (d) { return d.val > 0; });
   }
   function moeda(v) {
     return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -204,24 +144,7 @@
     return s.size;
   }
 
-  /** Identidade do produtor: o NOME, normalizado (sem acento, sem caixa, sem
-      espaço dobrado). É a única identidade que o painel conhece — documentos
-      pessoais não são lidos da planilha nem publicados nos dados.
-      Não usamos nome+imóvel: 209 produtores aparecem com o imóvel grafado de
-      formas diferentes (ou em branco num registro e preenchido noutro), o que
-      inflava a contagem em 307 pessoas que não existem. */
-  function chaveProdutor(r) { return chaveBusca(r.prod).replace(/\s+/g, ' ').trim(); }
 
-  /** Produtores distintos. O mesmo produtor atendido várias vezes no ano — ou
-      em exercícios diferentes — conta uma vez só. */
-  function nProdutores(D) {
-    var s = new Set();
-    D.forEach(function (r) {
-      var k = chaveProdutor(r);
-      if (k) s.add(k);
-    });
-    return s.size;
-  }
 
   /** Quantos atendimentos cada produtor teve na seleção. */
   function atendimentosPorProdutor(D) {
@@ -595,6 +518,8 @@
     el('btnLimpar').addEventListener('click', function () {
       // o exercício não é um filtro comum: continua sendo o do período escolhido
       F = { ano: F.ano, mes: [], pc: [], reg: [], mun: [], esc: [], cult: [], tec: [] };
+      PER = { de: '', ate: '' };
+      if (el('perDe')) { el('perDe').value = ''; el('perAte').value = ''; }
       el('busca').value = '';
       pag = 1;
       popularFiltros();
@@ -606,6 +531,7 @@
       montar a lista de opções de um campo sem que ele restrinja a si mesmo.
       Aceita uma lista de campos: a de regionais precisa ignorar também o
       município, porque escolher outra regional zera o município. */
+  var PER = { de: '', ate: '' };   // período livre: datas ISO (aaaa-mm-dd) ou vazio
   function filtrar(exceto, anoAlvo) {
     var fora = Array.isArray(exceto) ? exceto : [exceto];
     function sem(k) { return fora.indexOf(k) >= 0; }
@@ -613,6 +539,11 @@
     var anos = (anoAlvo === undefined) ? F.ano : (anoAlvo ? [anoAlvo] : []);
     return TODOS.filter(function (r) {
       if (anos.length && anos.indexOf(anoDe(r)) < 0) return false;
+      // período livre (datas de vistoria); não vale na comparação com o ano anterior
+      if (anoAlvo === undefined && (PER.de || PER.ate)) {
+        var dr = dataRef(r);
+        if ((PER.de && dr < PER.de) || (PER.ate && dr > PER.ate)) return false;
+      }
       if (!sem('mes') && F.mes.length && F.mes.indexOf(dataRef(r).slice(5, 7)) < 0) return false;
       if (!sem('pc') && F.pc.length && F.pc.indexOf(r.pc) < 0) return false;
       /* Regional e município são listas, e lista vazia é TODOS. A regional é
@@ -1068,12 +999,6 @@
   /* ------------------------------------------------------ ficha do produtor */
   var NOMES_PROD = [];
 
-  /** Remove acentos e caixa para a busca casar "joao" com "João".
-      Não mexe em espaços: realcar() usa o índice do resultado para recortar o
-      nome original, então a chave precisa ter o mesmo comprimento da entrada. */
-  function chaveBusca(s) {
-    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  }
 
   /** Nomes que casam com o texto digitado. Sem texto, ninguém casa: a aba só
       mostra alguém depois que o usuário procura. */
@@ -1468,7 +1393,27 @@
       }).join('') +
       '</tbody></table></div>';
 
-    el('fichaProd').innerHTML = secResumo + secFicha + secCult + secMaq + secTabela;
+    /* Linha do tempo: os atendimentos em ordem, com o intervalo entre um e outro */
+    var ord = R.slice().sort(function (a, b) {
+      var x = dataRef(a), y = dataRef(b);
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+    var diasEntre = function (a, b) {
+      return Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 86400000);
+    };
+    var secLinha = ord.length < 1 ? '' : '<h3 class="ben-sec">Linha do tempo</h3><ol class="linha-tempo">' +
+      ord.map(function (r, i) {
+        var gap = i ? diasEntre(dataRef(ord[i - 1]), dataRef(r)) : null;
+        var det = r.pc === MEC
+          ? (r.cult.length ? r.cult.map(function (c) { return G.esc(c[0]); }).join(', ') + ' · ' : '') + G.num(r.ha, 1) + ' ha'
+          : G.num(r.hrs, 1) + ' h de máquina' + (r.ac ? ' · ' + G.num(r.ac) + ' tanque(s)' : '');
+        return '<li class="lt-' + (r.pc === MEC ? 'mec' : 'acu') + '"><span class="lt-data">' + dataBR(dataRef(r)) + '</span>' +
+          '<div><b>' + G.esc(r.pc || '—') + '</b> · ' + G.esc(r.mun || '—') + ' <small>' + det + '</small>' +
+          (gap != null ? '<em>' + (gap === 0 ? 'no mesmo dia do anterior' : gap + ' dia(s) depois do anterior') + '</em>' : '<em>primeiro atendimento</em>') +
+          '</div></li>';
+      }).join('') + '</ol>';
+
+    el('fichaProd').innerHTML = secResumo + secFicha + secCult + secMaq + secLinha + secTabela;
   }
 
   /* -------------------------------------------------------------- renderizar */
@@ -1544,7 +1489,7 @@
     // o período não conta como filtro: ele é o recorte, não um corte dentro dele
     var ativos = Object.keys(F).filter(function (k) {
       return k !== 'ano' && F[k].length;
-    }).length;
+    }).length + ((PER.de || PER.ate) ? 1 : 0);
     var noAno = TODOS.filter(function (r) {
       return !F.ano.length || F.ano.indexOf(anoDe(r)) >= 0;
     }).length;
@@ -3581,7 +3526,7 @@
       ou mes. Só ela fica visível; a barra de opções fica fixa no topo. */
   var insSecao = 'pessoa';
   function escolherInsSecao(sec) {
-    if (['registros', 'pessoa', 'dia', 'semana', 'mes'].indexOf(sec) < 0) sec = 'pessoa';
+    if (['registros', 'pessoa', 'dia', 'semana', 'mes', 'pontos'].indexOf(sec) < 0) sec = 'pessoa';
     insSecao = sec;
     document.querySelectorAll('#insNav button').forEach(function (b) {
       var ativa = b.getAttribute('data-sec') === sec;
@@ -3594,6 +3539,8 @@
     // a barra fica colada logo abaixo das abas: mede a altura delas
     var abas = document.querySelector('.abas'), nav = el('insNav');
     if (abas && nav) nav.style.top = abas.offsetHeight + 'px';
+    // o mapa de pontos (js/painel-pontos.js) só é desenhado quando a visão é aberta
+    if (sec === 'pontos' && window.PAINEL_PONTOS_DESENHAR && TODOS.length) window.PAINEL_PONTOS_DESENHAR(contexto());
   }
 
   /** Aba única "Inserções": registros, por pessoa, por dia, por semana e por mês no
@@ -3605,6 +3552,7 @@
     abaInsSemana(C);
     abaInsMes(C);
     pintarCalendarios(insercoes(C));
+    if (insSecao === 'pontos' && window.PAINEL_PONTOS_DESENHAR) window.PAINEL_PONTOS_DESENHAR(C);
   }
 
   /* --------------------------------------------------- ABA: CULTURAS ---- */
@@ -3714,6 +3662,7 @@
 
   /* ------------------------------------------------------------------ tabela */
   var pag = 1, POR_PAG = 25;
+  var LISTA_REG = [];   // registros da listagem (já filtrados e ordenados): é o que a exportação leva
 
   /* Ordenação da listagem. O padrão é a inserção mais recente primeiro: é onde
      se confere um caso concreto, e o caso concreto quase sempre é recente —
@@ -3792,6 +3741,7 @@
         r.loc + ' ' + r.obs + ' ' + r.cult.map(function (c) { return c[0]; }).join(' ')).indexOf(q) >= 0;
     });
     L = ordenar(L);
+    LISTA_REG = L;
     if ((pag - 1) * POR_PAG >= L.length) pag = 1;
     var pagina = L.slice((pag - 1) * POR_PAG, (pag - 1) * POR_PAG + POR_PAG);
     var nada = '<span class="nada">—</span>';
@@ -4515,6 +4465,8 @@
       if (k === 'ano') return;
       if (F[k].length) p.push(k + '=' + encodeURIComponent(F[k].join(',')));
     });
+    if (PER.de) p.push('de=' + PER.de);
+    if (PER.ate) p.push('ate=' + PER.ate);
     return '#' + abaAtiva + '?' + p.join('&');
   }
 
@@ -4544,7 +4496,7 @@
       var j = par.indexOf('=');
       if (j < 0) return;
       var k = par.slice(0, j);
-      if (CAMPOS_URL.indexOf(k) >= 0) filtros[k] = decodeURIComponent(par.slice(j + 1));
+      if (CAMPOS_URL.indexOf(k) >= 0 || k === 'de' || k === 'ate') filtros[k] = decodeURIComponent(par.slice(j + 1));
     });
     return { aba: (i < 0 ? bruto : bruto.slice(0, i)) || '', filtros: filtros };
   }
@@ -4553,7 +4505,7 @@
      lançamento e administração). */
   var ABAS_FORA_DO_PUBLICO = ['registros', 'lancamento', 'insercoes', 'ins-cultura', 'beneficiario'];
   function abaValida(nome) {
-    if (nome === 'registros') nome = 'insercoes';
+    if (nome === 'registros' || nome === 'pontos') nome = 'insercoes';
     if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) return false;
     return botoes.some(function (b) { return b.getAttribute('data-aba') === nome && !b.hidden; });
   }
@@ -4593,6 +4545,9 @@
       if (k === 'ano' || !est.filtros[k]) return;
       F[k] = listaDaUrl(est.filtros[k]);
     });
+    var iso = /^\d{4}-\d{2}-\d{2}$/;
+    PER = { de: iso.test(est.filtros.de || '') ? est.filtros.de : '', ate: iso.test(est.filtros.ate || '') ? est.filtros.ate : '' };
+    if (el('perDe')) { el('perDe').value = PER.de; el('perAte').value = PER.ate; }
     pag = 1;
     popularFiltros();
     sincronizarAno();
@@ -4606,6 +4561,7 @@
     opc = opc || {};
     // "Registros" virou uma visão dentro de "Inserções"
     if (nome === 'registros') { insSecao = 'registros'; nome = 'insercoes'; }
+    if (nome === 'pontos') { insSecao = 'pontos'; nome = 'insercoes'; }
     // um cartão de "Ver detalhes" pode apontar para uma aba que o público não tem
     if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) nome = 'geral';
     abaAtiva = nome;
@@ -4894,6 +4850,263 @@
     });
   }
 
+  /* ------------------------------------------------------------- auditoria */
+  /** Registra no log do sistema (js/admin-auth.js) quem exportou ou alterou algo. Só com login. */
+  function auditar(acao, descricao) {
+    try {
+      if (window.MODO_PUBLICO || !window.ADMIN_AUTH || !ADMIN_AUTH.registrarEvento) return;
+      ADMIN_AUTH.registrarEvento(acao, 'painel-mecanizacao', descricao);
+    } catch (e) { /* auditoria é opcional */ }
+  }
+  if (window.PainelExport) {
+    window.PainelExport.aoBaixar = function (base, n, formato) {
+      auditar('exportar', 'Exportou "' + base + '" (' + n + ' linha(s), ' + (formato === 'xls' ? 'Excel' : 'CSV') + ')');
+    };
+  }
+
+  /* ------------------------------ link público: abas liberadas e senha opcional */
+  var ABAS_CONFIGURAVEIS = [
+    ['geral', 'Visão geral'], ['mecanizacao', 'Mecanização'], ['acudagem', 'Açudagem'], ['cultura', 'Cultura'],
+    ['municipio', 'Município'], ['mapa', 'Mapa'], ['escritorio', 'Escritório Local'], ['comparativo', 'Comparativo'],
+    ['metas', 'Metas'], ['relatorio', 'Exportar']
+  ];
+  function rpc(nome, corpo, comSessao) {
+    var cfg = window.BANCO_CONFIG || {};
+    var h = { apikey: cfg.chavePublica, 'Content-Type': 'application/json' };
+    if (comSessao) {
+      var s = window.ADMIN_AUTH && ADMIN_AUTH.sessaoAtual && ADMIN_AUTH.sessaoAtual();
+      if (!s || !s.access_token) return Promise.reject(new Error('Entre novamente para continuar.'));
+      h.Authorization = 'Bearer ' + s.access_token;
+    }
+    return fetch(String(cfg.url || '').replace(/\/$/, '') + '/rest/v1/rpc/' + nome, {
+      method: 'POST', headers: h, body: JSON.stringify(corpo || {}), cache: 'no-store'
+    }).then(function (r) {
+      if (!r.ok) { var e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
+      return r.text();
+    }).then(function (t) { return t ? JSON.parse(t) : null; });
+  }
+
+  /** Na versão pública: aplica as abas liberadas e pede a senha, se houver. Nunca impede o painel de abrir por falha de rede. */
+  function prepararPublico() {
+    if (!window.MODO_PUBLICO) return Promise.resolve();
+    return rpc('mecanizacao_publico_config_publica').then(function (c) {
+      if (!c) return;
+      if (Array.isArray(c.abas) && c.abas.length) {
+        document.querySelectorAll('.aba[data-aba]').forEach(function (b) {
+          var a = b.getAttribute('data-aba');
+          if (c.abas.indexOf(a) < 0) { b.hidden = true; b.setAttribute('data-oculta-publico', '1'); }
+        });
+      }
+      if (!c.exige_senha) return;
+      try { if (sessionStorage.getItem('seagri_mec_pub_ok') === '1') return; } catch (e) { /* privado */ }
+      return pedirSenhaPublica();
+    }).catch(function () { /* sem rede para a configuração: abre com o padrão */ });
+  }
+  function pedirSenhaPublica() {
+    return new Promise(function (ok) {
+      var ov = document.createElement('div');
+      ov.className = 'pub-senha-ov';
+      ov.innerHTML = '<form class="pub-senha-box"><h2>Painel da Mecanização</h2><p>Digite a senha para abrir o painel.</p>' +
+        '<input type="password" id="pubSenha" autocomplete="current-password" aria-label="Senha" required>' +
+        '<p class="pub-senha-erro" id="pubSenhaErro" role="alert"></p><button class="btn" type="submit">Entrar</button></form>';
+      document.body.appendChild(ov);
+      var f = ov.querySelector('form'), i = ov.querySelector('#pubSenha'), er = ov.querySelector('#pubSenhaErro');
+      i.focus();
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        er.textContent = '';
+        rpc('mecanizacao_publico_verificar', { p_senha: i.value }).then(function (v) {
+          if (v === true) {
+            try { sessionStorage.setItem('seagri_mec_pub_ok', '1'); } catch (x) { /* privado */ }
+            ov.remove();
+            ok();
+          } else { er.textContent = 'Senha incorreta.'; i.value = ''; i.focus(); }
+        }).catch(function () { er.textContent = 'Não foi possível conferir agora. Tente de novo.'; });
+      });
+    });
+  }
+
+  /** Janela do responsável para escolher as abas do link público e a senha. */
+  function abrirConfigPublico() {
+    if (!ehResponsavelLogado()) { window.alert('Somente o responsável pode configurar o link público.'); return; }
+    if (document.querySelector('.pub-cfg-ov')) return;
+    var ov = document.createElement('div');
+    ov.className = 'pub-senha-ov pub-cfg-ov';
+    ov.innerHTML = '<form class="pub-senha-box pub-cfg-box"><h2>Link público</h2><p>Escolha o que aparece para quem abre o link sem login e, se quiser, uma senha.</p>' +
+      '<div class="pub-cfg-abas" id="pubCfgAbas">Carregando…</div>' +
+      '<label class="pub-cfg-campo">Senha (opcional) <input type="password" id="pubCfgSenha" autocomplete="new-password" placeholder="deixe em branco para manter"></label>' +
+      '<label class="pub-cfg-rm"><input type="checkbox" id="pubCfgSemSenha"> Remover a senha</label>' +
+      '<p class="pub-senha-erro" id="pubCfgMsg" role="status"></p>' +
+      '<div class="pub-cfg-acoes"><button class="btn" type="submit">Salvar</button><button class="btn" type="button" id="pubCfgFechar">Fechar</button></div></form>';
+    document.body.appendChild(ov);
+    var caixa = ov.querySelector('#pubCfgAbas'), msg = ov.querySelector('#pubCfgMsg');
+    var fechar = function () { ov.remove(); };
+    ov.querySelector('#pubCfgFechar').addEventListener('click', fechar);
+    ov.addEventListener('click', function (e) { if (e.target === ov) fechar(); });
+    rpc('mecanizacao_publico_config_publica').then(function (c) {
+      var sel = c && Array.isArray(c.abas) && c.abas.length ? c.abas : null;
+      caixa.innerHTML = ABAS_CONFIGURAVEIS.map(function (a) {
+        return '<label><input type="checkbox" value="' + a[0] + '"' + (!sel || sel.indexOf(a[0]) >= 0 ? ' checked' : '') + '> ' + G.esc(a[1]) + '</label>';
+      }).join('');
+      if (c && c.exige_senha) msg.textContent = 'Este link está protegido por senha.';
+    }).catch(function () {
+      caixa.innerHTML = '<p class="pub-senha-erro">Rode database/mecanizacao-publico-config.sql no Supabase para habilitar esta janela.</p>';
+    });
+    ov.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var marcadas = Array.prototype.map.call(caixa.querySelectorAll('input:checked'), function (i) { return i.value; });
+      if (!marcadas.length) { msg.textContent = 'Marque ao menos uma aba.'; return; }
+      var todas = marcadas.length === ABAS_CONFIGURAVEIS.length;
+      var senha = ov.querySelector('#pubCfgSemSenha').checked ? '' : (ov.querySelector('#pubCfgSenha').value || null);
+      msg.textContent = 'Salvando…';
+      rpc('mecanizacao_publico_salvar', { p_abas: todas ? null : marcadas, p_senha: senha }, true).then(function () {
+        auditar('alterar', 'Configurou o link público do painel (' + (todas ? 'todas as abas' : marcadas.join(', ')) +
+          (senha === '' ? ', senha removida' : senha ? ', senha definida' : '') + ')');
+        msg.textContent = 'Configuração salva ✓';
+        ov.querySelector('#pubCfgSenha').value = '';
+        ov.querySelector('#pubCfgSemSenha').checked = false;
+      }).catch(function (er) {
+        msg.textContent = er.status === 403 || er.status === 401 ? 'Só o responsável pode salvar.' : 'Não foi possível salvar (' + er.message + ').';
+      });
+    });
+  }
+
+  /* ------------------------------------- período livre, visões, exportar, atualizar */
+  var CHAVE_FAV = 'seagri_visoes_painel';
+  var ULTIMA_CARGA = null, TIMER_AUTO = null, CARREGANDO = false;
+  var INTERVALO_AUTO = 5 * 60 * 1000;
+
+  function hhmm(d) {
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  function pintarAtualizado() {
+    var a = el('atualizadoEm');
+    if (!a) return;
+    if (!ULTIMA_CARGA) { a.textContent = 'Dados: carregando…'; return; }
+    var min = Math.floor((Date.now() - ULTIMA_CARGA.getTime()) / 60000);
+    a.textContent = 'Dados de ' + hhmm(ULTIMA_CARGA) + (min >= 1 ? ' (há ' + min + ' min)' : ' (agora)');
+  }
+  function recarregarDados() {
+    if (CARREGANDO) return;
+    CARREGANDO = true;
+    var b = el('btnAtualizar');
+    if (b) { b.disabled = true; b.textContent = 'Atualizando…'; }
+    carregarDados().then(function (res) {
+      if (!res.pacote || !res.pacote.registros) throw new Error('sem dados');
+      usarPacote(res.pacote, res.fonte, true);
+      render();
+      gravarUrl(false);
+      ULTIMA_CARGA = new Date();
+      pintarAtualizado();
+    }).catch(function () {
+      var a = el('atualizadoEm');
+      if (a) a.textContent = 'Não foi possível atualizar agora';
+    }).then(function () {
+      CARREGANDO = false;
+      if (b) { b.disabled = false; b.textContent = 'Atualizar agora'; }
+    });
+  }
+
+  function lerFavoritos() {
+    try { var v = JSON.parse(localStorage.getItem(CHAVE_FAV) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  }
+  function gravarFavoritos(l) {
+    try { localStorage.setItem(CHAVE_FAV, JSON.stringify(l)); } catch (e) { /* modo privado */ }
+  }
+  function pintarFavoritos(escolhido) {
+    var s = el('favSel');
+    if (!s) return;
+    s.innerHTML = '<option value="">Escolher…</option>' + lerFavoritos().map(function (f, i) {
+      return '<option value="' + i + '">' + G.esc(f.nome) + '</option>';
+    }).join('');
+    if (escolhido != null) s.value = String(escolhido);
+  }
+
+  function linhasRegistros(L) {
+    return L.map(function (r) {
+      return [dataBR(r.d), r.dv ? dataBR(r.dv) : '', r.pc, r.prod || '', r.propr || '', r.mun || '', r.esc || '', r.rt || '',
+        r.cult.map(function (c) { return c[0] + (c[1] ? ' (' + String(c[1]).replace('.', ',') + ' ha)' : ''); }).join('; '),
+        r.ha ? String(r.ha).replace('.', ',') : '', r.hrs ? String(r.hrs).replace('.', ',') : '', r.ac || '',
+        r.maq.join('; '), r.impl.join('; '), r.dae ? String(r.dae).replace('.', ',') : '', r.form || ''];
+    });
+  }
+  var CAB_REGISTROS = ['Inserção', 'Vistoria', 'Serviço', 'Produtor', 'Propriedade', 'Município', 'Escritório', 'Responsável técnico',
+    'Culturas', 'Área (ha)', 'Horas', 'Tanques', 'Máquinas', 'Implementos', 'DAE (R$)', 'Formulário'];
+
+  function ligarFase1() {
+    var de = el('perDe'), ate = el('perAte');
+    if (de && ate) {
+      var aoMudarPeriodo = function () {
+        PER = { de: de.value || '', ate: ate.value || '' };
+        if (PER.de && PER.ate && PER.de > PER.ate) { PER = { de: PER.ate, ate: PER.de }; de.value = PER.de; ate.value = PER.ate; }
+        pag = 1;
+        popularFiltros();
+        atualizar();
+      };
+      de.addEventListener('change', aoMudarPeriodo);
+      ate.addEventListener('change', aoMudarPeriodo);
+    }
+    var b = el('btnAtualizar');
+    if (b) b.addEventListener('click', recarregarDados);
+    // recarrega sozinho, só com a aba visível
+    TIMER_AUTO = setInterval(function () {
+      if (document.visibilityState === 'visible' && TODOS.length) recarregarDados();
+      else pintarAtualizado();
+    }, INTERVALO_AUTO);
+    setInterval(pintarAtualizado, 30000);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && ULTIMA_CARGA && Date.now() - ULTIMA_CARGA.getTime() > INTERVALO_AUTO) recarregarDados();
+    });
+
+    var imp = el('btnImprimir');
+    if (imp) imp.addEventListener('click', function () { auditar('exportar', 'Imprimiu / salvou em PDF a aba "' + abaAtiva + '"'); window.print(); });
+    var cfgPub = el('linkPublicoConfig');
+    if (cfgPub) {
+      cfgPub.hidden = !!window.MODO_PUBLICO || !ehResponsavelLogado();
+      window.addEventListener('admin-auth-atualizado', function () { cfgPub.hidden = !!window.MODO_PUBLICO || !ehResponsavelLogado(); });
+      cfgPub.addEventListener('click', abrirConfigPublico);
+    }
+
+    // visões salvas
+    pintarFavoritos();
+    var sel = el('favSel');
+    if (sel) sel.addEventListener('change', function () {
+      var f = lerFavoritos()[+sel.value];
+      if (!f) return;
+      try { history.pushState(null, '', f.hash); } catch (e) { location.hash = f.hash; return; }
+      aplicarEstado(lerHash());
+      gravarUrl(false);
+    });
+    var sv = el('favSalvar');
+    if (sv) sv.addEventListener('click', function () {
+      var nome = window.prompt('Nome desta visão (filtros e aba atuais):', '');
+      if (!nome || !nome.trim()) return;
+      nome = nome.trim().slice(0, 60);
+      var l = lerFavoritos().filter(function (f) { return f.nome.toLowerCase() !== nome.toLowerCase(); });
+      l.push({ nome: nome, hash: estadoParaHash() });
+      gravarFavoritos(l);
+      pintarFavoritos(l.length - 1);
+    });
+    var ex = el('favExcluir');
+    if (ex) ex.addEventListener('click', function () {
+      var l = lerFavoritos(), i = sel ? +sel.value : -1;
+      if (!sel || sel.value === '' || !l[i]) return;
+      if (!window.confirm('Excluir a visão "' + l[i].nome + '"?')) return;
+      l.splice(i, 1);
+      gravarFavoritos(l);
+      pintarFavoritos();
+    });
+
+    // exportação dos registros filtrados (todos, não só a página)
+    ['regCsv', 'regXls'].forEach(function (id) {
+      var bt = el(id);
+      if (!bt || !window.PainelExport) return;
+      bt.addEventListener('click', function () {
+        window.PainelExport.baixar('registros', CAB_REGISTROS, linhasRegistros(LISTA_REG), id === 'regCsv' ? 'csv' : 'xls');
+      });
+    });
+  }
+
   /* -------------------------------------------------------- carregar dados */
   /* Fonte principal: os LANÇAMENTOS do sistema (ação "painel" do servidor), no
      mesmo formato de data/mecanizacao.json. Assim o que foi lançado aparece no
@@ -5116,18 +5329,47 @@
   });
   ligarTeclasAbas();
   ligarMais();
+  ligarFase1();
 
   /* Base e regras do painel para o assistente de perguntas (js/assistente-dados.js).
      Só leitura: ele consulta a mesma base já carregada, sem os filtros da lateral. */
   window.PAINEL_DADOS = {
     registros: function () { return TODOS; },
+    // base já recortada pelos filtros da lateral (usada pelo assistente, se a pessoa pedir)
+    registrosFiltrados: function () { return filtrar(); },
+    chaveSelecao: function () { return JSON.stringify([F, PER]); },
     dataRef: dataRef, anoDe: anoDe, regionalDe: regionalDe, chaveProdutor: chaveProdutor,
     regionais: function () { return REGIONAIS.map(function (r) { return r.nome; }); },
     MEC: MEC, ACU: ACU,
     historicoCarregado: function () { return !!window.DADOS_MECANIZACAO_HISTORICO; }
   };
 
-  carregarDados().then(function (res) {
+  /* API para abas que moram em arquivos próprios (js/painel-*.js). Cada uma se
+     registra com registrarAba(nome, fn); fn(C) roda quando a aba é aberta ou a
+     seleção muda, como as abas internas. */
+  window.PAINEL_API = {
+    G: G,
+    registros: function () { return TODOS; },
+    anos: function () { return ANOS.slice(); },
+    filtros: function () { return F; },
+    periodoLivre: function () { return PER; },
+    filtrar: filtrar,
+    anoDe: anoDe, dataRef: dataRef, regionalDe: regionalDe,
+    MEC: MEC, ACU: ACU, NI: NI,
+    soma: soma, somarPor: somarPor, contar: contar, nProdutores: nProdutores, chaveProdutor: chaveProdutor,
+    tiles: tiles, pintarSerie: pintarSerie, pintarCat: pintarCat, ranking: ranking,
+    abrirAba: abrirAba, aba: function () { return abaAtiva; },
+    invalidar: invalidar,
+    ehResponsavel: ehResponsavelLogado, ehAdmin: ehAdmin,
+    modoPublico: function () { return !!window.MODO_PUBLICO; },
+    registrarAba: function (nome, fn) { ABAS[nome] = fn; SUJAS[nome] = true; },
+    auditar: auditar,
+    aoCarregar: function (fn) { if (TODOS.length) fn(); else AO_CARREGAR.push(fn); },
+    redesenhar: function () { invalidar(); render(); }
+  };
+  var AO_CARREGAR = [];
+
+  prepararPublico().then(function () { return carregarDados(); }).then(function (res) {
     if (!res.pacote || !res.pacote.registros) {
       document.querySelector('.wrap').insertAdjacentHTML('afterbegin',
         '<p class="aviso erro">Não foi possível carregar os dados de mecanização.</p>');
@@ -5136,6 +5378,9 @@
     usarPacote(res.pacote, res.fonte);
     aplicarEstado(lerHash());
     gravarUrl(false);   // deixa a URL refletir a seleção já no primeiro desenho
+    ULTIMA_CARGA = new Date();
+    pintarAtualizado();
+    AO_CARREGAR.splice(0).forEach(function (fn) { try { fn(); } catch (e) { /* aba extra não derruba o painel */ } });
 
     /* Só agora o histórico: o painel já está desenhado e utilizável. Ao chegar,
        a base é remontada mantendo a seleção e o seletor de período ganha os
