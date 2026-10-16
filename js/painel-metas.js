@@ -44,7 +44,9 @@
   /** Realizado de uma meta (independe dos filtros da lateral). */
   function realizado(m) {
     var D = A.registros().filter(function (r) {
-      return A.anoDe(r) === m.ano && (!m.municipio || r.mun === m.municipio);
+      return A.anoDe(r) === m.ano && (!m.municipio || r.mun === m.municipio) &&
+        (!m.escritorio || r.esc === m.escritorio) && (!m.tecnico || r.rt === m.tecnico) &&
+        (!m.mes || A.dataRef(r).slice(5, 7) === m.mes);
     });
     if (m.metrica === 'ha') return A.soma(D.filter(function (r) { return r.pc === A.MEC; }), function (r) { return r.ha; });
     if (m.metrica === 'horas') return A.soma(D, function (r) { return r.hrs; });
@@ -53,30 +55,46 @@
   }
 
   /** Fração do ano já decorrida (só para o ano corrente; 1 para anos passados). */
-  function fracaoDoAno(ano) {
+  function fracaoDoAno(ano, mes) {
     var hoje = new Date(), a = String(hoje.getFullYear());
     if (+ano < +a) return 1;
     if (+ano > +a) return 0;
+    if (mes) {   // meta mensal: fração do mês decorrida
+      var mi = +mes - 1, mh = hoje.getMonth();
+      if (mi < mh) return 1;
+      if (mi > mh) return 0;
+      var ini1 = new Date(hoje.getFullYear(), mi, 1), fim1 = new Date(hoje.getFullYear(), mi + 1, 1);
+      return (hoje - ini1) / (fim1 - ini1);
+    }
     var ini = new Date(hoje.getFullYear(), 0, 1), fim = new Date(hoje.getFullYear() + 1, 0, 1);
     return (hoje - ini) / (fim - ini);
   }
+  var MESES_ROT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  function territorio(m) {
+    var p = [];
+    if (m.municipio) p.push(m.municipio);
+    if (m.escritorio) p.push(m.escritorio);
+    if (m.tecnico) p.push('Téc. ' + m.tecnico);
+    return p.length ? p.join(' · ') : 'Acre (todos)';
+  }
 
   function situacao(m) {
-    var real = realizado(m), frac = fracaoDoAno(m.ano), valor = +m.valor || 0;
+    var real = realizado(m), frac = fracaoDoAno(m.ano, m.mes), valor = +m.valor || 0;
     var pct = valor ? real / valor * 100 : 0;
     var proj = frac >= 1 ? real : (frac > 0.08 ? real / frac : null);
     var sem;
     if (frac >= 1) sem = real >= valor ? 'ok' : (real >= valor * 0.9 ? 'atencao' : 'ruim');
+    else if (frac <= 0) sem = 'nd';
     else if (proj == null) sem = 'nd';
     else sem = proj >= valor ? 'ok' : (proj >= valor * 0.9 ? 'atencao' : 'ruim');
     return { real: real, pct: pct, proj: proj, sem: sem, valor: valor };
   }
-  var ROT_SEM = { ok: 'No ritmo', atencao: 'Atenção', ruim: 'Abaixo do ritmo', nd: 'Início do ano' };
+  var ROT_SEM = { ok: 'No ritmo', atencao: 'Atenção', ruim: 'Abaixo do ritmo', nd: 'Início do período' };
 
   function linhaMeta(m, comAcoes) {
     var S = situacao(m), dec = METRICAS[m.metrica].dec;
-    return '<tr><td class="num">' + G.esc(m.ano) + '</td><td class="forte">' + G.esc(METRICAS[m.metrica].rot) + '</td>' +
-      '<td>' + (m.municipio ? G.esc(m.municipio) : 'Acre (todos)') + '</td>' +
+    return '<tr><td class="num">' + G.esc(m.ano) + (m.mes ? ' · ' + MESES_ROT[+m.mes - 1] : '') + '</td><td class="forte">' + G.esc(METRICAS[m.metrica].rot) + '</td>' +
+      '<td>' + G.esc(territorio(m)) + '</td>' +
       '<td class="num">' + G.num(S.valor, dec) + '</td><td class="num">' + G.num(S.real, dec) + '</td>' +
       '<td class="num"><div class="meta-barra" title="' + G.num(S.pct, 0) + '% da meta"><span class="meta-' + S.sem + '" style="width:' +
       Math.min(100, Math.max(2, S.pct)).toFixed(1) + '%"></span></div>' + G.num(S.pct, 0) + '%</td>' +
@@ -95,7 +113,7 @@
       alvo.innerHTML = '<p class="vazio">Nenhuma meta cadastrada' + (admin ? '. Use o formulário abaixo.' : ' ainda.') + '</p>';
       return;
     }
-    alvo.innerHTML = '<div class="tabela-scroll"><table class="dados"><thead><tr><th>Ano</th><th>Indicador</th><th>Território</th><th>Meta</th>' +
+    alvo.innerHTML = '<div class="tabela-scroll"><table class="dados"><thead><tr><th>Período</th><th>Indicador</th><th>Território</th><th>Meta</th>' +
       '<th>Realizado</th><th>% da meta</th><th>Projeção</th><th>Situação</th>' + (admin ? '<th></th>' : '') + '</tr></thead><tbody>' +
       METAS.map(function (m) { return linhaMeta(m, admin); }).join('') + '</tbody></table></div>' +
       '<p class="cmp-nota">Projeção = realizado ÷ fração do ano decorrida. No ano corrente, <b>No ritmo</b> = projeção ≥ meta; <b>Atenção</b> = ≥ 90%; senão <b>Abaixo do ritmo</b>.</p>';
@@ -112,11 +130,21 @@
     if (anos.indexOf(prox) < 0) anos.unshift(prox);
     var muns = {};
     A.registros().forEach(function (r) { if (r.mun) muns[r.mun] = true; });
+    var escs = {}, tecs = {};
+    A.registros().forEach(function (r) {
+      if (r.esc && r.esc !== A.NI) escs[r.esc] = true;
+      if (r.rt && r.rt !== A.NI) tecs[r.rt] = true;
+    });
+    var opc = function (o) { return Object.keys(o).sort().map(function (m) { return '<option>' + G.esc(m) + '</option>'; }).join(''); };
     f.innerHTML =
       '<label>Ano <select id="metaAno">' + anos.map(function (a) { return '<option>' + a + '</option>'; }).join('') + '</select></label>' +
       '<label>Indicador <select id="metaMetrica">' + Object.keys(METRICAS).map(function (k) { return '<option value="' + k + '">' + METRICAS[k].rot + '</option>'; }).join('') + '</select></label>' +
       '<label>Município <select id="metaMun"><option value="">Acre (todos)</option>' +
       Object.keys(muns).sort().map(function (m) { return '<option>' + G.esc(m) + '</option>'; }).join('') + '</select></label>' +
+      '<label>Escritório <select id="metaEsc"><option value="">Todos</option>' + opc(escs) + '</select></label>' +
+      '<label>Técnico <select id="metaTec"><option value="">Todos</option>' + opc(tecs) + '</select></label>' +
+      '<label>Mês <select id="metaMes"><option value="">Ano inteiro</option>' +
+      MESES_ROT.map(function (n, i) { return '<option value="' + String(i + 1).padStart(2, '0') + '">' + n + '</option>'; }).join('') + '</select></label>' +
       '<label>Meta <input type="number" id="metaValor" min="0" step="any" placeholder="0"></label>' +
       '<button type="button" class="btn" id="metaSalvar">Salvar meta</button><span class="meta-msg" id="metaMsg" role="status"></span>';
     el('metaSalvar').addEventListener('click', salvar);
@@ -132,6 +160,7 @@
     if (!(valor >= 0)) { msg('Informe um valor de meta válido.', true); return; }
     var corpo = {
       ano: el('metaAno').value, metrica: el('metaMetrica').value, municipio: el('metaMun').value,
+      escritorio: el('metaEsc').value, tecnico: el('metaTec').value, mes: el('metaMes').value,
       valor: valor, atualizado_em: new Date().toISOString(),
       atualizado_por: (window.ADMIN_AUTH && ADMIN_AUTH.sessaoAtual() && ADMIN_AUTH.sessaoAtual().user && ADMIN_AUTH.sessaoAtual().user.email) || ''
     };
@@ -139,7 +168,7 @@
     var h;
     try { h = cabecalho(true); } catch (e) { msg(e.message, true); return; }
     h.Prefer = 'resolution=merge-duplicates,return=representation';
-    fetch(base() + '?on_conflict=ano,metrica,municipio', { method: 'POST', headers: h, body: JSON.stringify(corpo) })
+    fetch(base() + '?on_conflict=ano,metrica,municipio,escritorio,tecnico,mes', { method: 'POST', headers: h, body: JSON.stringify(corpo) })
       .then(function (r) {
         if (r.status === 401 || r.status === 403) throw new Error('Só o responsável (root) pode cadastrar metas.');
         if (!r.ok) throw new Error('Não foi possível salvar (HTTP ' + r.status + ').');
@@ -150,7 +179,8 @@
         return carregar();
       })
       .then(function () {
-        A.auditar('alterar', 'Salvou meta ' + corpo.ano + ' · ' + corpo.metrica + ' · ' + (corpo.municipio || 'Acre') + ' = ' + corpo.valor);
+        A.auditar('alterar', 'Salvou meta ' + corpo.ano + (corpo.mes ? '/' + corpo.mes : '') + ' · ' + corpo.metrica + ' · ' +
+          territorio(corpo) + ' = ' + corpo.valor);
         msg('Meta salva ✓'); desenharLista(); desenharGeral();
       })
       .catch(function (e) { msg(e.message, true); });
@@ -179,7 +209,7 @@
     var alvo = document.getElementById('kpisMetasGeral');
     if (!alvo) return;
     var ano = A.anos()[0];
-    var ms = METAS.filter(function (m) { return m.ano === ano && !m.municipio; });
+    var ms = METAS.filter(function (m) { return m.ano === ano && !m.municipio && !m.escritorio && !m.tecnico && !m.mes; });
     if (!ms.length) { alvo.innerHTML = ''; alvo.hidden = true; return; }
     alvo.hidden = false;
     A.tiles('kpisMetasGeral', [{ _sec: 'Metas de ' + ano }].concat(ms.map(function (m) {

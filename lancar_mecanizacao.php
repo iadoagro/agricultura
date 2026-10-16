@@ -534,7 +534,7 @@ if ($acao === 'painel') {
             if ($dv !== '' && substr($dv, 0, 4) !== substr($d, 0, 4)) $outroAno++;
             $produtores[mb_strtolower(preg_replace('/\s+/', ' ', trim($prod)))] = true;
             $registros[] = [
-                'd' => $d, 'ex' => substr($d, 0, 4), 'dv' => $dv,
+                'd' => $d, 'h' => gmdate('H:i', ($criado ?: time()) - 5 * 3600), 'ex' => substr($d, 0, 4), 'dv' => $dv,
                 'pc' => $ou($l['tipo_servico'] ?? null), 'mun' => $ou($l['municipio'] ?? null),
                 'esc' => $ou($l['escritorio_local'] ?? null), 'rt' => $ou($l['responsavel_tecnico'] ?? null),
                 'alim' => $email !== '' ? ($nomes[$email] ?? $sugerido($email)) : $NI,

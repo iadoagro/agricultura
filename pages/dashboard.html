@@ -9,10 +9,10 @@
 <meta property="og:title" content="Painel da Mecaniza&ccedil;&atilde;o">
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
-<link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026101710">
-<link rel="stylesheet" href="../css/assistente-dados.css?v=2026101710">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101415">
+<link rel="stylesheet" href="../css/base.css?v=96e317c8">
+<link rel="stylesheet" href="../css/dashboard.css?v=0917e083">
+<link rel="stylesheet" href="../css/assistente-dados.css?v=04476821">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=003327b7">
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
      sem login, sem menu lateral e sem Registros, lançamento ou administração. Precisa vir antes dos
@@ -28,12 +28,12 @@
     } catch (e) { /* sem modo público */ }
   })();
 </script>
-<script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/ambiente-cliente.js?v=2026092302"></script>
-<script src="../js/admin-auth.js?v=2026101401"></script>
-<script src="../js/admin-gate.js?v=2026092530"></script>
-<script src="../js/rastreio.js?v=2026092530"></script>
-<script src="../js/nav.js?v=2026101201"></script>
+<script src="../js/banco-config.js?v=61ce7c3f"></script>
+<script src="../js/ambiente-cliente.js?v=4e3462f5"></script>
+<script src="../js/admin-auth.js?v=688de1c2"></script>
+<script src="../js/admin-gate.js?v=252869c0"></script>
+<script src="../js/rastreio.js?v=04af733f"></script>
+<script src="../js/nav.js?v=555f77e6"></script>
 <script>
   /* aplica o tema antes da pintura para não piscar branco */
   (function () {
@@ -46,14 +46,14 @@
     } catch (e) { document.documentElement.setAttribute('data-tema', 'claro'); }
   })();
 </script>
-<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
-<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
-<link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
-<link rel="stylesheet" href="../css/nav.css?v=2026101201">
-<link rel="stylesheet" href="../css/select-app.css?v=2026092603">
-<script src="../js/select-app.js?v=2026092603" defer></script>
-<link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
-<script src="../js/modal-ui.js?v=2026092527"></script>
+<link rel="stylesheet" href="../css/motion-ui.css?v=f99d6b57">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=54842f62">
+<link rel="stylesheet" href="../css/fx-ui.css?v=aaabe5a4">
+<link rel="stylesheet" href="../css/nav.css?v=8eb6c0f7">
+<link rel="stylesheet" href="../css/select-app.css?v=db8eb13e">
+<script src="../js/select-app.js?v=4be396f6" defer></script>
+<link rel="stylesheet" href="../css/modal-ui.css?v=847ed560">
+<script src="../js/modal-ui.js?v=6b7826a3"></script>
 </head>
 <body>
 
@@ -90,14 +90,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
       Munic&iacute;pio
     </button>
-    <button class="aba" data-aba="comparativo" type="button" role="tab" id="aba-comparativo" aria-controls="painel-comparativo" aria-selected="false" tabindex="-1">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
-      Comparativo
-    </button>
-    <button class="aba" data-aba="metas" type="button" role="tab" id="aba-metas" aria-controls="painel-metas" aria-selected="false" tabindex="-1">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
-      Metas
-    </button>
     <button class="aba" data-aba="mapa" type="button" role="tab" id="aba-mapa" aria-controls="painel-mapa" aria-selected="false" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 7v13M15 4v13"/></svg>
       Mapa
@@ -108,7 +100,7 @@
     </button>
     <button class="aba" data-aba="beneficiario" type="button" role="tab" id="aba-beneficiario" aria-controls="painel-beneficiario" aria-selected="false" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
-      Benefici&aacute;rio
+      Produtor
     </button>
     <button class="aba" data-aba="relatorio" type="button" role="tab" id="aba-relatorio" aria-controls="painel-relatorio" aria-selected="false" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="13" width="2" height="5" rx=".5" fill="currentColor" stroke="none"/><rect x="11" y="11" width="2" height="7" rx=".5" fill="currentColor" stroke="none"/><rect x="14" y="15" width="2" height="3" rx=".5" fill="currentColor" stroke="none"/></svg>
@@ -185,20 +177,6 @@
     <!-- aria-live: mudar um filtro reescreve a tela inteira; sem isto a
          troca era silenciosa para quem usa leitor de tela -->
     <p class="filtro-resumo" id="resumo" role="status" aria-live="polite"></p>
-    <!-- Link para quem n&atilde;o tem login: o mesmo painel, s&oacute; de Mecaniza&ccedil;&atilde;o e s&oacute; para ler. -->
-    <div class="link-publico" id="linkPublico">
-      <button class="btn" id="linkPublicoConfig" type="button" hidden title="Escolher as abas do link p&uacute;blico e uma senha opcional">Configurar link p&uacute;blico</button>
-      <span class="filtro-rot" title="Painel de Mecaniza&ccedil;&atilde;o sem login, s&oacute; para leitura">Link p&uacute;blico web (sem login)</span>
-      <div class="link-publico-linha">
-        <input type="text" id="linkPublicoWeb" readonly aria-label="Link p&uacute;blico web do painel de Mecaniza&ccedil;&atilde;o">
-        <button class="btn" id="linkPublicoWebCopiar" type="button">Copiar</button>
-      </div>
-      <span class="filtro-rot" title="Mesmo painel, servido por este computador (XAMPP ou servidor local)">Link p&uacute;blico local (sem login)</span>
-      <div class="link-publico-linha">
-        <input type="text" id="linkPublicoLocal" readonly aria-label="Link p&uacute;blico local do painel de Mecaniza&ccedil;&atilde;o">
-        <button class="btn" id="linkPublicoLocalCopiar" type="button">Copiar</button>
-      </div>
-    </div>
   </section>
 
   <div class="conteudo-abas">
@@ -207,6 +185,7 @@
   <div class="aba-conteudo" data-aba="geral" role="tabpanel" id="painel-geral" aria-labelledby="aba-geral" tabindex="0">
     <section class="kpis" id="kpis" aria-label="Indicadores principais"></section>
     <section class="kpis" id="kpisMetasGeral" aria-label="Metas do ano" hidden></section>
+    <section class="kpis" id="kpisAlertasGeral" aria-label="Alertas" hidden></section>
     <div class="painel-grid">
 
       <section class="painel duplo destaque">
@@ -461,77 +440,8 @@
     </div>
   </div>
 
-  <!-- ================================================ ABA: COMPARATIVO -->
-  <div class="aba-conteudo" data-aba="comparativo" role="tabpanel" id="painel-comparativo" aria-labelledby="aba-comparativo" tabindex="0">
-    <section class="painel largo cmp-controles" id="cmpControles" aria-label="Escolha o que comparar"></section>
-    <section class="kpis" id="kpisCmp" aria-label="Indicadores do comparativo"></section>
-    <div class="painel-grid">
-      <section class="painel largo">
-        <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>Hectares mecanizados m&ecirc;s a m&ecirc;s</h2>
-          <p class="sub" id="cmpSubMes">Os dois per&iacute;odos lado a lado.</p>
-        </div></div>
-        <div id="gCmpMes" data-tipos="colunas,linha,area,tabela" data-dec="1" data-unidade="ha"></div>
-      </section>
-      <section class="painel">
-        <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>Maiores crescimentos</h2>
-          <p class="sub">Munic&iacute;pios que mais ganharam hectares mecanizados.</p>
-        </div></div>
-        <div id="cmpCresc"></div>
-      </section>
-      <section class="painel">
-        <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>Maiores quedas</h2>
-          <p class="sub">Munic&iacute;pios que mais perderam hectares mecanizados.</p>
-        </div></div>
-        <div id="cmpQueda"></div>
-      </section>
-      <section class="painel largo">
-        <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>Munic&iacute;pios sem atendimento</h2>
-          <p class="sub">Atendidos no per&iacute;odo de refer&ecirc;ncia (B) e sem nenhum atendimento no per&iacute;odo atual (A).</p>
-        </div></div>
-        <div id="cmpSem"></div>
-      </section>
-      <section class="painel largo">
-        <div class="painel-cab"><div class="painel-cab-tit"><h2>Por munic&iacute;pio</h2><p class="sub">Atendimentos e hectares nos dois per&iacute;odos.</p></div></div>
-        <div id="tCmpMun"></div>
-      </section>
-      <section class="painel">
-        <div class="painel-cab"><div class="painel-cab-tit"><h2>Por escrit&oacute;rio local</h2></div></div>
-        <div id="tCmpEsc"></div>
-      </section>
-      <section class="painel">
-        <div class="painel-cab"><div class="painel-cab-tit"><h2>Por cultura</h2></div></div>
-        <div id="tCmpCult"></div>
-      </section>
-      <section class="painel largo">
-        <div class="painel-cab"><div class="painel-cab-tit"><h2>Por servi&ccedil;o</h2></div></div>
-        <div id="tCmpPc"></div>
-      </section>
-    </div>
-  </div>
-
-  <!-- ===================================================== ABA: METAS -->
-  <div class="aba-conteudo" data-aba="metas" role="tabpanel" id="painel-metas" aria-labelledby="aba-metas" tabindex="0">
-    <section class="painel largo">
-      <div class="painel-cab"><div class="painel-cab-tit">
-        <h2>Metas e andamento</h2>
-        <p class="sub" id="metasSub">Meta anual, realizado, proje&ccedil;&atilde;o para o fim do ano e situa&ccedil;&atilde;o (sem&aacute;foro).</p>
-      </div></div>
-      <div id="metasLista"></div>
-    </section>
-    <section class="painel largo" id="metasEditor" hidden>
-      <div class="painel-cab"><div class="painel-cab-tit">
-        <h2>Cadastrar meta</h2>
-        <p class="sub">Somente o respons&aacute;vel. Uma meta por ano, indicador e munic&iacute;pio (munic&iacute;pio vazio = Acre inteiro); salvar de novo substitui.</p>
-      </div></div>
-      <div class="metas-form" id="metasForm"></div>
-    </section>
-  </div>
-
-  <!-- ========================================================= ABA: MAPA -->
+  <!-- ================================================ ABA: CONFIGURAÇÕES -->
+    <!-- ========================================================= ABA: MAPA -->
   <div class="aba-conteudo" data-aba="mapa" role="tabpanel" id="painel-mapa" aria-labelledby="aba-mapa" tabindex="0">
     <div class="mapa-mec-wrap">
       <section class="mapa-mec-card">
@@ -627,6 +537,15 @@
         </div>
         <div id="fichaProd"></div>
       </section>
+      <section class="painel">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Recorr&ecirc;ncia</h2><p class="sub">Quantos produtores tiveram 1, 2, 3 ou mais atendimentos.</p></div></div>
+        <div id="gProdRec" data-tipos="barras,colunas,pizza,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Produtores que n&atilde;o voltaram</h2>
+          <p class="sub">Atendidos no ano anterior ao escolhido e sem atendimento no ano escolhido.</p></div></div>
+        <div id="tProdNao"></div>
+      </section>
     </div>
   </div>
 
@@ -662,8 +581,14 @@
        INSER&Ccedil;&Atilde;O (Carimbo de data/hora) &mdash; nunca a da vistoria. -->
   <div class="aba-conteudo" data-aba="insercoes" role="tabpanel" id="painel-insercoes" aria-labelledby="aba-insercoes" tabindex="0">
     <nav class="ins-nav" id="insNav" aria-label="Escolher visão">
-      <button type="button" data-sec="registros">Registros</button><button type="button" data-sec="pessoa">Por pessoa</button><button type="button" data-sec="dia">Por dia</button><button type="button" data-sec="semana">Por semana</button><button type="button" data-sec="mes">Por m&ecirc;s</button><button type="button" data-sec="pontos">Mapa de pontos</button><button class="ins-nav-pessoas" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lan&ccedil;ou e ligar ao login do sistema">Pessoas</button>
+      <button type="button" data-sec="registros">Registros</button><button type="button" data-sec="pessoa">Por pessoa</button><button type="button" data-sec="dia">Por dia</button><button type="button" data-sec="semana">Por semana</button><button type="button" data-sec="mes">Por m&ecirc;s</button><button type="button" data-sec="pontos">Mapa de pontos</button><button type="button" data-sec="comparativo">Comparativo</button><button type="button" data-sec="metas">Metas</button><button type="button" data-sec="tendencias">Tend&ecirc;ncias</button><button type="button" data-sec="cruzamentos">Cruzamentos</button><button type="button" data-sec="alertas">Alertas</button><button type="button" data-sec="relatorios">Relat&oacute;rios</button><button type="button" data-sec="configuracoes" id="insBtnConfig" hidden>Configura&ccedil;&otilde;es</button><button class="ins-nav-pessoas" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lan&ccedil;ou e ligar ao login do sistema">Pessoas</button>
     </nav>
+    <!-- seleção (período e filtros das outras abas) que estas visões usam; a lateral de filtros não aparece em "Mostrar mais" -->
+    <div class="ins-sel" id="insSel" role="status" aria-live="polite" hidden>
+      <span class="ins-sel-rot">Sele&ccedil;&atilde;o</span>
+      <span class="ins-sel-txt" id="insSelTxt"></span>
+      <button type="button" class="ins-sel-limpar" id="insSelLimpar" hidden>Limpar filtros</button>
+    </div>
     <div class="ins-bloco" data-sec="registros">
     <section class="kpis" id="kpisReg" aria-label="Indicadores dos registros"></section>
     <div class="painel-grid">
@@ -878,10 +803,201 @@
       <div class="pontos-barra">
         <label class="pontos-chk"><input type="checkbox" id="pontosVerAcu" checked><i class="pt-acu"></i> A&ccedil;udagem</label>
         <label class="pontos-chk"><input type="checkbox" id="pontosVerMec" checked><i class="pt-mec"></i> Mecaniza&ccedil;&atilde;o</label>
+        <label class="pontos-chk"><input type="checkbox" id="pontosCalor"> Mapa de calor</label>
+        <label class="pontos-chk"><input type="checkbox" id="pontosAreas"> &Aacute;rea de cada escrit&oacute;rio</label>
       </div>
       <div id="mapaPontos" class="mapa-pontos" role="application" aria-label="Mapa de pontos dos atendimentos"></div>
     </section>
     </div>
+<div class="ins-bloco" data-sec="comparativo" hidden>
+    <section class="painel largo cmp-controles" id="cmpControles" aria-label="Escolha o que comparar"></section>
+    <section class="kpis" id="kpisCmp" aria-label="Indicadores do comparativo"></section>
+    <div class="painel-grid">
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Hectares mecanizados m&ecirc;s a m&ecirc;s</h2>
+          <p class="sub" id="cmpSubMes">Os dois per&iacute;odos lado a lado.</p>
+        </div></div>
+        <div id="gCmpMes" data-tipos="colunas,linha,area,tabela" data-dec="1" data-unidade="ha"></div>
+      </section>
+      <section class="painel">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Maiores crescimentos</h2>
+          <p class="sub">Munic&iacute;pios que mais ganharam hectares mecanizados.</p>
+        </div></div>
+        <div id="cmpCresc"></div>
+      </section>
+      <section class="painel">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Maiores quedas</h2>
+          <p class="sub">Munic&iacute;pios que mais perderam hectares mecanizados.</p>
+        </div></div>
+        <div id="cmpQueda"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Munic&iacute;pios sem atendimento</h2>
+          <p class="sub">Atendidos no per&iacute;odo de refer&ecirc;ncia (B) e sem nenhum atendimento no per&iacute;odo atual (A).</p>
+        </div></div>
+        <div id="cmpSem"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Por munic&iacute;pio</h2><p class="sub">Atendimentos e hectares nos dois per&iacute;odos.</p></div></div>
+        <div id="tCmpMun"></div>
+      </section>
+      <section class="painel">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Por escrit&oacute;rio local</h2></div></div>
+        <div id="tCmpEsc"></div>
+      </section>
+      <section class="painel">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Por cultura</h2></div></div>
+        <div id="tCmpCult"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Por servi&ccedil;o</h2></div></div>
+        <div id="tCmpPc"></div>
+      </section>
+    </div>
+  </div>
+
+<div class="ins-bloco" data-sec="metas" hidden>
+    <section class="painel largo">
+      <div class="painel-cab"><div class="painel-cab-tit">
+        <h2>Metas e andamento</h2>
+        <p class="sub" id="metasSub">Meta anual, realizado, proje&ccedil;&atilde;o para o fim do ano e situa&ccedil;&atilde;o (sem&aacute;foro).</p>
+      </div></div>
+      <div id="metasLista"></div>
+    </section>
+    <section class="painel largo" id="metasEditor" hidden>
+      <div class="painel-cab"><div class="painel-cab-tit">
+        <h2>Cadastrar meta</h2>
+        <p class="sub">Somente o respons&aacute;vel. Uma meta por ano, indicador e munic&iacute;pio (munic&iacute;pio vazio = Acre inteiro); salvar de novo substitui.</p>
+      </div></div>
+      <div class="metas-form" id="metasForm"></div>
+    </section>
+  </div>
+
+<div class="ins-bloco" data-sec="tendencias" hidden>
+    <section class="painel largo cmp-controles">
+      <div class="cmp-linha">
+        <label>Indicador <select id="tendMetrica"><option value="n">Atendimentos</option><option value="ha">Hectares mecanizados</option><option value="hrs">Horas de m&aacute;quina</option><option value="ac">Tanques / a&ccedil;udes</option></select></label>
+        <p class="cmp-nota" style="margin:0">Usa todos os anos da base; os demais filtros (faixa Sele&ccedil;&atilde;o, acima) continuam valendo.</p>
+      </div>
+    </section>
+    <section class="kpis" id="kpisTend" aria-label="Projeção do ano"></section>
+    <div class="painel-grid">
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>S&eacute;rie hist&oacute;rica</h2><p class="sub" id="tendSubMes">Um m&ecirc;s ao lado do mesmo m&ecirc;s dos outros anos.</p></div></div>
+        <div id="gTendMes" data-tipos="linha,colunas,area,tabela" data-dec="1"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Sazonalidade</h2><p class="sub">Quanto de um ano costuma cair em cada m&ecirc;s (m&eacute;dia dos anos completos, em %).</p></div></div>
+        <div id="gTendSaz" data-tipos="colunas,linha,tabela" data-dec="1" data-unidade="%"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Ano &times; m&ecirc;s</h2></div></div>
+        <div id="tTend"></div>
+      </section>
+    </div>
+  </div>
+
+<div class="ins-bloco" data-sec="cruzamentos" hidden>
+    <section class="painel largo">
+      <div class="painel-cab"><div class="painel-cab-tit"><h2>Cruzamentos</h2>
+        <p class="sub">Escolha duas dimens&otilde;es e um valor. Ex.: cultura &times; munic&iacute;pio, m&aacute;quina &times; servi&ccedil;o, DAE por escrit&oacute;rio. Segue a sele&ccedil;&atilde;o mostrada acima.</p></div></div>
+      <div class="cmp-linha" id="cruzControles" style="padding:0 16px 10px"></div>
+      <div id="tCruz"></div>
+    </section>
+  </div>
+
+<div class="ins-bloco" data-sec="alertas" hidden>
+    <section class="kpis" id="kpisAlertas" aria-label="Resumo dos alertas"></section>
+    <p class="cmp-nota" id="alertasCriterio" style="margin:0 4px 10px"></p>
+    <div class="painel-grid">
+      <section class="painel">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>T&eacute;cnicos abaixo da m&eacute;dia</h2>
+          <p class="sub">Atendimentos no per&iacute;odo analisado, entre quem atuou no &uacute;ltimo ano.</p></div></div>
+        <div id="tAlertTec"></div>
+      </section>
+      <section class="painel">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Escrit&oacute;rios abaixo da m&eacute;dia</h2>
+          <p class="sub">Mesmo crit&eacute;rio, por escrit&oacute;rio local.</p></div></div>
+        <div id="tAlertEsc"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Munic&iacute;pios sem atendimento</h2>
+          <p class="sub">&Uacute;ltimo atendimento mais antigo que o prazo configurado.</p></div></div>
+        <div id="tAlertMun"></div>
+      </section>
+      <section class="painel largo" id="alertasConfigPainel">
+        <div class="painel-cab"><div class="painel-cab-tit"><h2>Limites dos alertas</h2>
+          <p class="sub">Somente o respons&aacute;vel altera. Valem para todos.</p></div></div>
+        <div class="metas-form" id="alertasConfig" hidden></div>
+      </section>
+    </div>
+  </div>
+
+<div class="ins-bloco" data-sec="relatorios" hidden>
+    <section class="painel largo">
+      <div class="painel-cab"><div class="painel-cab-tit"><h2>Relat&oacute;rios semanais e mensais</h2>
+        <p class="sub">Gerados automaticamente: toda segunda-feira (semana anterior) e no dia 1 (m&ecirc;s anterior). Abra, imprima em PDF ou envie por e-mail.</p></div></div>
+      <div class="metas-form" id="relGerar" hidden>
+        <button class="btn" type="button" data-tipo="semanal">Gerar semanal agora</button>
+        <button class="btn" type="button" data-tipo="mensal">Gerar mensal agora</button>
+        <span class="meta-msg" id="relMsg" role="status"></span>
+      </div>
+      <div id="relatoriosLista"></div>
+    </section>
+  </div>
+<div class="ins-bloco" data-sec="configuracoes" hidden><div id="painel-configuracoes" class="cfg">
+  <section class="cfg-topo" aria-labelledby="cfgTit">
+    <div class="cfg-topo-l1">
+      <div class="cfg-topo-txt">
+        <h2 id="cfgTit">O que cada pessoa v&ecirc;</h2>
+        <span class="cfg-dica">Salva sozinho e vale na hora &middot; o root v&ecirc; tudo &middot; cadeado = nunca vai ao p&uacute;blico</span>
+      </div>
+      <span id="cfgStatus" class="cfg-status" role="status" aria-live="polite"></span>
+      <div class="cfg-topo-acoes">
+        <div class="cfg-previa" role="group" aria-label="Pr&eacute;-visualizar a barra de abas de outro perfil">
+          <span class="cfg-previa-rot">Ver como</span>
+          <button type="button" class="cfg-seg" data-previa="publico" aria-pressed="false">P&uacute;blico</button>
+          <button type="button" class="cfg-seg" data-previa="logado" aria-pressed="false">Usu&aacute;rio logado</button>
+        </div>
+        <button type="button" class="btn" id="cfgDesfazer" title="Volta a &uacute;ltima altera&ccedil;&atilde;o (clique de novo para refazer)" disabled>Desfazer</button>
+        <button type="button" class="btn" id="cfgPadrao" title="Volta tudo ao padr&atilde;o">Restaurar o padr&atilde;o</button>
+      </div>
+    </div>
+    <div id="cfgPerfis" class="cfg-perfis"></div>
+    <div id="cfgAvisos" class="cfg-avisos"></div>
+  </section>
+  <div class="cfg-corpo">
+    <div id="cfgVisib" class="cfg-visib"><p class="vazio">Carregando&hellip;</p></div>
+    <aside class="cfg-lateral" aria-label="Link p&uacute;blico e senha">
+      <section class="cfg-cartao">
+        <h3>Link p&uacute;blico <small>sem login, s&oacute; leitura</small></h3>
+        <div class="cfg-link" id="linkPublico">
+          <label class="cfg-link-rot" for="linkPublicoWeb">Internet</label>
+          <div class="cfg-link-linha">
+            <input type="text" id="linkPublicoWeb" readonly aria-label="Link p&uacute;blico web do painel de Mecaniza&ccedil;&atilde;o">
+            <button class="btn" id="linkPublicoWebCopiar" type="button">Copiar</button>
+            <a class="btn" id="linkPublicoWebAbrir" target="_blank" rel="noopener">Abrir</a>
+          </div>
+          <label class="cfg-link-rot" for="linkPublicoLocal">Este computador (XAMPP)</label>
+          <div class="cfg-link-linha">
+            <input type="text" id="linkPublicoLocal" readonly aria-label="Link p&uacute;blico local do painel de Mecaniza&ccedil;&atilde;o">
+            <button class="btn" id="linkPublicoLocalCopiar" type="button">Copiar</button>
+            <a class="btn" id="linkPublicoLocalAbrir" target="_blank" rel="noopener">Abrir</a>
+          </div>
+        </div>
+      </section>
+      <section class="cfg-cartao" title="Controle leve de acesso: conferido pelo banco antes de abrir o painel">
+        <div id="cfgSenha"></div>
+      </section>
+    </aside>
+  </div>
+</div></div>
+
+
   </div>
 
   <!-- ======================================= ABA: CULTURAS (admin) -------->
@@ -1245,7 +1361,7 @@
 <!-- dados-mecanizacao-historico.js (1,3 MB, exercícios encerrados) NÃO entra
      aqui de propósito: o painel abre no ano corrente e js/dashboard.js o busca
      em segundo plano, depois do primeiro desenho. -->
-<script src="../js/dados-mecanizacao.js?v=2026100901"></script>
+<script src="../js/dados-mecanizacao.js?v=dc35cc92"></script>
 <!-- Assistente de perguntas (js/assistente-dados.js): bot&atilde;o flutuante no canto inferior direito, em todas as abas. -->
 <section class="assistente" id="assistenteDados" aria-label="Pergunte ao Agricultura">
   <button class="ia-abrir" type="button" aria-expanded="false" aria-controls="iaCaixa" aria-label="Pergunte ao Agricultura">
@@ -1271,27 +1387,34 @@
     <button class="ia-limpar" type="button" hidden>Limpar respostas</button>
   </div>
 </section>
-<script src="../js/graficos.js?v=2026081307"></script>
-<script src="../js/mapa-acre.js?v=2026091402"></script>
-<script src="../js/mapa-municipios.js?v=2026091402"></script>
-<script src="../js/data-br.js?v=2026101207"></script>
-<script src="../js/select-busca.js?v=2026101203" defer></script>
-<script src="../js/lancamento-campos.js?v=2026101418"></script>
-<script src="../js/lancamento-nomes.js?v=2026101301"></script>
-<script src="../js/lancamento-ux.js?v=2026101413"></script>
-<script src="../js/lancamento-validacao.js?v=2026101414"></script>
-<script src="../js/lancamento-pdf.js?v=2026101404"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026101411"></script>
-<script src="../js/painel-calculos.js?v=2026101710"></script>
-<script src="../js/tabela-ferramentas.js?v=2026101710"></script>
-<script src="../js/dashboard.js?v=2026101710"></script>
-<script src="../js/painel-comparativo.js?v=2026101710"></script>
-<script src="../js/painel-metas.js?v=2026101710"></script>
-<script src="../js/painel-pontos.js?v=2026101710"></script>
-<script src="../js/assistente-dados.js?v=2026101710"></script>
-<script src="../js/motion-ui.js?v=2026091904"></script>
-<script src="../js/motion-extras.js?v=2026100901"></script>
-<script src="../js/fx-ui.js?v=2026092102" defer></script>
-<script src="../js/mobile-ui.js?v=2026092001"></script>
+<script src="../js/graficos.js?v=a584c905"></script>
+<script src="../js/mapa-acre.js?v=6f66c78d"></script>
+<script src="../js/mapa-municipios.js?v=a316a89b"></script>
+<script src="../js/data-br.js?v=d801c961"></script>
+<script src="../js/select-busca.js?v=0d56edf9" defer></script>
+<script src="../js/lancamento-campos.js?v=4ad79d8b"></script>
+<script src="../js/lancamento-nomes.js?v=560082b9"></script>
+<script src="../js/lancamento-ux.js?v=47fa56b2"></script>
+<script src="../js/lancamento-validacao.js?v=653eebb8"></script>
+<script src="../js/lancamento-pdf.js?v=278a38f6"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2a0f9a04"></script>
+<script src="../js/painel-calculos.js?v=2246ccd4"></script>
+<script src="../js/tabela-ferramentas.js?v=2fd63664"></script>
+<script src="../js/painel-publico.js?v=989a7fa4"></script>
+<script src="../js/dashboard.js?v=1d12f7bd"></script>
+<script src="../js/painel-comparativo.js?v=9ca079be"></script>
+<script src="../js/painel-metas.js?v=4963de3a"></script>
+<script src="../js/painel-tendencias.js?v=128338af"></script>
+<script src="../js/painel-cruzamentos.js?v=4628c41b"></script>
+<script src="../js/painel-produtores.js?v=5b52a3dc"></script>
+<script src="../js/painel-config.js?v=7d9c53b2"></script>
+<script src="../js/painel-alertas.js?v=bcd6d314"></script>
+<script src="../js/painel-relatorios.js?v=287e0c16"></script>
+<script src="../js/painel-pontos.js?v=210cc46f"></script>
+<script src="../js/assistente-dados.js?v=0d6b0c2c"></script>
+<script src="../js/motion-ui.js?v=7de49da0"></script>
+<script src="../js/motion-extras.js?v=0cb3d83b"></script>
+<script src="../js/fx-ui.js?v=cbbdb79e" defer></script>
+<script src="../js/mobile-ui.js?v=1319889b"></script>
 </body>
 </html>

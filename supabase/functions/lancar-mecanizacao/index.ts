@@ -24,7 +24,12 @@ const CORS = {
 /** Encerra a requisição com a resposta — lançado e capturado no Deno.serve,
     pra ter o mesmo "responder() e sai" do PHP dentro das funções auxiliares. */
 class Resposta {
-  constructor(public status: number, public corpo: Record<string, unknown>) {}
+  constructor(
+    public status: number,
+    public corpo: Record<string, unknown>,
+    public texto?: string,                       // corpo já serializado (painel em cache): não refaz o JSON
+    public cabecalhos: Record<string, string> = {},
+  ) {}
 }
 function responder(status: number, corpo: Record<string, unknown>): never {
   throw new Resposta(status, corpo);
@@ -53,6 +58,10 @@ const mensagem = (corpo: unknown, padrao: string) => {
   const c = (corpo && typeof corpo === 'object' ? corpo : {}) as Record<string, unknown>;
   return typeof c.message === 'string' ? c.message : typeof c.msg === 'string' ? c.msg : padrao;
 };
+
+/** Painel já montado, por perfil (p = público, i = logado), guardado na memória da instância da função.
+    Só vale enquanto a versão da base (mecanizacao_versao) for a mesma. */
+const CACHE_PAINEL = new Map<string, { versao: string; registrosTexto: string; meta: Record<string, unknown> }>();
 
 const BUCKET_PDF = 'mecanizacao-formularios';
 const PDF_MAX_BYTES = 3 * 1024 * 1024;
@@ -350,6 +359,8 @@ function paraRegistroPainel(l: Record<string, unknown>, nomes: Map<string, strin
   const daes = (Array.isArray(l.daes) ? l.daes : []) as Record<string, unknown>[];
   return {
     d,
+    // hora do lançamento em Rio Branco (HH:MM): usada para marcar inserções fora do expediente
+    h: new Date(criado.getTime() - 5 * 3600 * 1000).toISOString().slice(11, 16),
     ex: d.slice(0, 4),
     dv: typeof l.data_vistoria === 'string' ? l.data_vistoria : '',
     pc: ou(l.tipo_servico),
@@ -383,7 +394,28 @@ function paraRegistroPainel(l: Record<string, unknown>, nomes: Map<string, strin
   };
 }
 
-async function montarPacotePainel(logado: boolean): Promise<Record<string, unknown>> {
+/** Todos os registros do painel numa consulta só (função mecanizacao_painel_bruto): antes eram 4 páginas de 1.000
+    linhas lidas em sequência, cada uma com sua ida e volta ao banco. Se o SQL ainda não foi aplicado (404), volta
+    ao jeito antigo, paginado. */
+async function lerRegistrosBrutos(): Promise<Record<string, unknown>[]> {
+  const [st0, corpo0] = await chamarSupabase('POST', '/rest/v1/rpc/mecanizacao_painel_bruto', {});
+  if (st0 >= 200 && st0 < 300 && Array.isArray(corpo0)) return corpo0 as Record<string, unknown>[];
+  if (st0 !== 404) responder(502, { ok: false, erro: mensagem(corpo0, 'Não foi possível ler os lançamentos.') });
+  const out: Record<string, unknown>[] = [];
+  const TAM = 1000;
+  for (let pagina = 0; pagina < 100; pagina++) {
+    const [st, corpo] = await chamarSupabase('GET',
+      `${TABELA}?select=${CAMPOS_PAINEL}&order=criado_em.asc,id.asc&limit=${TAM}&offset=${pagina * TAM}`);
+    if (st < 200 || st >= 300 || !Array.isArray(corpo)) {
+      responder(502, { ok: false, erro: mensagem(corpo, 'Não foi possível ler os lançamentos.') });
+    }
+    out.push(...(corpo as Record<string, unknown>[]));
+    if ((corpo as unknown[]).length < TAM) break;
+  }
+  return out;
+}
+
+async function lerNomesDeExibicao(): Promise<Map<string, string>> {
   // nomes de exibição definidos pelo responsável (tela "Pessoas")
   const nomes = new Map<string, string>();
   const [stN, ln] = await chamarSupabase('GET', '/rest/v1/mecanizacao_lancadores?select=email,nome');
@@ -394,17 +426,21 @@ async function montarPacotePainel(logado: boolean): Promise<Record<string, unkno
       if (e && n) nomes.set(e, n);
     }
   }
+  return nomes;
+}
+
+/** Contador de versão da base (mecanizacao_versao): sobe a cada gravação. Uma leitura de uma linha — é o que
+    permite responder "nada mudou" e servir o painel do cache sem reler nem recalcular nada. Vazio = sem contador. */
+async function versaoDaBase(): Promise<string> {
+  const [st, c] = await chamarSupabase('GET', '/rest/v1/mecanizacao_versao?select=n&id=eq.1');
+  if (st >= 200 && st < 300 && Array.isArray(c) && c[0] && c[0].n != null) return String((c[0] as Record<string, unknown>).n);
+  return '';
+}
+
+async function montarPacotePainel(logado: boolean): Promise<Record<string, unknown>> {
+  const [nomes, brutos] = await Promise.all([lerNomesDeExibicao(), lerRegistrosBrutos()]);
   const registros: Record<string, unknown>[] = [];
-  const TAM = 1000;
-  for (let pagina = 0; pagina < 100; pagina++) {
-    const [st, corpo] = await chamarSupabase('GET',
-      `${TABELA}?select=${CAMPOS_PAINEL}&order=criado_em.asc,id.asc&limit=${TAM}&offset=${pagina * TAM}`);
-    if (st < 200 || st >= 300 || !Array.isArray(corpo)) {
-      responder(502, { ok: false, erro: mensagem(corpo, 'Não foi possível ler os lançamentos.') });
-    }
-    for (const l of corpo as Record<string, unknown>[]) registros.push(paraRegistroPainel(l, nomes, logado));
-    if ((corpo as unknown[]).length < TAM) break;
-  }
+  for (const l of brutos) registros.push(paraRegistroPainel(l, nomes, logado));
   let semGeo = 0, semForm = 0, outroAno = 0;
   const produtores = new Set<string>();
   for (const r of registros) {
@@ -437,8 +473,42 @@ async function tratar(fd: FormData): Promise<never> {
 
   // público: o painel lê os lançamentos sem login (só campos agregáveis, sem dado pessoal)
   if (acao === 'painel') {
-    const logado = (await emailAutenticado(String(fd.get('token') ?? ''))) !== null;
-    responder(200, await montarPacotePainel(logado));
+    const t0 = Date.now();
+    const token = String(fd.get('token') ?? '');
+    // sessão (só quando há token) e versão da base andam juntas: uma ida e volta, não duas
+    const [email, ver] = await Promise.all([token ? emailAutenticado(token) : Promise.resolve(null), versaoDaBase()]);
+    const logado = email !== null;
+    const chave = logado ? 'i' : 'p';
+    let versao = ver ? ver + '-' + chave : '';
+    const t1 = Date.now();
+    // o navegador já tem esta versão: não reenvia a base
+    if (versao && String(fd.get('versao') ?? '') === versao) {
+      responder(200, { ok: true, igual: true, versao });
+    }
+    let c = versao ? CACHE_PAINEL.get(chave) : undefined;
+    let estado = 'hit';
+    if (!c || c.versao !== versao) {
+      estado = 'miss';
+      const pacote = await montarPacotePainel(logado);
+      const registrosTexto = JSON.stringify(pacote.registros);
+      if (!versao) {
+        // sem contador no banco: resumo (FNV-1a) do conteúdo, como antes
+        let h = 0x811c9dc5;
+        for (let i = 0; i < registrosTexto.length; i++) { h ^= registrosTexto.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+        versao = h.toString(16) + '-' + registrosTexto.length + '-' + chave;
+        if (String(fd.get('versao') ?? '') === versao) responder(200, { ok: true, igual: true, versao });
+      }
+      c = { versao, registrosTexto, meta: pacote.meta as Record<string, unknown> };
+      if (ver) CACHE_PAINEL.set(chave, c);
+    }
+    // a hora de leitura é a de agora; os registros vêm prontos (texto) do cache
+    const agora = new Date(Date.now() - 5 * 3600 * 1000);
+    const meta = { ...c.meta, gerado_em: agora.toISOString().slice(0, 10).split('-').reverse().join('/') + ' ' + agora.toISOString().slice(11, 16) };
+    const texto = '{"ok":true,"meta":' + JSON.stringify(meta) + ',"registros":' + c.registrosTexto + ',"versao":' + JSON.stringify(c.versao) + '}';
+    throw new Resposta(200, {}, texto, {
+      'Server-Timing': `sessao_versao;dur=${t1 - t0}, total;dur=${Date.now() - t0}`,
+      'X-Painel-Cache': estado,
+    });
   }
 
   if (acao === 'salvar') {
@@ -713,9 +783,9 @@ async function tratar(fd: FormData): Promise<never> {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
-  const json = (r: Resposta) => new Response(JSON.stringify(r.corpo), {
+  const json = (r: Resposta) => new Response(r.texto ?? JSON.stringify(r.corpo), {
     status: r.status,
-    headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' },
+    headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', ...r.cabecalhos },
   });
   if (req.method !== 'POST') return json(new Resposta(405, { ok: false, erro: 'Método não permitido.' }));
   if (!SUPABASE_URL || !SERVICE_ROLE) return json(new Resposta(500, { ok: false, erro: 'A função está sem SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY.' }));

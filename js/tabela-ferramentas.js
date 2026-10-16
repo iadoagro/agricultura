@@ -273,6 +273,22 @@
     desenhar();
   }
 
+  /** No celular a tabela vira lista de cartões: cada célula ganha o nome da coluna (data-label). */
+  function rotular(t) {
+    if (t.getAttribute('data-lab') || t.classList.contains('cruz') || !t.tHead || !t.tHead.rows.length) return;
+    var ths = t.tHead.rows[0].cells;
+    if (ths.length < 2 || ths.length > 12) return;
+    var nomes = Array.prototype.map.call(ths, txt);
+    var corpo = t.tBodies[0];
+    if (!corpo) return;
+    Array.prototype.forEach.call(corpo.rows, function (tr) {
+      if (tr.cells.length !== nomes.length) return;
+      Array.prototype.forEach.call(tr.cells, function (td, i) { if (nomes[i]) td.setAttribute('data-label', nomes[i]); });
+    });
+    t.classList.add('tf-cartao');
+    t.setAttribute('data-lab', '1');
+  }
+
   var agendado = false;
   function varrer() {
     agendado = false;
@@ -280,6 +296,8 @@
     for (var i = 0; i < ts.length; i++) {
       if (elegivel(ts[i])) montar(ts[i]);
     }
+    var todas = document.querySelectorAll('table.dados:not([data-lab])');
+    for (var j = 0; j < todas.length; j++) rotular(todas[j]);
   }
   function agendar() {
     if (agendado) return;
