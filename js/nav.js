@@ -285,7 +285,7 @@
 
   function sair() {
     try { sessionStorage.removeItem('seagri_home_direto'); } catch (e) { /* idem admin-home.js */ }
-    var ir = function () { location.href = 'admin-login.html'; };
+    var ir = function () { location.href = 'login.html'; };
     try { auth.sair().then(ir, ir); } catch (e) { ir(); }
   }
 

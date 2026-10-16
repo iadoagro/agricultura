@@ -3,72 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Entrar | Sistema</title>
-<link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/admin-auth.css?v=2026101401">
-<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
-<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
-<link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
+<!-- Endereço alternativo: leva para login.html mantendo o que vier depois do endereço (?destino=…). -->
+<script>location.replace('login.html'+location.search+location.hash);</script>
+<noscript><meta http-equiv="refresh" content="0;url=login.html"></noscript>
 </head>
-<body class="login-page">
-<div class="login-shader" id="loginShader" aria-hidden="true"></div>
-<main class="admin-auth login-layout">
-  <div class="admin-card">
-    <div id="painelStatus" hidden>
-      <p class="admin-desc" id="statusTexto"></p>
-      <button class="admin-submit" type="button" id="statusSair">Sair</button>
-    </div>
-    <div id="painelPin" hidden>
-      <span class="login-eyebrow">ACESSO MAIS RÁPIDO</span>
-      <h2 class="login-title">Quer cadastrar um PIN?</h2>
-      <p class="admin-desc">Com um PIN de 6 números você entra mais rápido, principalmente no celular. O PIN passa a ser a sua senha de acesso: a senha atual deixa de valer.</p>
-      <button class="admin-submit" type="button" id="pinSim">Cadastrar PIN</button>
-      <button class="admin-submit admin-submit-sec" type="button" id="pinAgoraNao">Agora não</button>
-      <p class="admin-desc" id="pinRestantes"></p>
-    </div>
-    <div id="painelFormularios">
-      <form id="formEntrar">
-        <span class="login-eyebrow">ACESSO AO SISTEMA</span>
-        <h2 class="login-title">Boas-vindas</h2>
-        <p class="admin-desc">Informe seus dados para entrar na sua conta.</p>
-        <label for="entEmail">Usuário</label>
-        <input id="entEmail" placeholder="nome.sobrenome (só letras, sem e-mail)" maxlength="60" autocapitalize="none" spellcheck="false" type="text" autocomplete="username" required>
-        <label for="entSenha">Senha</label>
-        <input id="entSenha" placeholder="Digite sua senha" type="password" autocomplete="current-password" required>
-        <button class="admin-submit" type="submit">Entrar</button>
-        <p class="admin-troca">Ainda não tem conta? <a href="#" id="linkParaCadastro">Cadastre-se</a></p>
-      </form>
-      <form id="formCadastrar" hidden>
-        <h2 class="login-title">Crie sua conta</h2><p class="admin-desc">Preencha seus dados. O acesso fica pendente até o responsável aprovar o cadastro.</p>
-        <label for="cadNome">Nome</label>
-        <input id="cadNome" type="text" autocomplete="given-name" required>
-        <label for="cadSobrenome">Sobrenome</label>
-        <input id="cadSobrenome" type="text" autocomplete="family-name" required>
-        <label for="cadLogin">Login (gerado automaticamente)</label>
-        <input id="cadLogin" type="text" disabled>
-        <label for="cadSenha">Senha</label>
-        <input id="cadSenha" type="password" autocomplete="new-password" required>
-        <button class="admin-submit" type="submit">Cadastrar</button>
-        <p class="admin-troca">Já tem conta? <a href="#" id="linkParaEntrar">Entrar</a></p>
-      </form>
-    </div>
-    <p class="admin-msg" id="adminMsg" role="status"></p>
-  </div>
-</main>
-<script src="../js/banco-config.js?v=2026091406"></script>
-<script src="../js/ambiente-cliente.js?v=2026092302"></script>
-<script src="../js/senha-regras.js?v=2026092909"></script>
-<script src="../js/admin-auth.js?v=2026101401"></script>
-<script src="../js/shader-login.js?v=2026091901"></script>
-<script>if(typeof montarShaderBackground==="function"){try{
-  var _shaderLogin=montarShaderBackground(document.getElementById("loginShader"),{colors:["#dbeafe","#2563eb","#1e3a8a","#60a5fa"],speed:0.28,distortion:0.8,swirl:0.2});
-  /* Roda pra sempre numa GPU (só para com prefers-reduced-motion ou aba escondida) — limita bem a resolução interna pra pesar menos em computador fraco, sem mudar o tamanho na tela (o shader só reamostra). */
-  if(_shaderLogin&&_shaderLogin.setMaxPixelCount)_shaderLogin.setMaxPixelCount(650000);
-}catch(e){}}</script>
-<script src="../js/admin-login.js?v=2026100801"></script>
-<script src="../js/motion-ui.js?v=2026091904"></script>
-<script src="../js/motion-extras.js?v=2026100901"></script>
-<script src="../js/fx-ui.js?v=2026092102" defer></script>
-</body>
+<body><p><a href="login.html">Entrar</a></p></body>
 </html>

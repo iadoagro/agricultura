@@ -29,7 +29,7 @@
   var ehTrocaSenha = arquivo === 'admin-trocar-senha.html';
 
   function paraLogin() {
-    if (!/(^|\/)admin-login\.html$/.test(location.pathname)) location.replace('admin-login.html');
+    if (!/(^|\/)(login|admin-login)\.html$/.test(location.pathname)) location.replace('login.html');
   }
   function paraInicio() {
     if (!/(^|\/)index\.html$/.test(location.pathname)) location.replace('index.html');

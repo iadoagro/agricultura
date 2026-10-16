@@ -1,4 +1,4 @@
-/* Login de Admin com aprovação — admin-login.html, admin-usuarios.html (com os acessos de cada pessoa) */
+/* Login de Admin com aprovação — login.html, admin-usuarios.html (com os acessos de cada pessoa) */
 header{background:linear-gradient(135deg,var(--verde),var(--verde2));color:#fff;padding:22px 20px;text-align:center}
 header h1{font-size:22px;margin-bottom:4px}
 header p{font-size:13px;opacity:.9}

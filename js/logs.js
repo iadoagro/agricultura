@@ -44,7 +44,7 @@
     'cadastros-chamados.html': 'Cadastros de chamados', 'contatos.html': 'Contatos',
     'cadastros-fiscais.html': 'Cadastro de fiscais', 'admin-usuarios.html': 'Usuários',
     'admin-permissoes.html': 'Acessos', 'logs.html': 'Logs', 'lancamento-editar.html': 'Editar lançamento',
-    'admin-trocar-senha.html': 'Trocar senha', 'admin-login.html': 'Login'
+    'admin-trocar-senha.html': 'Trocar senha', 'login.html': 'Login', 'admin-login.html': 'Login'
   };
   var ROTULO_GRUPO = { pessoa: 'PESSOA', acao: 'AÇÃO', pessoa_acao: 'PESSOA → AÇÃO', pagina: 'PÁGINA', pessoa_pagina: 'PESSOA → PÁGINA',
     aparelho: 'APARELHO', pessoa_aparelho: 'PESSOA → APARELHO', modulo: 'MÓDULO' };
