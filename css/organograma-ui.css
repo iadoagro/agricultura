@@ -1,0 +1,264 @@
+/* =====================================================================
+   Organograma — camada visual profissional (carregada por último).
+   Mantém geometria, posições e as cores de fundo das caixas; renova barra de
+   ferramentas, botões, campos, selects, painéis, janelas e reforça o contraste.
+   ===================================================================== */
+:root{
+  --ui-font:"Inter","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --ui-ink:#0f172a;        /* texto principal */
+  --ui-ink-2:#334155;      /* texto secundário */
+  --ui-mute:#64748b;       /* apoio (4.7:1 sobre branco) */
+  --ui-line:#e2e8f0;
+  --ui-line-2:#cbd5e1;
+  --ui-bg:#f1f5f9;
+  --ui-card:#ffffff;
+  --ui-brand:#1d4ed8;      /* ação principal */
+  --ui-brand-d:#1e40af;
+  --ui-brand-l:#eff6ff;
+  --ui-danger:#b91c1c;
+  --ui-ok:#15803d;
+  --ui-r:10px;
+  --ui-sh:0 1px 2px rgba(15,23,42,.06),0 1px 1px rgba(15,23,42,.04);
+  --ui-sh-2:0 10px 30px rgba(15,23,42,.14),0 2px 6px rgba(15,23,42,.08);
+  --ui-focus:0 0 0 3px rgba(29,78,216,.28);
+}
+
+html body{font-family:var(--ui-font);background:var(--ui-bg);color:var(--ui-ink);-webkit-font-smoothing:antialiased}
+
+/* ---------- Barra de ferramentas ---------- */
+html body .topbar{
+  min-height:64px;height:auto;padding:10px 20px;background:var(--ui-card);
+  border-bottom:1px solid var(--ui-line);box-shadow:0 1px 0 rgba(15,23,42,.03),0 4px 16px rgba(15,23,42,.04);
+}
+html body .toolbar{gap:8px;flex-wrap:wrap;align-items:center}
+html body .toolbar .search-node-wrap{gap:8px}
+html body .toolbar .search-node-label{
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ui-mute);
+}
+html body .toolbar .search-node-input{
+  width:260px;height:38px;min-height:38px;padding:0 14px 0 38px;border:1px solid var(--ui-line-2);border-radius:var(--ui-r);
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 13px 50%;
+  font:500 13.5px var(--ui-font);color:var(--ui-ink);transition:border-color .15s,box-shadow .15s,width .2s;
+}
+html body .toolbar .search-node-input::placeholder{color:#94a3b8}
+html body .toolbar .search-node-input:focus{width:340px;border-color:var(--ui-brand);box-shadow:var(--ui-focus);outline:none}
+
+html body .tool-button,
+html body .icon-button{
+  height:38px;min-height:38px;border:1px solid var(--ui-line-2);border-radius:var(--ui-r);background:#fff;color:var(--ui-ink);
+  font:600 13px var(--ui-font);letter-spacing:.005em;box-shadow:var(--ui-sh);cursor:pointer;
+  transition:background .15s,border-color .15s,box-shadow .15s,transform .1s;
+}
+html body .tool-button{padding:0 14px;gap:6px}
+html body .icon-button{width:38px;padding:0;font-size:17px;line-height:1}
+html body .tool-button:hover,
+html body .icon-button:hover{background:#f8fafc;border-color:#94a3b8}
+html body .tool-button:active,
+html body .icon-button:active{transform:translateY(1px);box-shadow:none}
+html body .tool-button:focus-visible,
+html body .icon-button:focus-visible,
+html body .org-cor:focus-visible{outline:none;box-shadow:var(--ui-focus);border-color:var(--ui-brand)}
+html body .tool-button[disabled]{opacity:.5;cursor:not-allowed}
+html body .tool-button.admin-ativo,
+html body #btnAdmin.admin-ativo{background:var(--ui-ink)!important;border-color:var(--ui-ink)!important;color:#fff!important}
+html body #btnPrint,
+html body #btnLinkPublico{color:var(--ui-ink)}
+
+/* zoom: controle compacto */
+html body .zoom-range{
+  -webkit-appearance:none;appearance:none;width:120px;height:4px;border-radius:99px;background:var(--ui-line-2);outline:none;accent-color:var(--ui-brand);
+}
+html body .zoom-range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--ui-brand);border:2px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.35);cursor:pointer}
+html body .zoom-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ui-brand);border:2px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.35);cursor:pointer}
+html body .zoom-label{min-width:48px;padding:6px 8px;border-radius:99px;background:var(--ui-bg);color:var(--ui-ink-2);font:700 12px var(--ui-font);text-align:center}
+
+/* menu Baixar */
+html body .dropdown-baixar-menu{
+  top:100%;margin-top:0;padding:6px;min-width:150px;border:1px solid var(--ui-line);border-radius:12px;background:#fff;box-shadow:var(--ui-sh-2);z-index:3000;
+}
+html body .dropdown-baixar::after{content:"";position:absolute;left:0;right:0;top:100%;height:8px}
+html body .dropdown-baixar-menu .tool-button{
+  width:100%;height:36px;border:0;border-radius:8px;box-shadow:none;justify-content:flex-start;background:transparent;font-weight:600;
+}
+html body .dropdown-baixar-menu .tool-button:hover{background:var(--ui-brand-l);color:var(--ui-brand-d)}
+
+/* resultados da busca */
+html body .search-node-results{
+  top:calc(100% + 6px);min-width:340px;max-height:60vh;overflow:auto;padding:6px;border:1px solid var(--ui-line);border-radius:12px;box-shadow:var(--ui-sh-2);
+}
+html body .search-node-item{border:0;border-radius:8px;padding:9px 10px;gap:10px;font-size:13px}
+html body .search-node-item:hover{background:var(--ui-brand-l)}
+html body .search-node-name{color:var(--ui-ink);font-weight:600}
+html body .search-node-holder{color:var(--ui-mute)}
+
+/* ---------- Painéis laterais ---------- */
+html body .filter-panel,
+html body .detail-panel{background:var(--ui-card);border-color:var(--ui-line);box-shadow:var(--ui-sh-2)}
+html body .detail-header{padding:14px 16px;border-bottom:1px solid var(--ui-line);background:#fff}
+html body .detail-kind-badge{
+  padding:4px 10px;border-radius:99px;background:var(--ui-brand-l);color:var(--ui-brand-d);
+  font:700 11px var(--ui-font);letter-spacing:.06em;text-transform:uppercase;
+}
+html body .filter-panel .detail-kind-badge{background:var(--ui-brand-l);color:var(--ui-brand-d)}
+html body .detail-close{width:32px;height:32px;border-radius:8px;color:var(--ui-mute);transition:background .15s,color .15s}
+html body .detail-close:hover{background:var(--ui-bg);color:var(--ui-ink)}
+html body .detail-title{padding:14px 16px 6px;font:700 17px/1.3 var(--ui-font);color:var(--ui-ink);letter-spacing:-.01em}
+html body .filter-panel .detail-title{font-size:15px}
+html body .detail-section{padding:14px 16px;border-bottom:1px solid var(--ui-line)}
+html body .detail-section-title{font:700 11px var(--ui-font);letter-spacing:.08em;text-transform:uppercase;color:var(--ui-mute);margin-bottom:8px}
+html body .detail-info-line{font-size:13.5px;color:var(--ui-ink-2);line-height:1.5}
+html body .detail-holder-name{font-weight:700;color:var(--ui-ink)}
+html body .detail-nav-btn{border:1px solid var(--ui-line);border-radius:10px;background:#fff;transition:background .15s,border-color .15s}
+html body .detail-nav-btn:hover{background:var(--ui-brand-l);border-color:#bfdbfe}
+html body .detail-pdf-btn,
+html body .pdf-toggle-btn{border-radius:10px;font-weight:700}
+html body .detail-pdf-btn{background:var(--ui-brand);color:#fff}
+html body .detail-pdf-btn:hover{background:var(--ui-brand-d)}
+html body .detail-wa-btn{border-radius:10px;background:#15803d;font-weight:700}
+html body .detail-wa-btn:hover{background:#166534}
+
+/* filtros */
+html body .filter-item{border-radius:8px;color:var(--ui-ink-2)}
+html body .filter-item:hover{background:var(--ui-bg)}
+html body .filter-item:has(input:checked){background:var(--ui-brand-l);color:var(--ui-brand-d)}
+html body .filter-item input[type=checkbox]{accent-color:var(--ui-brand)}
+html body .filter-section-hdr{background:var(--ui-bg);border:1px solid var(--ui-line);border-radius:10px}
+html body .filter-section-title{font:700 11px var(--ui-font);letter-spacing:.08em;color:var(--ui-mute)}
+html body .filter-resumo.ativo{background:var(--ui-brand-l);color:var(--ui-brand-d)}
+html body .filter-limpar{color:var(--ui-brand)}
+html body .filter-search{border:1px solid var(--ui-line-2);border-radius:10px;font-family:var(--ui-font)}
+html body .filter-search:focus{border-color:var(--ui-brand);box-shadow:var(--ui-focus);outline:none}
+html body .filter-count{background:var(--ui-bg);color:var(--ui-ink-2)}
+html body .filter-arv-acoes button{border:1px solid var(--ui-line-2);border-radius:8px;font-family:var(--ui-font);font-weight:600}
+
+/* ---------- Formulários de edição (modo admin) ---------- */
+html body .org-edit-campo{gap:6px;margin-bottom:14px;font:700 12px var(--ui-font);color:var(--ui-ink-2);letter-spacing:.01em}
+html body .org-edit-campo input,
+html body .org-edit-campo select,
+html body .org-edit-campo textarea,
+html body .admin-pwd{
+  width:100%;height:40px;padding:0 12px;border:1px solid var(--ui-line-2);border-radius:var(--ui-r);background-color:#fff;
+  font:500 14px var(--ui-font);color:var(--ui-ink);box-shadow:var(--ui-sh);transition:border-color .15s,box-shadow .15s;
+}
+html body .org-edit-campo textarea{height:auto;padding:10px 12px}
+html body .org-edit-campo select{
+  -webkit-appearance:none;appearance:none;padding-right:36px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
+html body .org-edit-campo input:focus,
+html body .org-edit-campo select:focus,
+html body .org-edit-campo textarea:focus,
+html body .admin-pwd:focus{outline:none;border-color:var(--ui-brand);box-shadow:var(--ui-focus)}
+html body .org-edit-campo input:disabled,
+html body .org-edit-campo select:disabled{background:var(--ui-bg);color:var(--ui-mute);cursor:not-allowed}
+html body .org-edit-dica{font-size:12px;color:var(--ui-mute);line-height:1.45;font-weight:500}
+html body .org-edit-msg{font-weight:600}
+html body .org-edit-previa{color:var(--ui-brand)}
+html body .org-edit-acoes{gap:10px;margin-top:6px}
+
+/* botões de formulário / janelas */
+html body .org-edit-salvar,
+html body .admin-btn-ok{
+  height:40px;padding:0 18px;border:0;border-radius:var(--ui-r);background:var(--ui-brand);color:#fff;
+  font:700 13.5px var(--ui-font);box-shadow:0 1px 2px rgba(29,78,216,.4);cursor:pointer;transition:background .15s,transform .1s;
+}
+html body .org-edit-salvar:hover,
+html body .admin-btn-ok:hover{background:var(--ui-brand-d)}
+html body .org-edit-salvar:active,
+html body .admin-btn-ok:active{transform:translateY(1px)}
+html body .org-edit-restaurar,
+html body .admin-btn-cancel,
+html body .versao-voltar{
+  height:40px;padding:0 16px;border:1px solid var(--ui-line-2);border-radius:var(--ui-r);background:#fff;color:var(--ui-ink-2);
+  font:600 13.5px var(--ui-font);box-shadow:var(--ui-sh);cursor:pointer;transition:background .15s,border-color .15s;
+}
+html body .org-edit-restaurar:hover,
+html body .admin-btn-cancel:hover,
+html body .versao-voltar:hover{background:#f8fafc;border-color:#94a3b8}
+html body .versao-voltar{height:34px;padding:0 12px;font-size:12.5px;color:var(--ui-brand-d)}
+html body .org-edit-remover{
+  height:40px;padding:0 16px;border:1px solid #fecaca;border-radius:var(--ui-r);background:#fff;color:var(--ui-danger);
+  font:600 13.5px var(--ui-font);cursor:pointer;transition:background .15s;
+}
+html body .org-edit-remover:hover{background:#fef2f2}
+
+/* paleta de cores */
+html body .org-edit-cores{gap:8px}
+html body .org-cor{
+  position:relative;width:30px;height:30px;border-radius:9px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(15,23,42,.22);cursor:pointer;transition:transform .12s,box-shadow .12s;
+}
+html body .org-cor:hover{transform:scale(1.1)}
+html body .org-cor.on{box-shadow:0 0 0 2px var(--ui-brand),0 0 0 4px rgba(29,78,216,.2)}
+html body .org-cor-texto{border-radius:50%;width:28px;height:28px}
+html body .org-edit-intens input[type=range]{accent-color:var(--ui-brand)}
+
+/* janelas (admin, versões) */
+html body .admin-overlay{background:rgba(15,23,42,.55)}
+html body .admin-box{
+  max-width:400px;padding:26px;border-radius:16px;border:1px solid var(--ui-line);box-shadow:0 24px 60px rgba(15,23,42,.3);
+}
+html body .admin-box-title{font:700 18px var(--ui-font);color:var(--ui-ink);letter-spacing:-.01em;margin-bottom:6px}
+html body .admin-box-desc{font-size:13.5px;color:var(--ui-ink-2);line-height:1.55}
+html body .admin-errmsg{color:var(--ui-danger);font-weight:600}
+html body .versoes-box{max-width:600px}
+html body .versoes-lista{border:1px solid var(--ui-line);border-radius:12px}
+html body .versao-item{padding:12px 14px;border-bottom:1px solid var(--ui-line)}
+html body .versao-info b{color:var(--ui-ink)}
+html body .versao-info small{color:var(--ui-mute)}
+
+/* visualizador de PDF */
+html body .pdf-viewer-panel{box-shadow:-12px 0 40px rgba(15,23,42,.25)}
+html body .pdf-viewer-toolbar{padding:10px 12px;background:#fff;border-bottom:1px solid var(--ui-line)}
+html body .pdf-zoom-btn{border:1px solid var(--ui-line-2);border-radius:8px}
+html body .pdf-viewer-title{color:var(--ui-ink);font-weight:700}
+
+/* tooltip e aviso */
+html body .tooltip{border:1px solid var(--ui-line);border-radius:12px;box-shadow:var(--ui-sh-2);font-family:var(--ui-font);padding:12px 14px}
+html body .tooltip strong{color:var(--ui-ink)}
+html body .tooltip span{color:var(--ui-ink-2)}
+html body .toast{background:var(--ui-ink);border-radius:12px;font-family:var(--ui-font);padding:12px 20px;box-shadow:var(--ui-sh-2)}
+
+/* ---------- Área do organograma ---------- */
+html body .viewport{
+  background:#eef2f7;
+  background-image:radial-gradient(rgba(100,116,139,.22) 1px,transparent 1.2px);background-size:22px 22px;
+}
+html body .canvas{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(15,23,42,.1),0 18px 44px rgba(15,23,42,.1);outline:0}
+html body .line-layer path{stroke:#475569;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:1}
+
+/* caixas: a cor do cabeçalho vem de --node-bg (mantida); só borda, texto e contraste */
+html body .org-node{
+  font-family:var(--ui-font);border:1px solid #64748b;border-radius:8px;background:#fff;color:var(--ui-ink);
+  box-shadow:0 1px 2px rgba(15,23,42,.12),0 2px 6px rgba(15,23,42,.06);
+  transition:box-shadow .15s,transform .15s,border-color .15s,opacity .3s,filter .3s;
+}
+html body .org-node:hover{border-color:var(--node-bg,#1e293b);box-shadow:0 8px 22px rgba(15,23,42,.22);transform:translateY(-1px)}
+html body .org-node .node-header,
+html body .org-node[data-color] .node-header{
+  background-color:var(--node-bg,#4472c4);background-image:none;color:#fff;text-shadow:none;
+  font-weight:700;letter-spacing:.1px;border-bottom:1px solid rgba(15,23,42,.35);
+}
+html body .org-node[data-color="yellow"] .node-header{color:#111827}
+html body .org-node .node-body{background:#fff;color:var(--ui-ink);font-weight:600}
+html body .org-node .node-sigla{background:#fff;color:#0b1220;font-weight:800;box-shadow:0 0 0 1px rgba(15,23,42,.35)}
+html body .org-node .node-toggle{background:#fff;color:var(--ui-ink);border:1px solid #475569}
+html body .source-note,
+html body .update-note{color:var(--ui-ink-2);font-family:var(--ui-font);font-weight:600}
+
+/* barras de rolagem discretas */
+html body .filter-panel,
+html body .detail-panel,
+html body .versoes-lista,
+html body .search-node-results{scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
+
+@media (max-width:700px){
+  html body .topbar{padding:8px 12px}
+  html body .toolbar .search-node-input,
+  html body .toolbar .search-node-input:focus{width:100%}
+  html body .toolbar .search-node-wrap{width:100%}
+}
+@media print{
+  html body .viewport{background:#fff}
+  html body .org-node:hover{transform:none}
+}

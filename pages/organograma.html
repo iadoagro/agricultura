@@ -16,7 +16,7 @@
 <script src="../js/nav.js?v=2026101201"></script>
 <link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
 <script src="../js/modal-ui.js?v=2026092527"></script>
-<link rel="stylesheet" href="../css/organograma.css?v=2026101417">
+<link rel="stylesheet" href="../css/organograma.css?v=2026101623">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/select-app.css?v=2026092603">
 <script src="../js/select-app.js?v=2026092603" defer></script>
+<link rel="stylesheet" href="../css/organograma-ui.css?v=2026101701">
 </head>
 <body>
 <header class="cab-padrao"><h1>SISTEMA</h1><p>Organograma</p></header>
@@ -39,14 +40,9 @@
     <button class="tool-button" id="btnExpand" type="button">+ Expandir</button>
     <button class="tool-button" id="btnCollapse" type="button">− Recolher</button>
     <button class="tool-button" id="btnFit" type="button">↺ Redefinir</button>
-    <div class="dropdown-baixar">
-      <button class="tool-button" type="button">Baixar ▾</button>
-      <div class="dropdown-baixar-menu">
-        <button class="tool-button" id="btnPDF" type="button">&#128196; PDF</button>
-        <button class="tool-button" id="btnJPG" type="button">&#128247; JPG</button>
-      </div>
-    </div>
+    <button class="tool-button" id="btnPDF" type="button" title="Baixar o organograma em PDF">&#128196; Baixar PDF</button>
     <button class="tool-button" id="btnPrint" type="button">Imprimir</button>
+    <button class="tool-button" id="btnLinkPublico" type="button" title="Copiar o link público (somente visualização)">Link público</button>
     <button class="tool-button" id="btnDesfazer" type="button" hidden title="Desfaz a última alteração (Ctrl+Z)">&#8630; Desfazer</button>
     <button class="tool-button" id="btnVersoes" type="button" hidden title="Ver e recuperar versões anteriores">&#128368; Versões</button>
     <button class="tool-button" id="btnAdmin" type="button">Admin</button>
@@ -68,8 +64,6 @@
 <div class="viewport" id="viewport">
   <div class="canvas" id="canvas">
     <svg class="line-layer" id="lineLayer"></svg>
-    <div class="source-note">Portaria N&ordm; 187/2026</div>
-    <div class="update-note">&Uacute;ltima atualiza&ccedil;&atilde;o: 23 de junho de 2026</div>
   </div>
 </div>
 <aside class="detail-panel" id="detailPanel">
@@ -150,7 +144,7 @@
   function iniciar(d){
     window.ORG_DADOS=d;
     var s=document.createElement('script');
-    s.src='../js/organograma.js?v=2026101421';
+    s.src='../js/organograma.js?v=2026101623';
     document.body.appendChild(s);
   }
   function falhou(e){

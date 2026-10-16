@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organograma 2026</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta property="og:title" content="Organograma 2026">
+<meta property="og:description" content="Estrutura organizacional — 2026.">
+<meta property="og:type" content="website">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
+<script src="../js/modal-ui.js?v=2026092527"></script>
+<link rel="stylesheet" href="../css/organograma.css?v=2026101623">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
+<link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
+<link rel="stylesheet" href="../css/organograma-ui.css?v=2026101701">
+</head>
+<body>
+<header class="topbar">
+  <div class="toolbar">
+    <div class="search-node-wrap">
+      <span class="search-node-label">Pesquisa</span>
+      <input class="search-node-input" id="searchNode" type="search" placeholder="Buscar setor ou servidor…" autocomplete="off">
+      <div class="search-node-results" id="searchResults"></div>
+    </div>
+    <button class="tool-button" id="btnFilter" type="button">Filtros</button>
+    <button class="tool-button" id="btnExpand" type="button">+ Expandir</button>
+    <button class="tool-button" id="btnCollapse" type="button">− Recolher</button>
+    <button class="tool-button" id="btnFit" type="button">↺ Redefinir</button>
+    <button class="tool-button" id="btnPDF" type="button" title="Baixar o organograma em PDF">&#128196; Baixar PDF</button>
+    <button class="tool-button" id="btnPrint" type="button">Imprimir</button>
+    <button class="icon-button" id="btnZoomOut" type="button">&minus;</button>
+    <input id="zoomRange" class="zoom-range" type="range" min="20" max="150" step="5" value="70">
+    <button class="icon-button" id="btnZoomIn" type="button">+</button>
+    <span class="zoom-label" id="zoomLabel">70%</span>
+  </div>
+</header>
+<div class="main-row">
+<aside class="filter-panel" id="filterPanel">
+  <div class="detail-header">
+    <span class="detail-kind-badge">Filtros</span>
+    <button class="detail-close" id="filterClose" type="button" title="Fechar">&#10005;</button>
+  </div>
+  <div class="detail-title">Exibir no organograma</div>
+  <div id="filterContent"></div>
+</aside>
+<div class="viewport" id="viewport">
+  <div class="canvas" id="canvas">
+    <svg class="line-layer" id="lineLayer"></svg>
+  </div>
+</div>
+<aside class="detail-panel" id="detailPanel">
+  <div class="detail-header">
+    <span class="detail-kind-badge" id="detailKind"></span>
+    <button class="detail-close" id="detailClose" type="button" title="Fechar">&#10005;</button>
+  </div>
+  <div class="detail-title" id="detailTitle"></div>
+  <div class="detail-body" id="detailBody"></div>
+</aside>
+</div>
+<div class="tooltip" id="tooltip"></div>
+<div class="pdf-overlay" id="pdfOverlay">
+  <div class="pdf-viewer-panel" id="pdfViewerPanel">
+    <div class="pdf-drag-handle" id="pdfDragHandle"></div>
+    <div class="pdf-viewer-toolbar">
+      <button class="pdf-zoom-btn" id="pdfZoomOut" title="Reduzir zoom">&minus;</button>
+      <span class="pdf-zoom-label" id="pdfZoomLabel">100%</span>
+      <button class="pdf-zoom-btn" id="pdfZoomIn" title="Aumentar zoom">+</button>
+      <span class="pdf-viewer-title" id="pdfViewerTitle">Portaria</span>
+      <button class="pdf-viewer-close" id="pdfViewerClose" title="Fechar">&#10005;</button>
+    </div>
+    <iframe class="pdf-viewer-iframe" id="pdfViewerIframe" title="Portaria"></iframe>
+  </div>
+</div>
+<script>
+/* Carregador do organograma: busca no banco os setores, responsáveis, portarias e histórico
+   (antes escritos dentro desta página) e só então roda js/organograma.js. Guarda uma cópia no
+   navegador: nas visitas seguintes desenha na hora e, se o banco tiver algo novo, recarrega uma vez. */
+window.ORG_PUBLICO=true;   // somente visualização
+(function(){
+  var CHAVE='seagri_org_dados_v1';
+  var cfg=window.BANCO_CONFIG||{};
+  var base=String(cfg.url||'').replace(/\/$/,'');
+  function lerCache(){
+    try{var v=JSON.parse(localStorage.getItem(CHAVE)||'null');return v&&v.setores&&v.setores.length?v:null;}catch(e){return null;}
+  }
+  function pegar(tabela,consulta){
+    return fetch(base+'/rest/v1/'+tabela+'?'+consulta,{headers:{apikey:cfg.chavePublica},cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error(tabela+': HTTP '+r.status);return r.json();});
+  }
+  function buscar(){
+    return Promise.all([
+      pegar('organograma_setores','select=*&order=ordem.asc'),
+      pegar('organograma_portarias','select=chave,pdf'),
+      pegar('organograma_historico','select=setor_id,nome,portaria,ano,ordem&order=setor_id.asc,ordem.asc')
+    ]).then(function(r){
+      var d={setores:[],portarias:{},matriculas:{},historico:{}};
+      r[0].forEach(function(x){
+        d.setores.push([x.id,x.parent_id,x.tipo,x.cor,x.titulo,x.holder||'',Number(x.x),Number(x.y),Number(x.w),Number(x.hh),Number(x.bh)]);
+        d.matriculas[x.id]=x.matricula||'';
+      });
+      r[1].forEach(function(p){d.portarias[p.chave]=p.pdf;});
+      r[2].forEach(function(h){(d.historico[h.setor_id]=d.historico[h.setor_id]||[]).push({nome:h.nome,portaria:h.portaria,ano:h.ano});});
+      if(!d.setores.length)throw new Error('organograma_setores vazio');
+      return d;
+    });
+  }
+  function iniciar(d){
+    window.ORG_DADOS=d;
+    var s=document.createElement('script');
+    s.src='../js/organograma.js?v=2026101623';
+    document.body.appendChild(s);
+  }
+  function falhou(e){
+    var p=document.createElement('p');
+    p.style.cssText='padding:24px;font:15px Arial;color:#b91c1c';
+    p.textContent='Não foi possível carregar o organograma ('+(e&&e.message||'sem conexão')+'). Recarregue a página.';
+    document.body.appendChild(p);
+  }
+  var cache=lerCache();
+  if(cache){
+    iniciar(cache);
+    buscar().then(function(novo){
+      var a=JSON.stringify(novo);
+      if(a===JSON.stringify(cache))return;
+      try{localStorage.setItem(CHAVE,a);}catch(e){}
+      try{
+        if(sessionStorage.getItem('seagri_org_dados_reload')===String(a.length))return;
+        sessionStorage.setItem('seagri_org_dados_reload',String(a.length));
+      }catch(e){}
+      location.reload();
+    }).catch(function(){});
+  }else{
+    buscar().then(function(d){
+      try{localStorage.setItem(CHAVE,JSON.stringify(d));}catch(e){}
+      iniciar(d);
+    }).catch(falhou);
+  }
+})();
+</script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
+<script src="../js/motion-extras.js?v=2026100901"></script>
+<script src="../js/fx-ui.js?v=2026092102" defer></script>
+</body>
+</html>

@@ -185,15 +185,16 @@ function orgTextoCaixa(holder){
   return linhas.join('\n');
 }
 
-// Cor da caixa: uma das cinco do desenho (data-color) ou um #rrggbb escolhido na edição.
+// Cor da caixa: uma das cinco do desenho (data-color) ou um #rrggbb (ou #rrggbbaa, com transparência) escolhido na edição.
 function orgTextoSobre(hex){
   // escolhe branco ou preto pelo maior contraste (relação WCAG) com a cor de fundo
-  const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return '#fff';
-  const v=parseInt(m[1],16);
+  const m=/^#?([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(hex||'');if(!m)return '#fff';
+  const v=parseInt(m[1],16), a=m[2]?parseInt(m[2],16)/255:1;   // com transparência, o fundo é o branco da página
+  const mix=c=>c*a+255*(1-a);
   const lin=c=>{c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);};
-  const L=0.2126*lin(v>>16&255)+0.7152*lin(v>>8&255)+0.0722*lin(v&255);
+  const L=0.2126*lin(mix(v>>16&255))+0.7152*lin(mix(v>>8&255))+0.0722*lin(mix(v&255));
   const comBranco=1.05/(L+0.05), comPreto=(L+0.05)/0.05;
-  return comBranco>=comPreto?'#fff':'#111827';
+  return (comBranco>=3.5||comBranco>=comPreto)?'#fff':'#111827';   // prefere branco (texto em negrito) enquanto o contraste for ≥ 3,5:1
 }
 /** Cor do título e do texto da caixa escolhidas na edição ('' = automática). */
 function orgAplicarTextos(el,n){
@@ -201,13 +202,13 @@ function orgAplicarTextos(el,n){
   const body=el.querySelector('.node-body');
   if(hdr){
     // sem cor própria, volta ao automático (branco/escuro conforme o fundo)
-    const auto=/^#[0-9a-f]{6}$/i.test(n.color||'')?orgTextoSobre(n.color):'';
+    const auto=/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(n.color||'')?orgTextoSobre(n.color):'';
     hdr.style.color=n.corTitulo||auto;
   }
   if(body)body.style.color=n.corTexto||'';
 }
 function orgAplicarCor(el,hdr,cor){
-  if(/^#[0-9a-f]{6}$/i.test(cor||'')){
+  if(/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(cor||'')){
     el.dataset.color='custom';
     el.style.setProperty('--node-bg',cor);
     hdr.style.background='';hdr.style.color=orgTextoSobre(cor);   // cor escolhida: fundo vem de --node-bg
@@ -371,6 +372,7 @@ function makeCopyableLine(displayText,copyValue,extraClass){
 }
 
 function openDetailPanel(n,pdfPath){
+  if(window.orgSalvarEdicaoAberta){const f=window.orgSalvarEdicaoAberta;window.orgSalvarEdicaoAberta=null;f().catch(()=>{});}   // não perde o que estava aberto
   document.getElementById("detailKind").textContent=KIND_LABEL[n.kind]||n.kind;
   document.getElementById("detailKind").style.background=KIND_COLOR[n.kind]||'#888';
   document.getElementById("detailTitle").textContent=n.title;
@@ -517,12 +519,12 @@ function makeDetailSection(title,icon){
   return wrap;
 }
 
-document.getElementById("detailClose").addEventListener("click",()=>{
+function orgFecharDetalhe(){
+  if(window.orgSalvarEdicaoAberta){const f=window.orgSalvarEdicaoAberta;window.orgSalvarEdicaoAberta=null;f().catch(()=>{});}
   detailPanel.classList.remove("open");
-});
-document.getElementById("viewport").addEventListener("click",()=>{
-  detailPanel.classList.remove("open");
-});
+}
+document.getElementById("detailClose").addEventListener("click",orgFecharDetalhe);
+document.getElementById("viewport").addEventListener("click",orgFecharDetalhe);
 const filterPanel=document.getElementById("filterPanel");
 document.getElementById("btnFilter").addEventListener("click",()=>{
   filterPanel.classList.toggle("open");
@@ -1107,8 +1109,9 @@ function downloadLink(url,name){
   document.body.appendChild(a);a.click();a.remove();
 }
 
-document.getElementById("btnJPG").addEventListener("click",()=>{
-  const btn=document.getElementById("btnJPG");
+const btnJPG=document.getElementById("btnJPG");   // sem botão na tela: o Baixar já gera o PDF direto
+if(btnJPG)btnJPG.addEventListener("click",()=>{
+  const btn=btnJPG;
   btn.disabled=true;btn.textContent="Gerando...";
   captureCanvas().then(c=>{
     downloadLink(c.toDataURL("image/jpeg",0.95),orgNomeArquivo("jpg",new Date()));
@@ -1128,9 +1131,9 @@ document.getElementById("btnPDF").addEventListener("click",()=>{
     pdf.setFont("helvetica","normal");
     pdf.setFontSize(Math.round(CANVAS_W/150));
     pdf.setTextColor(90,100,115);
-    pdf.text("Última alteração: "+orgDataBr(orgDataAlteracao())+"  |  Baixado em: "+orgDataBr(agora),CANVAS_W/2,CANVAS_H-14,{align:"center"});
+    pdf.text("Última alteração: "+orgDataBr(orgDataAlteracao())+"  |  Baixado em: "+orgDataBr(agora),CANVAS_W-40,CANVAS_H-14,{align:"right"});
     pdf.save(orgNomeArquivo("pdf",agora));
-    btn.disabled=false;btn.innerHTML="&#128196; PDF";
+    btn.disabled=false;btn.innerHTML="&#128196; Baixar PDF";
   });
 });
 
@@ -1139,14 +1142,26 @@ function buildFilterPanel(){
   container.innerHTML='';
   const colorMap={purple:'#c0392b',yellow:'#ffc000',blue:'#4472c4',green:'#4771ad',orange:'#ed7d31'};
 
+  // -- Resumo da seleção (fixo no topo) + limpar --
+  const resumo=document.createElement('div');
+  resumo.className='filter-resumo';
+  resumo.innerHTML='<span class="filter-resumo-txt"></span>'+
+    '<button type="button" class="filter-limpar">Limpar seleção</button>';
+  container.appendChild(resumo);
+
   // -- Campo de busca --
   const searchWrap=document.createElement('div');
   searchWrap.className='filter-search-wrap';
   const searchInput=document.createElement('input');
-  searchInput.type='text';searchInput.className='filter-search';
-  searchInput.placeholder='Pesquisar setor...';
+  searchInput.type='search';searchInput.className='filter-search';
+  searchInput.placeholder='Pesquisar setor ou sigla…';
+  searchInput.setAttribute('aria-label','Pesquisar setor');
   searchWrap.appendChild(searchInput);
   container.appendChild(searchWrap);
+  const semResultado=document.createElement('p');
+  semResultado.className='filter-vazio';semResultado.hidden=true;
+  semResultado.textContent='Nenhum setor encontrado.';
+  container.appendChild(semResultado);
 
   // -- Seção TIPOS --
   const kindSec=document.createElement('div');
@@ -1186,11 +1201,15 @@ function buildFilterPanel(){
   const dirCount=nodes.filter(n=>n.kind==='diretoria').length;
   const deptCount=nodes.filter(n=>n.kind==='departamento').length;
   const divCount=nodes.filter(n=>n.kind==='divisao').length;
-  hdrLbl.appendChild(document.createTextNode(' Estrutura '));
-  const masterBadge=document.createElement('span');masterBadge.className='filter-count';
-  masterBadge.textContent='('+dirCount+' dir · '+deptCount+' dep · '+divCount+' div)';
-  hdrLbl.appendChild(masterBadge);
+  const hdrTxt=document.createElement('span');hdrTxt.className='filter-hdr-txt';
+  hdrTxt.innerHTML='Estrutura <small>'+dirCount+' diretorias · '+deptCount+' departamentos · '+divCount+' divisões</small>';
+  hdrLbl.appendChild(hdrTxt);
   treeSec.appendChild(hdrLbl);
+
+  const acoesArv=document.createElement('div');acoesArv.className='filter-arv-acoes';
+  acoesArv.innerHTML='<button type="button" data-a="abrir">Expandir tudo</button>'+
+    '<button type="button" data-a="fechar">Recolher tudo</button>';
+  treeSec.appendChild(acoesArv);
 
   const treeChks=[];
   const dirWrappers=[];
@@ -1254,6 +1273,11 @@ function buildFilterPanel(){
       toggleBtn.title=open?'Recolher':'Expandir';
     });
 
+    if(childItems.length){
+      const cnt=document.createElement('span');cnt.className='filter-count';
+      cnt.textContent=childItems.length;cnt.title=childItems.length+' setores abaixo';
+      dirLbl.appendChild(cnt);
+    }
     wrapper.appendChild(childrenDiv);
     treeSec.appendChild(wrapper);
     dirWrappers.push({dir,dirLbl,childrenDiv,toggleBtn,childItems,wrapper});
@@ -1270,9 +1294,13 @@ function buildFilterPanel(){
   container.appendChild(treeSec);
 
   // -- Busca em tempo real --
+  searchInput.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&searchInput.value){searchInput.value='';searchInput.dispatchEvent(new Event('input'));}
+  });
   searchInput.addEventListener('input',()=>{
     const q=searchInput.value.toLowerCase().trim();
     if(!q){
+      semResultado.hidden=true;
       dirWrappers.forEach(({wrapper,childItems,childrenDiv,toggleBtn,dirLbl})=>{
         wrapper.style.display='';
         dirLbl.style.display='';
@@ -1280,6 +1308,7 @@ function buildFilterPanel(){
       });
       return;
     }
+    let achou=0;
     dirWrappers.forEach(({dir,dirLbl,childrenDiv,toggleBtn,childItems,wrapper})=>{
       const dirMatch=dir.title.toLowerCase().includes(q)||dir.sigla.toLowerCase().includes(q);
       let anyChild=false;
@@ -1289,12 +1318,41 @@ function buildFilterPanel(){
         if(m)anyChild=true;
       });
       wrapper.style.display=(dirMatch||anyChild)?'':'none';
+      if(dirMatch||anyChild)achou++;
+      if(dirMatch&&!anyChild)childItems.forEach(({lbl})=>lbl.style.display='');
       if(anyChild){
         childrenDiv.classList.add('open');
         toggleBtn.textContent='▼';toggleBtn.title='Recolher';
       }
     });
+    semResultado.hidden=achou>0;
   });
+
+  // -- Expandir / recolher tudo --
+  acoesArv.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-a]');if(!b)return;
+    const abrir=b.dataset.a==='abrir';
+    dirWrappers.forEach(({childrenDiv,toggleBtn})=>{
+      childrenDiv.classList.toggle('open',abrir);
+      toggleBtn.textContent=abrir?'▼':'▶';toggleBtn.title=abrir?'Recolher':'Expandir';
+    });
+  });
+
+  // -- Resumo: quantos itens marcados e limpar tudo --
+  function atualizarResumo(){
+    const n=selectedKinds.size+selectedNodes.size;
+    resumo.classList.toggle('ativo',n>0);
+    resumo.querySelector('.filter-resumo-txt').textContent=n
+      ?n+(n===1?' item selecionado':' itens selecionados')
+      :'Nada marcado: o organograma inteiro é exibido';
+  }
+  container.addEventListener('change',atualizarResumo);
+  resumo.querySelector('.filter-limpar').addEventListener('click',()=>{
+    container.querySelectorAll('input[type=checkbox]').forEach(c=>{c.checked=false;c.indeterminate=false;});
+    selectedKinds.clear();selectedNodes.clear();
+    atualizarResumo();refresh();
+  });
+  atualizarResumo();
 }
 buildFilterPanel();
 
@@ -1315,8 +1373,21 @@ document.getElementById("btnPrint").addEventListener("click",()=>{
   canvas.style.top=savedTop;
 });
 
+// ===== Link público (somente visualização: organograma/) =====
+(function(){
+  const b=document.getElementById('btnLinkPublico');if(!b)return;
+  const URL_PUB='https://iadoagro.github.io/agricultura/organograma';
+  let t=null;
+  b.addEventListener('click',()=>{
+    const ok=()=>{b.textContent='Link copiado ✓';clearTimeout(t);t=setTimeout(()=>{b.textContent='Link público';},2200);};
+    const res=()=>{const x=document.createElement('textarea');x.value=URL_PUB;x.style.cssText='position:fixed;opacity:0';document.body.appendChild(x);x.select();let c=false;try{c=document.execCommand('copy');}catch(e){}x.remove();if(c)ok();else b.textContent='Copie: '+URL_PUB;};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(URL_PUB).then(ok,res);else res();
+  });
+})();
+
 // ===== Admin Mode =====
-let adminMode=sessionStorage.getItem('seagri_admin')==='1';
+const ORG_PUBLICO=!!window.ORG_PUBLICO;   // página pública (organograma/): só visualização, sem admin, desfazer ou versões
+let adminMode=!ORG_PUBLICO&&sessionStorage.getItem('seagri_admin')==='1';
 const WA_ICON='<svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.002-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
 
 // Lê telefones direto do contatos.json (funciona em GH Pages e local)
@@ -1336,6 +1407,7 @@ function updateAdminBtn(){
   document.body.classList.toggle('org-admin',adminMode);
   ['btnDesfazer','btnVersoes'].forEach(id=>{const b=document.getElementById(id);if(b)b.hidden=!adminMode;});
   const btn=document.getElementById('btnAdmin');
+  if(!btn)return;
   if(adminMode){btn.textContent='Admin ✓';btn.classList.add('admin-ativo')}
   else{btn.textContent='Admin';btn.classList.remove('admin-ativo')}
 }
@@ -1345,8 +1417,13 @@ const adminOverlay=document.getElementById('adminOverlay');
 const adminPwdInput=document.getElementById('adminPwdInput');
 const adminErr=document.getElementById('adminErr');
 
-function openAdminModal(){
+async function openAdminModal(){
   if(adminMode){
+    // ao sair do modo admin, grava o que ainda estiver aberto no formulário de edição
+    const b=document.getElementById('btnAdmin');
+    if(b)b.disabled=true;
+    try{if(window.orgSalvarEdicaoAberta)await window.orgSalvarEdicaoAberta();}catch(e){}
+    if(b)b.disabled=false;
     adminMode=false;
     sessionStorage.removeItem('seagri_admin');
     updateAdminBtn();
@@ -1377,11 +1454,13 @@ function submitAdminPwd(){
   });
 }
 
+if(!ORG_PUBLICO){
 document.getElementById('btnAdmin').addEventListener('click',openAdminModal);
 document.getElementById('adminOk').addEventListener('click',submitAdminPwd);
 document.getElementById('adminCancel').addEventListener('click',()=>adminOverlay.classList.remove('show'));
 adminPwdInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitAdminPwd();if(e.key==='Escape')adminOverlay.classList.remove('show');});
 adminOverlay.addEventListener('click',e=>{if(e.target===adminOverlay)adminOverlay.classList.remove('show');});
+}
 
 // ===== Ajustes do organograma (modo Admin): mover caixas e editar o responsável =====
 // Gravados na tabela organograma_ajustes (database/organograma-ajustes.sql): todo
@@ -1443,17 +1522,28 @@ async function orgGravarLote(linhas,descricao){
     grupos.get(chave).push(l);
   });
   for(const grupo of grupos.values()){
-    const r=await fetch(orgUrl()+'?on_conflict=id',{
+    const corpo=JSON.stringify(grupo.map(l=>({...l,atualizado_em:agora,atualizado_por:email})));
+    const enviar=hh=>fetch(orgUrl()+'?on_conflict=id&select=id',{
       method:'POST',
-      headers:{...h,Prefer:'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify(grupo.map(l=>({...l,atualizado_em:agora,atualizado_por:email})))
+      headers:{...hh,Prefer:'resolution=merge-duplicates,return=representation'},   // devolve as linhas gravadas: dá para conferir
+      body:corpo
     });
-    if(r.status===401||r.status===403)throw new Error('Só a conta do responsável pode salvar alterações no organograma.');
+    let r=await enviar(h);
+    if(r.status===401){
+      // token vencido: renova a sessão e tenta de novo uma vez
+      try{await window.ADMIN_AUTH.renovarSessao();}catch(e){}
+      r=await enviar(await orgCabecalhoAuth());
+      if(r.status===401)throw new Error('Sua sessão expirou. Recarregue a página, entre de novo e repita a alteração.');
+    }
+    if(r.status===403)throw new Error('Só a conta do responsável (root) pode salvar alterações no organograma.');
     if(!r.ok){
       let detalhe='';
       try{const j=await r.json();detalhe=j.message||j.hint||'';}catch(e){}
       throw new Error('Não foi possível salvar (HTTP '+r.status+')'+(detalhe?': '+detalhe:'.'));
     }
+    let gravadas=null;try{gravadas=await r.json();}catch(e){}
+    if(!Array.isArray(gravadas)||gravadas.length!==grupo.length)
+      throw new Error('O banco não confirmou a gravação ('+(Array.isArray(gravadas)?gravadas.length:0)+' de '+grupo.length+' caixas). Nada foi alterado: tente de novo.');
   }
   orgCacheMesclar(linhas);
 }
@@ -1528,11 +1618,13 @@ async function orgAbrirVersoes(){
   }catch(err){lista.textContent=err.message;}
 }
 
+if(!ORG_PUBLICO){
 document.getElementById('btnDesfazer').addEventListener('click',orgDesfazer);
 document.getElementById('btnVersoes').addEventListener('click',orgAbrirVersoes);
+}
 // Volta o desenho ao original (como no PDF): zera posição, hierarquia, tipo, cor, título e sigla,
 // e apaga as caixas novas. Nomes, matrículas e telefones editados continuam. Fica na lista de versões.
-document.getElementById('versoesOriginal').addEventListener('click',async()=>{
+if(!ORG_PUBLICO)document.getElementById('versoesOriginal').addEventListener('click',async()=>{
   const ok=await window.Modal.confirmar({
     titulo:'Voltar ao layout original',
     mensagem:'Todas as caixas voltam para a posição, o nível, o tipo e a cor do desenho original, e as caixas novas são removidas.\n\nNomes, matrículas e telefones editados continuam. O estado de agora fica guardado em Versões.',
@@ -1552,8 +1644,10 @@ document.getElementById('versoesOriginal').addEventListener('click',async()=>{
     await orgRecarregarDoBanco();
   }catch(err){showToast(err.message);}
 });
+if(!ORG_PUBLICO){
 document.getElementById('versoesFechar').addEventListener('click',()=>document.getElementById('versoesOverlay').classList.remove('show'));
 document.getElementById('versoesOverlay').addEventListener('click',e=>{if(e.target.id==='versoesOverlay')e.target.classList.remove('show');});
+}
 // Ctrl+Z desfaz a última alteração (fora de campos de texto)
 document.addEventListener('keydown',e=>{
   if(!adminMode||!(e.ctrlKey||e.metaKey)||e.key.toLowerCase()!=='z'||e.shiftKey)return;
@@ -1609,6 +1703,11 @@ function orgDeslocamento(n){
         const t=a.holder_atualizado_em?new Date(a.holder_atualizado_em):null;   // só troca de nome conta
         if(t&&!isNaN(t)&&(!ORG_ULTIMA_ALT||t>ORG_ULTIMA_ALT))ORG_ULTIMA_ALT=t;
         const n=byId.get(a.id);if(!n)return;
+        if(sig!==ORG_ASSINATURA_BUILD){   // recarga única já usada: aplica as cores/títulos do banco na hora
+          if(a.cor)n.color=a.cor;
+          n.corTitulo=a.cor_titulo||'';n.corTexto=a.cor_texto||'';
+          orgAtualizarVisual(n);
+        }
         if(a.holder!=null){n.holder=a.holder;}
         if(a.matricula!=null){n.matricula=a.matricula;}
         if(a.telefone!=null&&a.telefone!==''){TEL_AJUSTES[n.id]=a.telefone;}
@@ -1741,6 +1840,10 @@ function orgBlocoEstrutura(n,sec){
   // cor: só as que já existem no organograma (as cinco do desenho + as que algum setor usa hoje).
   // Ao trocar, vale também para todas as caixas abaixo.
   let cor=n.color;
+  // intensidade (opacidade): guardada como #rrggbbaa; 100% = #rrggbb
+  const ORG_PALETA=[['#2f855a','Verde'],['#15803d','Verde-escuro'],['#84cc16','Verde-limão'],['#0d9488','Turquesa'],['#0284c7','Azul-claro'],['#1d4ed8','Azul'],['#4472c4','Azul-aço'],['#6a1b9a','Roxo'],['#be185d','Rosa'],['#dc2626','Vermelho'],['#c95c14','Laranja'],['#ffc000','Amarelo'],['#78350f','Marrom'],['#475569','Cinza'],['#111827','Preto']];
+  const mc=/^(#[0-9a-f]{6})([0-9a-f]{2})$/i.exec(cor||'');
+  let corBase=mc?mc[1]:cor, intens=mc?Math.round(parseInt(mc[2],16)/255*100):100;
   const corWrap=document.createElement('div');corWrap.className='org-edit-cores';
   const NOMES_COR={purple:'Roxo',yellow:'Amarelo',blue:'Azul',green:'Azul-aço',orange:'Laranja','#2f855a':'Verde'};
   const emUso=[];
@@ -1748,13 +1851,22 @@ function orgBlocoEstrutura(n,sec){
   nodes.forEach(x=>{if(x.color&&emUso.indexOf(x.color)<0)emUso.push(x.color);});
   if(cor&&emUso.indexOf(cor)<0)emUso.push(cor);
   const valorCor=k=>ORG_COR_PRESETS[k]||k;
-  const marcar=()=>corWrap.querySelectorAll('.org-cor').forEach(b=>b.classList.toggle('on',b.dataset.cor===cor));
-  emUso.forEach(k=>{
+  const marcar=()=>corWrap.querySelectorAll('.org-cor').forEach(b=>b.classList.toggle('on',b.dataset.cor===corBase));
+  const compor=()=>{
+    if(intens>=100){cor=corBase;return;}
+    const hex=valorCor(corBase);
+    cor=/^#[0-9a-f]{6}$/i.test(hex)?hex+Math.round(intens/100*255).toString(16).padStart(2,'0'):corBase;
+  };
+  const addCor=(k,nome)=>{
     const b=document.createElement('button');b.type='button';b.className='org-cor';b.dataset.cor=k;
-    b.style.background=valorCor(k);b.title=NOMES_COR[k]||k;b.setAttribute('aria-label',NOMES_COR[k]||k);
-    b.addEventListener('click',()=>{cor=k;marcar();});
+    b.style.background=valorCor(k);b.title=nome;b.setAttribute('aria-label',nome);
+    b.addEventListener('click',()=>{corBase=k;compor();marcar();});
     corWrap.appendChild(b);
-  });
+  };
+  emUso.forEach(k=>{if(!/^#[0-9a-f]{8}$/i.test(k))addCor(k,NOMES_COR[k]||k);});
+  // paleta padrão (cores que ainda não aparecem acima)
+  ORG_PALETA.forEach(p=>{if(emUso.indexOf(p[0])<0)addCor(p[0],p[1]);});
+  if(corBase&&!corWrap.querySelector('.org-cor[data-cor="'+corBase+'"]'))addCor(corBase,corBase);
   const lc=document.createElement('div');lc.className='org-edit-campo';
   const tc=document.createElement('span');tc.textContent='Cor da caixa';
   lc.append(tc,corWrap);
@@ -1763,6 +1875,13 @@ function orgBlocoEstrutura(n,sec){
     dicaCor.textContent=n.parent?'A cor escolhida vale também para todas as caixas abaixo desta.':'Na secretaria, a cor vale só para ela (cada grupo abaixo mantém a sua).';
     lc.appendChild(dicaCor);
   }
+  const intWrap=document.createElement('div');intWrap.className='org-edit-intens';
+  intWrap.style.cssText='display:flex;align-items:center;gap:8px;margin-top:8px';
+  const intLbl=document.createElement('span');intLbl.textContent='Intensidade';intLbl.style.cssText='font-size:12px;color:#475569';
+  const intRng=document.createElement('input');intRng.type='range';intRng.min='10';intRng.max='100';intRng.step='5';intRng.value=String(Math.max(10,intens));intRng.style.flex='1';
+  const intVal=document.createElement('span');intVal.style.cssText='font-size:12px;min-width:36px;text-align:right';intVal.textContent=intens+'%';
+  intRng.addEventListener('input',()=>{intens=Number(intRng.value);intVal.textContent=intens+'%';compor();});
+  intWrap.append(intLbl,intRng,intVal);lc.appendChild(intWrap);
   sec.appendChild(lc);
   marcar();
 
@@ -1957,7 +2076,15 @@ window.montarEdicaoNo=function(n,body){
   sec.appendChild(dica);
   body.insertBefore(sec,body.firstChild);
 
-  bSalvar.addEventListener('click',async()=>{
+  // modo: 'manual' (botão Salvar), 'silencioso' (ao trocar de caixa / fechar / sair do admin) ou 'auto' (logo depois de mexer)
+  let emCurso=null;
+  const salvarEdicao=(modo)=>{
+    if(emCurso)return emCurso.then(()=>salvarEdicao(modo));
+    emCurso=salvarEdicaoCore(modo||'manual').finally(()=>{emCurso=null;});
+    return emCurso;
+  };
+  const salvarEdicaoCore=async(modo)=>{
+    const silencioso=modo!=='manual';
     const nome=iNome.value.trim().replace(/\s+/g,' ');
     const ato=montarAto();
     const holder=nome?(nome+(ato?'\n'+ato:'')):'';
@@ -1969,6 +2096,7 @@ window.montarEdicaoNo=function(n,body){
       const mudouTitulo=est.titulo!==n.title,mudouSigla=est.sigla!==n.sigla,mudouTipo=est.tipo!==n.kind;
       const mudouCor=est.cor!==n.color,mudouPai=est.parent!==null&&est.parent!==n.parent;
       const mudouCorTitulo=est.corTitulo!==(n.corTitulo||''),mudouCorTexto=est.corTexto!==(n.corTexto||'');
+      if(modo==='auto'&&(mudouTipo||mudouPai)){bSalvar.disabled=false;msg.textContent='';return;}   // mudança de nível: só no Salvar / ao sair (redesenha)
       const campos={holder,matricula:iMat.value.trim(),telefone:tel};
       if(mudouTitulo)campos.titulo=est.titulo;
       if(mudouSigla)campos.sigla=est.sigla;
@@ -1982,13 +2110,19 @@ window.montarEdicaoNo=function(n,body){
       if(mudouHolder||mudouTitulo||mudouSigla||mudouPai)campos.holder_atualizado_em=agoraIso;
       const lote=[{id:n.id,...campos}];
       // cor trocada num nível: vale para todas as caixas abaixo (menos na secretaria, a raiz)
-      const aplicaAbaixo=(mudouCor||mudouCorTitulo||mudouCorTexto)&&n.parent;
-      const abaixo=aplicaAbaixo?[...orgDescendentesIds(n)]:[];
+      // (também quando a caixa já tinha essa cor e só as de baixo estão diferentes)
+      const descIds=n.parent?[...orgDescendentesIds(n)]:[];
+      const difCor=descIds.filter(id=>{const d=byId.get(id);return d&&d.color!==est.cor;});
+      const difTit=descIds.filter(id=>{const d=byId.get(id);return d&&(d.corTitulo||'')!==est.corTitulo;});
+      const difTxt=descIds.filter(id=>{const d=byId.get(id);return d&&(d.corTexto||'')!==est.corTexto;});
+      const aplicaCor=(mudouCor||mudouCorTitulo||mudouCorTexto)?descIds:[];
+      const abaixo=[...new Set([...aplicaCor,...difCor,...difTit,...difTxt])];
+      const propagaCor=mudouCor||difCor.length>0, propagaTit=mudouCorTitulo||difTit.length>0, propagaTxt=mudouCorTexto||difTxt.length>0;
       abaixo.forEach(id=>{
         const l={id};
-        if(mudouCor)l.cor=est.cor;
-        if(mudouCorTitulo)l.cor_titulo=est.corTitulo||null;
-        if(mudouCorTexto)l.cor_texto=est.corTexto||null;
+        if(propagaCor)l.cor=est.cor;
+        if(propagaTit)l.cor_titulo=est.corTitulo||null;
+        if(propagaTxt)l.cor_texto=est.corTexto||null;
         lote.push(l);
       });
       await orgGravarLote(lote,'Editou "'+n.title+'"'+(abaixo.length?' (cor aplicada a '+abaixo.length+' caixa(s) abaixo)':''));
@@ -1998,21 +2132,38 @@ window.montarEdicaoNo=function(n,body){
       orgAtualizarVisual(n);
       abaixo.forEach(id=>{
         const d=byId.get(id);if(!d)return;
-        if(mudouCor)d.color=est.cor;
-        if(mudouCorTitulo)d.corTitulo=est.corTitulo;
-        if(mudouCorTexto)d.corTexto=est.corTexto;
+        if(propagaCor)d.color=est.cor;
+        if(propagaTit)d.corTitulo=est.corTitulo;
+        if(propagaTxt)d.corTexto=est.corTexto;
         orgAtualizarVisual(d);
       });
       n.holder=holder;n.matricula=iMat.value.trim();
       if(tel)TEL_AJUSTES[n.id]=tel;else delete TEL_AJUSTES[n.id];
       orgAjustarCorpo(n);drawLines();
+      sujo=false;
+      if(silencioso){bSalvar.disabled=false;msg.textContent=modo==='auto'?'Salvo automaticamente ✓':'';msg.className='org-edit-msg';return;}
       showToast('Alterações salvas');
       openDetailPanel(n,getPDFPath(n.holder));
     }catch(err){
       msg.textContent=err.message;msg.className='org-edit-msg erro';
       bSalvar.disabled=false;
+      if(silencioso)showToast('Não foi possível salvar: '+err.message);
     }
-  });
+  };
+  let sujo=false, timerAuto=null;   // sujo = algo foi mexido no formulário e ainda não foi gravado
+  bSalvar.addEventListener('click',()=>{clearTimeout(timerAuto);salvarEdicao('manual');});
+  const marcarSujo=()=>{
+    sujo=true;clearTimeout(timerAuto);
+    timerAuto=setTimeout(()=>{if(sujo&&document.body.contains(bSalvar))salvarEdicao('auto').catch(()=>{});},1200);   // grava sozinho depois de mexer
+  };
+  sec.addEventListener('input',marcarSujo);sec.addEventListener('change',marcarSujo);
+  sec.addEventListener('click',e=>{if(e.target.closest('.org-cor'))marcarSujo();});
+  // chamada ao trocar de caixa, fechar o painel ou sair do modo admin: grava o que faltar (e espera terminar)
+  window.orgSalvarEdicaoAberta=async()=>{
+    clearTimeout(timerAuto);
+    if(emCurso)await emCurso.catch(()=>{});
+    if(sujo)await salvarEdicao('silencioso');
+  };
   bRest.addEventListener('click',async()=>{
     const o=ORG_ORIGINAL.get(n.id),b=ORG_BASE.get(n.id);
     bRest.disabled=true;msg.textContent='Restaurando…';msg.className='org-edit-msg';
