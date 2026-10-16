@@ -1076,3 +1076,7 @@ dialog.cal-det{position:fixed;inset:0;margin:auto;height:fit-content;overflow:hi
 .pub-cfg-abas label,.pub-cfg-rm{display:flex;gap:6px;align-items:center;cursor:pointer}
 .pub-cfg-campo{display:grid;gap:4px;font-size:12px;font-weight:700}
 .pub-cfg-acoes{display:flex;gap:8px;justify-content:flex-end}
+
+.pontos-chk{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700}
+.pontos-chk i{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(15,23,42,.35)}
+.pontos-chk .pt-mec{background:#16a34a}.pontos-chk .pt-acu{background:#2563eb}

@@ -10,8 +10,8 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026101708">
-<link rel="stylesheet" href="../css/assistente-dados.css?v=2026101708">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026101710">
+<link rel="stylesheet" href="../css/assistente-dados.css?v=2026101710">
 <link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101415">
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
@@ -876,10 +876,8 @@
         <p class="sub" id="pontosSub">Atendimentos com coordenada, na sele&ccedil;&atilde;o atual. Vis&iacute;vel s&oacute; para quem est&aacute; logado.</p>
       </div></div>
       <div class="pontos-barra">
-        <label>Colorir por
-          <select id="pontosCor"><option value="servico">Servi&ccedil;o</option><option value="cultura">Cultura principal</option></select>
-        </label>
-        <ul class="pontos-legenda" id="pontosLegenda"></ul>
+        <label class="pontos-chk"><input type="checkbox" id="pontosVerAcu" checked><i class="pt-acu"></i> A&ccedil;udagem</label>
+        <label class="pontos-chk"><input type="checkbox" id="pontosVerMec" checked><i class="pt-mec"></i> Mecaniza&ccedil;&atilde;o</label>
       </div>
       <div id="mapaPontos" class="mapa-pontos" role="application" aria-label="Mapa de pontos dos atendimentos"></div>
     </section>
@@ -1284,13 +1282,13 @@
 <script src="../js/lancamento-validacao.js?v=2026101414"></script>
 <script src="../js/lancamento-pdf.js?v=2026101404"></script>
 <script src="../js/lancamento-mecanizacao.js?v=2026101411"></script>
-<script src="../js/painel-calculos.js?v=2026101708"></script>
-<script src="../js/tabela-ferramentas.js?v=2026101708"></script>
-<script src="../js/dashboard.js?v=2026101708"></script>
-<script src="../js/painel-comparativo.js?v=2026101708"></script>
-<script src="../js/painel-metas.js?v=2026101708"></script>
-<script src="../js/painel-pontos.js?v=2026101708"></script>
-<script src="../js/assistente-dados.js?v=2026101708"></script>
+<script src="../js/painel-calculos.js?v=2026101710"></script>
+<script src="../js/tabela-ferramentas.js?v=2026101710"></script>
+<script src="../js/dashboard.js?v=2026101710"></script>
+<script src="../js/painel-comparativo.js?v=2026101710"></script>
+<script src="../js/painel-metas.js?v=2026101710"></script>
+<script src="../js/painel-pontos.js?v=2026101710"></script>
+<script src="../js/assistente-dados.js?v=2026101710"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026100901"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

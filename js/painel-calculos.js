@@ -132,6 +132,233 @@
     return [lat * 180 / Math.PI, lon * 180 / Math.PI];
   }
 
+  /* ------------------------------------------------ reparo de coordenadas ----
+     Coordenadas digitadas à mão erram de formas previsíveis. Em vez de descartá-las, o painel
+     tenta descobrir o que a pessoa quis digitar e escolhe a leitura mais próxima do município
+     informado. Famílias de erro tratadas:
+       UTM (x ~ 6 dígitos, y ~ 7 dígitos, zona 18/19):
+         - x e y trocados;
+         - falta um dígito (884068 -> 8884068) ou sobra um (decimais digitados sem a vírgula);
+         - um dígito trocado (998783 -> 598783);
+         - zona errada (18 por 19 e vice-versa);
+       Graus decimais digitados sem separador (lat 7–11, lon 66–74):
+         - 7392659 / 72562651 -> -7,392659 / -72,562651, em qualquer ordem;
+         - 1102070456 -> -11,02070456; "10.9802" já com ponto;
+         - primeiro dígito trocado (584534364 -> 8,4534364).
+     A referência é o centro do município (mediana dos pontos corretos dele). Escolhe-se a leitura
+     de menor "custo" = distância ao centro + pequena penalidade por correção aplicada. Se nada
+     ficar plausível, o ponto vai para o centro do município (aproximado). O resultado sempre cai
+     dentro da caixa do Acre. */
+  var ACRE = { s: -11.3, n: -6.9, o: -74.1, l: -66.4 };
+  var PEN = { digito: 25, truncar: 8, troca: 10, zona: 10, graus: 6, aproximado: 0 };
+
+  function dentroDoAcre(lat, lng) {
+    return isFinite(lat) && isFinite(lng) && lat >= ACRE.s && lat <= ACRE.n && lng >= ACRE.o && lng <= ACRE.l;
+  }
+
+  function distKm(a, b) {
+    var R = 6371, rad = Math.PI / 180;
+    var dLat = (b[0] - a[0]) * rad, dLng = (b[1] - a[1]) * rad;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  /** [lat, lng] -> { x, y } UTM (hemisfério sul) na zona dada (inversa de utmParaLatLng). */
+  function latLngParaUtm(lat, lng, zona) {
+    var a = 6378137, f = 1 / 298.257223563, k0 = 0.9996, e2 = f * (2 - f), ep2 = e2 / (1 - e2);
+    var rad = Math.PI / 180, phi = lat * rad, lam = lng * rad, lam0 = ((zona - 1) * 6 - 180 + 3) * rad;
+    var N = a / Math.sqrt(1 - e2 * Math.sin(phi) * Math.sin(phi));
+    var T = Math.tan(phi) * Math.tan(phi), C = ep2 * Math.cos(phi) * Math.cos(phi), A = Math.cos(phi) * (lam - lam0);
+    var M = a * ((1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * Math.pow(e2, 3) / 256) * phi -
+      (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * Math.pow(e2, 3) / 1024) * Math.sin(2 * phi) +
+      (15 * e2 * e2 / 256 + 45 * Math.pow(e2, 3) / 1024) * Math.sin(4 * phi) -
+      (35 * Math.pow(e2, 3) / 3072) * Math.sin(6 * phi));
+    var x = k0 * N * (A + (1 - T + C) * Math.pow(A, 3) / 6 + (5 - 18 * T + T * T + 72 * C - 58 * ep2) * Math.pow(A, 5) / 120) + 500000;
+    var y = k0 * (M + N * Math.tan(phi) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * Math.pow(A, 4) / 24 +
+      (61 - 58 * T + T * T + 600 * C - 330 * ep2) * Math.pow(A, 6) / 720)) + 10000000;
+    return { x: x, y: y };
+  }
+
+  function soDigitos(v) {
+    var s = String(v == null ? '' : v).trim().replace(',', '.');
+    var m = /^-?(\d+)(?:\.(\d+))?$/.exec(s);
+    return m ? { inteiro: m[1], frac: m[2] || '', tem: m[2] != null } : null;
+  }
+
+  /** Variantes de uma string de dígitos para ter `alvo` dígitos: [{ s, e (penalidade), n (nota) }]. */
+  function variantesUtm(str, alvo, digitosInicio) {
+    var d = soDigitos(str);
+    if (!d) return [];
+    var base = d.inteiro, out = [], vistos = {};
+    function add(s, e, n) {
+      if (s.length !== alvo || vistos[s]) return;
+      vistos[s] = true;
+      out.push({ s: s, e: e, n: n });
+    }
+    if (base.length === alvo) {
+      add(base, 0, '');
+      for (var i = 0; i < base.length; i++) {
+        for (var c = 0; c <= 9; c++) {
+          var ch = String(c);
+          if (ch !== base[i]) add(base.slice(0, i) + ch + base.slice(i + 1), PEN.digito, 'dígito ' + (i + 1) + ' trocado');
+        }
+      }
+    } else if (base.length > alvo) {
+      // decimais digitados sem a vírgula: sobram dígitos no fim
+      add(base.slice(0, alvo), PEN.truncar, 'decimais sem vírgula');
+      if (base.length === alvo + 1) {
+        for (var p = 0; p < base.length; p++) add(base.slice(0, p) + base.slice(p + 1), PEN.digito, 'dígito sobrando');
+      }
+    } else {
+      var falta = alvo - base.length;
+      if (falta === 1) {
+        for (var q = 0; q <= base.length; q++) {
+          for (var k = 0; k <= 9; k++) add(base.slice(0, q) + k + base.slice(q), PEN.digito, 'dígito faltando');
+        }
+      } else {
+        // faltam vários: completa com zeros à direita ou com os dígitos típicos à esquerda
+        var zeros = new Array(falta + 1).join('0');
+        add(base + zeros, PEN.digito * 1.5, 'zeros no fim');
+        (digitosInicio || []).forEach(function (pre) {
+          add(pre + base + new Array(Math.max(0, falta - pre.length) + 1).join('0'), PEN.digito * 1.5, 'início completado');
+        });
+      }
+    }
+    return out;
+  }
+
+  /** Graus digitados sem separador -> valor numérico, dado o papel (lat: 7–11; lon: 66–74). */
+  function grausDeDigitos(str, papel) {
+    var d = soDigitos(str);
+    if (!d) return [];
+    var base = d.inteiro, out = [];
+    function de(s, e, n) {
+      var nInt;
+      if (d.tem && d.inteiro.length <= 2) {
+        // já veio com ponto: "10.9802"
+        out.push({ v: Number(d.inteiro + '.' + d.frac), e: e, n: n });
+        return;
+      }
+      if (papel === 'lat') nInt = (s[0] === '1') ? 2 : 1;
+      else nInt = 2;
+      if (s.length <= nInt) return;
+      out.push({ v: Number(s.slice(0, nInt) + '.' + s.slice(nInt) + d.frac), e: e, n: n });
+    }
+    de(base, 0, '');
+    // primeiro dígito trocado
+    var inicio = papel === 'lat' ? ['7', '8', '9', '1'] : ['6', '7'];
+    inicio.forEach(function (ch) {
+      if (ch !== base[0]) de(ch + base.slice(1), PEN.digito, 'primeiro dígito trocado');
+    });
+    return out;
+  }
+
+  /**
+   * Tenta ler (x, y, zona) como uma coordenada do Acre.
+   * prior: { lat, lng, raio } do município (ou do Acre). Devolve a melhor leitura ou null.
+   */
+  function reinterpretar(x, y, zona, prior) {
+    var P = [prior.lat, prior.lng], melhor = null;
+    function oferta(lat, lng, custo, metodo) {
+      if (!dentroDoAcre(lat, lng)) return;
+      var dist = distKm([lat, lng], P);
+      var c = dist + custo;
+      if (!melhor || c < melhor.custo) melhor = { lat: lat, lng: lng, custo: c, dist: dist, metodo: metodo };
+    }
+    var zonas = [];
+    if (zona >= 17 && zona <= 20) zonas.push([zona, 0]);
+    [19, 18].forEach(function (z) { if (!zonas.some(function (t) { return t[0] === z; })) zonas.push([z, zona >= 17 && zona <= 20 ? PEN.zona : 0]); });
+
+    var ordens = [[x, y, 0, ''], [y, x, PEN.troca, 'x e y trocados']];
+    ordens.forEach(function (o) {
+      var vx = variantesUtm(o[0], 6, ['5', '6', '7']);
+      var vy = variantesUtm(o[1], 7, ['8', '9']);
+      if (!vx.length || !vy.length) return;
+      zonas.forEach(function (zz) {
+        var z = zz[0], pu = latLngParaUtm(prior.lat, prior.lng, z);
+        // x e y quase independentes: escolhe cada um pelo mais próximo do centro (em m -> km)
+        var bx = null, by = null;
+        vx.forEach(function (v) {
+          var c = Math.abs(+v.s - pu.x) / 1000 + v.e;
+          if (!bx || c < bx.c) bx = { v: v, c: c };
+        });
+        vy.forEach(function (v) {
+          var c = Math.abs(+v.s - pu.y) / 1000 + v.e;
+          if (!by || c < by.c) by = { v: v, c: c };
+        });
+        var ll = utmParaLatLng(+bx.v.s, +by.v.s, z);
+        var notas = [o[3], bx.v.n && 'x: ' + bx.v.n, by.v.n && 'y: ' + by.v.n, zz[1] && 'zona ' + z].filter(Boolean);
+        oferta(ll[0], ll[1], o[2] + zz[1] + bx.v.e + by.v.e, 'UTM' + (notas.length ? ' (' + notas.join('; ') + ')' : ''));
+      });
+    });
+
+    // graus decimais sem separador, em qualquer ordem
+    [[x, y, 0, ''], [y, x, PEN.troca, 'ordem trocada']].forEach(function (o) {
+      var la = grausDeDigitos(o[0], 'lat'), lo = grausDeDigitos(o[1], 'lon');
+      la.forEach(function (a) {
+        lo.forEach(function (b) {
+          var notas = [o[3], a.n && 'lat: ' + a.n, b.n && 'lon: ' + b.n].filter(Boolean);
+          oferta(-a.v, -b.v, PEN.graus + o[2] + a.e + b.e, 'graus sem separador' + (notas.length ? ' (' + notas.join('; ') + ')' : ''));
+        });
+      });
+    });
+    return melhor;
+  }
+
+  function mediana(v) {
+    var s = v.slice().sort(function (a, b) { return a - b; }), n = s.length;
+    return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+  }
+
+  /** Centro e raio de cada município a partir dos pontos corretos. */
+  function centros(pontos) {
+    var por = {}, todos = [];
+    pontos.forEach(function (p) {
+      if (!dentroDoAcre(p.lat, p.lng)) return;
+      todos.push(p);
+      var k = p.mun || '';
+      (por[k] = por[k] || []).push(p);
+    });
+    function resumo(l, raioMin) {
+      var c = [mediana(l.map(function (p) { return p.lat; })), mediana(l.map(function (p) { return p.lng; }))];
+      var ds = l.map(function (p) { return distKm([p.lat, p.lng], c); }).sort(function (a, b) { return a - b; });
+      var p90 = ds[Math.floor(ds.length * 0.9)] || 0;
+      return { lat: c[0], lng: c[1], raio: Math.max(raioMin, p90 * 1.8), n: l.length };
+    }
+    var out = {};
+    Object.keys(por).forEach(function (m) { if (m && por[m].length >= 3) out[m] = resumo(por[m], 90); });
+    out._acre = todos.length ? resumo(todos, 250) : { lat: -9.0, lng: -70.5, raio: 400, n: 0 };
+    return out;
+  }
+
+  /**
+   * itens: [{ mun, x, y, zona }]. Devolve, na mesma ordem:
+   *   { lat, lng, situacao: 'original'|'corrigida'|'aproximada', confianca, metodo, distancia }
+   * Todo ponto devolvido está dentro da caixa do Acre.
+   */
+  function repararPontos(itens) {
+    var conv = itens.map(function (it) {
+      var z = +it.zona >= 17 && +it.zona <= 20 ? +it.zona : 19;
+      var ll = utmParaLatLng(+it.x, +it.y, z);
+      return { mun: it.mun, lat: ll[0], lng: ll[1], ok: dentroDoAcre(ll[0], ll[1]) };
+    });
+    var C = centros(conv.filter(function (c) { return c.ok; }));
+    return itens.map(function (it, i) {
+      var c = conv[i];
+      if (c.ok) return { lat: c.lat, lng: c.lng, situacao: 'original', confianca: 'alta', metodo: 'UTM', distancia: 0 };
+      var prior = C[it.mun] || C._acre;
+      var r = reinterpretar(it.x, it.y, +it.zona || 0, prior);
+      // plausível = perto do centro do município (ou, sem referência do município, qualquer ponto do Acre)
+      if (r && r.dist <= prior.raio) {
+        return { lat: r.lat, lng: r.lng, situacao: 'corrigida', metodo: r.metodo, distancia: r.dist,
+          confianca: r.dist <= prior.raio * 0.4 && r.custo < 80 ? 'alta' : (r.dist <= prior.raio * 0.8 ? 'média' : 'baixa') };
+      }
+      return { lat: prior.lat, lng: prior.lng, situacao: 'aproximada', confianca: 'baixa',
+        metodo: 'centro do município (coordenada irrecuperável)', distancia: 0 };
+    });
+  }
+
   /** Variação entre dois valores: { d, pct } (pct é null quando a referência é zero). */
   function variacao(atual, anterior) {
     var d = atual - anterior;
@@ -143,6 +370,7 @@
     difMeses: difMeses, vistoriaValida: vistoriaValida, dataRef: dataRef, anoDe: anoDe, mesChave: mesChave,
     soma: soma, contar: contar, somarPor: somarPor, distintosPor: distintosPor, ranking: ranking, faixas: faixas,
     chaveBusca: chaveBusca, chaveProdutor: chaveProdutor, nProdutores: nProdutores,
-    utmParaLatLng: utmParaLatLng, variacao: variacao
+    utmParaLatLng: utmParaLatLng, latLngParaUtm: latLngParaUtm, variacao: variacao,
+    dentroDoAcre: dentroDoAcre, distKm: distKm, repararPontos: repararPontos, reinterpretar: reinterpretar
   };
 });

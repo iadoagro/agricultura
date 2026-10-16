@@ -90,6 +90,53 @@ t('equador (y = 10.000.000) dá latitude 0', () => {
   assert.ok(perto(lat, 0, 1e-9));
 });
 
+console.log('Reparo de coordenadas');
+(function () {
+  // pontos corretos de Xapuri e Mâncio Lima formam a referência de cada município
+  const base = [];
+  for (let i = 0; i < 6; i++) base.push({ mun: 'Xapuri', x: 579000 + i * 700, y: 8822000 + i * 500, zona: 19 });
+  for (let i = 0; i < 6; i++) base.push({ mun: 'Mâncio Lima', x: 733000 + i * 600, y: 9158000 + i * 400, zona: 18 });
+  const rep = (it) => PC.repararPontos(base.concat([it]))[base.length];
+  const perto2 = (r, lat, lng, km) => PC.distKm([r.lat, r.lng], [lat, lng]) <= km;
+  t('ponto correto permanece original', () => {
+    const r = rep({ mun: 'Xapuri', x: 579300, y: 8822200, zona: 19 });
+    assert.strictEqual(r.situacao, 'original');
+  });
+  t('x e y trocados', () => {
+    const r = rep({ mun: 'Xapuri', x: 8822200, y: 579300, zona: 19 });
+    assert.strictEqual(r.situacao, 'corrigida');
+    assert.ok(perto2(r, -10.65, -68.5, 40), r.lat + ',' + r.lng);
+  });
+  t('dígito faltando no y', () => {
+    const r = rep({ mun: 'Xapuri', x: 579300, y: 822200, zona: 19 });
+    assert.strictEqual(r.situacao, 'corrigida');
+    assert.ok(perto2(r, -10.65, -68.5, 40));
+  });
+  t('graus sem vírgula, lat/lon em x/y', () => {
+    const r = rep({ mun: 'Mâncio Lima', x: 7392659, y: 72562651, zona: 18 });
+    assert.strictEqual(r.situacao, 'corrigida');
+    assert.ok(Math.abs(r.lat + 7.392659) < 1e-4 && Math.abs(r.lng + 72.562651) < 1e-4, r.lat + ',' + r.lng);
+  });
+  t('primeiro dígito da latitude trocado', () => {
+    const r = rep({ mun: 'Xapuri', x: 584534364, y: 679000000, zona: 0 });
+    assert.ok(PC.dentroDoAcre(r.lat, r.lng));
+  });
+  t('lixo total vai para o centro do município e fica dentro do Acre', () => {
+    const r = rep({ mun: 'Xapuri', x: 1, y: 2, zona: 0 });
+    assert.ok(PC.dentroDoAcre(r.lat, r.lng));
+    assert.ok(perto2(r, -10.65, -68.5, 60));
+  });
+  t('todo resultado está dentro da caixa do Acre', () => {
+    const lixos = [[0, 0], [999999999, 1], [123, 456789012], [88888888, 11], [7777, 7777]];
+    lixos.forEach(([x, y]) => { const r = rep({ mun: 'Mâncio Lima', x, y, zona: 18 }); assert.ok(PC.dentroDoAcre(r.lat, r.lng)); });
+  });
+  t('conversão UTM <-> lat/lng é inversa', () => {
+    const u = PC.latLngParaUtm(-10.397190, -68.649024, 19);
+    const [lat, lng] = PC.utmParaLatLng(u.x, u.y, 19);
+    assert.ok(perto(lat, -10.39719, 1e-6) && perto(lng, -68.649024, 1e-6));
+  });
+})();
+
 console.log('Desempenho (20 mil registros sintéticos)');
 t('filtrar + agregar 20 mil registros em menos de 300 ms', () => {
   const M = ['Xapuri', 'Brasiléia', 'Rio Branco', 'Cruzeiro do Sul', 'Sena Madureira', 'Tarauacá'];
