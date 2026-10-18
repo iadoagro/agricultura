@@ -82,6 +82,14 @@
     });
   }
 
+
+  /* O layout de tela cheia (html.et-fs) prende tudo na altura da tela e rola só dentro das abas: no desktop é o que se quer,
+     mas no celular o cabeçalho e os placares ocupam a tela inteira e as abas ficam escondidas. Até 900 px a página rola normal. */
+  var MQ_TELA = window.matchMedia ? window.matchMedia('(max-width: 900px)') : null;
+  function ajustarLayout() { document.documentElement.classList.toggle('et-fs', !(MQ_TELA && MQ_TELA.matches)); }
+  ajustarLayout();
+  if (MQ_TELA) { if (MQ_TELA.addEventListener) MQ_TELA.addEventListener('change', ajustarLayout); else if (MQ_TELA.addListener) MQ_TELA.addListener(ajustarLayout); }
+
   var cfg = window.BANCO_CONFIG;
   if (!cfg || !cfg.url) { negar('Não foi possível verificar o link agora.'); return; }
 

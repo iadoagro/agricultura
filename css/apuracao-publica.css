@@ -8,3 +8,6 @@ body.ap-publica{display:block;min-height:100vh;margin:0;padding:0;background:rad
 .ap-peq{font-size:13px;color:#667085}
 .ap-rodape{margin:22px 0 0;text-align:center;font-size:12px;color:#667085}
 .ap-main .aba-conteudo.ativa{display:block;overflow:visible}
+
+/* As abas (Principal, Regional, Município…) ficam coladas no topo ao rolar: ficavam no fim de uma página longa e ninguém as via */
+body.ap-publica .t26-abas{position:sticky;top:0;z-index:50;background:#fff;box-shadow:0 4px 14px rgba(11,36,71,.12)}
