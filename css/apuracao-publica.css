@@ -15,3 +15,38 @@ body.ap-publica .t26-abas{position:sticky;top:0;z-index:50;background:#fff;box-s
 /* Contador de sessão de quem entrou com a senha da página: pequeno, dentro do cabeçalho azul, no canto de cima à direita */
 .ap-sessao{position:absolute;top:8px;right:12px;z-index:5;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.14);color:rgba(255,255,255,.85);font:600 11px/1.5 system-ui,Arial,sans-serif;pointer-events:none}
 @media(min-width:901px){.ap-sessao{top:2px;right:8px;font-size:10px;padding:0 8px}}
+
+/* ===== Celular: a página pública na tela do telefone ===== */
+@media screen and (max-width:900px){
+  .ap-main{padding:8px 8px 24px}
+  body.ap-publica{overflow-x:hidden}
+  /* cabeçalho azul mais compacto */
+  #etBarra.et-barra{padding:12px 14px 16px;gap:8px}
+  #etBarra .et-cab-esq h2{font-size:20px}
+  #etBarra .et-cab-esq p{font-size:13px}
+  #etBarra .et-cab-btns{flex-wrap:wrap}
+  /* as abas viram uma única fileira que desliza para o lado e fica fixa no topo; os botões de ação saem de dentro dela */
+  #painel-turno2 .t26-abas,body.ap-publica .t26-abas{display:contents}
+  #painel-turno2 .t26-abas-lista{display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+    position:sticky;top:0;z-index:60;margin:10px -8px 8px;padding:6px 12px;background:#fff;border-bottom:1px solid #d9e0ea;box-shadow:0 4px 12px rgba(11,36,71,.1);scrollbar-width:none}
+  #painel-turno2 .t26-abas-lista::-webkit-scrollbar{display:none}
+  #painel-turno2 .t26-abas-lista button{flex:0 0 auto;scroll-snap-align:start;min-height:42px;padding:8px 14px;font-size:14px;white-space:nowrap;line-height:1.2}
+  #painel-turno2 .t26-abas-acoes{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:0;border:0}
+  #painel-turno2 .t26-abas-acoes button{flex:1 1 140px;min-height:44px}
+  #painel-turno2 .t26-abas-acoes .t26-apres{display:none!important}   /* o modo apresentação é para telão */
+  /* ordem no celular: abas e botões primeiro, depois o título do candidato e o conteúdo da aba; os indicadores gerais vão para o fim */
+  #resultadosGoverno2T{display:flex;flex-direction:column}
+  #resultadosGoverno2T>.t26-abas-lista{order:-3}
+  #resultadosGoverno2T>.t26-abas-acoes{order:-2}
+  #resultadosGoverno2T>.t26-cab{order:-1}
+  #resultadosGoverno2T>.t26-kpis,#resultadosGoverno2T>.t26-vgeral{order:5}
+  /* conteúdo */
+  .et-aviso,.et-nota{font-size:14px;line-height:1.5}
+  .t26-card{padding:12px}
+  .t26-kpi{padding:10px 12px}
+  /* mapa: os controles e a legenda não cobrem mais o mapa inteiro */
+  .t26-gm{height:min(60dvh,440px);min-height:320px}
+  .t26-ctlmapa{max-width:min(250px,calc(100vw - 100px))}
+  .t26-leg{max-height:110px}
+}
+@media(max-width:400px){.ap-sessao-nome{display:none}}

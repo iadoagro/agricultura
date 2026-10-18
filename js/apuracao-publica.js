@@ -18,7 +18,7 @@
     BASE + 'js/dados-governo-2turno-2026.js',
     BASE + 'js/dados-governo-1turno-secoes.js',
     BASE + 'js/dados-perfil-2026.js',
-    BASE + 'js/eleicao-painel.js',
+    BASE + 'js/eleicao-painel.js?v=2026101810',
     BASE + 'js/eleicoes-2turno.js',
     BASE + 'js/eleicoes-2turno-secoes.js'
   ];
@@ -69,7 +69,9 @@
     function p2(n) { return String(n).padStart(2, '0'); }
     function tique() {
       var t = Math.floor((Date.now() - ini) / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60);
-      el.textContent = (nome ? nome.split(' ')[0] + ' · ' : '') + '⏱ ' + (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(t % 60);
+      el.innerHTML = (nome ? '<span class="ap-sessao-nome"></span>' : '') + '<span class="ap-sessao-t"></span>';
+      if (nome) el.firstChild.textContent = nome.split(' ')[0] + ' · ';
+      el.lastChild.textContent = '⏱ ' + (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(t % 60);
     }
     tique(); setInterval(tique, 1000);
   }
@@ -120,6 +122,21 @@
   function ajustarLayout() { document.documentElement.classList.toggle('et-fs', !(MQ_TELA && MQ_TELA.matches)); }
   ajustarLayout();
   if (MQ_TELA) { if (MQ_TELA.addEventListener) MQ_TELA.addEventListener('change', ajustarLayout); else if (MQ_TELA.addListener) MQ_TELA.addListener(ajustarLayout); }
+
+  /* a fileira de abas do celular rola para o lado: mantém a aba ativa à vista quando a apuração redesenha a página */
+  var ultimaAba = '';
+  function centrarAbaAtiva() {
+    var l = document.querySelector('.t26-abas-lista'), a = l && l.querySelector('[aria-selected="true"]');
+    if (!a || l.scrollWidth <= l.clientWidth) return;
+    if (a.dataset.visto === '1' && a.offsetLeft >= l.scrollLeft && a.offsetLeft + a.offsetWidth <= l.scrollLeft + l.clientWidth) return;   // já à vista: não mexe em quem está deslizando
+    if (a.textContent === ultimaAba) return;   // só quando a aba ativa muda
+    ultimaAba = a.textContent;
+    l.scrollLeft = a.offsetLeft - (l.clientWidth - a.offsetWidth) / 2;
+  }
+  if (window.MutationObserver && app) {
+    var tmAba = 0;
+    new MutationObserver(function () { clearTimeout(tmAba); tmAba = setTimeout(centrarAbaAtiva, 80); }).observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-selected'] });
+  }
 
   var cfg = window.BANCO_CONFIG;
   if (!cfg || !cfg.url) { negar('Não foi possível verificar o link agora.'); return; }

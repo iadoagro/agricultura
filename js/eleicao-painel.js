@@ -1022,6 +1022,7 @@
       var legenda = L.control({ position: 'bottomleft' });
       legenda.onAdd = function () {
         var dv = L.DomUtil.create('div', 't26-leg'); L.DomEvent.disableClickPropagation(dv);
+        if (window.matchMedia && window.matchMedia('(max-width:760px)').matches) dv.classList.add('t26-leg-min');   // celular: a legenda começa recolhida (toque no título abre)
         dv.addEventListener('click', function (ev) { if (ev.target.tagName === 'B') dv.classList.toggle('t26-leg-min'); });
         return dv;
       };
