@@ -1,0 +1,82 @@
+/* Página pública da apuração — versão para telefone (até 760 px). Tudo vale só com html.ap-m (js/apuracao-publica.js).
+   O desenho da apuração (js/eleicoes-2turno.js e js/eleicao-painel.js) continua o mesmo; aqui ele é reorganizado como um
+   aplicativo: placar fixo no alto, navegação por baixo (js/eleicao-mobile.js) e só o conteúdo da aba escolhida na tela. */
+html.ap-m,html.ap-m body{overflow-x:clip}
+html.ap-m body.ap-publica{padding-bottom:calc(70px + env(safe-area-inset-bottom));background:#eef2f8}
+html.ap-m .ap-main{padding:0 10px 16px;max-width:none}
+
+/* peças do desenho original que o placar e a navegação substituem */
+html.ap-m #etBarra,html.ap-m #etGeral,html.ap-m #etPlacarGrande,
+html.ap-m #eleicoes2tRaiz .et-cands,html.ap-m #eleicoes2tRaiz .et-status,html.ap-m #eleicoes2tRaiz .et-progresso,
+html.ap-m #eleicoes2tRaiz .et-duelo,html.ap-m #eleicoes2tRaiz .et-kpis,html.ap-m #eleicoes2tRaiz .et-tabela-topo,
+html.ap-m #eleicoes2tRaiz>.tabela-scroll,html.ap-m #eleicoes2tRaiz .et-selo,
+html.ap-m #resultadosGoverno2T .t26-cab,html.ap-m #painel-turno2 .t26-abas-lista,
+html.ap-m #painel-turno2 .t26-abas-acoes button:not([data-fx]),html.ap-m .ap-rodape{display:none!important}
+html.ap-m #eleicoes2tRaiz{padding:0;margin:10px 0 0;background:none;border:0;box-shadow:none}
+html.ap-m .et-aviso{margin:0 0 8px;padding:10px 12px;font-size:13.5px;line-height:1.45;border-radius:12px}
+html.ap-m .et-nota{margin:10px 2px;font-size:12px;line-height:1.5;color:#667085}
+html.ap-m .et-detalhe{margin:0;padding:0}
+html.ap-m #etDetStatus{margin:8px 2px;font-size:13px}
+html.ap-m #painel-turno2 .t26-abas{display:block;margin:0;padding:0;border:0;background:none;box-shadow:none}
+html.ap-m #painel-turno2 .t26-abas-acoes{display:flex;margin:6px 0}
+html.ap-m #painel-turno2 .t26-abas-acoes button{flex:1;min-height:44px}
+
+/* ---------- placar fixo no alto ---------- */
+#apmTopo{display:none}
+html.ap-m #apmTopo{display:block;position:sticky;top:0;z-index:70;margin:0 -10px 4px;padding:8px 12px 7px;
+  background:linear-gradient(180deg,#0e2a55,#153e75);color:#fff;box-shadow:0 4px 14px rgba(11,36,71,.28)}
+.apm-l1,.apm-l3{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;line-height:1.3;color:rgba(255,255,255,.82)}
+.apm-l1 b{color:#fff;font-weight:700}
+.apm-ponto{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fbbf24;margin-right:6px;vertical-align:0}
+.apm-vivo .apm-ponto{background:#34d399;animation:apm-pisca 1.6s infinite}
+.apm-fim .apm-ponto{background:#93c5fd}
+@keyframes apm-pisca{50%{opacity:.35}}
+.apm-placar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:6px 0 5px}
+.apm-c{min-width:0;border-left:4px solid var(--cor,#fff);padding-left:8px}
+.apm-c+.apm-c{text-align:right;border-left:0;border-right:4px solid var(--cor,#fff);padding:0 8px 0 0}
+.apm-c span{display:block;font-size:12px;font-weight:700;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+.apm-c strong{display:block;font-size:26px;line-height:1.05;font-weight:800;font-variant-numeric:tabular-nums}
+.apm-c small{display:block;font-size:11.5px;color:rgba(255,255,255,.8);font-variant-numeric:tabular-nums}
+.apm-barra{display:flex;height:6px;border-radius:99px;overflow:hidden;background:rgba(255,255,255,.2)}
+.apm-barra i{display:block;height:100%;transition:width .6s}
+.apm-l3{margin-top:5px;font-size:10.5px}
+.apm-l3 .ap-sessao{position:static;background:rgba(255,255,255,.14);padding:0 8px;font-size:10.5px;pointer-events:none}
+
+/* ---------- navegação por baixo ---------- */
+#apmNav,#apmSheet,#apmVeu{display:none}
+html.ap-m #apmNav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:80;background:#fff;border-top:1px solid #d9e0ea;
+  box-shadow:0 -4px 16px rgba(11,36,71,.12);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+#apmNav button{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;border:0;background:none;
+  border-radius:12px;font:600 11px/1.1 system-ui,Arial,sans-serif;color:#667085;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#apmNav button span{font-size:19px;line-height:1}
+#apmNav button.on{color:#153e75;background:#e8effb}
+#apmNav button.on span{transform:translateY(-1px)}
+html.ap-m #apmVeu.on{display:block;position:fixed;inset:0;z-index:85;background:rgba(10,20,40,.45)}
+html.ap-m #apmSheet.on{display:block;position:fixed;left:0;right:0;bottom:0;z-index:90;max-height:75dvh;overflow:auto;background:#fff;
+  border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.28);padding:6px 12px calc(14px + env(safe-area-inset-bottom))}
+.apm-alca{width:44px;height:5px;border-radius:99px;background:#cbd5e1;margin:6px auto 8px}
+#apmSheet h2{margin:0 4px 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#667085}
+#apmSheet button{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:52px;padding:0 14px;margin:0 0 6px;border:1px solid #d9e0ea;
+  border-radius:12px;background:#fff;font:600 16px system-ui,Arial,sans-serif;color:#153e75;text-align:left}
+#apmSheet button.on{background:#153e75;border-color:#153e75;color:#fff}
+#apmSheet button.on::after{content:"✓"}
+
+/* ---------- conteúdo da aba ---------- */
+html.ap-m .t26-corpo{scroll-margin-top:130px}
+html.ap-m .t26-card{padding:12px;border-radius:14px}
+html.ap-m .t26-gm{height:min(58dvh,460px);min-height:320px;border-radius:12px}
+html.ap-m .t26-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+html.ap-m .t26-kpi{padding:10px 12px}
+html.ap-m .t26-kpi b{font-size:20px}
+
+/* ---------- tabelas largas: um cartão por linha ---------- */
+html.ap-m .t26-tab:has(table[data-cartoes="1"]){overflow:visible;background:none}
+html.ap-m table[data-cartoes="1"]{min-width:0!important;width:100%;display:block;font-size:14px}
+html.ap-m table[data-cartoes="1"] thead{display:none}
+html.ap-m table[data-cartoes="1"] tbody{display:block}
+html.ap-m table[data-cartoes="1"] tr{display:block;margin:0 0 10px;padding:10px 12px;background:#fff;border:1px solid #d9e0ea;border-radius:14px;box-shadow:0 1px 4px rgba(11,36,71,.06)}
+html.ap-m table[data-cartoes="1"] td{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0!important;border:0!important;text-align:right;min-height:0}
+html.ap-m table[data-cartoes="1"] td::before{content:attr(data-l);flex:0 0 auto;max-width:46%;text-align:left;font-size:12px;font-weight:600;color:#667085}
+html.ap-m table[data-cartoes="1"] td:first-child{display:block;text-align:left;font-size:17px;padding:0 0 6px!important;border-bottom:1px solid #eef2f7!important;margin-bottom:4px}
+html.ap-m table[data-cartoes="1"] td:first-child::before{display:none}
+html.ap-m table[data-cartoes="1"] td[data-vazio="1"]{display:none}

@@ -20,7 +20,8 @@
     BASE + 'js/dados-perfil-2026.js',
     BASE + 'js/eleicao-painel.js?v=2026101810',
     BASE + 'js/eleicoes-2turno.js',
-    BASE + 'js/eleicoes-2turno-secoes.js'
+    BASE + 'js/eleicoes-2turno-secoes.js',
+    BASE + 'js/eleicao-mobile.js?v=2026101823'
   ];
 
   function negar(texto) {
@@ -58,6 +59,7 @@
     el.className = 'ap-sessao';
     // fica dentro do cabeçalho azul (#etBarra); o cabeçalho é redesenhado pela apuração, então o contador é recolocado quando some
     function encaixar() {
+      if (document.documentElement.classList.contains('ap-m')) { if (!el.parentNode) document.body.appendChild(el); return; }   // celular: o contador mora no placar (js/eleicao-mobile.js)
       var barra = document.getElementById('etBarra');
       if (barra && el.parentNode !== barra) barra.appendChild(el);
       else if (!barra && !el.parentNode) document.body.appendChild(el);
@@ -119,8 +121,14 @@
   /* O layout de tela cheia (html.et-fs) prende tudo na altura da tela e rola só dentro das abas: no desktop é o que se quer,
      mas no celular o cabeçalho e os placares ocupam a tela inteira e as abas ficam escondidas. Até 900 px a página rola normal. */
   var MQ_TELA = window.matchMedia ? window.matchMedia('(max-width: 900px)') : null;
-  function ajustarLayout() { document.documentElement.classList.toggle('et-fs', !(MQ_TELA && MQ_TELA.matches)); }
+  /* Telefone (até 760 px): versão própria da página, com placar fixo e navegação por baixo (css/eleicao-mobile.css, js/eleicao-mobile.js). */
+  var MQ_CEL = window.matchMedia ? window.matchMedia('(max-width: 760px)') : null;
+  function ajustarLayout() {
+    document.documentElement.classList.toggle('et-fs', !(MQ_TELA && MQ_TELA.matches));
+    document.documentElement.classList.toggle('ap-m', !!(MQ_CEL && MQ_CEL.matches));
+  }
   ajustarLayout();
+  if (MQ_CEL) { if (MQ_CEL.addEventListener) MQ_CEL.addEventListener('change', ajustarLayout); else if (MQ_CEL.addListener) MQ_CEL.addListener(ajustarLayout); }
   if (MQ_TELA) { if (MQ_TELA.addEventListener) MQ_TELA.addEventListener('change', ajustarLayout); else if (MQ_TELA.addListener) MQ_TELA.addListener(ajustarLayout); }
 
   /* a fileira de abas do celular rola para o lado: mantém a aba ativa à vista quando a apuração redesenha a página */
