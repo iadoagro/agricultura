@@ -56,13 +56,20 @@
     var el = document.createElement('div');
     el.setAttribute('role', 'timer');
     el.className = 'ap-sessao';
-    // no celular entra no fluxo da página, logo acima do cabeçalho; no computador fica fixo no canto
-    if (app) app.insertBefore(el, app.firstChild); else document.body.appendChild(el);
+    // fica dentro do cabeçalho azul (#etBarra); o cabeçalho é redesenhado pela apuração, então o contador é recolocado quando some
+    function encaixar() {
+      var barra = document.getElementById('etBarra');
+      if (barra && el.parentNode !== barra) barra.appendChild(el);
+      else if (!barra && !el.parentNode) document.body.appendChild(el);
+    }
+    encaixar();
+    var b0 = document.getElementById('etBarra');
+    if (b0 && window.MutationObserver) new MutationObserver(encaixar).observe(b0, { childList: true });
     var ini = Date.now();
     function p2(n) { return String(n).padStart(2, '0'); }
     function tique() {
       var t = Math.floor((Date.now() - ini) / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60);
-      el.textContent = (nome ? nome.split(' ')[0] + ' · ' : '') + 'sessão ' + (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(t % 60);
+      el.textContent = (nome ? nome.split(' ')[0] + ' · ' : '') + '⏱ ' + (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(t % 60);
     }
     tique(); setInterval(tique, 1000);
   }
