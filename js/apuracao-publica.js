@@ -40,7 +40,30 @@
   }
   function entrou() { try { return sessionStorage.getItem('ap_pub_ok') === '1'; } catch (e) { return false; } }
   function lembrar(nome) {
-    try { sessionStorage.setItem('ap_pub_ok', '1'); if (nome) localStorage.setItem('ap_pub_nome', nome); } catch (e) { /* sem armazenamento */ }
+    try {
+      sessionStorage.setItem('ap_pub_ok', '1');
+      if (nome) { sessionStorage.setItem('ap_pub_visitante', '1'); localStorage.setItem('ap_pub_nome', nome); }
+      else sessionStorage.removeItem('ap_pub_visitante');
+    } catch (e) { /* sem armazenamento */ }
+  }
+  /** Quem entrou com a senha da página (não é o responsável) vê, no alto à direita, há quanto tempo está na sessão.
+      O contador volta a zero a cada carregamento da página e quando entra outra pessoa. */
+  function mostrarContador() {
+    var visitante = false;
+    try { visitante = sessionStorage.getItem('ap_pub_visitante') === '1'; } catch (e) { /* sem armazenamento */ }
+    if (!visitante) return;
+    var nome = ''; try { nome = localStorage.getItem('ap_pub_nome') || ''; } catch (e) { /* sem armazenamento */ }
+    var el = document.createElement('div');
+    el.setAttribute('role', 'timer');
+    el.style.cssText = 'position:fixed;top:8px;right:8px;z-index:100000;padding:5px 11px;border-radius:999px;background:rgba(11,36,71,.88);color:#fff;font:600 12px/1.3 system-ui,Arial,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none';
+    document.body.appendChild(el);
+    var ini = Date.now();
+    function p2(n) { return String(n).padStart(2, '0'); }
+    function tique() {
+      var t = Math.floor((Date.now() - ini) / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60);
+      el.textContent = (nome ? nome.split(' ')[0] + ' · ' : '') + 'sessão ' + (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(t % 60);
+    }
+    tique(); setInterval(tique, 1000);
   }
   /** Mostra o formulário (senha e, se não for o responsável, o nome) e resolve quando a pessoa pode entrar. */
   function pedirSenha() {
@@ -106,6 +129,7 @@
     return pedirSenha().then(function () {
       if (aviso) aviso.hidden = true;
       if (app) app.hidden = false;
+      mostrarContador();
       return carrega(0);
     });
   }).catch(function () {
