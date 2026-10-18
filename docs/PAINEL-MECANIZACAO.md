@@ -23,23 +23,21 @@ cada aba nova vive em um arquivo próprio e se registra pela **`window.PAINEL_AP
 | `js/painel-alertas.js` | Alertas de produtividade (só interno). |
 | `js/painel-relatorios.js` | Relatórios semanal/mensal (só interno); PDF baixado direto no padrão visual dos relatórios do sistema. |
 | `js/painel-produtores.js` | Recorrência e produtores que não voltaram; aparece dentro da aba **Produtor** (ficha + recorrência, só interno). |
+| `js/painel-insercoes-extra.js` | Visões **Por município, Por escritório, Por serviço, Por técnico e Por horário** (lançamentos pela data/hora de inserção; só internas). |
 | `js/painel-pontos.js` | Mapa de pontos (satélite, calor, área por escritório). Vive em *Mostrar mais → Mapa de pontos*. |
 | `js/assistente-dados.js` | Assistente de perguntas (opção de usar os filtros; perguntas fixadas). |
 
 ### Onde ficam as visões
 Abas na barra: Visão geral, Mecanização, Açudagem, Cultura, Município, Mapa, Escritório Local, **Produtor**,
 Exportar, Lançar relatórios e **Mostrar mais**. Dentro de *Mostrar mais* (aba `insercoes`) ficam as visões:
-Registros, Por pessoa, Por dia, Por semana, Por mês, Mapa de pontos, **Comparativo, Metas, Tendências,
+Registros, Por lançador, Por dia, Por semana, Por mês, Por município, Por escritório, Por serviço, Por técnico, Por horário, Mapa de pontos, **Comparativo, Metas, Tendências,
 Cruzamentos, Alertas, Relatórios e Configurações (só root)**. Na versão pública só aparecem Comparativo, Metas, Tendências e
 Cruzamentos (as demais trazem nomes de pessoas ou dados internos e nem são desenhadas no DOM).
 Uma visão de módulo se registra com `PAINEL_API.registrarAba('x', fn)` e ganha um `<div class="ins-bloco" data-sec="x">`
 e um botão em `#insNav`; a lista fica em `SECOES_MODULO` (e `SECOES_INTERNAS`) no `js/dashboard.js`.
 
-**Filtros em *Mostrar mais*:** nenhuma visão tem a lateral de filtros (o conteúdo usa a largura toda;
-`atualizarFiltros()` esconde a coluna e põe `body.vista-ins`). Metas, Alertas, Relatórios e Configurações
-(`SECOES_SEM_SELECAO`) não leem filtro algum; as demais continuam usando a seleção escolhida nas outras abas, e a
-faixa **Seleção** (`#insSel`, logo abaixo dos botões) mostra qual é — período, filtros marcados e quantos
-registros sobram — com o botão *Limpar filtros*. Assim nenhum filtro fica escondido alterando os números.
+**Filtros em *Mostrar mais*:** a lateral de filtros aparece em todas as visões que leem a seleção. Metas, Alertas,
+Relatórios e Configurações (`SECOES_SEM_SELECAO`) não leem filtro algum e a lateral some (`atualizarFiltros()`).
 
 ### Como criar uma aba nova
 1. Botão `<button class="aba" data-aba="x">` e painel `<div class="aba-conteudo" data-aba="x">` em `dashboard.html`.
@@ -50,6 +48,18 @@ registros sobram — com o botão *Limpar filtros*. Assim nenhum filtro fica esc
    (em `dashboard.js`) e a regra `html.modo-publico .aba[data-aba="x"]` em `css/dashboard.css`.
    Se pode aparecer, inclua-a em `ABAS_CONFIGURAVEIS` (`js/painel-publico.js`).
 4. Rode `node tools/versionar.cjs pages/dashboard.html`.
+
+### Tipo de gráfico: computador × celular
+Todo gráfico tem um seletor de tipo (`data-tipos` no HTML; o 1º da lista é o tipo que o painel prevê como principal).
+- **Computador:** abre na tabela (ou no tipo que a pessoa escolheu); a escolha fica em `localStorage`, chave
+  `seagri_tipos_grafico`.
+- **Celular** (até 768 px, o mesmo corte do CSS; o painel se identifica sozinho e troca ao girar o aparelho): abre no tipo
+  principal do painel — barras para ranking, rosca para poucas partes, colunas/linha para o tempo. Rosca, pizza e colunas
+  com **mais de 6 categorias** vão para barras (`padraoCelular()` em `js/dashboard.js`). Só as escolhas feitas pela pessoa
+  ficam guardadas, em `seagri_tipos_grafico_celular`, à parte das do computador; os padrões nunca são gravados, então
+  mudar um padrão vale para todo mundo, inclusive quem já mexeu em outro gráfico.
+- No celular as barras mostram o nome inteiro em cima e a barra na largura toda (CSS no fim de `css/dashboard.css`), e as
+  séries usam uma área de desenho estreita (`eixos()` em `js/graficos.js`) para os números continuarem legíveis.
 
 ## 2. Regras de negócio (as que mais geram dúvida)
 

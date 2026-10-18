@@ -14,31 +14,24 @@
 <script src="../js/admin-gate.js?v=2026092530"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
 <script src="../js/nav.js?v=2026101201"></script>
-<script src="../js/dados-seagri.js?v=2026081307"></script>
+<script src="../js/contatos-organograma.js?v=2026101701"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/contatos.css?v=2026091501">
+<link rel="stylesheet" href="../css/contatos.css?v=2026101701">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
 <link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/select-app.css?v=2026092603">
 <script src="../js/select-app.js?v=2026092603" defer></script>
-<link rel="stylesheet" href="../css/padrao.css?v=2026101402">
+<link rel="stylesheet" href="../css/padrao.css?v=2026101701">
 </head>
 <body>
 <header class="cab-padrao"><h1>SISTEMA</h1><p>Contatos <span class="header-stats" id="statsLabel"></span></p></header>
 <div class="contatos-grade">
 <div class="controles">
-  <input class="busca" id="busca" type="search" placeholder="Buscar por nome ou setor...">
-  <div class="filtros">
-    <button class="filtro-btn ativo" data-grupo="">Todos</button>
-    <button class="filtro-btn" data-grupo="Secretaria">Secretaria</button>
-    <button class="filtro-btn" data-grupo="DAF">DAF</button>
-    <button class="filtro-btn" data-grupo="DPA">DPA</button>
-    <button class="filtro-btn" data-grupo="DPTEC">DPTEC</button>
-    <button class="filtro-btn" data-grupo="Escritórios Locais">Escritórios</button>
-  </div>
+  <input class="busca" id="busca" type="search" placeholder="Buscar por nome ou setor..." autocomplete="off">
+  <div class="filtros" id="filtros"><button class="filtro-btn ativo" data-grupo="" type="button">Todos</button></div>
 </div>
 <main id="main"></main>
 </div>
@@ -77,11 +70,11 @@ const qrBackdrop=document.getElementById('qrBackdrop');
 document.getElementById('qrClose').addEventListener('click',()=>qrBackdrop.classList.remove('show'));
 qrBackdrop.addEventListener('click',e=>{if(e.target===qrBackdrop)qrBackdrop.classList.remove('show');});
 
-function showQR(p,tel){
+function showQR(n,tel){
   const waUrl=formatWA(tel);
   if(!waUrl)return;
-  document.getElementById('qrNome').textContent=p.nome;
-  document.getElementById('qrSetor').textContent=p.setor;
+  document.getElementById('qrNome').textContent=nomeDe(n)||n.title;
+  document.getElementById('qrSetor').textContent=n.title;
   const canvas=document.getElementById('qrCanvas');
   canvas.innerHTML='';
   const qr=qrcode(0,'M');
@@ -110,9 +103,22 @@ function formatDisplay(tel){
 let grupoAtivo='',buscaAtiva='';
 let contatos=loadLocal();
 
+// As caixas são as do organograma (js/contatos-organograma.js): mesmos setores, nomes, cores e hierarquia,
+// com as trocas, inclusões e remoções feitas lá. Vêm do banco a cada abertura e quando a página volta a ser vista.
+let ORG={nos:[],grupos:[]};
+let orgFalhou=false,orgBuscando=false,orgUltima=0,orgPendente=null;
+
+function linhasDe(n){return String(n.holder||'').split('\n').map(s=>s.trim()).filter(Boolean)}
+function nomeDe(n){return linhasDe(n)[0]||''}
+function atoDe(n){return linhasDe(n).slice(1).join('\n')}
+/** Telefone salvo nesta página; na falta dele, o que foi digitado no organograma (modo Admin). */
+function telefoneDe(n){return contatos[n.id]||n.telefone||''}
+function semAcento(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()}
+
 function atualizarStats(){
-  const preenchidos=Object.keys(contatos).filter(k=>contatos[k]).length;
-  document.getElementById('statsLabel').textContent=preenchidos+' de '+SEAGRI_PESSOAS.length+' com telefone';
+  const total=ORG.nos.length;
+  const preenchidos=ORG.nos.filter(n=>telefoneDe(n)).length;
+  document.getElementById('statsLabel').textContent=total?preenchidos+' de '+total+' com telefone':'';
 }
 
 let toastTimer;
@@ -122,20 +128,32 @@ function showToast(msg){
   t.classList.add('show');toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
 }
 
-function renderCard(p){
+function renderCard(n){
   const card=document.createElement('div');
   card.className='card-contato';
-  card.dataset.id=p.id;
-  card.dataset.nome=p.nome.toLowerCase();
-  card.dataset.setor=p.setor.toLowerCase();
-  card.dataset.grupo=p.grupo;
+  card.dataset.id=n.id;
+  const cor=OrgContatos.corDaCaixa(n);
 
-  const nome=document.createElement('div');nome.className='card-nome';nome.textContent=p.nome;
-  const setor=document.createElement('div');setor.className='card-setor';setor.textContent=p.setor;
+  // a caixa do organograma: cabeçalho colorido com o setor e a sigla; corpo com o responsável e o ato
+  const topo=document.createElement('div');topo.className='card-topo';
+  topo.style.setProperty('--cc-bg',cor.bg);topo.style.setProperty('--cc-fg',cor.fg);
+  const titulo=document.createElement('span');titulo.className='card-titulo';titulo.textContent=n.title.replace(/\s+/g,' ');
+  const sigla=document.createElement('span');sigla.className='card-sigla';sigla.textContent=n.sigla;
+  topo.append(titulo,sigla);
+
+  const corpo=document.createElement('div');corpo.className='card-corpo';
+  if(cor.corpo)corpo.style.setProperty('--cc-corpo',cor.corpo);
+  const quem=nomeDe(n);
+  const nome=document.createElement('div');nome.className='card-nome'+(quem?'':' vazio');
+  nome.textContent=quem||'Sem responsável';
+  corpo.appendChild(nome);
+  const ato=atoDe(n);
+  if(ato){const a=document.createElement('div');a.className='card-ato';a.textContent=ato;corpo.appendChild(a);}
 
   const campo=document.createElement('div');campo.className='campo-tel';
   const inp=document.createElement('input');
   inp.type='tel';inp.className='input-tel';inp.placeholder='(68) 9XXXX-XXXX';
+  inp.setAttribute('aria-label','Telefone — '+(quem||n.title));
 
   const btnSalvar=document.createElement('button');
   btnSalvar.type='button';btnSalvar.className='btn-salvar';btnSalvar.textContent='Salvar';
@@ -153,7 +171,7 @@ function renderCard(p){
 
   // Modo VISUALIZAÇÃO: input travado, mostra lápis + WhatsApp (se houver número)
   function modoVisual(){
-    const tel=contatos[p.id]||'';
+    const tel=telefoneDe(n);
     inp.value=tel?formatDisplay(tel):'';
     inp.disabled=true;inp.classList.add('locked');
     inp.classList.toggle('salvo',!!tel);
@@ -177,7 +195,7 @@ function renderCard(p){
     if(foco)setTimeout(()=>inp.focus(),0);
   }
 
-  btnQR.addEventListener('click',()=>{const tel=contatos[p.id]||'';if(tel)showQR(p,tel);});
+  btnQR.addEventListener('click',()=>{const tel=telefoneDe(n);if(tel)showQR(n,tel);});
 
   btnEditar.addEventListener('click',()=>modoEdicao(true));
 
@@ -185,9 +203,9 @@ function renderCard(p){
     const v=inp.value.trim();
     const digitos=v?v.replace(/\D/g,''):'';
     btnSalvar.disabled=true;btnSalvar.textContent='Salvando...';
-    salvarServidor(p.id,digitos).then(res=>{
+    salvarServidor(n.id,digitos).then(res=>{
       if(res&&res.ok){
-        if(digitos)contatos[p.id]=digitos;else delete contatos[p.id];
+        if(digitos)contatos[n.id]=digitos;else delete contatos[n.id];
         mirrorLocal();atualizarStats();
         showToast(digitos?'Telefone salvo!':'Telefone removido');
         modoVisual();
@@ -196,12 +214,13 @@ function renderCard(p){
       }
     }).catch(()=>{
       // PHP indisponível (ex: GitHub Pages) — salva apenas localmente
-      if(digitos)contatos[p.id]=digitos;else delete contatos[p.id];
+      if(digitos)contatos[n.id]=digitos;else delete contatos[n.id];
       mirrorLocal();atualizarStats();
       showToast(digitos?'Salvo localmente (sem servidor)':'Removido localmente');
       modoVisual();
     }).finally(()=>{
       btnSalvar.disabled=false;btnSalvar.textContent='Salvar';
+      aplicarPendente();
     });
   }
 
@@ -209,64 +228,73 @@ function renderCard(p){
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();salvar();}});
 
   campo.appendChild(inp);campo.appendChild(btnSalvar);campo.appendChild(btnEditar);campo.appendChild(wa);campo.appendChild(btnQR);
-  card.appendChild(nome);card.appendChild(setor);card.appendChild(campo);
+  corpo.appendChild(campo);
+  card.append(topo,corpo);
 
   // Estado inicial conforme já exista telefone salvo
-  if(contatos[p.id])modoVisual();else modoEdicao(false);
+  if(telefoneDe(n))modoVisual();else modoEdicao(false);
   return card;
 }
 
 // Hierarquia igual ao organograma: diretoria › departamento › divisão › núcleo
-const KIND_ORDER=['secretaria','secretaria-adjunta','assessoria','diretoria','departamento','divisao','nucleo','escritorio'];
+const KIND_ORDER=['secretaria','secretaria-adjunta','assessoria','comissao','diretoria','departamento','divisao','nucleo','escritorio'];
 const KIND_LABEL={
   'secretaria':'Secretaria',
   'secretaria-adjunta':'Secretaria Adjunta',
   'assessoria':'Assessorias',
+  'comissao':'Comissões',
   'diretoria':'Diretoria',
   'departamento':'Departamentos',
   'divisao':'Divisões',
   'nucleo':'Núcleos',
   'escritorio':'Escritórios Locais'
 };
+function ordemTipo(k){const i=KIND_ORDER.indexOf(k);return i<0?KIND_ORDER.length:i}
+function rotuloGrupo(g){return g==='Escritórios Locais'?'Escritórios':g}
+
+function casa(n,q){
+  if(!q)return true;
+  return semAcento(nomeDe(n)).includes(q)||semAcento(n.title).includes(q)||semAcento(n.sigla).includes(q);
+}
 
 function render(){
   const main=document.getElementById('main');
   main.innerHTML='';
-  const q=buscaAtiva.toLowerCase().trim();
-  const grupos=['Secretaria','DAF','DPA','DPTEC','Escritórios Locais'];
-  const gruposNomes={'Escritórios Locais':'Escritórios'};
+  if(!ORG.nos.length){
+    const s=document.createElement('div');s.className='sem-resultado';
+    s.textContent=orgFalhou?'Não foi possível carregar os contatos do organograma. Recarregue a página.':'Carregando contatos do organograma…';
+    main.appendChild(s);
+    atualizarStats();
+    return;
+  }
+  const q=semAcento(buscaAtiva.trim());
   let totalVisiveis=0;
 
-  grupos.forEach(g=>{
-    if(grupoAtivo&&grupoAtivo!==g)return;
-    const lista=SEAGRI_PESSOAS.filter(p=>{
-      if(p.grupo!==g)return false;
-      if(q&&!p.nome.toLowerCase().includes(q)&&!p.setor.toLowerCase().includes(q))return false;
-      return true;
-    });
+  ORG.grupos.forEach(g=>{
+    if(grupoAtivo&&grupoAtivo!==g.nome)return;
+    const lista=ORG.nos.filter(n=>n.grupo===g.nome&&casa(n,q));
     if(!lista.length)return;
     totalVisiveis+=lista.length;
 
     const secao=document.createElement('div');secao.className='grupo-secao';
-    const titulo=document.createElement('div');
-    const cls=g==='Escritórios Locais'?'Escritórios':g;
-    titulo.className='grupo-titulo '+cls;
-    titulo.textContent=(gruposNomes[g]||g)+' ('+lista.length+')';
+    const titulo=document.createElement('div');titulo.className='grupo-titulo';
+    const cg=g.cabeca?OrgContatos.corDaCaixa(g.cabeca):{bg:'#475569',fg:'#fff'};
+    titulo.style.setProperty('--gt-bg',cg.bg);titulo.style.setProperty('--gt-fg',cg.fg);
+    titulo.textContent=rotuloGrupo(g.nome)+' ('+lista.length+')';
     secao.appendChild(titulo);
 
     // Separa por tipo (diretoria/departamento/divisão/núcleo), como no organograma
-    KIND_ORDER.forEach(kind=>{
-      const doTipo=lista.filter(p=>p.kind===kind);
-      if(!doTipo.length)return;
+    const tipos=[...new Set(lista.map(n=>n.kind))].sort((a,b)=>ordemTipo(a)-ordemTipo(b));
+    tipos.forEach(kind=>{
+      const doTipo=lista.filter(n=>n.kind===kind);
       // Só mostra o rótulo do tipo quando o grupo tem mais de um tipo
-      const tiposNoGrupo=new Set(lista.map(p=>p.kind));
-      if(tiposNoGrupo.size>1){
+      if(tipos.length>1){
         const sub=document.createElement('div');sub.className='subgrupo-titulo';
         sub.textContent=(KIND_LABEL[kind]||kind)+' ('+doTipo.length+')';
         secao.appendChild(sub);
       }
       const grid=document.createElement('div');grid.className='cards-grid';
-      doTipo.forEach(p=>grid.appendChild(renderCard(p)));
+      doTipo.forEach(n=>grid.appendChild(renderCard(n)));
       secao.appendChild(grid);
     });
 
@@ -275,24 +303,70 @@ function render(){
 
   if(!totalVisiveis){
     const s=document.createElement('div');s.className='sem-resultado';
-    s.textContent='Nenhuma pessoa encontrada.';main.appendChild(s);
+    s.textContent='Nenhum contato encontrado.';main.appendChild(s);
   }
   atualizarStats();
 }
 
+/** Botões dos grupos: Todos + um por seção do organograma (se entrar ou sair uma diretoria, muda sozinho). */
+function montarFiltros(){
+  const box=document.getElementById('filtros');
+  const nomes=['',...ORG.grupos.map(g=>g.nome)];
+  if(!nomes.includes(grupoAtivo))grupoAtivo='';   // o grupo escolhido deixou de existir no organograma
+  box.innerHTML='';
+  nomes.forEach(nome=>{
+    const b=document.createElement('button');
+    b.type='button';b.className='filtro-btn'+(nome===grupoAtivo?' ativo':'');
+    b.dataset.grupo=nome;b.textContent=nome?rotuloGrupo(nome):'Todos';
+    b.addEventListener('click',()=>{
+      box.querySelectorAll('.filtro-btn').forEach(x=>x.classList.toggle('ativo',x===b));
+      grupoAtivo=nome;
+      render();
+    });
+    box.appendChild(b);
+  });
+}
+
 document.getElementById('busca').addEventListener('input',e=>{buscaAtiva=e.target.value;render()});
 
-document.querySelectorAll('.filtro-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('ativo'));
-    btn.classList.add('ativo');
-    grupoAtivo=btn.dataset.grupo;
-    render();
-  });
+function aplicarOrg(dados){
+  ORG=dados;orgPendente=null;
+  montarFiltros();render();
+}
+/** Telefone digitado e ainda não salvo: não dá para redesenhar a lista por cima dele. */
+function editandoAlgum(){
+  return [...document.querySelectorAll('.input-tel')].some(i=>!i.disabled&&i.value.trim()!=='');
+}
+function aplicarPendente(){
+  if(orgPendente&&!editandoAlgum())aplicarOrg(orgPendente);
+}
+function atualizarOrg(){
+  if(orgBuscando)return;
+  orgBuscando=true;orgUltima=Date.now();
+  OrgContatos.carregar().then(res=>{
+    orgFalhou=false;
+    if(res.mudou||!ORG.nos.length){
+      if(editandoAlgum())orgPendente=res.dados;   // entra assim que o telefone for salvo ou a página voltar a ser vista
+      else aplicarOrg(res.dados);
+    }
+  }).catch(()=>{
+    // sem conexão: segue com a última leitura guardada; sem ela, avisa
+    if(!ORG.nos.length){orgFalhou=true;render();}
+  }).finally(()=>{orgBuscando=false;});
+}
+// quem troca um nome no organograma e volta para esta aba vê a mudança sem recarregar
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)return;
+  aplicarPendente();
+  if(Date.now()-orgUltima>20000)atualizarOrg();
 });
 
-// Carrega telefones do contatos.json (funciona em GH Pages e local)
+// Abre com a última leitura guardada (se houver) e confere com o banco; telefones vêm do contatos.json
+const lido=OrgContatos.doCache();
+if(lido)ORG=lido;
+montarFiltros();
 render();
+atualizarOrg();
 fetch(API_READ,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{
   if(d&&typeof d==='object'&&Object.keys(d).length>0){
     contatos=d;mirrorLocal();render();

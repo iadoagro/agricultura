@@ -223,7 +223,9 @@
     opts = opts || {};
     if (!rotulos || !rotulos.length) return vazio(el);
     var cores = paleta();
-    var W = 760, H = 280, ml = 48, mr = 14, mt = 16, mb = 36;
+    // celular (até 768 px): área de desenho estreita, para a escala ficar perto de 1:1 e os números continuarem legíveis
+    var cel = !!(global.matchMedia && global.matchMedia('(max-width: 768px)').matches);
+    var W = cel ? 360 : 760, H = cel ? 260 : 280, ml = cel ? 40 : 48, mr = cel ? 12 : 14, mt = 16, mb = cel ? 30 : 36;
     var pw = W - ml - mr, ph = H - mt - mb;
     var max = 0;
     series.forEach(function (s) { s.valores.forEach(function (v) { if (v > max) max = v; }); });
@@ -241,7 +243,7 @@
     }
     g += '<line class="g-eixo" x1="' + ml + '" y1="' + (mt + ph) + '" x2="' + (W - mr) + '" y2="' + (mt + ph) + '"/>';
 
-    var salto = Math.ceil(n / 12);
+    var salto = Math.ceil(n / (cel ? 6 : 12));   // no celular, um rótulo de tempo a cada poucos períodos (o toque mostra o exato)
     rotulos.forEach(function (rr, i) {
       if (i % salto === 0 || i === n - 1) {
         g += '<text class="g-tick" x="' + x(i).toFixed(1) + '" y="' + (mt + ph + 16) +
@@ -334,10 +336,15 @@
         cursor.setAttribute('x2', x(i).toFixed(1));
         cursor.style.visibility = 'visible';
         var h = '<div class="tooltip-tit">' + esc(rotulos[i]) + '</div>';
-        series.forEach(function (s, si) {
-          if (s.valores[i] == null || s.valores[i] === 0) return; // sem lançamento no mês
+        // do mais forte para o mais fraco naquele ponto (a cor continua a da série)
+        var ordem = series.map(function (s, si) { return { s: s, si: si }; }).filter(function (o) {
+          return o.s.valores[i] != null && o.s.valores[i] !== 0; // sem lançamento no mês
+        }).sort(function (a, b) { return b.s.valores[i] - a.s.valores[i]; });
+        ordem.forEach(function (o, pos) {
+          var s = o.s, si = o.si;
           h += '<div class="tooltip-l"><span class="legenda-cor" style="background:' + cor(s, si) +
-            '"></span>' + esc(s.nome) + '<b>' + num(s.valores[i], opts.dec) + '</b></div>';
+            '"></span>' + (ordem.length > 1 ? '<span class="tooltip-pos">' + (pos + 1) + 'º</span>' : '') +
+            esc(s.nome) + '<b>' + num(s.valores[i], opts.dec) + '</b></div>';
           // medida própria do serviço (hectares na mecanização, horas na açudagem)
           if (s.detalhe && s.detalhe.valores[i]) {
             h += '<div class="tooltip-l tooltip-sub">' + esc(s.detalhe.rot) +

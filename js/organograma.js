@@ -503,6 +503,7 @@ function openDetailPanel(n,pdfPath){
 }
 
 function panToNode(n){
+  if(window.orgCelular&&window.orgCelular.ativo()){window.orgCelular.revelar(n);return}   // modo celular: mostra o cartão na lista
   const r=rectFor(n);
   const cx=r.x+r.w/2, cy=r.y+r.h/2;
   const vr=viewport.getBoundingClientRect();
@@ -678,6 +679,7 @@ function refresh(){
     if(tg)tg.textContent=collapsed.has(id)?"+":"−";
   });
   drawLines();
+  if(window.orgCelular)window.orgCelular.atualizar();
 }
 
 // Render all nodes
@@ -1056,8 +1058,12 @@ document.getElementById("btnZoomIn").addEventListener("click",()=>zoomCenter(sca
 document.getElementById("btnZoomOut").addEventListener("click",()=>zoomCenter(scale-.05));
 zoomRange.addEventListener("input",()=>{zoomCenter(Number(zoomRange.value)/100)});
 document.getElementById("btnFit").addEventListener("click",fitToScreen);
-document.getElementById("btnExpand").addEventListener("click",()=>{collapsed.clear();refresh()});
+document.getElementById("btnExpand").addEventListener("click",()=>{
+  if(window.orgCelular&&window.orgCelular.ativo()){window.orgCelular.expandir(true);return}   // modo celular: abre a lista toda
+  collapsed.clear();refresh();
+});
 document.getElementById("btnCollapse").addEventListener("click",()=>{
+  if(window.orgCelular&&window.orgCelular.ativo()){window.orgCelular.expandir(false);return}
   nodes.forEach(n=>{if(n.id!=="sec"&&n.children.length>0)collapsed.add(n.id)});
   refresh();
 });
@@ -1068,20 +1074,25 @@ setTimeout(fitToScreen,60);
 
 // ===== Download =====
 function captureCanvas(){
-  return new Promise(resolve=>{
+  return new Promise((resolve,reject)=>{
+    const voltarCelular=window.orgCelular?window.orgCelular.pausar():null;   // modo celular: o quadro só aparece (sob um aviso) durante a captura
     const prevTransform=canvas.style.transform;
     const prevOverflow=canvas.style.overflow;
     const wasCollapsed=[...collapsed];
     collapsed.clear();refresh();
     canvas.style.transform="none";
     canvas.style.overflow="visible";
+    const restaurar=()=>{
+      canvas.style.transform=prevTransform;
+      canvas.style.overflow=prevOverflow;
+      wasCollapsed.forEach(id=>collapsed.add(id));refresh();
+      if(voltarCelular)voltarCelular();
+    };
     setTimeout(()=>{
       html2canvas(canvas,{scale:2,useCORS:true,backgroundColor:"#ffffff",width:CANVAS_W,height:CANVAS_H,windowWidth:CANVAS_W,windowHeight:CANVAS_H}).then(c=>{
-        canvas.style.transform=prevTransform;
-        canvas.style.overflow=prevOverflow;
-        wasCollapsed.forEach(id=>collapsed.add(id));refresh();
+        restaurar();
         resolve(c);
-      });
+      },err=>{restaurar();reject(err);});
     },100);
   });
 }
@@ -1134,6 +1145,9 @@ document.getElementById("btnPDF").addEventListener("click",()=>{
     pdf.text("Última alteração: "+orgDataBr(orgDataAlteracao())+"  |  Baixado em: "+orgDataBr(agora),CANVAS_W-40,CANVAS_H-14,{align:"right"});
     pdf.save(orgNomeArquivo("pdf",agora));
     btn.disabled=false;btn.innerHTML="&#128196; Baixar PDF";
+  }).catch(()=>{
+    btn.disabled=false;btn.innerHTML="&#128196; Baixar PDF";
+    showToast("Não foi possível gerar o PDF");
   });
 });
 
@@ -1666,6 +1680,7 @@ function orgAjustarCorpo(n){
   while(body.scrollHeight>body.clientHeight+1&&fs>4){fs-=.5;body.style.fontSize=fs+'px';}
   el.dataset.hasPdf=getPDFPath(n.holder||'')?'true':'';
   if(!el.dataset.hasPdf)delete el.dataset.hasPdf;
+  if(window.orgCelular)window.orgCelular.atualizarNo(n);
 }
 
 function orgPosicionar(n){
@@ -1955,6 +1970,7 @@ function orgAtualizarVisual(n){
   orgAplicarCor(el,el.querySelector('.node-header'),n.color);
   orgAplicarTextos(el,n);
   el.dataset.long=String(n.title.length>42);
+  if(window.orgCelular)window.orgCelular.atualizarNo(n);
 }
 
 function orgRecarregarAbrindo(id){
@@ -2264,7 +2280,8 @@ function doSearch(q){
       searchInput.value='';
       collapsed.clear();refresh();
       panToNode(n);
-      openDetailPanel(n,getPDFPath(n.holder));
+      // no modo celular o painel taparia a lista: o cartão achado só é mostrado e marcado (toque nele para abrir)
+      if(!(window.orgCelular&&window.orgCelular.ativo()))openDetailPanel(n,getPDFPath(n.holder));
     });
     searchResults.appendChild(item);
   });
@@ -2299,4 +2316,210 @@ searchInput.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{
   if(!e.target.closest('.search-node-wrap'))searchResults.classList.remove('show');
 });
+
+// ===== Modo celular =====
+// O quadro é desenhado para tela grande: no telefone as caixas ficam minúsculas. Este modo mostra o mesmo
+// organograma como lista hierárquica — um cartão por setor, com a cor do quadro, o responsável e a portaria,
+// ligado ao setor de cima por linhas de árvore ("Ver N setores" abre cada nível). Em tela de celular abre
+// sozinho; a escolha feita no seletor da barra de ferramentas fica guardada neste aparelho. Quem aplica o modo
+// inicial (classe org-celular no body) é o carregador da página, para o primeiro desenho já sair certo.
+// Estilos: css/organograma-celular.css. Os ganchos (refresh, panToNode, captureCanvas…) chamam window.orgCelular.
+window.orgCelular=(function(){
+  const CHAVE='seagri_org_modo';
+  const COR_NOMEADA={purple:'var(--purple)',yellow:'var(--yellow)',blue:'var(--blue)',green:'var(--green)',orange:'var(--orange)'};
+  const SETA='<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const bQuadro=document.getElementById('btnModoQuadro');
+  const bCelular=document.getElementById('btnModoCelular');
+  const raizes=nodes.filter(n=>!n.parent||!byId.has(n.parent));
+  const itens=new Map();     // id -> peças do cartão
+  const abertos=new Set();   // setores com os subordinados à mostra
+  let assinaturaFiltro=null,selecionado=null;
+
+  function ativo(){return document.body.classList.contains('org-celular');}
+
+  /** Subordinados na ordem em que aparecem no quadro: de cima para baixo e, em cada fileira, da esquerda para a direita. */
+  function ordenarFilhos(n){
+    const fileiras=[];
+    n.children.map(id=>byId.get(id)).filter(Boolean).sort((a,b)=>a.y-b.y).forEach(c=>{
+      const f=fileiras.find(x=>Math.abs(x.y-c.y)<200000);
+      if(f)f.itens.push(c);else fileiras.push({y:c.y,itens:[c]});
+    });
+    return fileiras.flatMap(f=>f.itens.sort((a,b)=>a.x-b.x));
+  }
+
+  /** Textos e cores do cartão, com as mesmas regras das caixas do quadro (as cinco cores do desenho ou #rrggbb[aa]; título claro ou escuro). */
+  function preencher(n,it){
+    it.titulo.textContent=n.title.replace(/\s+/g,' ');
+    it.sigla.textContent=n.sigla;
+    const linhas=String(n.holder||'').split('\n').map(s=>s.trim()).filter(Boolean);
+    it.nome.textContent=linhas[0]||'Responsável não informado';
+    it.nome.classList.toggle('oc-vazio',!linhas.length);
+    it.ato.textContent=linhas.slice(1).join('\n');
+    it.ato.hidden=linhas.length<2;
+    const propria=/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(n.color||'');
+    const texto=n.corTitulo||(propria?orgTextoSobre(n.color):(n.color==='yellow'?'#1a1300':'#fff'));
+    it.caixa.style.setProperty('--oc-bg',propria?n.color:(COR_NOMEADA[n.color]||COR_NOMEADA.blue));
+    it.caixa.style.setProperty('--oc-fg',texto);
+    it.caixa.classList.toggle('oc-claro',/^#f{3}(f{3})?$/i.test(texto));
+    if(n.corTexto)it.caixa.style.setProperty('--oc-corpo',n.corTexto);else it.caixa.style.removeProperty('--oc-corpo');
+  }
+
+  function montarItem(n){
+    const li=document.createElement('li');li.className='oc-item';li.dataset.id=n.id;
+    const caixa=document.createElement('div');caixa.className='oc-caixa';caixa.dataset.kind=n.kind;
+    const card=document.createElement('button');card.type='button';card.className='oc-card';
+    const topo=document.createElement('span');topo.className='oc-topo';
+    const titulo=document.createElement('span');titulo.className='oc-titulo';
+    const sigla=document.createElement('span');sigla.className='oc-sigla';
+    topo.append(titulo,sigla);
+    const corpo=document.createElement('span');corpo.className='oc-corpo';
+    const nome=document.createElement('span');nome.className='oc-nome';
+    const ato=document.createElement('span');ato.className='oc-ato';
+    corpo.append(nome,ato);
+    card.append(topo,corpo);
+    card.addEventListener('click',()=>{selecionar(n.id);openDetailPanel(n,getPDFPath(n.holder));});
+    caixa.appendChild(card);
+    li.appendChild(caixa);
+    const it={li,caixa,titulo,sigla,nome,ato,filhos:ordenarFilhos(n),ul:null,tg:null,tgTxt:null};
+    if(it.filhos.length){
+      it.ul=document.createElement('ul');it.ul.className='oc-filhos';it.ul.id='oc-f-'+n.id;
+      it.tg=document.createElement('button');it.tg.type='button';it.tg.className='oc-toggle';
+      it.tg.setAttribute('aria-controls',it.ul.id);
+      const seta=document.createElement('span');seta.className='oc-seta';seta.innerHTML=SETA;
+      it.tgTxt=document.createElement('span');
+      it.tg.append(seta,it.tgTxt);
+      it.tg.addEventListener('click',()=>{if(abertos.has(n.id))abertos.delete(n.id);else abertos.add(n.id);aplicar();});
+      caixa.appendChild(it.tg);
+      li.appendChild(it.ul);
+      it.filhos.forEach(c=>it.ul.appendChild(montarItem(c)));
+    }
+    itens.set(n.id,it);
+    preencher(n,it);
+    return li;
+  }
+
+  const secao=document.createElement('section');secao.className='org-cel';secao.id='orgCel';
+  secao.setAttribute('aria-label','Organograma em lista');
+  const coluna=document.createElement('div');coluna.className='oc-coluna';
+  const resumo=document.createElement('p');resumo.className='oc-resumo';resumo.setAttribute('aria-live','polite');
+  const lista=document.createElement('ul');lista.className='oc-lista';
+  raizes.forEach(r=>lista.appendChild(montarItem(r)));
+  coluna.append(resumo,lista);secao.appendChild(coluna);
+  viewport.after(secao);   // dentro de .main-row, no lugar do quadro enquanto o modo estiver ligado
+
+  /** Mostra/esconde conforme o filtro e os níveis abertos; "Ver N setores" conta só o que o filtro deixa à vista. */
+  function aplicar(){
+    const f=filterVisible;
+    const assinatura=f?[...f].sort().join(','):'';
+    if(assinatura!==assinaturaFiltro){   // filtro novo (ou removido): abre tudo o que ele mostra / volta ao começo
+      const primeira=assinaturaFiltro===null;
+      assinaturaFiltro=assinatura;
+      abertos.clear();
+      (f?[...f]:raizes.map(r=>r.id)).forEach(id=>abertos.add(id));
+      if(!primeira)voltarAoInicio();
+    }
+    let mostrados=0;
+    itens.forEach((it,id)=>{
+      it.li.hidden=!!f&&!f.has(id);
+      if(!it.li.hidden)mostrados++;
+    });
+    itens.forEach((it,id)=>{
+      if(!it.ul)return;
+      const visiveis=it.filhos.filter(c=>!itens.get(c.id).li.hidden);
+      const aberto=abertos.has(id)&&visiveis.length>0;
+      it.li.classList.toggle('oc-aberto',aberto);
+      it.tg.hidden=!visiveis.length;
+      it.tg.setAttribute('aria-expanded',aberto?'true':'false');
+      it.tgTxt.textContent=(aberto?'Ocultar ':'Ver ')+visiveis.length+(visiveis.length===1?' setor':' setores');
+      it.filhos.forEach(c=>itens.get(c.id).li.classList.toggle('oc-ultimo',c===visiveis[visiveis.length-1]));   // a linha da árvore termina no último
+    });
+    resumo.textContent=f?mostrados+' de '+itens.size+' setores (filtro ativo)'
+      :itens.size+' setores · toque em um setor para ver o responsável, a portaria e o contato.';
+  }
+
+  /** Rola a página de uma vez, sem a animação suave do site (não faz sentido "viajar" por uma lista que acabou de mudar). */
+  function rolarPara(y){
+    const raiz=document.documentElement;
+    raiz.style.scrollBehavior='auto';
+    window.scrollTo(0,y);
+    raiz.style.scrollBehavior='';
+  }
+
+  /** Filtro novo ou lista recolhida: volta ao começo dela (logo abaixo da barra fixa do celular). */
+  function voltarAoInicio(){
+    if(getComputedStyle(secao).overflowY==='auto'){secao.scrollTop=0;return;}   // computador: a lista rola dentro da página
+    const barra=document.querySelector('.topbar');
+    const fixa=barra&&getComputedStyle(barra).position==='sticky'?barra.offsetHeight:0;
+    rolarPara(Math.max(0,secao.getBoundingClientRect().top+window.scrollY-fixa));
+  }
+
+  function selecionar(id,pulsar){
+    if(selecionado)selecionado.classList.remove('oc-sel','oc-pulso');
+    const it=itens.get(id);
+    selecionado=it?it.li:null;
+    if(!selecionado)return;
+    selecionado.classList.add('oc-sel');
+    if(pulsar){
+      selecionado.classList.add('oc-pulso');
+      const li=selecionado;
+      setTimeout(()=>li.classList.remove('oc-pulso'),1200);
+    }
+  }
+
+  /** Abre os níveis de cima, marca o cartão e rola até ele (busca e links do painel de detalhes). */
+  function revelar(n){
+    if(filterVisible&&!filterVisible.has(n.id)){   // o filtro esconde o setor procurado: tira o filtro
+      const limpar=document.querySelector('#filterContent .filter-limpar');
+      if(limpar)limpar.click();
+    }
+    for(let p=n.parent?byId.get(n.parent):null,i=0;p&&i<60;p=p.parent?byId.get(p.parent):null,i++)abertos.add(p.id);
+    aplicar();
+    selecionar(n.id,true);
+    const it=itens.get(n.id);
+    if(it)it.caixa.scrollIntoView({block:'center',behavior:'smooth'});
+  }
+
+  /** "+ Expandir" abre todos os níveis; "− Recolher" volta só ao primeiro (como no quadro). */
+  function expandir(abrir){
+    abertos.clear();
+    (abrir?[...itens.keys()]:raizes.map(r=>r.id)).forEach(id=>abertos.add(id));
+    aplicar();
+    if(!abrir)voltarAoInicio();   // a lista encolhe: volta ao começo para não ficar perdido no fim dela
+  }
+
+  /** Antes de gerar o PDF: mostra o quadro (oculto neste modo) sob um aviso e devolve a função que desfaz. */
+  function pausar(){
+    if(!ativo())return null;
+    const y=window.scrollY;
+    document.body.classList.remove('org-celular');
+    document.body.classList.add('org-gerando');
+    return ()=>{
+      document.body.classList.add('org-celular');
+      document.body.classList.remove('org-gerando');
+      aplicar();
+      rolarPara(y);   // volta para onde estava
+    };
+  }
+
+  function mostrarModo(celular){
+    document.body.classList.toggle('org-celular',celular);
+    bQuadro.setAttribute('aria-pressed',String(!celular));
+    bCelular.setAttribute('aria-pressed',String(celular));
+    if(celular)aplicar();
+  }
+  function escolherModo(modo){
+    try{localStorage.setItem(CHAVE,modo);}catch(e){}
+    mostrarModo(modo==='celular');
+    if(modo!=='celular')requestAnimationFrame(fitToScreen);   // o quadro volta a ter tamanho: reenquadra na tela
+  }
+  bQuadro.addEventListener('click',()=>escolherModo('quadro'));
+  bCelular.addEventListener('click',()=>escolherModo('celular'));
+  mostrarModo(ativo());   // o modo inicial (guardado, ou lista em telefone) já foi posto no body pelo carregador da página
+
+  return {
+    ativo,revelar,expandir,pausar,
+    atualizar(){if(ativo())aplicar();},
+    atualizarNo(n){const it=itens.get(n.id);if(it)preencher(n,it);}
+  };
+})();
 

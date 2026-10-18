@@ -14,6 +14,7 @@
 <script src="../js/admin-gate.js?v=2026092530"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
 <script src="../js/nav.js?v=2026101201"></script>
+<script src="../js/contatos-organograma.js?v=2026101701"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/portarias.css?v=2026091501">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
@@ -22,7 +23,7 @@
 <link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/select-app.css?v=2026092603">
 <script src="../js/select-app.js?v=2026092603" defer></script>
-<link rel="stylesheet" href="../css/padrao.css?v=2026101402">
+<link rel="stylesheet" href="../css/padrao.css?v=2026101701">
 </head>
 <body>
 <header class="cab-padrao"><h1>SISTEMA</h1><p>Portarias</p></header>
@@ -141,97 +142,24 @@ const portariasPDFMap = {
   "298/2025": "../portarias/portarias 2025/[151]-0018170345_Publicacao.pdf"
 };
 
-const portariasDados = [
-  {titulo:"Secretária",pessoa:"Temyllis Lima da Silva",portaria:"Decreto Nº 12.457-P/2026"},
-  {titulo:"Gabinete da Secretária",pessoa:"Francisco Diego",portaria:"Portaria Nº 25/2026"},
-  {titulo:"Secretário Adjunto",pessoa:"Edivan Maciel",portaria:"Decreto Nº 1.307-P/2023"},
-  {titulo:"Gabinete do Secretário Adjunto",pessoa:"Josilda Lima",portaria:"Portaria Nº 214/2023"},
-  {titulo:"Controle Interno",pessoa:"Lilian Vitoria",portaria:"Portaria Nº 285/2024"},
-  {titulo:"Consultoria Jurídica",pessoa:"Thais Ferreira",portaria:"Portaria Nº 35/2023"},
-  {titulo:"Assessoria de Comunicação",pessoa:"Dionisio Neto",portaria:"Portaria Nº 192/2026"},
-  {titulo:"Ouvidoria",pessoa:"Maria Socorro",portaria:"Portaria Nº 110/2023"},
-  {titulo:"Diretoria de Administração e Finanças",pessoa:"Nivia Cristina",portaria:"Decreto Nº 12.182-P/2026"},
-  {titulo:"Diretoria de Produção e Agronegócio",pessoa:"Cláudio Malveira",portaria:"Decreto Nº 1.855-P/2023"},
-  {titulo:"Diretoria de Pesquisa, Tecnologia e Inovação do Agronegócio",pessoa:"Thiago de Almeida",portaria:"Decreto Nº 2.525-P/2023"},
-  {titulo:"Departamento de Escritórios Locais",pessoa:"Jorge Ney Pontes",portaria:"Portaria Nº 45/2023"},
-  {titulo:"Departamento de Gestão",pessoa:"Mayssa Diniz",portaria:"Portaria Nº 83/2026"},
-  {titulo:"Departamento de Planejamento",pessoa:"Natalia Cristina",portaria:"Portaria Nº 60/2025"},
-  {titulo:"Departamento de Orçamento e Finanças",pessoa:"Heloneyda Marques",portaria:"Portaria Nº 193/2026"},
-  {titulo:"Divisão de Serviços Gerais",pessoa:"Renata Carvalho",portaria:"Portaria Nº 151/2025"},
-  {titulo:"Divisão de Patrimônio e Materiais",pessoa:"Rosimeire Cavalcante",portaria:"Portaria Nº 06/2023"},
-  {titulo:"Divisão de Arquivo e Protocolo",pessoa:"Maria do Socorro",portaria:"Portaria Nº 07/2023"},
-  {titulo:"Divisão de Recursos Humanos",pessoa:"Marcleide Tavares",portaria:"Portaria Nº 04/2023"},
-  {titulo:"Divisão de Transporte",pessoa:"Pedro Alencar",portaria:"Portaria Nº 173/2026"},
-  {titulo:"Divisão de Modernização Tecnológica",pessoa:"Luan Dourado",portaria:"Portaria Nº 216/2026"},
-  {titulo:"Divisão de Licitações, Compras e Contratos",pessoa:"João Paulo",portaria:"Portaria Nº 30/2026"},
-  {titulo:"Divisão de Convênios",pessoa:"Pâmela Galvão",portaria:"Portaria Nº 19/2025"},
-  {titulo:"Divisão de Programas",pessoa:"Marcos Santana",portaria:"Portaria Nº 217/2026"},
-  {titulo:"Divisão de Monitoramento",pessoa:"Éllen Abud",portaria:"Portaria Nº 97/2023"},
-  {titulo:"Divisão de Finanças",pessoa:"Karin Gomes",portaria:"Portaria Nº 194/2026"},
-  {titulo:"Divisão de Contabilidade",pessoa:"Camila Arruda",portaria:"Portaria Nº 195/2026"},
-  {titulo:"Departamento Socioprodutivo e Segurança Alimentar",pessoa:"Igor Honorato",portaria:"Portaria Nº 196/2026"},
-  {titulo:"Departamento de Agronegócio",pessoa:"Jalceyr Pessoa",portaria:"Portaria Nº 94/2023"},
-  {titulo:"Departamento de Produção Familiar",pessoa:"Josicley Azevedo",portaria:"Portaria Nº 244/2026"},
-  {titulo:"Departamento de Mecanização",pessoa:"Richarler Aguiar",portaria:"Portaria Nº 124/2024"},
-  {titulo:"Divisão de Inclusão Socioprodutiva",pessoa:"Ariane Gadelha",portaria:"Portaria Nº 197/2026"},
-  {titulo:"Divisão de Segurança Alimentar",pessoa:"Marcela",portaria:"Portaria Nº 201/2026"},
-  {titulo:"Divisão de Agricultura",pessoa:"Nilton Cesar",portaria:"Portaria Nº 207/2026"},
-  {titulo:"Divisão de Pecuária",pessoa:"Willian Junis",portaria:"Portaria Nº 227/2025"},
-  {titulo:"Divisão de Produção Indígena",pessoa:"Adriano Dias",portaria:"Portaria Nº 107/2023"},
-  {titulo:"Divisão de Produção Familiar",pessoa:"Wally Stanley",portaria:"Portaria Nº 245/2026"},
-  {titulo:"Divisão de Sociobiodiversidade",pessoa:"Eneide Thaumaturgo",portaria:"Portaria Nº 246/2026"},
-  {titulo:"Divisão de Remuneração de Serviços Ambientais",pessoa:"",portaria:""},
-  {titulo:"Núcleo de Apoio Logístico",pessoa:"Antônio José",portaria:"Portaria Nº 198/2026"},
-  {titulo:"Núcleo de Cadastro da Agricultura Familiar",pessoa:"Conceição",portaria:"Portaria Nº 199/2026"},
-  {titulo:"Núcleo de Polos Agroflorestais",pessoa:"Carlos Antonio",portaria:"Portaria Nº 200/2026"},
-  {titulo:"Núcleo do Programa de Aquisição de Alimentos",pessoa:"Claiton",portaria:"Portaria Nº 202/2026"},
-  {titulo:"Núcleo do Programa de Aquisição de Alimentos Indígena",pessoa:"José Paulo",portaria:"Portaria Nº 204/2026"},
-  {titulo:"Núcleo do Programa de Aquisição de Alimentos Extrativista",pessoa:"Yanná",portaria:"Portaria Nº 205/2026"},
-  {titulo:"Núcleo do Café",pessoa:"Michelma Silva",portaria:"Portaria Nº 206/2026"},
-  {titulo:"Núcleo de Armazenamento e Silos",pessoa:"Nilton César",portaria:"Portaria Nº 207/2026"},
-  {titulo:"Núcleo de Aquicultura e Pesca",pessoa:"Wallace Santos",portaria:"Portaria Nº 208/2026"},
-  {titulo:"Núcleo da Avicultura",pessoa:"Bruna Diogo",portaria:"Portaria Nº 209/2026"},
-  {titulo:"Núcleo Socioprodutivo Indígena",pessoa:"Hidelk Farias",portaria:"Portaria Nº 210/2026"},
-  {titulo:"Núcleo do Cacau",pessoa:"Marcos Rocha",portaria:"Portaria Nº 211/2026"},
-  {titulo:"Núcleo do Mel",pessoa:"Rubia Mara",portaria:"Portaria Nº 212/2026"},
-  {titulo:"Núcleo da Mandioca",pessoa:"Murilo Matos",portaria:"Portaria Nº 213/2026"},
-  {titulo:"Núcleo da Olericultura",pessoa:"Adriana Melo",portaria:"Portaria Nº 214/2026"},
-  {titulo:"Núcleo de Extrativismo",pessoa:"Angelina Lima",portaria:"Portaria Nº 215/2026"},
-  {titulo:"Departamento de Tecnologia",pessoa:"Luan Sobral",portaria:"Portaria Nº 216/2026"},
-  {titulo:"Departamento de Pesquisa e Inovação",pessoa:"Roger Recco",portaria:"Portaria Nº 53/2025"},
-  {titulo:"Divisão de Geoprocessamento e Telemetria",pessoa:"Izaura Cardoso",portaria:"Portaria Nº 218/2026"},
-  {titulo:"Divisão de Sistema de Informação",pessoa:"Gabriane Vaz",portaria:"Portaria Nº 219/2026"},
-  {titulo:"Divisão de Transferência de Tecnologia",pessoa:"Ediu Carlos",portaria:"Portaria Nº 220/2026"},
-  {titulo:"Divisão de Pesquisa Agropecuária",pessoa:"Marcos Vinicius",portaria:"Portaria Nº 217/2026"},
-  {titulo:"Divisão de Certificação de Produtos",pessoa:"Yanná Thaumaturgo",portaria:"Portaria Nº 205/2026"},
-  {titulo:"Escritório Local de Acrelândia",pessoa:"Max Teodoro",portaria:"Portaria Nº 298/2025"},
-  {titulo:"Escritório Local de Assis Brasil",pessoa:"Wilker Nazareno",portaria:"Portaria Nº 187/2023"},
-  {titulo:"Escritório Local de Brasiléia",pessoa:"Antônio Francisco",portaria:"Portaria Nº 153/2023"},
-  {titulo:"Escritório Local de Bujari",pessoa:"Luciano Queiroz",portaria:"Portaria Nº 86/2025"},
-  {titulo:"Escritório Local de Capixaba",pessoa:"Kemy Fernandes",portaria:"Portaria Nº 329/2024"},
-  {titulo:"Escritório Local de Cruzeiro do Sul",pessoa:"Marcos Pereira",portaria:"Portaria Nº 136/2023"},
-  {titulo:"Escritório Local de Epitaciolândia",pessoa:"Jose Menezes",portaria:"Portaria Nº 138/2023"},
-  {titulo:"Escritório Local de Feijó",pessoa:"João Paulo",portaria:"Portaria Nº 134/2023"},
-  {titulo:"Escritório Local do Humaitá",pessoa:"Wilson Brito",portaria:"Portaria Nº 30/2025"},
-  {titulo:"Escritório Local de Jordão",pessoa:"Cintia Araujo",portaria:"Portaria Nº 127/2026"},
-  {titulo:"Escritório Local de Mâncio Lima",pessoa:"Magno Corrêa",portaria:"Portaria Nº 177/2024"},
-  {titulo:"Escritório Local de Manoel Urbano",pessoa:"Denes Bruno",portaria:"Portaria Nº 175/2023"},
-  {titulo:"Escritório Local de Marechal Thaumaturgo",pessoa:"Laires Azevedo Soares",portaria:"Portaria Nº 290/2025"},
-  {titulo:"Escritório Local de Porto Acre",pessoa:"Wilson de Brito",portaria:"Portaria Nº 191/2023"},
-  {titulo:"Escritório Local de Plácido de Castro",pessoa:"Antonio Pinto",portaria:"Portaria Nº 101/2025"},
-  {titulo:"Escritório Local de Porto Walter",pessoa:"Eriânio Melo",portaria:"Portaria Nº 255/2024"},
-  {titulo:"Escritório Local de Rio Branco",pessoa:"Risomar Freire",portaria:"Portaria Nº 179/2023"},
-  {titulo:"Escritório Local de Santa Rosa do Purus",pessoa:"Lugma Fernanda",portaria:"Portaria Nº 181/2026"},
-  {titulo:"Escritório Local de Sena Madureira",pessoa:"Adoneyson Campos",portaria:"Portaria Nº 118/2024"},
-  {titulo:"Escritório Local de Senador Guiomard",pessoa:"Carlos Casas",portaria:"Portaria Nº 269/2025"},
-  {titulo:"Escritório Local de Tarauacá",pessoa:"Leocélia Monteiro",portaria:"Portaria Nº 141/2026"},
-  {titulo:"Escritório Local da Transacreana",pessoa:"Lucas Paiva",portaria:"Portaria Nº 180/2023"},
-  {titulo:"Escritório Local de Xapuri",pessoa:"Antonio Alves",portaria:"Portaria Nº 32/2025"}
-];
+// Os setores, responsáveis e portarias vêm do organograma (js/contatos-organograma.js): trocas, inclusões e remoções
+// feitas lá aparecem aqui sozinhas. Só os PDFs (portariasPDFMap) continuam listados nesta página.
+let portariasDados = [];
+function dadosDoOrganograma(dados) {
+  return dados.nos.map(n => {
+    const linhas = String(n.holder || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    return {titulo: n.title.replace(/\s+/g, ' '), pessoa: linhas[0] || '', portaria: linhas.slice(1).join(' ')};
+  });
+}
+
+const portariasPDFNorm = {};
+Object.keys(portariasPDFMap).forEach(k => { const m = k.match(/^0*(\d+)\/(\d{4})$/); if (m) portariasPDFNorm[`${m[1]}/${m[2]}`] = portariasPDFMap[k]; });
 
 function getPortariaKey(portariaStr) {
   const match = portariaStr.match(/(\d+)\/(\d{4})/);
-  return match ? `${match[1]}/${match[2]}` : null;
+  if (!match) return null;
+  const n = String(Number(match[1]));
+  return portariasPDFNorm[`${n}/${match[2]}`] ? `${n}/${match[2]}` : null;
 }
 
 function getPreposicao(titulo) {
@@ -256,13 +184,14 @@ function getCargoLabel(titulo, pessoa) {
 
 function renderPortarias() {
   const container = document.getElementById('setoresContainer');
+  container.innerHTML = '';
 
   portariasDados.forEach(p => {
     const card = document.createElement('div');
     card.className = 'portaria-card';
 
     const key = getPortariaKey(p.portaria);
-    const pdfPath = portariasPDFMap[key];
+    const pdfPath = key ? portariasPDFNorm[key] : null;
 
     const linkHTML = pdfPath
       ? `<a href="${pdfPath}" download class="portaria-link has-pdf" title="Baixar PDF">⬇ Download</a>`
@@ -273,7 +202,7 @@ function renderPortarias() {
         <h2>${p.titulo}</h2>
       </div>
       <div class="card-body">
-        <p class="chefe-nome">${p.pessoa}</p>
+        <p class="chefe-nome">${p.pessoa || 'Sem responsável'}</p>
         <p class="chefe-cargo">${getCargoLabel(p.titulo)}</p>
         <p class="portaria-num">${p.portaria}</p>
         ${linkHTML}
@@ -290,8 +219,6 @@ document.getElementById('searchInput').addEventListener('input', e => {
     card.style.display = term === '' || text.includes(term) ? '' : 'none';
   });
 });
-
-renderPortarias();
 
 const setoresContainer = document.getElementById('setoresContainer');
 const gridViewBtn = document.getElementById('gridViewBtn');
@@ -317,6 +244,20 @@ function updateListViewClasses() {
   });
 }
 
+function aplicarOrganograma(dados) {
+  portariasDados = dadosDoOrganograma(dados);
+  renderPortarias();
+  updateListViewClasses();
+  document.getElementById('searchInput').dispatchEvent(new Event('input'));
+}
+// Abre com a última leitura guardada e confere com o banco; volta a conferir ao voltar para esta aba
+const lidoOrg = OrgContatos.doCache();
+if (lidoOrg) aplicarOrganograma(lidoOrg);
+function atualizarOrganograma() {
+  OrgContatos.carregar().then(r => { if (r.mudou || !lidoOrg) aplicarOrganograma(r.dados); }).catch(() => {});
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) atualizarOrganograma(); });
+
 // Inicializar com modo lista como padrão
 setoresContainer.classList.add('list-view');
 updateListViewClasses();
@@ -334,6 +275,7 @@ listViewBtn.addEventListener('click', () => {
   gridViewBtn.classList.remove('active');
   updateListViewClasses();
 });
+atualizarOrganograma();
 </script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026100901"></script>

@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
 <link rel="stylesheet" href="../css/organograma-ui.css?v=2026101701">
+<link rel="stylesheet" href="../css/organograma-celular.css?v=2026101703">
 </head>
 <body>
 <header class="topbar">
@@ -29,16 +30,22 @@
       <input class="search-node-input" id="searchNode" type="search" placeholder="Buscar setor ou servidor…" autocomplete="off">
       <div class="search-node-results" id="searchResults"></div>
     </div>
-    <button class="tool-button" id="btnFilter" type="button">Filtros</button>
-    <button class="tool-button" id="btnExpand" type="button">+ Expandir</button>
-    <button class="tool-button" id="btnCollapse" type="button">− Recolher</button>
-    <button class="tool-button" id="btnFit" type="button">↺ Redefinir</button>
-    <button class="tool-button" id="btnPDF" type="button" title="Baixar o organograma em PDF">&#128196; Baixar PDF</button>
-    <button class="tool-button" id="btnPrint" type="button">Imprimir</button>
-    <button class="icon-button" id="btnZoomOut" type="button">&minus;</button>
-    <input id="zoomRange" class="zoom-range" type="range" min="20" max="150" step="5" value="70">
-    <button class="icon-button" id="btnZoomIn" type="button">+</button>
-    <span class="zoom-label" id="zoomLabel">70%</span>
+    <div class="toolbar-botoes">
+      <div class="org-modo" role="group" aria-label="Modo de exibição">
+        <button class="org-modo-btn" id="btnModoQuadro" type="button" aria-pressed="true">Quadro completo</button>
+        <button class="org-modo-btn" id="btnModoCelular" type="button" aria-pressed="false">Modo celular</button>
+      </div>
+      <button class="tool-button" id="btnFilter" type="button">Filtros</button>
+      <button class="tool-button" id="btnExpand" type="button">+ Expandir</button>
+      <button class="tool-button" id="btnCollapse" type="button">− Recolher</button>
+      <button class="tool-button" id="btnFit" type="button">↺ Redefinir</button>
+      <button class="tool-button" id="btnPDF" type="button" title="Baixar o organograma em PDF">&#128196; Baixar PDF</button>
+      <button class="tool-button" id="btnPrint" type="button">Imprimir</button>
+      <button class="icon-button" id="btnZoomOut" type="button">&minus;</button>
+      <input id="zoomRange" class="zoom-range" type="range" min="20" max="150" step="5" value="70">
+      <button class="icon-button" id="btnZoomIn" type="button">+</button>
+      <span class="zoom-label" id="zoomLabel">70%</span>
+    </div>
   </div>
 </header>
 <div class="main-row">
@@ -114,7 +121,7 @@ window.ORG_PUBLICO=true;   // somente visualização
   function iniciar(d){
     window.ORG_DADOS=d;
     var s=document.createElement('script');
-    s.src='../js/organograma.js?v=2026101623';
+    s.src='../js/organograma.js?v=2026101704';
     document.body.appendChild(s);
   }
   function falhou(e){
@@ -123,6 +130,12 @@ window.ORG_PUBLICO=true;   // somente visualização
     p.textContent='Não foi possível carregar o organograma ('+(e&&e.message||'sem conexão')+'). Recarregue a página.';
     document.body.appendChild(p);
   }
+  // Modo celular (lista): vale já no primeiro desenho, antes de o organograma.js chegar. A escolha guardada neste
+  // aparelho manda; sem ela, telefone (tela estreita, ou deitado com pouca altura) abre em lista.
+  try{
+    var modo=localStorage.getItem('seagri_org_modo');
+    if(modo?modo==='celular':matchMedia('(max-width:700px),(pointer:coarse) and (max-height:520px)').matches)document.body.classList.add('org-celular');
+  }catch(e){}
   var cache=lerCache();
   if(cache){
     iniciar(cache);

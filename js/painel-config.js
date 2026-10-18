@@ -21,7 +21,7 @@
   var visoes = P.ITENS.visoes;
   var todos = P.ITENS.abas.concat(visoes);
   // as visões de "Mostrar mais" em dois grupos, para as colunas ficarem curtas e caberem na tela
-  var GRUPO_LISTAS = ['registros', 'pessoa', 'dia', 'semana', 'mes', 'pontos'];
+  var GRUPO_LISTAS = ['registros', 'pessoa', 'dia', 'semana', 'mes', 'imun', 'iesc', 'iserv', 'itec', 'ihora', 'pontos'];
   var visoesListas = visoes.filter(function (v) { return GRUPO_LISTAS.indexOf(v.k) >= 0; });
   var visoesAnalises = visoes.filter(function (v) { return GRUPO_LISTAS.indexOf(v.k) < 0; });
   var filhos = visoes.map(function (v) { return v.k; });
@@ -52,6 +52,11 @@
     dia: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 15h.01"/>',
     semana: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M7 15h10"/>',
     mes: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
+    imun: '<path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+    iesc: '<path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/>',
+    iserv: '<path d="M14.7 6.3a4 4 0 01-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2.2-.5-.5-2.2z"/>',
+    itec: '<circle cx="12" cy="7" r="4"/><path d="M20 21v-2a6 6 0 00-6-6h-4a6 6 0 00-6 6v2M9 7h6"/>',
+    ihora: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     pontos: '<path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
     comparativo: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
     metas: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
@@ -356,7 +361,7 @@
       if (pv) { entrarPrevia(pv.getAttribute('data-previa')); return; }
       if (e.target.closest('#cfgDesfazer')) { desfazer(); return; }
       if (e.target.closest('#cfgPadrao')) {
-        if (!window.confirm('Voltar ao padrão? O público vê tudo que pode ser liberado e o usuário logado vê tudo, menos Registros, Por pessoa, Por dia, Por semana, Por mês e Mapa de pontos.')) return;
+        if (!window.confirm('Voltar ao padrão? O público vê tudo que pode ser liberado e o usuário logado vê tudo, menos Registros, Por lançador, Por dia, Por semana, Por mês e Mapa de pontos.')) return;
         P.salvar(null, null).then(function () { return P.recarregar(); }).then(function (c) {
           carregarEstado(c);
           render();

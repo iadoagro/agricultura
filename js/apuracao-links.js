@@ -1,7 +1,7 @@
 /* Link público da apuração do 2º turno (botão "🔗 Link público" do cabeçalho da aba Eleições > 2º Turno).
    Só o responsável (root@root.com) vê o botão e gerencia o link. Existe UM link ativo por vez, com um código curto e fácil
-   de falar, guardado em public.apuracao_links (database/apuracao-links.sql). Quem abre o link (…/agricultura/eleicoes) vai para
-   eleicoes/index.html, que NÃO faz login, NÃO carrega o menu nem as telas internas e só consulta dados públicos do TSE; o
+   de falar, guardado em public.apuracao_links (database/apuracao-links.sql). Quem abre o link (…/agricultura/eleicao) vai para
+   eleicao/index.html, que NÃO faz login, NÃO carrega o menu nem as telas internas e só consulta dados públicos do TSE; o
    código não dá nenhuma permissão no banco (o público só consegue perguntar "este código vale?" via apuracao_link_valido).
    O link pode ser revogado a qualquer momento (botão Revogar) ou trocado por um novo (Gerar novo código). */
 (function () {
@@ -38,7 +38,7 @@
     for (var i = 0; i < 4; i++) c += C[b[i * 2] % C.length] + V[b[i * 2 + 1] % V.length];
     return c + String(b[8] % 10) + String(b[9] % 10);
   }
-  function urlDoLink() { return BASE_PUBLICA + 'eleicoes'; }   // endereço fixo e fácil de falar; ligar/desligar é no botão
+  function urlDoLink() { return BASE_PUBLICA + 'eleicao'; }   // endereço fixo e fácil de falar; ligar/desligar é no botão
   async function copiar(texto) {
     try { await navigator.clipboard.writeText(texto); return true; } catch (e) {
       var t = document.createElement('textarea'); t.value = texto; t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select();
@@ -109,7 +109,7 @@
       '<div class="al-modal" role="dialog" aria-modal="true" aria-labelledby="alTit">' +
       '<div class="al-cab"><h3 id="alTit">Link público da apuração</h3><button type="button" data-al="fechar" aria-label="Fechar">×</button></div>' +
       '<p class="al-intro">Um único link, sempre o mesmo, para <b>qualquer pessoa</b> acompanhar a apuração do 2º turno <b>sem login</b>. Ele abre somente a página de apuração (dados públicos do TSE): não dá acesso ao restante do sistema. Use <b>Revogar</b> para desligá-lo e <b>Ativar</b> para ligar de novo.</p>' +
-      '<div data-al-corpo></div><div data-al-msg class="al-dica"></div></div>';
+      '<div data-al-corpo></div><p class="al-dica">Senha da página: <b>eleicao</b> (sem acento). Quem digitar essa senha informa o nome ao entrar; o código do responsável entra direto.</p><div data-al-msg class="al-dica"></div></div>';
     document.body.appendChild(overlay);
     overlay.addEventListener('click', aoClicar);
     document.addEventListener('keydown', teclas);

@@ -10,7 +10,7 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=96e317c8">
-<link rel="stylesheet" href="../css/dashboard.css?v=0917e083">
+<link rel="stylesheet" href="../css/dashboard.css?v=c892e519">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=04476821">
 <link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=003327b7">
 <script>
@@ -581,7 +581,7 @@
        INSER&Ccedil;&Atilde;O (Carimbo de data/hora) &mdash; nunca a da vistoria. -->
   <div class="aba-conteudo" data-aba="insercoes" role="tabpanel" id="painel-insercoes" aria-labelledby="aba-insercoes" tabindex="0">
     <nav class="ins-nav" id="insNav" aria-label="Escolher visão">
-      <button type="button" data-sec="registros">Registros</button><button type="button" data-sec="pessoa">Por pessoa</button><button type="button" data-sec="dia">Por dia</button><button type="button" data-sec="semana">Por semana</button><button type="button" data-sec="mes">Por m&ecirc;s</button><button type="button" data-sec="pontos">Mapa de pontos</button><button type="button" data-sec="comparativo">Comparativo</button><button type="button" data-sec="metas">Metas</button><button type="button" data-sec="tendencias">Tend&ecirc;ncias</button><button type="button" data-sec="cruzamentos">Cruzamentos</button><button type="button" data-sec="alertas">Alertas</button><button type="button" data-sec="relatorios">Relat&oacute;rios</button><button type="button" data-sec="configuracoes" id="insBtnConfig" hidden>Configura&ccedil;&otilde;es</button><button class="ins-nav-pessoas" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lan&ccedil;ou e ligar ao login do sistema">Pessoas</button>
+      <button type="button" data-sec="registros">Registros</button><button type="button" data-sec="pessoa">Por lan&ccedil;ador</button><button type="button" data-sec="dia">Por dia</button><button type="button" data-sec="semana">Por semana</button><button type="button" data-sec="mes">Por m&ecirc;s</button><button type="button" data-sec="imun">Por munic&iacute;pio</button><button type="button" data-sec="iesc">Por escrit&oacute;rio</button><button type="button" data-sec="iserv">Por servi&ccedil;o</button><button type="button" data-sec="itec">Por t&eacute;cnico</button><button type="button" data-sec="ihora">Por hor&aacute;rio</button><button type="button" data-sec="pontos">Mapa de pontos</button><button type="button" data-sec="comparativo">Comparativo</button><button type="button" data-sec="metas">Metas</button><button type="button" data-sec="tendencias">Tend&ecirc;ncias</button><button type="button" data-sec="cruzamentos">Cruzamentos</button><button type="button" data-sec="alertas">Alertas</button><button type="button" data-sec="relatorios">Relat&oacute;rios</button><button type="button" data-sec="configuracoes" id="insBtnConfig" hidden>Configura&ccedil;&otilde;es</button><button class="ins-nav-pessoas" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lan&ccedil;ou e ligar ao login do sistema">Pessoas</button>
     </nav>
     <!-- seleção (período e filtros das outras abas) que estas visões usam; a lateral de filtros não aparece em "Mostrar mais" -->
     <div class="ins-sel" id="insSel" role="status" aria-live="polite" hidden>
@@ -647,8 +647,8 @@
     <div class="painel-grid">
       <section class="painel largo">
         <div class="painel-cab"><div class="painel-cab-tit">
-          <h2>Calend&aacute;rio por pessoa</h2>
-          <p class="sub">Escolha uma pessoa: em verde os dias em que ela lan&ccedil;ou, em vermelho os dias &uacute;teis sem lan&ccedil;amento dela.</p>
+          <h2>Calend&aacute;rio por lan&ccedil;ador</h2>
+          <p class="sub">Por padr&atilde;o mostra todos os lan&ccedil;adores juntos; escolha um para ver em verde os dias em que ele lan&ccedil;ou e em vermelho os dias &uacute;teis sem lan&ccedil;amento dele.</p>
         </div></div>
         <div id="gCalPessoa"></div>
       </section>
@@ -791,6 +791,241 @@
           <p class="sub">Mesmo recorte da planilha <em>Inser&ccedil;&atilde;o por mes</em>, com os dias listados.</p>
         </div></div>
         <div id="tInsMes"></div>
+      </section>
+    </div>
+    </div>
+    <div class="ins-bloco" data-sec="imun" hidden>
+    <section class="kpis" id="kpisInsMun" aria-label="Indicadores de inser&ccedil;&atilde;o por munic&iacute;pio"></section>
+    <div class="painel-grid">
+      <section class="painel largo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Mapa de calor: munic&iacute;pios &times; m&ecirc;s</h2>
+          <p class="sub">Cada linha &eacute; um munic&iacute;pio, cada coluna um m&ecirc;s: quanto mais forte a cor, mais lan&ccedil;amentos inseridos.</p>
+        </div></div>
+        <div id="gHeatMun"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Calend&aacute;rio por munic&iacute;pio</h2>
+          <p class="sub">Escolha um munic&iacute;pio: em verde os dias em que houve inser&ccedil;&atilde;o para ele, em vermelho os dias &uacute;teis sem. &ldquo;Todos&rdquo; soma tudo.</p>
+        </div></div>
+        <div id="gCalMun"></div>
+      </section>
+      <section class="painel duplo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Lan&ccedil;amentos por munic&iacute;pio</h2>
+          <p class="sub">Quantos lan&ccedil;amentos foram inseridos para cada munic&iacute;pio, na sele&ccedil;&atilde;o atual (os 20 maiores).</p>
+        </div></div>
+        <div id="gInsMunRank" data-tipos="barras,colunas,rosca,pizza,tabela"></div>
+      </section>
+      <section class="painel destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Fora do expediente</h2>
+          <p class="sub">Parte dos lan&ccedil;amentos inserida antes das 7h ou a partir das 18h (os 12 maiores).</p>
+        </div></div>
+        <div id="gInsMunFora" data-tipos="barras,colunas,tabela" data-unidade="%" data-dec="1"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>M&ecirc;s a m&ecirc;s por munic&iacute;pio</h2>
+          <p class="sub">Os cinco maiores do per&iacute;odo, pela data de inser&ccedil;&atilde;o.</p>
+        </div></div>
+        <div id="gInsMunMes" data-tipos="colunas,linha,area,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Detalhe por munic&iacute;pio</h2>
+          <p class="sub">Dias ativos, ritmo, inseridores distintos e per&iacute;odo de inser&ccedil;&atilde;o.</p>
+        </div></div>
+        <div id="tInsMun"></div>
+      </section>
+    </div>
+    </div>
+    <div class="ins-bloco" data-sec="iesc" hidden>
+    <section class="kpis" id="kpisInsEsc" aria-label="Indicadores de inser&ccedil;&atilde;o por escrit&oacute;rio"></section>
+    <div class="painel-grid">
+      <section class="painel largo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Mapa de calor: escrit&oacute;rios &times; m&ecirc;s</h2>
+          <p class="sub">Cada linha &eacute; um escrit&oacute;rio, cada coluna um m&ecirc;s: quanto mais forte a cor, mais lan&ccedil;amentos inseridos.</p>
+        </div></div>
+        <div id="gHeatEsc"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Calend&aacute;rio por escrit&oacute;rio</h2>
+          <p class="sub">Escolha um escrit&oacute;rio: em verde os dias em que houve inser&ccedil;&atilde;o para ele, em vermelho os dias &uacute;teis sem. &ldquo;Todos&rdquo; soma tudo.</p>
+        </div></div>
+        <div id="gCalEsc"></div>
+      </section>
+      <section class="painel duplo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Lan&ccedil;amentos por escrit&oacute;rio</h2>
+          <p class="sub">Quantos lan&ccedil;amentos foram inseridos para cada escrit&oacute;rio, na sele&ccedil;&atilde;o atual (os 20 maiores).</p>
+        </div></div>
+        <div id="gInsEscRank" data-tipos="barras,colunas,rosca,pizza,tabela"></div>
+      </section>
+      <section class="painel destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Fora do expediente</h2>
+          <p class="sub">Parte dos lan&ccedil;amentos inserida antes das 7h ou a partir das 18h (os 12 maiores).</p>
+        </div></div>
+        <div id="gInsEscFora" data-tipos="barras,colunas,tabela" data-unidade="%" data-dec="1"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>M&ecirc;s a m&ecirc;s por escrit&oacute;rio</h2>
+          <p class="sub">Os cinco maiores do per&iacute;odo, pela data de inser&ccedil;&atilde;o.</p>
+        </div></div>
+        <div id="gInsEscMes" data-tipos="colunas,linha,area,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Detalhe por escrit&oacute;rio</h2>
+          <p class="sub">Dias ativos, ritmo, inseridores distintos e per&iacute;odo de inser&ccedil;&atilde;o.</p>
+        </div></div>
+        <div id="tInsEsc"></div>
+      </section>
+    </div>
+    </div>
+    <div class="ins-bloco" data-sec="iserv" hidden>
+    <section class="kpis" id="kpisInsServ" aria-label="Indicadores de inser&ccedil;&atilde;o por servi&ccedil;o"></section>
+    <div class="painel-grid">
+      <section class="painel largo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Mapa de calor: servi&ccedil;os &times; m&ecirc;s</h2>
+          <p class="sub">Cada linha &eacute; um servi&ccedil;o, cada coluna um m&ecirc;s: quanto mais forte a cor, mais lan&ccedil;amentos inseridos.</p>
+        </div></div>
+        <div id="gHeatServ"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Calend&aacute;rio por servi&ccedil;o</h2>
+          <p class="sub">Escolha um servi&ccedil;o: em verde os dias em que houve inser&ccedil;&atilde;o para ele, em vermelho os dias &uacute;teis sem. &ldquo;Todos&rdquo; soma tudo.</p>
+        </div></div>
+        <div id="gCalServ"></div>
+      </section>
+      <section class="painel duplo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Lan&ccedil;amentos por servi&ccedil;o</h2>
+          <p class="sub">Quantos lan&ccedil;amentos foram inseridos para cada servi&ccedil;o, na sele&ccedil;&atilde;o atual (os 20 maiores).</p>
+        </div></div>
+        <div id="gInsServRank" data-tipos="barras,colunas,rosca,pizza,tabela"></div>
+      </section>
+      <section class="painel destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Fora do expediente</h2>
+          <p class="sub">Parte dos lan&ccedil;amentos inserida antes das 7h ou a partir das 18h (os 12 maiores).</p>
+        </div></div>
+        <div id="gInsServFora" data-tipos="barras,colunas,tabela" data-unidade="%" data-dec="1"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>M&ecirc;s a m&ecirc;s por servi&ccedil;o</h2>
+          <p class="sub">Os cinco maiores do per&iacute;odo, pela data de inser&ccedil;&atilde;o.</p>
+        </div></div>
+        <div id="gInsServMes" data-tipos="colunas,linha,area,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Detalhe por servi&ccedil;o</h2>
+          <p class="sub">Dias ativos, ritmo, inseridores distintos e per&iacute;odo de inser&ccedil;&atilde;o.</p>
+        </div></div>
+        <div id="tInsServ"></div>
+      </section>
+    </div>
+    </div>
+    <div class="ins-bloco" data-sec="itec" hidden>
+    <section class="kpis" id="kpisInsTec" aria-label="Indicadores de inser&ccedil;&atilde;o por t&eacute;cnico"></section>
+    <div class="painel-grid">
+      <section class="painel largo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Mapa de calor: t&eacute;cnicos &times; m&ecirc;s</h2>
+          <p class="sub">Cada linha &eacute; um t&eacute;cnico, cada coluna um m&ecirc;s: quanto mais forte a cor, mais lan&ccedil;amentos inseridos.</p>
+        </div></div>
+        <div id="gHeatTec"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Calend&aacute;rio por t&eacute;cnico</h2>
+          <p class="sub">Escolha um t&eacute;cnico: em verde os dias em que houve inser&ccedil;&atilde;o para ele, em vermelho os dias &uacute;teis sem. &ldquo;Todos&rdquo; soma tudo.</p>
+        </div></div>
+        <div id="gCalTec"></div>
+      </section>
+      <section class="painel duplo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Lan&ccedil;amentos por t&eacute;cnico</h2>
+          <p class="sub">Quantos lan&ccedil;amentos foram inseridos para cada t&eacute;cnico, na sele&ccedil;&atilde;o atual (os 20 maiores).</p>
+        </div></div>
+        <div id="gInsTecRank" data-tipos="barras,colunas,rosca,pizza,tabela"></div>
+      </section>
+      <section class="painel destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Fora do expediente</h2>
+          <p class="sub">Parte dos lan&ccedil;amentos inserida antes das 7h ou a partir das 18h (os 12 maiores).</p>
+        </div></div>
+        <div id="gInsTecFora" data-tipos="barras,colunas,tabela" data-unidade="%" data-dec="1"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>M&ecirc;s a m&ecirc;s por t&eacute;cnico</h2>
+          <p class="sub">Os cinco maiores do per&iacute;odo, pela data de inser&ccedil;&atilde;o.</p>
+        </div></div>
+        <div id="gInsTecMes" data-tipos="colunas,linha,area,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Detalhe por t&eacute;cnico</h2>
+          <p class="sub">Dias ativos, ritmo, inseridores distintos e per&iacute;odo de inser&ccedil;&atilde;o.</p>
+        </div></div>
+        <div id="tInsTec"></div>
+      </section>
+    </div>
+    </div>
+    <div class="ins-bloco" data-sec="ihora" hidden>
+    <section class="kpis" id="kpisInsHora" aria-label="Indicadores de inser&ccedil;&atilde;o por hor&aacute;rio"></section>
+    <div class="painel-grid">
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>M&ecirc;s &times; hora</h2>
+          <p class="sub">Mapa de calor: em que horas se inseriu em cada m&ecirc;s &mdash; mostra se o hor&aacute;rio de trabalho mudou ao longo do tempo.</p>
+        </div></div>
+        <div id="gHeatHoraMes"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Dia da semana &times; hora</h2>
+          <p class="sub">Mapa de calor: em que hora de cada dia da semana se concentram as inser&ccedil;&otilde;es.</p>
+        </div></div>
+        <div id="gHeatHora"></div>
+      </section>
+      <section class="painel duplo destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Lan&ccedil;amentos por hora do dia</h2>
+          <p class="sub">Em que hora o trabalho de digita&ccedil;&atilde;o se concentra (hora do carimbo de inser&ccedil;&atilde;o).</p>
+        </div></div>
+        <div id="gInsHoraHora" data-tipos="colunas,barras,linha,area,tabela"></div>
+      </section>
+      <section class="painel destaque">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Expediente &times; fora dele</h2>
+          <p class="sub">Antes das 7h, entre 7h e 18h e depois das 18h.</p>
+        </div></div>
+        <div id="gInsHoraTurno" data-tipos="rosca,pizza,barras,colunas,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>M&ecirc;s a m&ecirc;s: no expediente e fora dele</h2>
+          <p class="sub">Mostra se o trabalho fora do hor&aacute;rio est&aacute; crescendo ou diminuindo.</p>
+        </div></div>
+        <div id="gInsHoraMes" data-tipos="colunas,linha,area,tabela"></div>
+      </section>
+      <section class="painel largo">
+        <div class="painel-cab"><div class="painel-cab-tit">
+          <h2>Detalhe por hora</h2>
+          <p class="sub">Cada hora do dia com lan&ccedil;amentos.</p>
+        </div></div>
+        <div id="tInsHora"></div>
       </section>
     </div>
     </div>
@@ -1387,7 +1622,7 @@
     <button class="ia-limpar" type="button" hidden>Limpar respostas</button>
   </div>
 </section>
-<script src="../js/graficos.js?v=a584c905"></script>
+<script src="../js/graficos.js?v=fec0a8d2"></script>
 <script src="../js/mapa-acre.js?v=6f66c78d"></script>
 <script src="../js/mapa-municipios.js?v=a316a89b"></script>
 <script src="../js/data-br.js?v=d801c961"></script>
@@ -1400,14 +1635,15 @@
 <script src="../js/lancamento-mecanizacao.js?v=2a0f9a04"></script>
 <script src="../js/painel-calculos.js?v=2246ccd4"></script>
 <script src="../js/tabela-ferramentas.js?v=2fd63664"></script>
-<script src="../js/painel-publico.js?v=989a7fa4"></script>
-<script src="../js/dashboard.js?v=1d12f7bd"></script>
+<script src="../js/painel-publico.js?v=46f95ecc"></script>
+<script src="../js/dashboard.js?v=11c8f9c6"></script>
 <script src="../js/painel-comparativo.js?v=9ca079be"></script>
 <script src="../js/painel-metas.js?v=4963de3a"></script>
 <script src="../js/painel-tendencias.js?v=128338af"></script>
+<script src="../js/painel-insercoes-extra.js?v=c4e03e5f"></script>
 <script src="../js/painel-cruzamentos.js?v=4628c41b"></script>
 <script src="../js/painel-produtores.js?v=5b52a3dc"></script>
-<script src="../js/painel-config.js?v=7d9c53b2"></script>
+<script src="../js/painel-config.js?v=32772bde"></script>
 <script src="../js/painel-alertas.js?v=bcd6d314"></script>
 <script src="../js/painel-relatorios.js?v=287e0c16"></script>
 <script src="../js/painel-pontos.js?v=210cc46f"></script>

@@ -1,0 +1,171 @@
+/* =====================================================================
+   Organograma — modo celular
+   O quadro é desenhado para tela grande; no telefone as caixas ficam minúsculas.
+   Este modo mostra o MESMO organograma como lista hierárquica: cada setor é um
+   cartão com a cor do quadro, o responsável e a portaria, ligado ao setor de cima
+   por linhas de árvore, com "Ver N setores" para abrir cada nível.
+   Carregado depois de organograma-ui.css; js/organograma.js (seção "Modo celular")
+   liga e desliga a classe body.org-celular.
+   ===================================================================== */
+
+/* ---------- Seletor de modo (barra de ferramentas) ---------- */
+html body .toolbar-botoes{display:contents}   /* no computador os botões seguem soltos na barra, como sempre */
+html body .org-modo{
+  display:inline-flex;gap:2px;padding:3px;border:1px solid var(--ui-line-2);border-radius:11px;background:var(--ui-bg);
+}
+html body .org-modo-btn{
+  height:30px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--ui-ink-2);
+  font:600 13px var(--ui-font);white-space:nowrap;cursor:pointer;
+}
+html body .org-modo-btn:hover{background:rgba(255,255,255,.7)}
+/* o botão marcado segue a classe do body (aplicada pelo carregador da página antes do primeiro desenho) */
+html body:not(.org-celular) #btnModoQuadro,
+html body.org-celular #btnModoCelular{background:#fff;color:var(--ui-brand-d);box-shadow:0 1px 3px rgba(15,23,42,.18)}
+html body .org-modo-btn:focus-visible{outline:none;box-shadow:var(--ui-focus)}
+
+/* ---------- A lista só existe no modo celular; o quadro some ---------- */
+html body .org-cel{display:none}
+html body.org-celular .viewport{display:none}
+html body.org-celular .org-cel{
+  display:block;flex:1;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px 16px 56px;
+}
+html body.org-celular #btnFit,
+html body.org-celular #btnZoomOut,
+html body.org-celular #zoomRange,
+html body.org-celular #btnZoomIn,
+html body.org-celular #zoomLabel{display:none}   /* zoom e "Redefinir" são do quadro */
+
+/* ---------- Árvore de cartões ---------- */
+.org-cel{--oc-linha:#8a99ad;--oc-recuo:10px;--oc-passo:12px;--oc-cotovelo:30px}
+.oc-coluna{max-width:720px;margin:0 auto}
+.oc-resumo{margin:0 2px 14px;font:600 12.5px/1.45 var(--ui-font);color:var(--ui-mute)}
+.oc-lista,
+.oc-filhos{margin:0;padding:0;list-style:none}
+.oc-filhos{margin-left:var(--oc-recuo);padding-left:var(--oc-passo)}
+.oc-item{position:relative;margin:0;padding-top:10px}
+.oc-lista>.oc-item{padding-top:0}
+.oc-lista>.oc-item+.oc-item{padding-top:14px}
+.org-cel [hidden]{display:none!important}
+.oc-item:not(.oc-aberto)>.oc-filhos{display:none}
+
+/* linhas de ligação: uma vertical por nível e um cotovelo até cada cartão */
+.oc-filhos>.oc-item::before{
+  content:"";position:absolute;top:0;bottom:0;left:calc(-1 * var(--oc-passo));border-left:2px solid var(--oc-linha);
+}
+.oc-filhos>.oc-item.oc-ultimo::before{bottom:auto;height:var(--oc-cotovelo)}
+.oc-filhos>.oc-item::after{
+  content:"";position:absolute;top:var(--oc-cotovelo);left:calc(-1 * var(--oc-passo));width:var(--oc-passo);border-top:2px solid var(--oc-linha);
+}
+
+/* cartão: cabeçalho colorido (título + sigla), corpo branco (responsável) e rodapé que abre o nível */
+.oc-caixa{
+  overflow:hidden;border:1px solid #aab5c3;border-radius:10px;background:#fff;
+  box-shadow:0 1px 2px rgba(15,23,42,.1),0 2px 6px rgba(15,23,42,.05);
+  transition:box-shadow .2s,border-color .2s;
+}
+.oc-card{
+  position:relative;display:block;width:100%;margin:0;padding:0;border:0;background:none;
+  font:inherit;color:inherit;text-align:left;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.oc-topo{
+  display:flex;align-items:flex-start;gap:8px;padding:9px 12px;
+  background:var(--oc-bg,#4472c4);color:var(--oc-fg,#fff);border-bottom:1px solid rgba(15,23,42,.28);
+}
+.oc-titulo{flex:1;min-width:0;font:700 13.5px/1.3 var(--ui-font);overflow-wrap:anywhere}
+.oc-caixa.oc-claro .oc-titulo{text-shadow:0 1px 1px rgba(0,0,0,.28)}
+.oc-caixa[data-kind="secretaria"] .oc-titulo{text-transform:uppercase}
+.oc-sigla{
+  flex:none;padding:2px 8px;border-radius:999px;background:#fff;color:#0b1220;
+  font:800 11px/1.3 var(--ui-font);letter-spacing:.4px;box-shadow:0 0 0 1px rgba(15,23,42,.18);
+}
+.oc-corpo{display:grid;gap:2px;padding:9px 12px 10px;background:#fff}
+.oc-nome{font:700 14.5px/1.35 var(--ui-font);color:var(--oc-corpo,var(--ui-ink));overflow-wrap:anywhere}
+.oc-nome.oc-vazio{font-weight:500;font-style:italic;color:var(--ui-mute)}
+.oc-ato{font:500 12.5px/1.4 var(--ui-font);color:var(--oc-corpo,#475569);white-space:pre-line;overflow-wrap:anywhere}
+.oc-toggle{
+  position:relative;display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin:0;padding:0 12px;
+  border:0;border-top:1px solid var(--ui-line);background:#f8fafc;color:#1e3a8a;
+  font:700 13px var(--ui-font);text-align:left;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.oc-seta{display:inline-flex;flex:none;transition:transform .2s}
+.oc-aberto>.oc-caixa>.oc-toggle .oc-seta{transform:rotate(180deg)}
+.oc-card:not(:disabled):active,
+.oc-toggle:not(:disabled):active{scale:none}   /* o "clique com mola" do site encolheria só um pedaço do cartão */
+.oc-toggle:active{background:#eef2f7}
+.oc-card:focus-visible,
+.oc-toggle:focus-visible{outline:3px solid var(--ui-brand);outline-offset:-3px}
+@media (hover:hover){
+  .oc-card:hover .oc-corpo{background:#f8fafc}
+  .oc-caixa:hover{border-color:#64748b;box-shadow:0 4px 14px rgba(15,23,42,.14)}
+  .oc-toggle:hover{background:#eef2f7}
+}
+
+/* setor aberto no painel / achado na busca */
+.oc-item.oc-sel>.oc-caixa{border-color:var(--ui-brand);box-shadow:0 0 0 3px rgba(29,78,216,.3),0 4px 14px rgba(15,23,42,.14)}
+.oc-item.oc-pulso>.oc-caixa{animation:oc-pulso 1.1s ease-out 1}
+@keyframes oc-pulso{0%{box-shadow:0 0 0 0 rgba(29,78,216,.6)}100%{box-shadow:0 0 0 10px rgba(29,78,216,0)}}
+@media (prefers-reduced-motion:reduce){
+  .oc-item.oc-pulso>.oc-caixa{animation:none}
+  .oc-seta{transition:none}
+}
+@media (max-width:380px){
+  .org-cel{--oc-recuo:8px;--oc-passo:10px}
+}
+
+/* ---------- Celular (e telefone deitado): a página inteira rola ---------- */
+@media (max-width:768px),(max-height:520px){
+  html body.org-celular{display:block;height:auto;min-height:100vh;min-height:100dvh;overflow:visible}
+  html body.org-celular .main-row{display:block;overflow:visible}
+  html body.org-celular .org-cel{overflow:visible;padding:12px 12px calc(56px + env(safe-area-inset-bottom))}
+  /* painéis de filtros e de detalhes: gavetas por cima da lista (fechadas, nem ocupam lugar) */
+  html body.org-celular .filter-panel:not(.open),
+  html body.org-celular .detail-panel:not(.open){display:none}
+  html body.org-celular .filter-panel.open,
+  html body.org-celular .detail-panel.open{
+    position:fixed;top:0;bottom:0;z-index:1200;width:min(92vw,360px);overscroll-behavior:contain;
+    box-shadow:12px 0 34px rgba(15,23,42,.22);
+  }
+  html body.org-celular .filter-panel.open{left:0;right:auto}
+  html body.org-celular .detail-panel.open{left:auto;right:0;box-shadow:-12px 0 34px rgba(15,23,42,.22)}
+  /* o botão "voltar ao topo" do site não fica por cima das gavetas */
+  html body.org-celular:has(.filter-panel.open) .fx-dock,
+  html body.org-celular:has(.detail-panel.open) .fx-dock{display:none}
+  /* 16 px nos campos: o iPhone dá zoom na página quando o campo é menor que isso */
+  html body.org-celular .detail-panel input,
+  html body.org-celular .detail-panel select,
+  html body.org-celular .detail-panel textarea,
+  html body.org-celular .filter-panel input[type="search"]{font-size:16px}
+}
+@media (max-width:768px){
+  /* barra do topo: busca em cima, botões numa única fileira que desliza para o lado; fica fixa ao rolar a lista */
+  html body.org-celular .topbar{
+    position:sticky;top:0;z-index:900;min-height:0;max-height:none;overflow:visible;padding:8px 10px;
+    box-shadow:0 1px 0 var(--ui-line),0 8px 16px -10px rgba(15,23,42,.28);
+  }
+  html body.org-celular .toolbar{flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:8px}
+  html body.org-celular .toolbar .search-node-wrap{display:block;width:100%;flex:none}
+  html body.org-celular .toolbar .search-node-label{display:none}
+  html body.org-celular .toolbar .search-node-input,
+  html body.org-celular .toolbar .search-node-input:focus{width:100%;height:42px;min-height:42px;font-size:16px}
+  html body.org-celular .toolbar-botoes{
+    display:flex;align-items:center;gap:6px;margin:0 -10px;padding:1px 10px 2px;
+    overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  html body.org-celular .toolbar-botoes::-webkit-scrollbar{display:none}
+  html body.org-celular .toolbar-botoes>*{flex:none}
+  html body.org-celular .org-modo-btn{height:34px}
+  /* o aviso ("Copiado!", "Posição salva") precisa ficar acima das gavetas */
+  html body .toast{z-index:3500}
+}
+
+/* ---------- Gerando o PDF a partir do modo celular (o quadro aparece só por baixo deste aviso) ---------- */
+body.org-gerando::after{
+  content:"Gerando o PDF…";position:fixed;inset:0;z-index:5000;display:grid;place-items:center;
+  background:rgba(241,245,249,.97);color:var(--ui-ink);font:700 16px var(--ui-font);
+}
+
+/* ---------- Impressão: sempre o quadro ---------- */
+@media print{
+  html body.org-celular .viewport{display:block!important}
+  html body.org-celular .org-cel{display:none!important}
+}

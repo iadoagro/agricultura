@@ -306,7 +306,7 @@
     } else if (pl) pl.textContent = '';
   }
   /* "Link público": só copia o endereço fixo para a área de transferência */
-  var PUBLICO_URL = 'https://iadoagro.github.io/agricultura/eleicoes', linkTimer = null;
+  var PUBLICO_URL = 'https://iadoagro.github.io/agricultura/eleicao', linkTimer = null;
   function copiarLink(btn) {
     function feito(ok) {
       btn.textContent = ok ? 'Link copiado ✓' : 'Copie: ' + PUBLICO_URL;

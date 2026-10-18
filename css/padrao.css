@@ -9,6 +9,7 @@
        o cartão da lista, com a busca (lupa), os filtros de situação em botões
        segmentados (Todos / Ativos / Inativos) e a contagem EM CIMA da tabela.
      • Tela SÓ de listagem: cartão "Filtros" à ESQUERDA e a lista à DIREITA.
+       (Exceção, a pedido do responsável: Contatos e Portarias têm o cartão "Filtros" no TOPO.)
      Os dois cartões sempre com o mesmo acabamento.
 
      Tela ............ fundo #f4f7fb, conteúdo até a borda (sem coluna centralizada)
@@ -155,33 +156,57 @@
 }
 
 /* --- Contatos ------------------------------------------------------------- */
-@media(min-width:1000px){
-  .contatos-grade{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start;padding:22px clamp(14px,2.4vw,44px) 60px}
-  .contatos-grade > .controles{position:sticky;top:12px;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:14px;
-    padding:20px;background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra)}
-  .contatos-grade > .controles::before{content:"Filtros";font-size:17px;font-weight:800;color:var(--pd-titulo)}
-  .contatos-grade > .controles .busca{flex:none;width:100%;min-width:0;min-height:42px;border-radius:10px;box-sizing:border-box}
-  .contatos-grade > .controles .filtros{flex-direction:column;flex-wrap:nowrap}
-  .contatos-grade > .controles .filtro-btn{width:100%;text-align:left;border-radius:10px;padding:9px 12px}
-  .contatos-grade > main{padding:20px;background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra);min-width:0}
-  .contatos-grade .cards-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+/* Exceção à regra do cartão "Filtros" à esquerda (pedido do responsável em 2026-10-17): em Contatos e em
+   Portarias o cartão "Filtros" fica em CIMA, na largura toda, com os controles lado a lado; a lista vem
+   logo abaixo. Nos dois o cartão acompanha a rolagem. */
+.contatos-grade{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;padding:22px clamp(14px,2.4vw,44px) 60px}
+.contatos-grade > .controles{position:sticky;top:12px;z-index:10;flex-direction:row;align-items:center;flex-wrap:wrap;gap:12px 16px;
+  padding:20px;background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra)}
+.contatos-grade > .controles::before{content:"Filtros";flex:0 0 100%;font-size:17px;font-weight:800;color:var(--pd-titulo)}
+.contatos-grade > .controles .busca{flex:1 1 280px;width:auto;max-width:460px;min-width:0;min-height:42px;border-radius:10px;box-sizing:border-box}
+.contatos-grade > .controles .filtros{flex:1 1 auto;min-width:0}
+.contatos-grade > main{padding:20px;background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra);min-width:0}
+.contatos-grade .cards-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+@media(max-width:700px){
+  /* celular: busca em cima e os grupos numa única fileira que desliza para o lado; o título "Filtros" sai para sobrar tela */
+  .contatos-grade{gap:12px;padding:12px 12px 40px}
+  .contatos-grade > .controles{top:0;padding:10px 12px;gap:8px;border-radius:14px}
+  .contatos-grade > .controles::before{display:none}
+  .contatos-grade > .controles .busca{flex:1 1 100%;max-width:none;font-size:16px}
+  .contatos-grade > .controles .filtros{flex:1 1 100%;scrollbar-width:none}
+  .contatos-grade > .controles .filtros::-webkit-scrollbar{display:none}
+  .contatos-grade > main{padding:12px;border-radius:14px}
+  /* cartão: telefone e "Salvar" na mesma linha (antes ficavam um embaixo do outro); com número salvo, o WhatsApp ocupa a linha de baixo */
+  .contatos-grade .card-contato .campo-tel{grid-template-columns:minmax(0,1fr) auto auto;grid-auto-flow:row dense}
+  .contatos-grade .card-contato .campo-tel .input-tel{grid-column:auto}
+  .contatos-grade .card-contato .campo-tel .btn-salvar{width:auto}
+  .contatos-grade .card-contato .campo-tel .btn-wa{grid-column:1 / -1;width:100%}
+  .contatos-grade .card-corpo{padding:12px}
 }
 .busca:focus,.input-tel:focus{border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
 
 /* --- Portarias ------------------------------------------------------------ */
-.portarias-grade{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start;padding:22px clamp(14px,2.4vw,44px) 40px}
-.portarias-grade > .portarias-filtros{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px;padding:20px;
+.portarias-grade{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;padding:22px clamp(14px,2.4vw,44px) 40px}
+.portarias-grade > .portarias-filtros{position:sticky;top:12px;z-index:5;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 16px;padding:20px;
   background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra)}
-.portarias-grade > .portarias-filtros::before{content:"Filtros";font-size:17px;font-weight:800;color:var(--pd-titulo)}
-.portarias-grade .search-box{margin:0}
+.portarias-grade > .portarias-filtros::before{content:"Filtros";flex:0 0 100%;font-size:17px;font-weight:800;color:var(--pd-titulo);margin-bottom:-4px}
+.portarias-grade .search-box{margin:0;flex:1 1 320px;min-width:0}
 .portarias-grade .search-box label{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:6px}
 .portarias-grade .search-box input{max-width:none;min-height:44px;padding:10px 12px;border:1.5px solid var(--pd-linha-forte);border-radius:10px;box-sizing:border-box;outline:none}
 .portarias-grade .search-box input:focus{border-color:var(--pd-azul);box-shadow:var(--pd-foco)}
-.portarias-grade .view-controls{flex-direction:column;margin:0}
-.portarias-grade .view-btn{width:100%;text-align:left;border:1.5px solid var(--pd-linha-forte);border-radius:10px;color:var(--pd-suave);padding:9px 12px}
+.portarias-grade .view-controls{flex-direction:row;flex:0 0 auto;gap:8px;margin:0;position:static;padding:0;background:none}
+.portarias-grade .view-btn{flex:0 0 auto;white-space:nowrap;text-align:left;min-height:44px;border:1.5px solid var(--pd-linha-forte);border-radius:10px;color:var(--pd-suave);padding:9px 14px}
 .portarias-grade .view-btn.active{border-color:var(--pd-azul);background:var(--pd-azul-suave);color:var(--pd-azul-esc)}
 .portarias-grade > .portarias-lista{min-width:0;padding:20px;background:var(--pd-cartao);border:1px solid var(--pd-linha);border-radius:18px;box-shadow:var(--pd-sombra)}
-@media(max-width:1000px){.portarias-grade{grid-template-columns:1fr}.portarias-grade > .portarias-filtros{position:static}}
+@media(max-width:700px){
+  /* celular: o cartão deixa de acompanhar a rolagem (ocuparia metade da tela); pesquisa em cima e os dois modos lado a lado */
+  .portarias-grade{gap:12px}
+  .portarias-grade > .portarias-filtros{position:static;padding:14px;gap:10px;border-radius:14px}
+  .portarias-grade .search-box{flex:1 1 100%}
+  .portarias-grade .view-controls{flex:1 1 100%;display:grid;grid-template-columns:1fr 1fr}
+  .portarias-grade .view-btn{text-align:center;padding:9px 8px;white-space:normal;line-height:1.25}
+  .portarias-grade > .portarias-lista{padding:14px;border-radius:14px}
+}
 
 /* --- Fiscais (eleicoes.html): formulário e listas --------------------------- */
 #painel-fiscais #cadastro .campo label,#cadastro .campo label{font-size:13px;font-weight:700;color:#1e293b}

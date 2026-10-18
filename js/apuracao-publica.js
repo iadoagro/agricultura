@@ -1,4 +1,4 @@
-/* Página pública da apuração do 2º turno (eleicoes/index.html): sem login, sem menu, sem telas internas.
+/* Página pública da apuração do 2º turno (eleicao/index.html): sem login, sem menu, sem telas internas.
    1) pergunta ao banco, pela única função aberta ao público
    (apuracao_publica_ativa), se o link está ativo; 2) só então carrega os scripts da apuração, um a um. Sem token válido
    nada da apuração é carregado. Os scripts abaixo são os únicos que esta página usa — não há admin-auth, admin-gate,
@@ -28,6 +28,50 @@
     if (aviso) { aviso.hidden = false; aviso.className = 'ap-aviso ap-negado'; aviso.innerHTML = '<h1>Acesso não autorizado</h1><p>' + texto + '</p><p class="ap-peq">Peça um novo link a quem compartilhou esta página.</p>'; }
     document.title = 'Acesso não autorizado';
   }
+
+  /* Senha da página: "eleicao" (sem acento) abre e depois pergunta o nome de quem entrou; o código do responsável abre direto.
+     Só o hash fica aqui. A conferência é no navegador: serve para filtrar quem recebe o link, não como proteção forte. */
+  var HASH_SENHA = '20afa897941ac6c338a675e327cb4421d5a559ef921d6c80ef54a79ee233d59b';
+  var HASH_ROOT = '4e1d2e77e667141b73b1f9774a10eaeec75ce75b8fc4cb710f4595f35f1c8ca0';
+  function sha(t) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)).then(function (b) {
+      return Array.prototype.map.call(new Uint8Array(b), function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+    });
+  }
+  function entrou() { try { return sessionStorage.getItem('ap_pub_ok') === '1'; } catch (e) { return false; } }
+  function lembrar(nome) {
+    try { sessionStorage.setItem('ap_pub_ok', '1'); if (nome) localStorage.setItem('ap_pub_nome', nome); } catch (e) { /* sem armazenamento */ }
+  }
+  /** Mostra o formulário (senha e, se não for o responsável, o nome) e resolve quando a pessoa pode entrar. */
+  function pedirSenha() {
+    return new Promise(function (ok) {
+      if (entrou()) { ok(); return; }
+      if (!aviso) { ok(); return; }
+      aviso.hidden = false; aviso.className = 'ap-aviso';
+      aviso.innerHTML = '<h1>Apuração do 2º turno</h1><p id="apTxt">Digite a senha para continuar.</p>' +
+        '<form id="apForm" autocomplete="off"><input id="apCampo" type="password" required autofocus aria-label="Senha" placeholder="Senha" ' +
+        'style="width:100%;box-sizing:border-box;padding:12px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:10px;margin:8px 0">' +
+        '<p id="apErro" class="ap-peq" style="color:#b42318;min-height:18px;margin:0 0 8px"></p>' +
+        '<button type="submit" style="padding:11px 28px;font-size:15px;font-weight:700;border:0;border-radius:10px;background:#2563eb;color:#fff;cursor:pointer">Entrar</button></form>';
+      var form = document.getElementById('apForm'), campo = document.getElementById('apCampo'), erro = document.getElementById('apErro'), etapa = 'senha';
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (etapa === 'nome') {
+          var nome = campo.value.trim().replace(/\s+/g, ' ');
+          if (nome.length < 2) { erro.textContent = 'Informe seu nome.'; return; }
+          lembrar(nome); ok(); return;
+        }
+        sha(campo.value.trim().toLowerCase()).then(function (h) {
+          if (h === HASH_ROOT) { lembrar(''); ok(); return; }
+          if (h !== HASH_SENHA) { erro.textContent = 'Senha incorreta.'; campo.value = ''; campo.focus(); return; }
+          etapa = 'nome'; erro.textContent = '';
+          document.getElementById('apTxt').textContent = 'Qual é o seu nome?';
+          campo.type = 'text'; campo.value = ''; campo.placeholder = 'Seu nome'; campo.setAttribute('aria-label', 'Seu nome'); campo.autocomplete = 'name'; campo.focus();
+        });
+      });
+    });
+  }
+
   function carrega(i) {
     return new Promise(function (ok, falha) {
       if (i >= SCRIPTS.length) { ok(); return; }
@@ -51,9 +95,11 @@
     return r.json();
   }).then(function (ativo) {
     if (ativo !== true) { negar('Este link foi desativado ou ainda não foi liberado.'); return; }
-    if (aviso) aviso.hidden = true;
-    if (app) app.hidden = false;
-    return carrega(0);
+    return pedirSenha().then(function () {
+      if (aviso) aviso.hidden = true;
+      if (app) app.hidden = false;
+      return carrega(0);
+    });
   }).catch(function () {
     negar('Não foi possível verificar o link agora. Confira sua conexão e tente novamente.');
   });

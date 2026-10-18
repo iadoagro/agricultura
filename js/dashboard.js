@@ -633,29 +633,84 @@
     tabela: '<rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 9.5h18M9.5 9.5V20" fill="none" stroke="currentColor" stroke-width="1.8"/>'
   };
 
-  /** Tipo escolhido por painel na última visita. */
-  var TIPOS_SALVOS = (function () {
-    try { return JSON.parse(lerPref(CHAVE_TIPOS, '{}')) || {}; } catch (e) { return {}; }
-  })();
+  /* Celular (até 768 px, o mesmo ponto de corte do CSS): o painel se identifica sozinho e cada gráfico abre no tipo
+     que melhor se lê numa tela estreita — o que o painel prevê como principal (barras para ranking, rosca para poucas
+     partes, colunas ou linha para o tempo) e não a tabela, que no celular vira uma pilha de cartões. O que o usuário
+     escolhe no celular fica guardado à parte do que escolheu no computador, e só as escolhas dele (nunca os padrões),
+     assim um padrão melhor passa a valer também para quem já tinha mexido em algum gráfico. */
+  var CHAVE_TIPOS_CEL = CHAVE_TIPOS + '_celular';
+  var MQ_CELULAR = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
+  function emCelular() { return !!(MQ_CELULAR && MQ_CELULAR.matches); }
+
+  function lerSalvos(chave) {
+    try { return JSON.parse(lerPref(chave, '{}')) || {}; } catch (e) { return {}; }
+  }
+  /** Tipo escolhido por painel na última visita (computador e celular guardados separados). */
+  var TIPOS_SALVOS = lerSalvos(CHAVE_TIPOS);
+  var TIPOS_SALVOS_CEL = lerSalvos(CHAVE_TIPOS_CEL);
 
   function salvarTipos() {
     try { localStorage.setItem(CHAVE_TIPOS, JSON.stringify(TIPOS)); } catch (e) { /* modo privado */ }
+  }
+  function salvarTipoCelular(id, t) {
+    TIPOS_SALVOS_CEL[id] = t;
+    try { localStorage.setItem(CHAVE_TIPOS_CEL, JSON.stringify(TIPOS_SALVOS_CEL)); } catch (e) { /* modo privado */ }
+  }
+
+  /** Tipos do painel na ordem dos botões: a tabela encabeça (é a visão padrão no computador). */
+  function tiposDoPainel(div) {
+    var tipos = div.getAttribute('data-tipos').split(',');
+    var iTab = tipos.indexOf('tabela');
+    if (iTab > 0) {
+      tipos.splice(iTab, 1);
+      tipos.unshift('tabela');
+    }
+    return tipos;
+  }
+
+  /** Padrão no celular: o tipo que o painel prevê como principal (o 1º de data-tipos). Rosca, pizza e colunas só dão
+      conta de poucas categorias numa tela estreita (as colunas se atropelam, as fatias repetem cor): com mais de 6
+      vão para barras, que ficam legíveis com qualquer quantidade. n = categorias do gráfico (null = ainda sem dados). */
+  function padraoCelular(div, tipos, n) {
+    var principal = div.getAttribute('data-tipos').split(',')[0];
+    if (n > 6 && tipos.indexOf('barras') >= 0 &&
+        (principal === 'rosca' || principal === 'pizza' || principal === 'colunas')) return 'barras';
+    return principal;
+  }
+
+  /** O tipo em uso num painel: a escolha guardada do aparelho (celular ou computador) ou o padrão dele. */
+  function tipoInicial(div, tipos, n) {
+    var id = div.id;
+    // a escolha guardada vale, desde que ainda seja um tipo válido para este painel (a lista de tipos pode ter mudado no HTML)
+    if (emCelular()) return tipos.indexOf(TIPOS_SALVOS_CEL[id]) >= 0 ? TIPOS_SALVOS_CEL[id] : padraoCelular(div, tipos, n);
+    return tipos.indexOf(TIPOS_SALVOS[id]) >= 0 ? TIPOS_SALVOS[id] : tipos[0];
+  }
+
+  function marcarTipo(div) {
+    var grupo = div._grupoTipos;
+    if (!grupo) return;
+    grupo.querySelectorAll('.tipo-btn').forEach(function (b) {
+      var on = b.getAttribute('data-tipo') === TIPOS[div.id];
+      b.classList.toggle('ativo', on);
+      b.setAttribute('aria-pressed', on);
+    });
+  }
+
+  /** Já com os dados na mão: no celular, sem escolha do usuário, confere se o tipo padrão dá conta desta quantidade de categorias. */
+  function ajustarTipoCelular(div, n) {
+    if (!emCelular() || TIPOS_SALVOS_CEL[div.id] != null) return;
+    var t = padraoCelular(div, tiposDoPainel(div), n);
+    if (t !== TIPOS[div.id]) {
+      TIPOS[div.id] = t;
+      marcarTipo(div);
+    }
   }
 
   function montarControles() {
     document.querySelectorAll('[data-tipos]').forEach(function (div) {
       var id = div.id;
-      var tipos = div.getAttribute('data-tipos').split(',');
-      // a tabela é a visão padrão de todo painel: encabeça os botões e é o que
-      // aparece na primeira visita
-      var iTab = tipos.indexOf('tabela');
-      if (iTab > 0) {
-        tipos.splice(iTab, 1);
-        tipos.unshift('tabela');
-      }
-      // a escolha da última visita vale, desde que ainda seja um tipo válido
-      // para este painel (a lista de tipos pode ter mudado no HTML)
-      TIPOS[id] = tipos.indexOf(TIPOS_SALVOS[id]) >= 0 ? TIPOS_SALVOS[id] : tipos[0];
+      var tipos = tiposDoPainel(div);
+      TIPOS[id] = tipoInicial(div, tipos, null);
 
       var cab = div.closest('.painel').querySelector('.painel-cab');
       var acoes = document.createElement('div');
@@ -672,19 +727,16 @@
           '" aria-pressed="' + (t === TIPOS[id]) + '">' +
           '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + ICONE_TIPO[t] + '</svg></button>';
       }).join('');
+      div._grupoTipos = grupo;
       grupo.addEventListener('click', function (ev) {
         var btn = ev.target.closest('.tipo-btn');
         if (!btn) return;
         var t = btn.getAttribute('data-tipo');
         if (t === TIPOS[id]) return;
         TIPOS[id] = t;
-        grupo.querySelectorAll('.tipo-btn').forEach(function (b) {
-          var on = b === btn;
-          b.classList.toggle('ativo', on);
-          b.setAttribute('aria-pressed', on);
-        });
+        marcarTipo(div);
         redesenhar(id);
-        salvarTipos();
+        if (emCelular()) salvarTipoCelular(id, t); else salvarTipos();
       });
       acoes.appendChild(grupo);
 
@@ -699,6 +751,20 @@
       }
       cab.appendChild(acoes);
     });
+  }
+
+  /** Cruzou o ponto de corte (girou o aparelho, redimensionou a janela): cada painel passa ao tipo do novo modo. */
+  function trocarModoTipos() {
+    document.querySelectorAll('[data-tipos]').forEach(function (div) {
+      var p = PAYLOAD[div.id];
+      TIPOS[div.id] = tipoInicial(div, tiposDoPainel(div), p && p.tipo === 'cat' ? p.dados.length : null);
+      marcarTipo(div);
+      redesenhar(div.id);
+    });
+  }
+  if (MQ_CELULAR) {
+    if (MQ_CELULAR.addEventListener) MQ_CELULAR.addEventListener('change', trocarModoTipos);
+    else if (MQ_CELULAR.addListener) MQ_CELULAR.addListener(trocarModoTipos);   // Safari antigo
   }
 
   function aoClicarDe(div) {
@@ -765,6 +831,7 @@
       aoClicar: aoClicarDe(div)
     }, extra || {});
     PAYLOAD[id] = { tipo: 'cat', dados: dados, opts: opts };
+    ajustarTipoCelular(div, dados.length);
     G.categorico(TIPOS[id], div, dados, opts);
     descreverGrafico(div, opts.titulo, dados.slice(0, 6).map(function (d) {
       return d.rot + ' ' + G.num(d.val, opts.dec || 0) + (opts.unidade ? ' ' + opts.unidade : '');
@@ -3189,29 +3256,28 @@
           top.slice(0, 4).map(function (t) {
             return '<li><span class="cal-sig">' + G.esc(sigla(t.n)) + '</span> ' + G.esc(t.n) + ' <b>' + G.num(t.v) + '</b></li>';
           }).join('') +
-          (top.length > 4 ? '<li class="cal-sub">+ ' + (top.length - 4) + ' pessoa(s)</li>' : '') +
+          (top.length > 4 ? '<li class="cal-sub">+ ' + (top.length - 4) + ' lançador(es)</li>' : '') +
           '</ul>' + htmlMesCalendario(ym, I, {}) + '</div>';
       });
     }
 
     if (el('gCalPessoa')) {
       var nomes = I.pessoas.map(function (p) { return p.rot; });
-      if (nomes.indexOf(calPessoa) < 0) calPessoa = '';   // ninguém de cara: só quando escolherem
+      if (nomes.indexOf(calPessoa) < 0) calPessoa = '';   // por padrão, todos os lançadores juntos
       var meu = I.pessoas.filter(function (p) { return p.rot === calPessoa; })[0];
       var maxP = 1;
-      I.dias.forEach(function (d) { maxP = Math.max(maxP, quem.get(d.iso).get(calPessoa) || 0); });
+      I.dias.forEach(function (d) { maxP = Math.max(maxP, calPessoa ? (quem.get(d.iso).get(calPessoa) || 0) : d.n); });
       I._calMax = maxP;
       el('gCalPessoa').innerHTML =
-        '<div class="tf-bar"><label class="tf-campo">Pessoa <select id="calPessoaSel">' +
-        '<option value=""' + (calPessoa ? '' : ' selected') + '>Selecione uma pessoa&hellip;</option>' +
+        '<div class="tf-bar"><label class="tf-campo">Lançador <select id="calPessoaSel">' +
+        '<option value=""' + (calPessoa ? '' : ' selected') + '>Todos os lançadores</option>' +
         nomes.map(function (n) {
           return '<option value="' + G.esc(n) + '"' + (n === calPessoa ? ' selected' : '') + '>' + G.esc(sigla(n)) + ' — ' + G.esc(n) + '</option>';
         }).join('') + '</select></label>' +
-        '<span class="tf-cont">' + (meu ? G.num(meu.n) + ' lançamentos em ' + G.num(meu.dias) + ' dias' : '') +
+        '<span class="tf-cont">' + (meu ? G.num(meu.n) + ' lançamentos em ' + G.num(meu.dias) + ' dias' : G.num(I.total) + ' lançamentos de ' + G.num(nomes.length) + ' lançadores') +
         '</span>' + (meu ? '<button type="button" class="tf-dir cal-link" data-cal-t="pessoa" data-cal-k="' +
           G.esc(calPessoa) + '">Ver tudo de ' + G.esc(sigla(calPessoa)) + ' &rsaquo;</button>' : '') +
-        '</div>' + (calPessoa ? grade({ pessoa: calPessoa })
-          : '<p class="nota">Escolha uma pessoa para ver em que dias ela lançou e em quais não.</p>');
+        '</div>' + grade(calPessoa ? { pessoa: calPessoa } : {});
       I._calMax = maxDia;
       var sel = el('calPessoaSel');
       if (sel) sel.addEventListener('change', function () { calPessoa = sel.value; pintarCalendarios(I); });
@@ -3222,8 +3288,19 @@
      Passar o mouse numa data, semana, mês, ano ou pessoa abre um resumo;
      clicar abre uma janela com os lançamentos, que podem ser agrupados por
      dia, semana, mês, pessoa, município, serviço ou escritório (dois níveis). */
-  function registrosDe(I, t, k, p) {
-    var out = [];
+  /** g = 'mun|Rio Branco' (data-cal-g): restringe os lançamentos a um município, escritório, serviço ou técnico */
+  function grupoDe(g) {
+    var i = (g || '').indexOf('|');
+    return i < 0 ? null : { dim: g.slice(0, i), v: g.slice(i + 1) };
+  }
+  function predGrupo(g) {
+    var o = grupoDe(g);
+    if (!o || !CAL_AGRUPAR[o.dim]) return null;
+    return function (r) { return CAL_AGRUPAR[o.dim].chave(r) === o.v; };
+  }
+
+  function registrosDe(I, t, k, p, g) {
+    var out = [], pg = predGrupo(g);
     I.dias.forEach(function (d) {
       var ok = t === 'dia' ? d.iso === k
         : t === 'semana' ? segundaDaSemana(d.iso) === k
@@ -3233,14 +3310,16 @@
       if (!ok) return;
       d.registros.forEach(function (r) {
         var quem = r.alim || NI;
+        if (pg && !pg(r)) return;
         if (t === 'pessoa' ? quem === k : (!p || quem === p)) out.push(r);
       });
     });
     return out;
   }
 
-  function tituloDe(t, k, p) {
+  function tituloDe(t, k, p, g) {
     var sufixo = p && t !== 'pessoa' ? ' — ' + p : '';
+    if (grupoDe(g) && t !== 'pessoa') sufixo += ' — ' + grupoDe(g).v;
     if (t === 'dia') return DIAS_SEMANA[diaSemana(k)] + ', ' + dataBR(k) + sufixo;
     if (t === 'semana') return 'Semana de ' + dataBR(k) + ' a ' + dataBR(somarDias(k, 6)) + sufixo;
     if (t === 'mes') return mesLongo(k) + ' de ' + k.slice(0, 4) + sufixo;
@@ -3262,7 +3341,7 @@
     if (!CTX) return;
     var I = insercoes(CTX);
     var t = alvo.getAttribute('data-cal-t'), k = alvo.getAttribute('data-cal-k'),
-        p = alvo.getAttribute('data-cal-p') || '';
+        p = alvo.getAttribute('data-cal-p') || '', g = alvo.getAttribute('data-cal-g') || '';
     if (!CAL_POP) {
       CAL_POP = document.createElement('div');
       CAL_POP.className = 'cal-pop';
@@ -3272,19 +3351,19 @@
     var h;
     if (t === 'vazio') {
       var fds = alvo.getAttribute('data-cal-m') === 'fds';
-      h = '<h5>' + G.esc(tituloDe('vazio', k, p)) + '</h5><p>' +
+      h = '<h5>' + G.esc(tituloDe('vazio', k, p, g)) + '</h5><p>' +
         (fds ? 'Fim de semana' : 'Dia útil <b>sem inserção</b>') + (p ? ' de ' + G.esc(p) : '') + '.</p>';
     } else {
-      var regs = registrosDe(I, t, k, p);
+      var regs = registrosDe(I, t, k, p, g);
       var dias = new Set(regs.map(function (r) { return r.d; }));
       var pess = contarPor(regs, function (r) { return r.alim || NI; });
       var serv = contarPor(regs, function (r) { return r.pc || 'Sem serviço'; });
       var mun = contarPor(regs, function (r) { return r.mun || NI; });
-      h = '<h5>' + G.esc(tituloDe(t, k, p)) + '</h5>' +
+      h = '<h5>' + G.esc(tituloDe(t, k, p, g)) + '</h5>' +
         '<p><b>' + G.num(regs.length) + '</b> lançamentos em <b>' + G.num(dias.size) + '</b> dia(s)</p>' +
         (t === 'pessoa' ? '' : '<p class="cal-pop-t">Quem inseriu</p><ul>' + pess.slice(0, 6).map(function (x) {
           return '<li><span class="cal-sig">' + G.esc(sigla(x.n)) + '</span> ' + G.esc(x.n) + ' <b>' + G.num(x.v) + '</b></li>';
-        }).join('') + (pess.length > 6 ? '<li>+ ' + (pess.length - 6) + ' pessoa(s)</li>' : '') + '</ul>') +
+        }).join('') + (pess.length > 6 ? '<li>+ ' + (pess.length - 6) + ' lançador(es)</li>' : '') + '</ul>') +
         '<p class="cal-pop-t">Serviço</p><p>' + serv.map(function (x) {
           return G.esc(x.n) + ' <b>' + G.num(x.v) + '</b>';
         }).join(' · ') + '</p>' +
@@ -3317,6 +3396,8 @@
     pc: { rot: 'Serviço', chave: function (r) { return r.pc || 'Sem serviço'; },
       nome: function (k) { return k; }, ordem: 'qtd' },
     esc: { rot: 'Escritório', chave: function (r) { return r.esc || NI; },
+      nome: function (k) { return k; }, ordem: 'qtd' },
+    tec: { rot: 'Técnico', chave: function (r) { return r.rt || NI; },
       nome: function (k) { return k; }, ordem: 'qtd' }
   };
   var CAL_PADRAO = { dia: ['pessoa', 'nada'], semana: ['dia', 'pessoa'], mes: ['dia', 'pessoa'],
@@ -3393,7 +3474,7 @@
       y = altCab + 8;
 
       var kpis = [['Lançamentos', G.num(regs.length)], ['Dias com inserção', G.num(dias)],
-        ['Pessoas', G.num(pess)], ['Municípios', G.num(muns)],
+        ['Lançadores', G.num(pess)], ['Municípios', G.num(muns)],
         ['Hectares', G.num(ha, 1) + ' ha'], ['Horas de máquina', G.num(hrs, 1) + ' h']];
       var kw = (CW - 9) / 4, kh = 15;
       kpis.forEach(function (k, i) {
@@ -3462,10 +3543,10 @@
     });
   }
 
-  function abrirDetalheCalendario(t, k, p) {
+  function abrirDetalheCalendario(t, k, p, g) {
     if (!CTX) return;
     var I = insercoes(CTX);
-    var regs = registrosDe(I, t, k, p);
+    var regs = registrosDe(I, t, k, p, g);
     if (!regs.length) return;
     var dlg = el('calDetalhe');
     if (!dlg) {
@@ -3504,7 +3585,7 @@
     s1.value = pad[0];
     s2.value = pad[1];
     q.value = '';
-    dlg.querySelector('h3').textContent = tituloDe(t, k, p);
+    dlg.querySelector('h3').textContent = tituloDe(t, k, p, g);
 
     var pessoas = new Set(regs.map(function (r) { return r.alim || NI; }));
     var dias = new Set(regs.map(function (r) { return r.d; }));
@@ -3513,7 +3594,7 @@
     var hrs = regs.reduce(function (a, r) { return a + (r.pc === ACU ? (r.hrs || 0) : 0); }, 0);
     dlg.querySelector('.cal-det-kpis').innerHTML = [
       ['Lançamentos', G.num(regs.length)], ['Dias com inserção', G.num(dias.size)],
-      ['Pessoas', G.num(pessoas.size)], ['Municípios', G.num(muns.size)],
+      ['Lançadores', G.num(pessoas.size)], ['Municípios', G.num(muns.size)],
       ['Hectares', G.num(ha, 1) + ' ha'], ['Horas de máquina', G.num(hrs, 1) + ' h']
     ].map(function (c) { return '<div><span>' + c[0] + '</span><b>' + c[1] + '</b></div>'; }).join('');
 
@@ -3523,7 +3604,7 @@
         return [r.prod, r.mun, r.esc, r.rt, r.alim, r.pc, r.d].join(' ').toLowerCase().indexOf(termo) >= 0;
       });
       var corpo = dlg.querySelector('.cal-det-corpo');
-      dlg._estado = { titulo: tituloDe(t, k, p), regs: base, g1: s1.value, g2: s2.value, termo: q.value.trim() };
+      dlg._estado = { titulo: tituloDe(t, k, p, g), regs: base, g1: s1.value, g2: s2.value, termo: q.value.trim() };
       if (!base.length) { corpo.innerHTML = '<p class="nota">Nenhum lançamento nessa busca.</p>'; return; }
       var abertos = base.length <= 150;
       corpo.innerHTML = grupos(base, s1.value).map(function (g) {
@@ -3566,7 +3647,7 @@
       var t = a.getAttribute('data-cal-t');
       if (t === 'vazio') return;
       fecharPopCalendario();
-      abrirDetalheCalendario(t, a.getAttribute('data-cal-k'), a.getAttribute('data-cal-p') || '');
+      abrirDetalheCalendario(t, a.getAttribute('data-cal-k'), a.getAttribute('data-cal-p') || '', a.getAttribute('data-cal-g') || '');
     });
   }
 
@@ -3610,13 +3691,12 @@
     if (TODOS.length) desenharSecaoModulo(contexto());
   }
 
-  /** Em "Mostrar mais" nenhuma visão tem a lateral de filtros: a coluna some e o conteúdo ocupa a largura toda.
-      Estas quatro nem leem os filtros; as demais (registros, por pessoa/dia/semana/mês, mapa de pontos, comparativo,
-      tendências, cruzamentos) continuam usando a seleção feita nas outras abas — uma faixa fina no topo mostra qual é
-      e deixa limpar, para não haver filtro escondido mexendo nos números sem aparecer em lugar nenhum. */
+  /** Em "Mostrar mais" a lateral de filtros aparece em todas as visões que leem a seleção. Metas, Alertas, Relatórios
+      e Configurações (abaixo) não leem filtro algum e ocupam a largura toda. */
   var SECOES_SEM_SELECAO = ['configuracoes', 'alertas', 'relatorios', 'metas'];
   function atualizarFiltros() {
-    var oculto = abaAtiva === 'lancamento' || abaAtiva === 'insercoes';
+    // "Mostrar mais": a lateral de filtros volta em todas as visões que leem a seleção (as de SECOES_SEM_SELECAO não leem filtro algum)
+    var oculto = abaAtiva === 'lancamento' || (abaAtiva === 'insercoes' && SECOES_SEM_SELECAO.indexOf(insSecao) >= 0);
     var f = el('filtros'), tg = document.querySelector('.filtros-toggle');   // o botão "Filtros" do celular também
     if (f) f.hidden = oculto;
     if (tg) tg.hidden = oculto;
@@ -3632,7 +3712,7 @@
   function pintarSelecaoIns(C) {
     var caixa = el('insSel');
     if (!caixa) return;
-    var usa = abaAtiva === 'insercoes' && SECOES_SEM_SELECAO.indexOf(insSecao) < 0;
+    var usa = false;   // com a lateral de filtros visível, a faixa de seleção é redundante
     caixa.hidden = !usa;
     if (!usa) return;
     var lista = function (v, fmt) {
@@ -4628,8 +4708,10 @@
      lançamento e administração). */
   var ABAS_FORA_DO_PUBLICO = ['registros', 'lancamento', 'ins-cultura', 'beneficiario', 'configuracoes'];
   // visões dentro de "Mostrar mais"; as internas não aparecem na versão pública
-  var SECOES_MODULO = ['comparativo', 'metas', 'tendencias', 'cruzamentos', 'alertas', 'relatorios', 'configuracoes'];
-  var SECOES_INTERNAS = ['registros', 'pessoa', 'dia', 'semana', 'mes', 'pontos', 'alertas', 'relatorios', 'configuracoes'];
+  var SECOES_MODULO = ['comparativo', 'metas', 'tendencias', 'cruzamentos', 'alertas', 'relatorios', 'configuracoes',
+    'imun', 'iesc', 'iserv', 'itec', 'ihora'];
+  var SECOES_INTERNAS = ['registros', 'pessoa', 'dia', 'semana', 'mes', 'pontos', 'alertas', 'relatorios', 'configuracoes',
+    'imun', 'iesc', 'iserv', 'itec', 'ihora'];
   /** Primeira aba que este perfil pode ver (a Visão geral pode estar desligada nas Configurações). */
   function primeiraAbaVisivel() {
     for (var i = 0; i < botoes.length; i++) {

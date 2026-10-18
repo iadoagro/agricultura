@@ -189,7 +189,7 @@ Na aba **Eleições > 2º Turno** o responsável vê o botão **🔗 Link públi
   `apuracao_link_revogar`; só o responsável lê/altera a tabela, o público só consegue perguntar "o link está ativo?").
 - No botão: **Ativar link público**, **Copiar link**, **Abrir** e **Revogar** (desliga o link na hora; quem abrir vê
   "Acesso não autorizado").
-- A página pública (`eleicoes/index.html`) **não carrega** `admin-auth`, `admin-gate`, menu nem telas internas, tem
+- A página pública (`eleicao/index.html`) **não carrega** `admin-auth`, `admin-gate`, menu nem telas internas, tem
   Content-Security-Policy própria (só fala com o TSE e com a verificação do link) e só mostra dados públicos do TSE.
 - As demais páginas continuam protegidas pelo login: o link não leva a elas.
-- Os endereços antigos (`pages/publico`, `pages/apuracao.html`, `pages/apuracao-publica.html`) redirecionam para `eleicoes/`.
+- Os endereços antigos (`pages/publico`, `pages/apuracao.html`, `pages/apuracao-publica.html`) redirecionam para `eleicao/`.

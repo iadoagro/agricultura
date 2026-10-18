@@ -13,19 +13,9 @@ header h1{font-size:20px;font-weight:500;flex:1}
 .filtro-btn{padding:7px 14px;border:1.5px solid var(--borda);border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;background:#fff;color:#555;transition:all .38s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .filtro-btn:hover{border-color:var(--verde2);color:var(--verde2)}
 .filtro-btn.ativo{background:var(--verde);color:#fff;border-color:var(--verde)}
-.filtro-btn[data-grupo="Secretaria"].ativo{background:var(--roxo);border-color:var(--roxo)}
-.filtro-btn[data-grupo="DAF"].ativo{background:var(--azul);border-color:var(--azul)}
-.filtro-btn[data-grupo="DPA"].ativo{background:#385c8e;border-color:#385c8e}
-.filtro-btn[data-grupo="DPTEC"].ativo{background:var(--laranja);border-color:var(--laranja)}
-.filtro-btn[data-grupo="Escritórios Locais"].ativo{background:var(--cinza);border-color:var(--cinza)}
 main{flex:1;padding:24px;max-width:none;margin:0 auto;width:100%}
 .grupo-secao{margin-bottom:32px}
-.grupo-titulo{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;padding:6px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:8px;margin-bottom:12px}
-.grupo-titulo.Secretaria{background:var(--roxo)}
-.grupo-titulo.DAF{background:var(--azul)}
-.grupo-titulo.DPA{background:#385c8e}
-.grupo-titulo.DPTEC{background:var(--laranja)}
-.grupo-titulo.Escritórios{background:var(--cinza)}
+.grupo-titulo{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--gt-bg,#475569);color:var(--gt-fg,#fff);padding:6px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:8px;margin-bottom:12px}
 .subgrupo-titulo{font-size:12px;font-weight:600;color:#555;margin:16px 0 8px;padding-left:4px;border-left:3px solid #cfcfcf;padding:2px 0 2px 10px;text-transform:uppercase;letter-spacing:.04em}
 .grupo-secao .subgrupo-titulo:first-of-type{margin-top:4px}
 /* 7 colunas ocupando a largura inteira da página; reduz em telas menores */
@@ -36,8 +26,17 @@ main{flex:1;padding:24px;max-width:none;margin:0 auto;width:100%}
 @media(max-width:480px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
 .card-contato{background:#fff;border-radius:12px;padding:16px;box-shadow:var(--sombra);border:1.5px solid var(--borda);transition:border-color .38s var(--mo-out,cubic-bezier(.22,1,.36,1))}
 .card-contato:hover{border-color:#bbb}
-.card-nome{font-size:15px;font-weight:600;color:var(--texto);margin-bottom:2px}
-.card-setor{font-size:12px;color:#666;margin-bottom:12px;line-height:1.4}
+/* Cartão = a caixa do organograma: cabeçalho colorido (setor + sigla), corpo branco (responsável e ato) e o telefone embaixo */
+.cards-grid .card-contato{padding:0;overflow:hidden;border:1px solid #aab5c3;border-radius:10px;display:flex;flex-direction:column}
+.cards-grid .card-contato:hover{border-color:#64748b}
+.card-topo{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;background:var(--cc-bg,#4472c4);color:var(--cc-fg,#fff);border-bottom:1px solid rgba(15,23,42,.28)}
+.card-titulo{flex:1;min-width:0;font-size:13px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.card-sigla{flex:none;padding:2px 8px;border-radius:999px;background:#fff;color:#0b1220;font-size:11px;font-weight:800;line-height:1.3;letter-spacing:.4px;box-shadow:0 0 0 1px rgba(15,23,42,.18)}
+.card-corpo{flex:1;display:flex;flex-direction:column;gap:3px;padding:12px 14px 14px}
+.card-nome{font-size:15px;font-weight:700;line-height:1.35;color:var(--cc-corpo,var(--texto));overflow-wrap:anywhere}
+.card-nome.vazio{font-weight:500;font-style:italic;color:#64748b}
+.card-ato{font-size:12px;line-height:1.4;color:var(--cc-corpo,#475569);white-space:pre-line}
+.card-corpo .campo-tel{margin-top:auto;padding-top:10px}
 .campo-tel{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .campo-tel .input-tel{min-width:120px}
 .input-tel{flex:1;padding:8px 12px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;outline:none;transition:border-color .38s var(--mo-out,cubic-bezier(.22,1,.36,1));color:var(--texto);background:#fff}

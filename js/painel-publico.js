@@ -22,9 +22,12 @@
       { k: 'insercoes', r: 'Mostrar mais', pub: true, nota: 'no público aparece sozinha quando alguma visão dela é liberada' }
     ],
     visoes: [
-      { k: 'registros', r: 'Registros', pub: false }, { k: 'pessoa', r: 'Por pessoa', pub: false },
+      { k: 'registros', r: 'Registros', pub: false }, { k: 'pessoa', r: 'Por lançador', pub: false },
       { k: 'dia', r: 'Por dia', pub: false }, { k: 'semana', r: 'Por semana', pub: false },
-      { k: 'mes', r: 'Por mês', pub: false }, { k: 'pontos', r: 'Mapa de pontos', pub: false },
+      { k: 'mes', r: 'Por mês', pub: false },
+      { k: 'imun', r: 'Por município', pub: false }, { k: 'iesc', r: 'Por escritório', pub: false },
+      { k: 'iserv', r: 'Por serviço', pub: false }, { k: 'itec', r: 'Por técnico', pub: false },
+      { k: 'ihora', r: 'Por horário', pub: false }, { k: 'pontos', r: 'Mapa de pontos', pub: false },
       { k: 'comparativo', r: 'Comparativo', pub: true }, { k: 'metas', r: 'Metas', pub: true },
       { k: 'tendencias', r: 'Tendências', pub: true }, { k: 'cruzamentos', r: 'Cruzamentos', pub: true },
       { k: 'alertas', r: 'Alertas', pub: false }, { k: 'relatorios', r: 'Relatórios', pub: false }
@@ -32,7 +35,7 @@
   };
   var CFG = null;   // { itens_publico, itens_logado, exige_senha }
   // padrões (quando a lista no banco é NULL): o público vê tudo que pode ser liberado; o usuário logado
-  // vê tudo, menos as visões que listam registros e pessoas (Registros, Por pessoa/dia/semana/mês, Mapa de pontos)
+  // vê tudo, menos as visões que listam registros e pessoas (Registros, Por lançador/dia/semana/mês, Mapa de pontos)
   var PADRAO_PUBLICO = ITENS.abas.concat(ITENS.visoes).filter(function (i) { return i.pub; }).map(function (i) { return i.k; });
   var PADRAO_LOGADO = ITENS.abas.concat(ITENS.visoes).map(function (i) { return i.k; }).filter(function (k) {
     return ['registros', 'pessoa', 'dia', 'semana', 'mes', 'pontos'].indexOf(k) < 0;
