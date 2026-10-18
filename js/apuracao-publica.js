@@ -55,8 +55,9 @@
     var nome = ''; try { nome = localStorage.getItem('ap_pub_nome') || ''; } catch (e) { /* sem armazenamento */ }
     var el = document.createElement('div');
     el.setAttribute('role', 'timer');
-    el.style.cssText = 'position:fixed;top:8px;right:8px;z-index:100000;padding:5px 11px;border-radius:999px;background:rgba(11,36,71,.88);color:#fff;font:600 12px/1.3 system-ui,Arial,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none';
-    document.body.appendChild(el);
+    el.className = 'ap-sessao';
+    // no celular entra no fluxo da página, logo acima do cabeçalho; no computador fica fixo no canto
+    if (app) app.insertBefore(el, app.firstChild); else document.body.appendChild(el);
     var ini = Date.now();
     function p2(n) { return String(n).padStart(2, '0'); }
     function tique() {
