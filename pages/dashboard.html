@@ -9,9 +9,9 @@
 <meta property="og:title" content="Painel da Mecaniza&ccedil;&atilde;o">
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
-<link rel="stylesheet" href="../css/base.css?v=96e317c8">
-<link rel="stylesheet" href="../css/dashboard.css?v=c892e519">
-<link rel="stylesheet" href="../css/assistente-dados.css?v=04476821">
+<link rel="stylesheet" href="../css/base.css?v=5817c6df">
+<link rel="stylesheet" href="../css/dashboard.css?v=e3f69f9b">
+<link rel="stylesheet" href="../css/assistente-dados.css?v=66c324af">
 <link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=003327b7">
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
@@ -25,15 +25,35 @@
       var m = document.createElement('meta');
       m.name = 'robots'; m.content = 'noindex';
       document.head.appendChild(m);
+
+      /* Só no modo público: espera confirmar com o servidor que o link não foi
+         revogado pela administração (config_publico.php) antes de pintar a
+         tela — ver #publicoRevogado mais abaixo e js/dashboard.js (ligarLinkPublico).
+         Sem PHP do outro lado (o link web é servido pelo GitHub Pages, estático)
+         ou se o servidor não responder a tempo, assume ativo: falha de rede não
+         pode travar quem está com o link em mãos. */
+      document.documentElement.classList.add('checando-publico');
+      var liberou = false;
+      function liberar(revogado) {
+        if (liberou) return;
+        liberou = true;
+        if (revogado) document.documentElement.setAttribute('data-publico-revogado', '1');
+        document.documentElement.classList.remove('checando-publico');
+      }
+      setTimeout(function () { liberar(false); }, 3500);
+      fetch('../config_publico.php', { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { liberar(!!j && j.ativo === false); })
+        .catch(function () { liberar(false); });
     } catch (e) { /* sem modo público */ }
   })();
 </script>
 <script src="../js/banco-config.js?v=61ce7c3f"></script>
-<script src="../js/ambiente-cliente.js?v=4e3462f5"></script>
+<script src="../js/ambiente-cliente.js?v=0c94fa84"></script>
 <script src="../js/admin-auth.js?v=688de1c2"></script>
-<script src="../js/admin-gate.js?v=252869c0"></script>
+<script src="../js/admin-gate.js?v=2280047c"></script>
 <script src="../js/rastreio.js?v=04af733f"></script>
-<script src="../js/nav.js?v=555f77e6"></script>
+<script src="../js/nav.js?v=a3e32e72"></script>
 <script>
   /* aplica o tema antes da pintura para não piscar branco */
   (function () {
@@ -50,12 +70,20 @@
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=54842f62">
 <link rel="stylesheet" href="../css/fx-ui.css?v=aaabe5a4">
 <link rel="stylesheet" href="../css/nav.css?v=8eb6c0f7">
-<link rel="stylesheet" href="../css/select-app.css?v=db8eb13e">
-<script src="../js/select-app.js?v=4be396f6" defer></script>
-<link rel="stylesheet" href="../css/modal-ui.css?v=847ed560">
-<script src="../js/modal-ui.js?v=6b7826a3"></script>
+<link rel="stylesheet" href="../css/select-app.css?v=67fe6766">
+<script src="../js/select-app.js?v=a8bc83c5" defer></script>
+<link rel="stylesheet" href="../css/modal-ui.css?v=409ee73c">
+<script src="../js/modal-ui.js?v=c9e73fa0"></script>
 </head>
 <body>
+
+<!-- só aparece se config_publico.php disser que o link foi desativado (ver script no <head>) -->
+<div id="publicoRevogado" role="alert">
+  <div class="publico-revogado-caixa">
+    <h1>Link desativado</h1>
+    <p>Este link p&uacute;blico foi desativado pela administra&ccedil;&atilde;o. Fale com a SEAGRI para mais informa&ccedil;&otilde;es.</p>
+  </div>
+</div>
 
 <header class="cab-painel cab-padrao">
   <h1 id="tituloPainel">SISTEMA</h1>
@@ -571,6 +599,7 @@
       <div class="relatorio-geral-acoes">
         <button class="btn btn-verde" type="button" data-geral="geral">Completo (PDF)</button>
         <button class="btn" type="button" data-geral="resumo">Resumido (PDF)</button>
+        <button class="btn" type="button" data-geral="slides">Apresenta&ccedil;&atilde;o (slides)</button>
       </div>
     </div>
     <div class="relatorio-grid" id="relatorioGrid"></div>
@@ -1211,6 +1240,19 @@
       <section class="cfg-cartao">
         <h3>Link p&uacute;blico <small>sem login, s&oacute; leitura</small></h3>
         <div class="cfg-link" id="linkPublico">
+          <div class="link-publico-estado">
+            <span class="link-publico-bolinha" id="linkPublicoBolinha" aria-hidden="true"></span>
+            <span id="linkPublicoEstadoTxt">Verificando estado&hellip;</span>
+          </div>
+          <button class="btn" type="button" id="linkPublicoRevogarBtn">Desativar link</button>
+          <div class="link-publico-senha" id="linkPublicoSenhaBox" hidden>
+            <input type="password" id="linkPublicoSenha" class="admin-pwd" placeholder="Senha de administrador" autocomplete="current-password">
+            <div class="link-publico-senha-btns">
+              <button class="btn btn-verde" type="button" id="linkPublicoSenhaOk">Confirmar</button>
+              <button class="btn" type="button" id="linkPublicoSenhaCancelar">Cancelar</button>
+            </div>
+            <p class="admin-errmsg" id="linkPublicoErro"></p>
+          </div>
           <label class="cfg-link-rot" for="linkPublicoWeb">Internet</label>
           <div class="cfg-link-linha">
             <input type="text" id="linkPublicoWeb" readonly aria-label="Link p&uacute;blico web do painel de Mecaniza&ccedil;&atilde;o">
@@ -1628,26 +1670,26 @@
 <script src="../js/data-br.js?v=d801c961"></script>
 <script src="../js/select-busca.js?v=0d56edf9" defer></script>
 <script src="../js/lancamento-campos.js?v=4ad79d8b"></script>
-<script src="../js/lancamento-nomes.js?v=560082b9"></script>
+<script src="../js/lancamento-nomes.js?v=b5804079"></script>
 <script src="../js/lancamento-ux.js?v=47fa56b2"></script>
 <script src="../js/lancamento-validacao.js?v=653eebb8"></script>
-<script src="../js/lancamento-pdf.js?v=278a38f6"></script>
+<script src="../js/lancamento-pdf.js?v=0475e33e"></script>
 <script src="../js/lancamento-mecanizacao.js?v=2a0f9a04"></script>
-<script src="../js/painel-calculos.js?v=2246ccd4"></script>
-<script src="../js/tabela-ferramentas.js?v=2fd63664"></script>
-<script src="../js/painel-publico.js?v=46f95ecc"></script>
-<script src="../js/dashboard.js?v=11c8f9c6"></script>
-<script src="../js/painel-comparativo.js?v=9ca079be"></script>
-<script src="../js/painel-metas.js?v=4963de3a"></script>
-<script src="../js/painel-tendencias.js?v=128338af"></script>
-<script src="../js/painel-insercoes-extra.js?v=c4e03e5f"></script>
-<script src="../js/painel-cruzamentos.js?v=4628c41b"></script>
-<script src="../js/painel-produtores.js?v=5b52a3dc"></script>
-<script src="../js/painel-config.js?v=32772bde"></script>
-<script src="../js/painel-alertas.js?v=bcd6d314"></script>
-<script src="../js/painel-relatorios.js?v=287e0c16"></script>
-<script src="../js/painel-pontos.js?v=210cc46f"></script>
-<script src="../js/assistente-dados.js?v=0d6b0c2c"></script>
+<script src="../js/painel-calculos.js?v=90cbdd5d"></script>
+<script src="../js/tabela-ferramentas.js?v=d2d2e204"></script>
+<script src="../js/painel-publico.js?v=9ed575d7"></script>
+<script src="../js/dashboard.js?v=d4c42e84"></script>
+<script src="../js/painel-comparativo.js?v=4fb37037"></script>
+<script src="../js/painel-metas.js?v=91a8cfdf"></script>
+<script src="../js/painel-tendencias.js?v=8093b9c3"></script>
+<script src="../js/painel-insercoes-extra.js?v=dee7d6ff"></script>
+<script src="../js/painel-cruzamentos.js?v=4c1a1de3"></script>
+<script src="../js/painel-produtores.js?v=5db3af3f"></script>
+<script src="../js/painel-config.js?v=ef3d64e2"></script>
+<script src="../js/painel-alertas.js?v=6174e012"></script>
+<script src="../js/painel-relatorios.js?v=6a7e41d8"></script>
+<script src="../js/painel-pontos.js?v=18b20ff1"></script>
+<script src="../js/assistente-dados.js?v=abba29aa"></script>
 <script src="../js/motion-ui.js?v=7de49da0"></script>
 <script src="../js/motion-extras.js?v=0cb3d83b"></script>
 <script src="../js/fx-ui.js?v=cbbdb79e" defer></script>

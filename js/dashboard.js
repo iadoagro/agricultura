@@ -29,6 +29,27 @@
   var MEC = 'Mecanização';
   var ACU = 'Açudagem';
   var MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  /* Frota de máquinas alocada por município em 2026 — informação fixa (não vem da
+     planilha de vistorias), passada à parte pela SEAGRI. Entra só no relatório
+     geral resumido (ver baixarPdfGeral), por isso fica separada dos dados de D. */
+  var MAQUINAS_MUNICIPIO_2026 = {
+    'Marechal Thaumaturgo': '2 escavadeiras hidráulicas',
+    'Mâncio Lima': '1 escavadeira hidráulica · 1 trator agrícola',
+    'Cruzeiro do Sul': '1 pá mecânica · 2 tratores agrícolas',
+    'Tarauacá': '1 escavadeira hidráulica · 2 tratores agrícolas',
+    'Feijó': '1 trator de esteira · 1 trator agrícola',
+    'Manoel Urbano': '1 trator agrícola',
+    'Porto Acre': '1 escavadeira · 1 pá mecânica · 1 trator agrícola',
+    'Acrelândia': '1 escavadeira hidráulica · 2 tratores agrícolas',
+    'Plácido de Castro': '2 tratores agrícolas',
+    'Capixaba': '1 trator de esteira · 1 escavadeira hidráulica · 1 pá mecânica · 1 trator agrícola',
+    'Xapuri': '2 tratores agrícolas',
+    'Epitaciolândia': '1 pá mecânica · 1 trator agrícola',
+    'Brasiléia': '2 escavadeiras hidráulicas · 2 tratores agrícolas',
+    'Assis Brasil': '2 tratores agrícolas · 1 pá mecânica',
+    'Bujari': '2 tratores de pneu',
+    'Rio Branco': '3 escavadeiras · 5 tratores de pneu · 2 pás carregadeiras'
+  };
   /* Não há hash de senha aqui: quem confere é salvar_mecanizacao.php. Um hash
      neste arquivo seria baixado por qualquer visitante e quebrado offline. */
   var CHAVE_LOCAL = 'seagri_mecanizacao';
@@ -4257,6 +4278,17 @@
       for (var c = 1; c < cabMun.length; c++) cols9[c] = dir;
       tabela(cabMun, linhasMun, { cols: cols9, totais: true });
 
+      // frota alocada por município (2026): só no resumido e só dos municípios
+      // que estão na seleção atual, na mesma ordem do "Por município" acima
+      if (resumo) {
+        var linhasMaq = muns.filter(function (m) { return MAQUINAS_MUNICIPIO_2026[m]; })
+          .map(function (m) { return [m, MAQUINAS_MUNICIPIO_2026[m]]; });
+        if (linhasMaq.length) {
+          secao('Máquinas alocadas por município (2026)');
+          tabela(['Município', 'Máquinas'], linhasMaq, { fs: 8.5 });
+        }
+      }
+
       if (!resumo) {
         var rkCult = ranking((function () {
           var m = new Map();
@@ -4346,6 +4378,168 @@
     }).then(function () {
       btns.forEach(function (b) { b.disabled = false; });
     });
+  }
+
+  /* ------------------------------------- Apresentação (slides) do relatório geral,
+     sempre no "modo resumido": números gerais + um painel por município, a partir
+     da mesma seleção de filtros do relatório em PDF (ver baixarPdfGeral acima). */
+  function montarSlidesGeral(D) {
+    var muns = munsDaSelecao(D);
+    var sub = D.filter(function (r) { return r.mun && r.mun !== NI; });
+    var mec = sub.filter(function (r) { return r.pc === MEC; });
+    var acu = sub.filter(function (r) { return r.pc === ACU; });
+    var ha = soma(mec, function (r) { return r.ha; });
+    var hrs = soma(acu, function (r) { return r.hrs; });
+    var nAc = soma(acu, function (r) { return r.ac; });
+    var nProd = nProdutores(sub);
+    var temMec = mec.length > 0, temAcu = acu.length > 0;
+    var cab = cabecalhoRelatorio(sub);
+    var slides = [];
+
+    slides.push({ capa: true, html:
+      '<div class="apr-capa-faixa"></div><div class="apr-capa-corpo">' +
+      '<div class="apr-capa-eyebrow">' + G.esc(cab.itens[0][1]) + '</div>' +
+      '<h1>Relat&oacute;rio geral &mdash; resumido</h1>' +
+      '<p class="apr-capa-periodo">Per&iacute;odo das vistorias: ' + G.esc(cab.periodo) + '</p>' +
+      '<p class="apr-capa-filtros">' + cab.itens.map(function (it) {
+        return '<span>' + G.esc(it[0]) + ': ' + G.esc(it[1]) + '</span>';
+      }).join('') + '</p>' +
+      '<p class="apr-capa-rodape">' + muns.length + ' munic&iacute;pio' + (muns.length === 1 ? '' : 's') + ' na sele&ccedil;&atilde;o</p>' +
+      '</div>' });
+
+    var kpis = [['Atendimentos', G.num(sub.length)]];
+    if (temMec) kpis.push(['Mecanização', G.num(mec.length) + ' (' + G.num(ha, 1) + ' ha)']);
+    if (temAcu) kpis.push(['Açudagem', G.num(acu.length) + ' (' + G.num(hrs, 1) + ' h)'], ['Tanques / açudes', G.num(nAc)]);
+    kpis.push(['Produtores', G.num(nProd)],
+      ['Atend. por município', G.num(sub.length / (muns.length || 1), 1)],
+      ['Municípios', G.num(muns.length)],
+      ['Meses com vistoria', G.num(chavesTempo(sub).length)]);
+    slides.push({ html:
+      '<div class="apr-slide-cab"><h2>N&uacute;meros gerais</h2><div class="apr-linha"></div></div>' +
+      '<div class="apr-kpis">' + kpis.map(function (k) {
+        return '<div class="apr-kpi"><div class="apr-kpi-rot">' + G.esc(k[0]) + '</div><div class="apr-kpi-val">' + k[1] + '</div></div>';
+      }).join('') + '</div>' });
+
+    var linhasMun = muns.map(function (m) {
+      var s = sub.filter(function (r) { return r.mun === m; });
+      return { nome: m, n: s.length };
+    }).sort(function (a, b) { return b.n - a.n; });
+    var mx = Math.max.apply(null, linhasMun.map(function (l) { return l.n; }).concat([1]));
+    var POR_SLIDE = 9;
+    for (var i = 0; i < linhasMun.length; i += POR_SLIDE) {
+      var pagina = linhasMun.slice(i, i + POR_SLIDE);
+      slides.push({ html:
+        '<div class="apr-slide-cab"><h2>Por munic&iacute;pio</h2><div class="apr-linha"></div></div>' +
+        '<div class="apr-barras">' + pagina.map(function (l) {
+          var pct = Math.max(4, Math.round(l.n / mx * 100));
+          return '<div class="apr-barra-item">' +
+            '<div class="apr-barra-rot">' + G.esc(l.nome) + '</div>' +
+            '<div class="apr-barra-trilho"><div class="apr-barra-preench" style="width:' + pct + '%"></div></div>' +
+            '<div class="apr-barra-val">' + G.num(l.n) + '</div></div>';
+        }).join('') + '</div>' });
+    }
+
+    slides.push({ capa: true, html:
+      '<div class="apr-capa-faixa"></div><div class="apr-capa-corpo">' +
+      '<h1>Fim</h1><p class="apr-capa-periodo">Gerado em ' + new Date().toLocaleDateString('pt-BR') + '</p></div>' });
+
+    return slides;
+  }
+
+  var deckApresentacao = null;
+  function abrirApresentacaoGeral(D) {
+    if (deckApresentacao) deckApresentacao.fechar();
+    var sub = D.filter(function (r) { return r.mun && r.mun !== NI; });
+    if (!sub.length) return;
+    var slides = montarSlidesGeral(D), i = 0;
+
+    var raiz = document.createElement('div');
+    raiz.className = 'apr-deck';
+    raiz.setAttribute('role', 'dialog'); raiz.setAttribute('aria-modal', 'true');
+    raiz.setAttribute('aria-label', 'Apresentação do relatório geral');
+    raiz.innerHTML =
+      '<div class="apr-barra"><strong class="apr-tit">Relat&oacute;rio geral &mdash; apresenta&ccedil;&atilde;o</strong><span class="apr-esp"></span>' +
+      '<button type="button" class="apr-b" data-a="tela" title="Tela cheia (F)">⛶ Tela cheia</button>' +
+      '<button type="button" class="apr-b apr-x" data-a="fechar" title="Fechar (Esc)" aria-label="Fechar">✕</button></div>' +
+      '<div class="apr-palco"><div class="apr-caixa"><div class="apr-pano"></div></div></div>' +
+      '<div class="apr-nav"><button type="button" class="apr-b" data-a="ant" aria-label="Slide anterior">‹</button>' +
+      '<span class="apr-cont" aria-live="polite"></span>' +
+      '<button type="button" class="apr-b" data-a="prox" aria-label="Próximo slide">›</button></div>';
+
+    var palco = raiz.querySelector('.apr-palco'), caixa = raiz.querySelector('.apr-caixa'),
+      pano = raiz.querySelector('.apr-pano'), cont = raiz.querySelector('.apr-cont');
+    slides.forEach(function (s) {
+      var div = document.createElement('div');
+      div.className = 'apr-slide' + (s.capa ? ' apr-capa' : '');
+      div.innerHTML = s.html;
+      div.hidden = true;
+      pano.appendChild(div);
+    });
+    var cenas = pano.children;
+
+    function ajusta() {
+      var esc = Math.min(palco.clientWidth / 1280, palco.clientHeight / 720);
+      caixa.style.width = Math.round(1280 * esc) + 'px';
+      caixa.style.height = Math.round(720 * esc) + 'px';
+      pano.style.transform = 'scale(' + esc + ')';
+    }
+    function ir(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      for (var j = 0; j < cenas.length; j++) cenas[j].hidden = j !== i;
+      cont.textContent = (i + 1) + ' / ' + slides.length;
+      raiz.querySelector('[data-a=ant]').disabled = i === 0;
+      raiz.querySelector('[data-a=prox]').disabled = i === slides.length - 1;
+    }
+    function tecla(ev) {
+      if (ev.key === 'ArrowRight' || ev.key === 'PageDown' || ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); ir(i + 1); }
+      else if (ev.key === 'ArrowLeft' || ev.key === 'PageUp' || ev.key === 'Backspace') { ev.preventDefault(); ir(i - 1); }
+      else if (ev.key === 'Home') { ev.preventDefault(); ir(0); }
+      else if (ev.key === 'End') { ev.preventDefault(); ir(slides.length - 1); }
+      else if (ev.key === 'f' || ev.key === 'F') { alternaTela(); }
+      else if (ev.key === 'Escape' && !document.fullscreenElement) { fechar(); }
+    }
+    function alternaTela() {
+      if (document.fullscreenElement) { document.exitFullscreen(); return; }
+      var f = raiz.requestFullscreen || raiz.webkitRequestFullscreen;
+      if (f) { try { f.call(raiz); } catch (e) { /* sem tela cheia neste navegador */ } }
+    }
+    function fechar() {
+      document.removeEventListener('keydown', tecla);
+      window.removeEventListener('resize', ajusta);
+      document.removeEventListener('fullscreenchange', ajusta);
+      if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (e) { /* já saiu */ } }
+      document.documentElement.classList.remove('apr-aberto');
+      raiz.remove();
+      deckApresentacao = null;
+    }
+    raiz.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-a]');
+      if (b) {
+        var a = b.getAttribute('data-a');
+        if (a === 'prox') ir(i + 1);
+        else if (a === 'ant') ir(i - 1);
+        else if (a === 'fechar') fechar();
+        else if (a === 'tela') alternaTela();
+        return;
+      }
+      if (ev.target.closest('.apr-caixa')) ir(i + 1);
+    });
+    var x0 = null;
+    raiz.addEventListener('touchstart', function (ev) { x0 = ev.touches[0].clientX; }, { passive: true });
+    raiz.addEventListener('touchend', function (ev) {
+      if (x0 == null) return;
+      var dx = ev.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 50) ir(i + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+
+    document.addEventListener('keydown', tecla);
+    window.addEventListener('resize', ajusta);
+    document.addEventListener('fullscreenchange', ajusta);
+    document.body.appendChild(raiz);
+    document.documentElement.classList.add('apr-aberto');
+    ajusta(); ir(0);
+    raiz.querySelector('[data-a=prox]').focus();
+    deckApresentacao = { fechar: fechar };
   }
 
   /** modo: 'mun' (um município), 'geral' (completo) ou 'resumo'. */
@@ -5429,6 +5623,71 @@
     }
     ligar('linkPublicoWeb', 'linkPublicoWebCopiar', web);
     ligar('linkPublicoLocal', 'linkPublicoLocalCopiar', local);
+
+    /* Ativar/desativar o link público (config_publico.php): servidor é quem
+       decide — o painel só mostra o estado e pede a mesma senha de admin para
+       trocar (ver senha_confere() em admin_senha.php). Sem PHP do outro lado
+       (ex.: o link web, servido pelo GitHub Pages, estático) a leitura falha e
+       a caixa assume "ativo" sem travar a cópia do link. */
+    var bolinha = el('linkPublicoBolinha'), estadoTxt = el('linkPublicoEstadoTxt'),
+      btnRevogar = el('linkPublicoRevogarBtn'), senhaBox = el('linkPublicoSenhaBox'),
+      campoSenha = el('linkPublicoSenha'), btnOk = el('linkPublicoSenhaOk'),
+      btnCancelar = el('linkPublicoSenhaCancelar'), erro = el('linkPublicoErro');
+    if (!bolinha || !btnRevogar) return;
+    var ativo = true, pendente = false;
+
+    function pintarEstado() {
+      bolinha.classList.toggle('ativo', ativo);
+      bolinha.classList.toggle('revogado', !ativo);
+      estadoTxt.textContent = ativo
+        ? 'Ativo — quem tiver o endereço consegue abrir.'
+        : 'Desativado — quem tiver o endereço vê um aviso, sem ver os dados.';
+      btnRevogar.textContent = ativo ? 'Desativar link' : 'Reativar link';
+    }
+    function fecharSenha() { senhaBox.hidden = true; erro.textContent = ''; campoSenha.value = ''; }
+
+    fetch('../config_publico.php', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { ativo = !j || j.ativo !== false; pintarEstado(); })
+      .catch(function () { pintarEstado(); });   // sem servidor: fica "ativo" (padrão)
+
+    btnRevogar.addEventListener('click', function () {
+      erro.textContent = ''; campoSenha.value = ''; senhaBox.hidden = false;
+      setTimeout(function () { campoSenha.focus(); }, 30);
+    });
+    btnCancelar.addEventListener('click', fecharSenha);
+    campoSenha.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); btnOk.click(); }
+      else if (e.key === 'Escape') fecharSenha();
+    });
+    btnOk.addEventListener('click', function () {
+      if (pendente) return;
+      var novoEstado = !ativo;
+      pendente = true; btnOk.disabled = true; erro.textContent = '';
+      fetch('../config_publico.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ senha: campoSenha.value, ativo: novoEstado })
+      }).then(function (r) {
+        return r.text().then(function (corpo) {
+          var j = null; try { j = JSON.parse(corpo); } catch (e) { /* não é resposta do endpoint */ }
+          return j;
+        });
+      }).then(function (j) {
+        pendente = false; btnOk.disabled = false;
+        if (!j) { erro.textContent = 'Não foi possível falar com o servidor (sem PHP ou fora do ar).'; return; }
+        if (!j.ok) {
+          erro.textContent = j.erro || 'Senha incorreta.';
+          campoSenha.value = ''; campoSenha.focus();
+          return;
+        }
+        ativo = j.ativo;
+        pintarEstado();
+        fecharSenha();
+      }).catch(function () {
+        pendente = false; btnOk.disabled = false;
+        erro.textContent = 'Falha de conexão com o servidor.';
+      });
+    });
   })();
   // o perfil da conta chega depois da página: reaplica quando ele muda
   window.addEventListener('admin-auth-atualizado', aplicarAdmin);
@@ -5514,7 +5773,9 @@
   el('relatorioGeral').addEventListener('click', function (e) {
     var btn = e.target.closest('button[data-geral]');
     if (!btn) return;
-    baixarPdfGeral(filtrar(), btn.getAttribute('data-geral'));
+    var modo = btn.getAttribute('data-geral');
+    if (modo === 'slides') abrirApresentacaoGeral(filtrar());
+    else baixarPdfGeral(filtrar(), modo);
   });
   /* Busca do dia a dia: só a tabela é refeita, não a aba inteira — os
      gráficos ao lado mostram o período todo, e piscar a cada tecla seria
