@@ -705,12 +705,16 @@ if ($acao === 'listar') {
     if (trim((string) ($_POST['f_pendente'] ?? '')) === '1') {
         $filtro .= filtroSoPendentes($supabaseUrl, $serviceRole);
     }
-    // Mais recente primeiro (2026 no topo); o primeiro lançado fica por último.
+    // Padrão: mais recente primeiro. A tela pode ordenar por outra coluna (só as da lista abaixo).
+    $colunasOrdenaveis = ['criado_em', 'tipo_servico', 'nome_beneficiario', 'municipio', 'escritorio_local', 'data_vistoria',
+        'area_total_ha', 'horas_maquina', 'quantidade_acudes', 'criado_por_email'];
+    $colunaOrdem = in_array((string) ($_POST['ordem'] ?? ''), $colunasOrdenaveis, true) ? (string) $_POST['ordem'] : 'criado_em';
+    $sentidoOrdem = (string) ($_POST['dir'] ?? '') === 'asc' ? 'asc' : 'desc';
     [$status, $corpo, $headersResp] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'GET',
         '/rest/v1/mecanizacao_lancamentos?select=id,criado_em,criado_por_email,tipo_servico,nome_beneficiario,' .
         'municipio,escritorio_local,data_vistoria,area_total_ha,horas_maquina,quantidade_acudes' .
-        $filtro . '&order=criado_em.desc,id.desc&limit=' . $limite . '&offset=' . (($pagina - 1) * $limite),
+        $filtro . '&order=' . $colunaOrdem . '.' . $sentidoOrdem . '.nullslast,id.desc&limit=' . $limite . '&offset=' . (($pagina - 1) * $limite),
         null, ['Prefer: count=exact']
     );
     // 416 = página além do fim (o filtro encolheu ou a última linha da

@@ -598,11 +598,16 @@ async function tratar(fd: FormData): Promise<never> {
     const meusEmails = await emailsDoUsuario(email);
     let filtro = filtrosDaLista(fd, meusEmails, email === RESPONSAVEL_EMAIL);
     if (String(fd.get('f_pendente') ?? '').trim() === '1') filtro += await filtroSoPendentes();
-    // Mais recente primeiro (2026 no topo); o primeiro lançado fica por último.
+    // Padrão: mais recente primeiro. A tela pode ordenar por outra coluna (só as da lista abaixo).
+    const colunasOrdenaveis = ['criado_em', 'tipo_servico', 'nome_beneficiario', 'municipio', 'escritorio_local', 'data_vistoria',
+      'area_total_ha', 'horas_maquina', 'quantidade_acudes', 'criado_por_email'];
+    const pedidaOrdem = String(fd.get('ordem') ?? '');
+    const colunaOrdem = colunasOrdenaveis.includes(pedidaOrdem) ? pedidaOrdem : 'criado_em';
+    const sentidoOrdem = String(fd.get('dir') ?? '') === 'asc' ? 'asc' : 'desc';
     let [status, corpo, headersResp] = await chamarSupabase('GET',
       `${TABELA}?select=id,criado_em,criado_por_email,tipo_servico,nome_beneficiario,` +
       'municipio,escritorio_local,data_vistoria,area_total_ha,horas_maquina,quantidade_acudes' +
-      `${filtro}&order=criado_em.desc,id.desc&limit=${limite}&offset=${(pagina - 1) * limite}`,
+      `${filtro}&order=${colunaOrdem}.${sentidoOrdem}.nullslast,id.desc&limit=${limite}&offset=${(pagina - 1) * limite}`,
       undefined, { Prefer: 'count=exact' });
     // 416 = página além do fim: lista vazia com o total (a tela volta pra última página).
     if (status === 416) { status = 200; corpo = []; }

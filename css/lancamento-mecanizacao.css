@@ -101,7 +101,9 @@
 }
 
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.lanc-tabela-acoes{display:flex;gap:6px;white-space:nowrap}
+.lanc-tabela-acoes{white-space:nowrap}
+.lanc-tabela-acoes > *{vertical-align:middle;margin-right:6px}
+.lanc-tabela-acoes > *:last-child{margin-right:0}
 .btn-excluir{background:transparent;border-color:var(--tag-acu-bg);color:var(--tag-acu-tx)}
 .btn-excluir:hover:not(:disabled){background:var(--tag-acu-bg)}
 
@@ -547,7 +549,81 @@
 .lanc-campos input.lanc-campo-erro,.lanc-campos select.lanc-campo-erro{border-color:#dc2626;box-shadow:0 0 0 3px rgba(220,38,38,.14)}
 .lanc-campos input.lanc-campo-aviso,.lanc-form .lc-area.lanc-campo-aviso{border-color:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.16)}
 
-/* ---- seções da lista separadas: "Solicitações pendentes" é um bloco próprio (faixa âmbar à esquerda)
-   e não gruda mais no "Novo relatório" logo abaixo ---- */
-.painel.lanc-solicitacoes{margin-bottom:24px;border-left:4px solid #d97706}
+/* ---- "Novo relatório" separado da lista; dentro da lista, abas Lançamentos | Solicitações pendentes ---- */
 .painel.lanc-novo{margin-bottom:24px}
+.lanc-abas{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;margin:0 0 14px;border-bottom:1px solid var(--linha-t)}
+/* botão "Novo relatório" à esquerda (verde, cor própria de destaque); o indicador de solicitações fica à direita */
+.lanc-novo-bloco{display:flex;align-items:center;justify-content:flex-start;gap:16px;padding:12px 0 15px;min-width:0}
+.lanc-novo-bloco .lanc-novo-txt{text-align:left}
+.lanc-novo-bloco #lancNovoBtn{flex:none;border-color:#15803d;background:linear-gradient(180deg,#22c55e,#16a34a);box-shadow:0 6px 16px -8px rgba(22,163,74,.9)}
+.lanc-novo-bloco #lancNovoBtn:hover{background:linear-gradient(180deg,#34d170,#1fb355)}
+.lanc-abas-tabs{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+.lanc-ind svg{width:18px;height:18px;flex:none}
+/* indicador de solicitações pendentes (só root): pílula âmbar com o contador */
+.lanc-aba.lanc-ind{display:inline-flex;align-items:center;gap:8px;margin:0;padding:6px 8px 6px 12px;border:1px solid #f59e0b;border-radius:999px;
+  background:rgba(245,158,11,.14);color:var(--tinta);font-weight:700;border-bottom-width:1px}
+.lanc-aba.lanc-ind:hover{background:rgba(245,158,11,.24);color:var(--tinta)}
+.lanc-ind .lanc-ind-num{min-width:26px;height:26px;padding:0 8px;border-radius:999px;background:#d97706;color:#fff;font-size:13px;
+  display:inline-flex;align-items:center;justify-content:center}
+.lanc-aba.lanc-ind.lanc-ind-zero{border-color:var(--linha-t);background:none;color:var(--tinta3)}
+.lanc-aba.lanc-ind.lanc-ind-zero .lanc-ind-num{background:var(--superficie2);color:var(--tinta3)}
+.lanc-aba.lanc-ind.ativa{background:#d97706;border-color:#b45309;color:#fff}
+.lanc-aba.lanc-ind.ativa .lanc-ind-num{background:#fff;color:#b45309}
+@media(max-width:900px){
+  .lanc-abas{grid-template-columns:1fr}
+  .lanc-abas-tabs{justify-content:flex-start;padding-bottom:10px}
+}
+.lanc-aba{appearance:none;border:0;background:none;margin:0 0 -1px;padding:10px 16px;font:inherit;font-weight:600;
+  color:var(--tinta3);border-bottom:3px solid transparent;cursor:pointer;transition:color .15s,border-color .15s}
+.lanc-aba[hidden]{display:none}
+.lanc-aba:hover{color:var(--tinta)}
+.lanc-aba.ativa{color:var(--acento-fundo);border-bottom-color:var(--acento-fundo)}
+.lanc-sol-cartao > .sub{margin:0 0 12px}
+/* na aba Lançar relatórios a margem de baixo e o rodapé encolhem: o espaço vira altura da lista e dos filtros */
+html:has(#painel-lancamento.ativa) .wrap{padding-bottom:6px}
+html:has(#painel-lancamento.ativa) footer{padding:8px 24px}
+/* Mês e Dia lado a lado na lateral (economiza altura) */
+.lanc-filtro-par{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:2 1 290px}
+.lanc-filtro-par label{min-width:0}
+/* filtros acima da tabela, simples: rótulo e seletor lado a lado, compactos */
+.lanc-filtros-topo{align-items:center;gap:8px 20px}
+.lanc-filtros-topo label{flex:0 0 auto;display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px}
+.lanc-filtros-topo select{width:auto;min-width:170px;max-width:260px;margin-top:0;padding:4px 8px;font-size:13px;border-width:1px}
+/* colunas ordenáveis: cabeçalho clicável com seta na coluna ativa */
+.lanc-tabela th[data-ord]{cursor:pointer;user-select:none;white-space:nowrap}
+.lanc-tabela th[data-ord]:hover{color:var(--tinta)}
+.lanc-tabela th[data-ord]::after{content:"\2195";margin-left:5px;font-size:10px;opacity:.35}
+.lanc-tabela th[aria-sort="ascending"]::after{content:"\25B2";opacity:1;color:var(--acento-fundo)}
+.lanc-tabela th[aria-sort="descending"]::after{content:"\25BC";opacity:1;color:var(--acento-fundo)}
+/* filtros acima da tabela: uma linha de campos dentro do cartão da lista */
+.lanc-filtros-topo{margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid var(--linha-t)}
+.lanc-filtros-topo label{flex:1 1 150px}
+@media(min-width:1500px){
+  /* em tela larga a lista não tem cartão próprio: as abas viram um cartão branco, separado dos filtros e da tabela abaixo */
+  .lanc-listagem > .lanc-abas{grid-column:1 / -1;grid-row:1;margin:0 0 18px;padding:0 12px;
+    background:var(--superficie);border:1px solid var(--anel);border-radius:12px;box-shadow:var(--sombra-p)}
+  /* a lista tem a MESMA altura do cartão de Filtros: "contain:size" faz o cartão da lista não contar na altura da linha
+     (quem manda é o Filtros) e ele estica até ela; o que passar disso rola dentro da tabela, com a paginação fixa embaixo */
+  .lanc-listagem > .lanc-lista-cartao{display:flex;flex-direction:column;align-self:stretch;contain:size;min-height:420px;overflow:hidden}
+  .lanc-listagem > .lanc-lista-cartao[hidden]{display:none}
+  /* cartão de Filtros compacto: a lista (que tem a mesma altura dele) cabe na tela sem rolar a página */
+  .lanc-listagem > .lanc-filtros{gap:8px;padding:12px 14px}
+  .lanc-listagem > .lanc-filtros input,.lanc-listagem > .lanc-filtros select{min-height:34px;padding:5px 10px;margin-top:3px}
+  .lanc-listagem > .lanc-filtros .btn{padding:6px 10px}
+  .lanc-listagem > .lanc-lista-cartao > #lancRecentes,.lanc-listagem > .lanc-lista-cartao > #lancSolicitacoes{flex:1 1 auto;min-height:0;overflow:auto}
+  /* linhas compactas: 10 por página cabem na altura do cartão sem rolar (uma linha por registro, botões menores) */
+  #lancRecentes .lanc-tabela th{padding:7px 8px}
+  #lancRecentes .lanc-tabela td{padding:3px 8px;white-space:nowrap}
+  #lancRecentes .lanc-tabela td:nth-child(4),#lancRecentes .lanc-tabela td:nth-child(5){white-space:normal}   /* município e escritório podem quebrar */
+  #lancRecentes .lanc-tabela .lanc-selo{margin-left:6px;padding:1px 7px;font-size:10.5px}
+  #lancRecentes .lanc-btn-icone{width:26px;height:26px}
+  #lancRecentes .lanc-btn-icone svg{width:14px;height:14px}
+  #lancRecentes .lanc-tabela-acoes > *{margin-right:4px}
+  #lancRecentes .lanc-tabela-acoes > *:last-child{margin-right:0}
+  #lancRecentes .tabela-scroll.lanc-cheia,#lancRecentes .tabela-scroll.lanc-cheia .lanc-tabela{height:100%}
+  .lanc-listagem > .lanc-lista-cartao > .lanc-filtros-topo{margin-bottom:10px;padding-bottom:10px}
+  .lanc-listagem > .lanc-lista-cartao > .lanc-filtros-topo select{padding:4px 8px}
+  .lanc-listagem > .lanc-lista-cartao > .lanc-paginacao{margin-top:8px}
+  .lanc-listagem > .lanc-lista-cartao > .lanc-filtros-topo,.lanc-listagem > .lanc-lista-cartao > .lanc-paginacao,
+  .lanc-listagem > .lanc-lista-cartao > #lancListaAviso,.lanc-listagem > .lanc-lista-cartao > #lancSolicitacoesAviso,.lanc-listagem > .lanc-lista-cartao > .sub{flex:none}
+}

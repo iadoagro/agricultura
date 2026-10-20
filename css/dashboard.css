@@ -1022,8 +1022,15 @@ table.dados tr.tf-grupo td{font-weight:600;border-top:1px solid var(--linha-t,#d
 table.dados tr.tf-grupo .tf-n{font-weight:400;opacity:.7}
 table.dados tr.tf-grupo:focus-visible{outline:2px solid var(--acento);outline-offset:-2px}
 
-/* Exportar é a última aba, inclusive no link público */
-.abas-pista>.aba[data-aba="relatorio"]{order:99}
+/* "Lançar relatórios" vem logo DEPOIS de Exportar (inclusive no link público), com destaque próprio em verde,
+   diferente das demais; "Mostrar mais" fica por último */
+.abas-pista>.aba[data-aba="relatorio"]{order:98}
+.abas-pista>.aba[data-aba="lancamento"],.abas-pista>.aba-lancar-publico{order:99}
+.abas-pista>.aba[data-aba="insercoes"]{order:100}
+.abas-pista>.aba[data-aba="lancamento"],.abas-pista>.aba-lancar-publico{color:#15803d;background:rgba(34,197,94,.10);border-radius:10px 10px 0 0}
+.abas-pista>.aba[data-aba="lancamento"] svg,.abas-pista>.aba-lancar-publico svg{opacity:1}
+.abas-pista>.aba[data-aba="lancamento"]:hover,.abas-pista>.aba-lancar-publico:hover{color:#166534;background:rgba(34,197,94,.20)}
+.abas-pista>.aba[data-aba="lancamento"].ativa{color:#166534;border-bottom-color:#16a34a;background:rgba(34,197,94,.16)}
 
 /* calendários de inserção (aba Inserções) */
 .cal-meses{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}

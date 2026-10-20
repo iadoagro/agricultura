@@ -327,15 +327,30 @@
       .catch(function () { aviso('lancSolicitacoesAviso', 'erro', 'Sem conexão com o servidor.'); });
   }
 
+  /* Abas da lista: "Lançamentos" (tabela de sempre) e, só para o responsável, "Solicitações pendentes",
+     que troca a tabela de lançamentos pelos pedidos de edição/exclusão aguardando aprovação. */
+  var abaAtual = 'lancamentos';
+  function mostrarAba(nome) {
+    if (nome === 'solicitacoes' && !ehResponsavel) nome = 'lancamentos';
+    abaAtual = nome;
+    el('lancListaCartao').hidden = nome !== 'lancamentos';
+    el('lancSolicitacoesSec').hidden = nome !== 'solicitacoes';
+    var ind = el('lancAbaSolic');
+    ind.classList.toggle('ativa', nome === 'solicitacoes');
+    ind.setAttribute('aria-pressed', nome === 'solicitacoes' ? 'true' : 'false');
+  }
+
   function carregarSolicitacoes() {
-    var sec = el('lancSolicitacoesSec');
-    if (!ehResponsavel) { sec.hidden = true; return; }
+    var aba = el('lancAbaSolic');
+    if (!ehResponsavel) { aba.hidden = true; mostrarAba('lancamentos'); return; }
+    aba.hidden = false;
     enviarAcao({ acao: 'solicitacoes' })
       .then(function (res) {
         var lista = (res.corpo.ok && res.corpo.solicitacoes) || [];
-        sec.hidden = !lista.length && res.corpo.ok;
         if (!res.corpo.ok) { el('lancSolicitacoes').innerHTML = '<p class="nota">' + esc(res.corpo.erro || 'Não foi possível carregar as solicitações.') + '</p>'; return; }
         el('lancSolicitacoesQtd').textContent = lista.length;
+        el('lancAbaSolic').classList.toggle('lanc-ind-zero', !lista.length);
+        if (!lista.length) { el('lancSolicitacoes').innerHTML = '<p class="nota">Nenhuma solicitação pendente.</p>'; return; }
         el('lancSolicitacoes').innerHTML = '<div class="tabela-scroll"><table class="lanc-tabela"><thead><tr>' +
           '<th>Pedido em</th><th>Tipo</th><th>Beneficiário</th><th>Solicitado por</th><th>Motivo</th><th>Ações</th>' +
           '</tr></thead><tbody>' + lista.map(function (s, i) {
@@ -384,7 +399,7 @@
     return POR_PAGINA;   // o tamanho da página é o que a pessoa escolheu
   }
   var paginaAtual = 1, totalLinhas = 0, pedidoLista = 0, filtrosProntos = false;
-  var CAMPOS_FILTRO = ['f_busca', 'f_pessoa', 'f_ano', 'f_mes', 'f_dia', 'f_pendente', 'f_tipo_servico', 'f_municipio', 'f_escritorio'];
+  var CAMPOS_FILTRO = ['f_busca', 'f_pessoa', 'f_ano', 'f_mes', 'f_dia', 'f_tipo_servico', 'f_municipio', 'f_escritorio'];
   var lancadores = [], meusEmails = [], usuariosSistema = [];
 
   /* Pessoas que já lançaram (e-mail → nome) — alimenta o filtro "Lançado
@@ -806,11 +821,13 @@
       el('lancFiltroDia').innerHTML = dias;
       el('lancFiltroPessoa').value = pessoaPadrao();
       var espera;
-      el('lancFiltros').addEventListener('input', function (e) {
+      function aoMudarFiltro(e) {
         clearTimeout(espera);
+        mostrarAba('lancamentos');   // os filtros valem para a tabela de lançamentos
         // texto livre espera a pessoa parar de digitar; selects aplicam na hora
         espera = setTimeout(function () { paginaAtual = 1; carregarRecentes(); }, e.target.tagName === 'INPUT' ? 400 : 0);
-      });
+      }
+      el('lancFiltros').addEventListener('input', aoMudarFiltro);
       el('lancFiltrosLimpar').addEventListener('click', function () {
         el('lancFiltros').reset();
         el('lancFiltroPessoa').value = pessoaPadrao();
@@ -896,6 +913,31 @@
     return valor === null || valor === undefined || valor === '' ? '-' : String(valor);
   }
 
+  /* Ordenação da tabela: o servidor ordena (a lista tem milhares de linhas e vem paginada). Clicar no cabeçalho
+     ordena por aquela coluna; clicar de novo inverte. Datas e números começam do maior/mais recente. */
+  var ordemCol = 'criado_em', ordemDir = 'desc';
+  var COLUNAS = [
+    ['criado_em', 'Salvo em', '', 'desc'], ['tipo_servico', 'Serviço', '', 'asc'], ['nome_beneficiario', 'Beneficiário', '', 'asc'],
+    ['municipio', 'Município', '', 'asc'], ['escritorio_local', 'Escritório', '', 'asc'], ['data_vistoria', 'Vistoria', '', 'desc'],
+    ['area_total_ha', 'ha', 'num', 'desc'], ['horas_maquina', 'h', 'num', 'desc'], ['quantidade_acudes', 'Açudes', 'num', 'desc'],
+    ['criado_por_email', 'Lançado por', '', 'asc']
+  ];
+  function cabecalhoOrdenavel() {
+    return COLUNAS.map(function (c) {
+      var ativo = c[0] === ordemCol;
+      return '<th data-ord="' + c[0] + '" tabindex="0" title="Ordenar por ' + c[1] + '"' + (c[2] ? ' class="' + c[2] + '"' : '') +
+        (ativo ? ' aria-sort="' + (ordemDir === 'asc' ? 'ascending' : 'descending') + '"' : '') + '>' + c[1] + '</th>';
+    }).join('') + '<th>Ações</th>';
+  }
+  function ordenarPor(col) {
+    var def = COLUNAS.filter(function (c) { return c[0] === col; })[0];
+    if (!def) return;
+    if (ordemCol === col) ordemDir = ordemDir === 'asc' ? 'desc' : 'asc';
+    else { ordemCol = col; ordemDir = def[3]; }
+    paginaAtual = 1;
+    carregarRecentes();
+  }
+
   function carregarRecentes() {
     var cabem = porPaginaQueCabe();
     if (cabem !== POR_PAGINA) {   // mudou o tamanho da página: mantém o primeiro item à vista
@@ -910,6 +952,8 @@
     fd.append('token', (sessao && sessao.access_token) || '');
     fd.append('limite', String(POR_PAGINA));
     fd.append('pagina', String(paginaAtual));
+    fd.append('ordem', ordemCol);
+    fd.append('dir', ordemDir);
     var filtros = el('lancFiltros').elements;
     CAMPOS_FILTRO.forEach(function (c) { if (filtros[c] && filtros[c].value) fd.append(c, filtros[c].value); });
     // "Ver como": lista só da pessoa escolhida, desenhada como ela vê (sem poderes de root)
@@ -943,9 +987,9 @@
         // sem a frase "Mostrando lançamentos de…": o filtro "Lançado por" já diz de quem é a lista
         var nota = '';
         if (!linhas.length) { el('lancRecentes').innerHTML = nota + '<p class="nota">Nenhum lançamento encontrado com esses filtros.</p>'; return; }
-        el('lancRecentes').innerHTML = nota + '<div class="tabela-scroll"><table class="lanc-tabela"><thead><tr>' +
-          '<th>Salvo em</th><th>Serviço</th><th>Beneficiário</th><th>Município</th><th>Escritório</th>' +
-          '<th>Vistoria</th><th class="num">ha</th><th class="num">h</th><th class="num">Açudes</th><th>Lançado por</th><th>Ações</th>' +
+        // página cheia (10 ou mais linhas): a tabela estica até o fim do cartão, sem sobrar espaço embaixo
+        el('lancRecentes').innerHTML = nota + '<div class="tabela-scroll' + (linhas.length >= 10 ? ' lanc-cheia' : '') + '"><table class="lanc-tabela"><thead><tr>' +
+          cabecalhoOrdenavel() +
           '</tr></thead><tbody>' + linhas.map(function (r) {
             var pend = pendencias[r.id];
             var selo = pend
@@ -1152,6 +1196,18 @@
         if (lista && lista.offsetParent && porPaginaQueCabe() !== POR_PAGINA) carregarRecentes();
       }, 300);
     });
+    function cliqueOrdem(e) {
+      var th = e.target.closest && e.target.closest('th[data-ord]');
+      if (th && (e.type === 'click' || e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ordenarPor(th.getAttribute('data-ord')); }
+    }
+    el('lancRecentes').addEventListener('click', cliqueOrdem);
+    el('lancRecentes').addEventListener('keydown', cliqueOrdem);
+    el('lancAbas').addEventListener('click', function (e) {
+      var b = e.target.closest('.lanc-aba');
+      if (!b || b.hidden) return;
+      var alvo = b.getAttribute('data-aba');
+      mostrarAba(abaAtual === alvo ? 'lancamentos' : alvo);   // o indicador alterna entre lançamentos e solicitações
+    });
     el('lancNovoBtn').addEventListener('click', function () {
       aviso('lancListaAviso', '', '');
       var btn = el('lancNovoBtn');
@@ -1168,10 +1224,46 @@
     });
   }
 
+  /* Em tela larga a lista cabe na janela sem rolar a página: se a altura natural (cartão de Filtros e lista, que
+     têm a mesma altura) passar do que sobra embaixo do cabeçalho, os dois encolhem até caber; o Filtros rola por
+     dentro e a tabela mostra menos linhas por tela. Mede sempre a altura natural primeiro (limpa e remede),
+     então volta a crescer sozinho quando a janela aumenta. */
+  var ALTURA_MINIMA_LISTA = 420;
+  function ajustarAlturaLista() {
+    var f = el('lancFiltros'), cartoes = [el('lancListaCartao'), el('lancSolicitacoesSec')];
+    if (!f) return;
+    f.style.height = ''; f.style.minHeight = ''; f.style.overflowY = '';
+    cartoes.forEach(function (c) { c.style.height = ''; c.style.minHeight = ''; });
+    var largo = window.matchMedia && window.matchMedia('(min-width:1500px)').matches;
+    if (!largo || !f.offsetParent) return;
+    var y = window.pageYOffset || 0;
+    var topo = f.getBoundingClientRect().top + y;
+    var fim = f.parentNode.getBoundingClientRect().bottom + y;
+    // o que a página ainda põe embaixo dos cartões: margem inferior do conteúdo + rodapé (medidos, não estimados)
+    var wrap = f.closest('.wrap'), rodape = document.querySelector('footer');
+    var abaixo = (wrap ? parseFloat(getComputedStyle(wrap).paddingBottom) || 0 : 0) + (rodape ? rodape.offsetHeight : 0);
+    var natural = fim - topo;
+    var disponivel = Math.max(ALTURA_MINIMA_LISTA, Math.floor(window.innerHeight - topo - abaixo - 2));
+    var alvo = Math.min(Math.round(natural * 1.1), disponivel);   // a tabela cresce 10% para baixo, no máximo até o fim da janela
+    if (alvo >= natural) {
+      f.style.minHeight = alvo + 'px';
+      cartoes.forEach(function (c) { c.style.minHeight = alvo + 'px'; });
+    } else {   // a natural não cabe: encolhe; o Filtros rola por dentro
+      f.style.height = alvo + 'px'; f.style.overflowY = 'auto';
+      cartoes.forEach(function (c) { c.style.height = alvo + 'px'; });
+    }
+  }
+
   function abrir(municipios) {
     municipios = municipios || [];
     var primeiraVez = !iniciado;
-    if (primeiraVez) { montar(); iniciado = true; }
+    if (primeiraVez) {
+      montar(); iniciado = true;
+      window.addEventListener('resize', ajustarAlturaLista);
+      window.addEventListener('load', ajustarAlturaLista);
+    }
+    setTimeout(ajustarAlturaLista, 0);
+    setTimeout(ajustarAlturaLista, 400);   // depois do layout e das fontes assentarem
     ajuda.montarMunicipios(municipios);
     montarFiltros(municipios);
     ajuda.sincronizarEscritorioPorMunicipio();

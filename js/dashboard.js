@@ -2199,18 +2199,32 @@
     }
   }
 
+  /* Valor mostrado nas listas laterais do mapa: hectares com "Mecanização", horas com "Açudagem". Com "Os dois"
+     (hectares e horas não se somam) segue o "Colorir por": Hectares → ha, Horas de máquina → h; nas demais
+     métricas, o número de atendimentos. */
+  function mapaMecUnidade() {
+    if (F.pc.length === 1) return F.pc[0] === MEC ? 'ha' : F.pc[0] === ACU ? 'h' : '';
+    return MAPA_COR === 'ha' ? 'ha' : MAPA_COR === 'hrs' ? 'h' : '';
+  }
+  function mapaMecFmtLateral(v, un) {
+    return un ? G.num(v, 1) + ' ' + un : G.num(v);
+  }
+
   function mapaMecDesenharRegionais(C) {
     var host = el('mapaMecRegionais');
     if (!host) return;
+    var un = mapaMecUnidade();
     var contPorReg = {};
     C.D.forEach(function (r) {
       var g = regionalDe(r.mun);
-      if (g) contPorReg[g] = (contPorReg[g] || 0) + 1;
+      if (!g) return;
+      var v = un === 'ha' ? (r.pc === MEC ? (r.ha || 0) : 0) : un === 'h' ? (r.pc === ACU ? (r.hrs || 0) : 0) : 1;
+      contPorReg[g] = (contPorReg[g] || 0) + v;
     });
     host.innerHTML = REGIONAIS.map(function (r) {
       var ativo = F.reg.length === 1 && F.reg[0] === r.nome;
       return '<li><button type="button" class="' + (ativo ? 'ativo' : '') + '" data-v="' + G.esc(r.nome) + '">' +
-        '<span>' + G.esc(r.nome) + '</span><span class="qtd">' + G.num(contPorReg[r.nome] || 0) + '</span></button></li>';
+        '<span>' + G.esc(r.nome) + '</span><span class="qtd">' + mapaMecFmtLateral(contPorReg[r.nome] || 0, un) + '</span></button></li>';
     }).join('');
     if (host.getAttribute('data-ligado') !== '1') {
       host.setAttribute('data-ligado', '1');
@@ -2227,11 +2241,12 @@
   function mapaMecDesenharMunicipios(C) {
     var host = el('mapaMecMunicipios');
     if (!host) return;
-    var lista = ranking(C.atendPorMun, 999);
+    var un = mapaMecUnidade();
+    var lista = ranking(un === 'ha' ? C.haPorMun : un === 'h' ? C.hrsPorMun : C.atendPorMun, 999);
     host.innerHTML = lista.map(function (item) {
       var ativo = F.mun.length === 1 && F.mun[0] === item.rot;
       return '<li><button type="button" class="' + (ativo ? 'ativo' : '') + '" data-v="' + G.esc(item.rot) + '">' +
-        '<span>' + G.esc(item.rot) + '</span><span class="qtd">' + G.num(item.val) + '</span></button></li>';
+        '<span>' + G.esc(item.rot) + '</span><span class="qtd">' + mapaMecFmtLateral(item.val, un) + '</span></button></li>';
     }).join('');
     if (host.getAttribute('data-ligado') !== '1') {
       host.setAttribute('data-ligado', '1');
