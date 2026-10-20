@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="../css/dashboard.css?v=e3f69f9b">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=66c324af">
 <link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=003327b7">
+<script src="../js/banco-config.js?v=61ce7c3f"></script>
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
      sem login, sem menu lateral e sem Registros, lançamento ou administração. Precisa vir antes dos
@@ -26,12 +27,13 @@
       m.name = 'robots'; m.content = 'noindex';
       document.head.appendChild(m);
 
-      /* Só no modo público: espera confirmar com o servidor que o link não foi
-         revogado pela administração (config_publico.php) antes de pintar a
-         tela — ver #publicoRevogado mais abaixo e js/dashboard.js (ligarLinkPublico).
-         Sem PHP do outro lado (o link web é servido pelo GitHub Pages, estático)
-         ou se o servidor não responder a tempo, assume ativo: falha de rede não
-         pode travar quem está com o link em mãos. */
+      /* Só no modo público: espera confirmar com o banco que o link não foi
+         desativado pela administração antes de pintar a tela — ver
+         #publicoRevogado mais abaixo e js/dashboard.js (ligarLinkPublico).
+         O estado fica no Supabase (função mecanizacao_publico_config_publica),
+         porque o link web é servido pelo GitHub Pages, que não roda PHP. Se o
+         banco não responder a tempo, assume ativo: falha de rede não pode
+         travar quem está com o link em mãos. */
       document.documentElement.classList.add('checando-publico');
       var liberou = false;
       function liberar(revogado) {
@@ -41,7 +43,11 @@
         document.documentElement.classList.remove('checando-publico');
       }
       setTimeout(function () { liberar(false); }, 3500);
-      fetch('../config_publico.php', { cache: 'no-store' })
+      var cfgBanco = window.BANCO_CONFIG || {};
+      fetch(String(cfgBanco.url || '').replace(/\/$/, '') + '/rest/v1/rpc/mecanizacao_publico_config_publica', {
+        method: 'POST', cache: 'no-store',
+        headers: { apikey: cfgBanco.chavePublica, 'Content-Type': 'application/json' }, body: '{}'
+      })
         .then(function (r) { return r.json(); })
         .then(function (j) { liberar(!!j && j.ativo === false); })
         .catch(function () { liberar(false); });
@@ -77,7 +83,7 @@
 </head>
 <body>
 
-<!-- só aparece se config_publico.php disser que o link foi desativado (ver script no <head>) -->
+<!-- só aparece se o banco disser que o link foi desativado (ver script no <head>) -->
 <div id="publicoRevogado" role="alert">
   <div class="publico-revogado-caixa">
     <h1>Link desativado</h1>

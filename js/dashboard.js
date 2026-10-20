@@ -5624,11 +5624,10 @@
     ligar('linkPublicoWeb', 'linkPublicoWebCopiar', web);
     ligar('linkPublicoLocal', 'linkPublicoLocalCopiar', local);
 
-    /* Ativar/desativar o link público (config_publico.php): servidor é quem
-       decide — o painel só mostra o estado e pede a mesma senha de admin para
-       trocar (ver senha_confere() em admin_senha.php). Sem PHP do outro lado
-       (ex.: o link web, servido pelo GitHub Pages, estático) a leitura falha e
-       a caixa assume "ativo" sem travar a cópia do link. */
+    /* Ativar/desativar o link público: o estado fica no Supabase (lido por
+       mecanizacao_publico_config_publica, gravado por mecanizacao_link_ativo_definir).
+       Para trocar, pede a senha do root: ela entra no Supabase como
+       root@root.com e o token resultante autoriza a gravação. */
     var bolinha = el('linkPublicoBolinha'), estadoTxt = el('linkPublicoEstadoTxt'),
       btnRevogar = el('linkPublicoRevogarBtn'), senhaBox = el('linkPublicoSenhaBox'),
       campoSenha = el('linkPublicoSenha'), btnOk = el('linkPublicoSenhaOk'),
@@ -5646,10 +5645,14 @@
     }
     function fecharSenha() { senhaBox.hidden = true; erro.textContent = ''; campoSenha.value = ''; }
 
-    fetch('../config_publico.php', { cache: 'no-store' })
+    var BANCO = window.BANCO_CONFIG || {}, BASE = String(BANCO.url || '').replace(/\/$/, '');
+    fetch(BASE + '/rest/v1/rpc/mecanizacao_publico_config_publica', {
+      method: 'POST', cache: 'no-store', body: '{}',
+      headers: { apikey: BANCO.chavePublica, 'Content-Type': 'application/json' }
+    })
       .then(function (r) { return r.json(); })
       .then(function (j) { ativo = !j || j.ativo !== false; pintarEstado(); })
-      .catch(function () { pintarEstado(); });   // sem servidor: fica "ativo" (padrão)
+      .catch(function () { pintarEstado(); });   // sem resposta: fica "ativo" (padrão)
 
     btnRevogar.addEventListener('click', function () {
       erro.textContent = ''; campoSenha.value = ''; senhaBox.hidden = false;
@@ -5664,19 +5667,25 @@
       if (pendente) return;
       var novoEstado = !ativo;
       pendente = true; btnOk.disabled = true; erro.textContent = '';
-      fetch('../config_publico.php', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senha: campoSenha.value, ativo: novoEstado })
+      var cab = { apikey: BANCO.chavePublica, 'Content-Type': 'application/json' };
+      fetch(BASE + '/auth/v1/token?grant_type=password', {
+        method: 'POST', headers: cab, body: JSON.stringify({ email: 'root@root.com', password: campoSenha.value })
       }).then(function (r) {
-        return r.text().then(function (corpo) {
-          var j = null; try { j = JSON.parse(corpo); } catch (e) { /* não é resposta do endpoint */ }
-          return j;
+        if (r.status === 400 || r.status === 401 || r.status === 422) return { senhaErrada: true };
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json().then(function (t) {
+          cab.Authorization = 'Bearer ' + t.access_token;
+          return fetch(BASE + '/rest/v1/rpc/mecanizacao_link_ativo_definir', {
+            method: 'POST', headers: cab, body: JSON.stringify({ p_ativo: novoEstado })
+          }).then(function (r2) {
+            if (!r2.ok) throw new Error('HTTP ' + r2.status);
+            return { ativo: novoEstado };
+          });
         });
       }).then(function (j) {
         pendente = false; btnOk.disabled = false;
-        if (!j) { erro.textContent = 'Não foi possível falar com o servidor (sem PHP ou fora do ar).'; return; }
-        if (!j.ok) {
-          erro.textContent = j.erro || 'Senha incorreta.';
+        if (j.senhaErrada) {
+          erro.textContent = 'Senha de administrador incorreta.';
           campoSenha.value = ''; campoSenha.focus();
           return;
         }
