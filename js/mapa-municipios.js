@@ -128,6 +128,11 @@ window.MapaMunicipios = (function () {
       },
       destacar: function (id) {
         caminhos.forEach(function (path, pid) { path.classList.toggle('selecionado', pid === id); });
+      },
+      /** Cor com que o município está pintado agora (já resolvida: serve fora do SVG, p.ex. no mapa Leaflet). */
+      corDe: function (id) {
+        var path = caminhos.get(id);
+        return path ? getComputedStyle(path).fill : '';
       }
     };
   }

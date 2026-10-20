@@ -10,7 +10,7 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=96e317c8">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026102028">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026102031">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=04476821">
 <link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026102025">
 <script src="../js/banco-config.js?v=61ce7c3f"></script>
@@ -484,6 +484,18 @@
           <p class="sub">Cada munic&iacute;pio mostra se teve mecaniza&ccedil;&atilde;o, a&ccedil;udagem ou os dois, dentro do filtro atual. Sem coordenada exata por vistoria, o recorte &eacute; por munic&iacute;pio.</p>
         </div>
         <div class="mapa-mec-modo" id="mapaMecModo" role="group" aria-label="Colorir o mapa por"></div>
+        <!-- Mapa integrado (só para quem está logado, js/painel-pontos.js): os municípios coloridos pelo "Colorir por"
+             e, por cima, um ponto por atendimento georreferenciado. Sem coordenadas (versão pública), vale o mapa SVG abaixo. -->
+        <div id="mapaMecVistaPontos" hidden>
+          <div class="pontos-barra">
+            <label class="pontos-chk"><input type="checkbox" id="pontosMunicipios"><i class="pt-mun"></i> Cores dos munic&iacute;pios</label>
+            <label class="pontos-chk"><input type="checkbox" id="pontosVerAcu" checked><i class="pt-acu"></i> Pontos de a&ccedil;udagem</label>
+            <label class="pontos-chk"><input type="checkbox" id="pontosVerMec" checked><i class="pt-mec"></i> Pontos de mecaniza&ccedil;&atilde;o</label>
+            <label class="pontos-chk"><input type="checkbox" id="pontosCalor"> Mapa de calor</label>
+          </div>
+          <div id="mapaPontos" class="mapa-pontos" role="application" aria-label="Mapa dos munic&iacute;pios e dos pontos dos atendimentos"></div>
+          <p class="sub" id="pontosSub">Atendimentos com coordenada, na sele&ccedil;&atilde;o atual.</p>
+        </div>
         <p id="mapaMecStatus" role="status">Carregando mapa&hellip;</p>
         <svg id="mapaMec" viewBox="0 0 1000 600" aria-label="Mapa de munic&iacute;pios atendidos pela mecaniza&ccedil;&atilde;o e a&ccedil;udagem"></svg>
         <ul class="mapa-mec-legenda" id="mapaMecLegenda" aria-hidden="true">
@@ -616,7 +628,7 @@
        INSER&Ccedil;&Atilde;O (Carimbo de data/hora) &mdash; nunca a da vistoria. -->
   <div class="aba-conteudo" data-aba="insercoes" role="tabpanel" id="painel-insercoes" aria-labelledby="aba-insercoes" tabindex="0">
     <nav class="ins-nav" id="insNav" aria-label="Escolher visão">
-      <button type="button" data-sec="registros">Registros</button><button type="button" data-sec="pessoa">Por lan&ccedil;ador</button><button type="button" data-sec="dia">Por dia</button><button type="button" data-sec="semana">Por semana</button><button type="button" data-sec="mes">Por m&ecirc;s</button><button type="button" data-sec="imun">Por munic&iacute;pio</button><button type="button" data-sec="iesc">Por escrit&oacute;rio</button><button type="button" data-sec="iserv">Por servi&ccedil;o</button><button type="button" data-sec="itec">Por t&eacute;cnico</button><button type="button" data-sec="ihora">Por hor&aacute;rio</button><button type="button" data-sec="pontos">Mapa de pontos</button><button type="button" data-sec="comparativo">Comparativo</button><button type="button" data-sec="metas">Metas</button><button type="button" data-sec="tendencias">Tend&ecirc;ncias</button><button type="button" data-sec="cruzamentos">Cruzamentos</button><button type="button" data-sec="alertas">Alertas</button><button type="button" data-sec="relatorios">Relat&oacute;rios</button><button type="button" data-sec="configuracoes" id="insBtnConfig" hidden>Configura&ccedil;&otilde;es</button><button class="ins-nav-pessoas" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lan&ccedil;ou e ligar ao login do sistema">Pessoas</button>
+      <button type="button" data-sec="registros">Registros</button><button type="button" data-sec="pessoa">Por lan&ccedil;ador</button><button type="button" data-sec="dia">Por dia</button><button type="button" data-sec="semana">Por semana</button><button type="button" data-sec="mes">Por m&ecirc;s</button><button type="button" data-sec="imun">Por munic&iacute;pio</button><button type="button" data-sec="iesc">Por escrit&oacute;rio</button><button type="button" data-sec="iserv">Por servi&ccedil;o</button><button type="button" data-sec="itec">Por t&eacute;cnico</button><button type="button" data-sec="ihora">Por hor&aacute;rio</button><button type="button" data-sec="comparativo">Comparativo</button><button type="button" data-sec="metas">Metas</button><button type="button" data-sec="tendencias">Tend&ecirc;ncias</button><button type="button" data-sec="cruzamentos">Cruzamentos</button><button type="button" data-sec="alertas">Alertas</button><button type="button" data-sec="relatorios">Relat&oacute;rios</button><button type="button" data-sec="configuracoes" id="insBtnConfig" hidden>Configura&ccedil;&otilde;es</button><button class="ins-nav-pessoas" id="lancPessoasBtn" type="button" hidden title="Definir o nome de quem lan&ccedil;ou e ligar ao login do sistema">Pessoas</button>
     </nav>
     <!-- seleção (período e filtros das outras abas) que estas visões usam; a lateral de filtros não aparece em "Mostrar mais" -->
     <div class="ins-sel" id="insSel" role="status" aria-live="polite" hidden>
@@ -1063,21 +1075,6 @@
         <div id="tInsHora"></div>
       </section>
     </div>
-    </div>
-  <div class="ins-bloco" data-sec="pontos" hidden>
-<section class="painel largo pontos-card">
-      <div class="painel-cab"><div class="painel-cab-tit">
-        <h2>Mapa de pontos</h2>
-        <p class="sub" id="pontosSub">Atendimentos com coordenada, na sele&ccedil;&atilde;o atual. Vis&iacute;vel s&oacute; para quem est&aacute; logado.</p>
-      </div></div>
-      <div class="pontos-barra">
-        <label class="pontos-chk"><input type="checkbox" id="pontosVerAcu" checked><i class="pt-acu"></i> A&ccedil;udagem</label>
-        <label class="pontos-chk"><input type="checkbox" id="pontosVerMec" checked><i class="pt-mec"></i> Mecaniza&ccedil;&atilde;o</label>
-        <label class="pontos-chk"><input type="checkbox" id="pontosCalor"> Mapa de calor</label>
-        <label class="pontos-chk"><input type="checkbox" id="pontosAreas"> &Aacute;rea de cada escrit&oacute;rio</label>
-      </div>
-      <div id="mapaPontos" class="mapa-pontos" role="application" aria-label="Mapa de pontos dos atendimentos"></div>
-    </section>
     </div>
 <div class="ins-bloco" data-sec="comparativo" hidden>
     <section class="painel largo cmp-controles" id="cmpControles" aria-label="Escolha o que comparar"></section>
@@ -1680,7 +1677,7 @@
 </section>
 <script src="../js/graficos.js?v=fec0a8d2"></script>
 <script src="../js/mapa-acre.js?v=6f66c78d"></script>
-<script src="../js/mapa-municipios.js?v=a316a89b"></script>
+<script src="../js/mapa-municipios.js?v=2026102030"></script>
 <script src="../js/data-br.js?v=d801c961"></script>
 <script src="../js/select-busca.js?v=0d56edf9" defer></script>
 <script src="../js/lancamento-campos.js?v=4ad79d8b"></script>
@@ -1689,10 +1686,10 @@
 <script src="../js/lancamento-validacao.js?v=653eebb8"></script>
 <script src="../js/lancamento-pdf.js?v=278a38f6"></script>
 <script src="../js/lancamento-mecanizacao.js?v=2026102025"></script>
-<script src="../js/painel-calculos.js?v=2246ccd4"></script>
+<script src="../js/painel-calculos.js?v=2026102034"></script>
 <script src="../js/tabela-ferramentas.js?v=2fd63664"></script>
-<script src="../js/painel-publico.js?v=2026102027"></script>
-<script src="../js/dashboard.js?v=2026102014"></script>
+<script src="../js/painel-publico.js?v=2026102030"></script>
+<script src="../js/dashboard.js?v=2026102030"></script>
 <script src="../js/painel-comparativo.js?v=9ca079be"></script>
 <script src="../js/painel-metas.js?v=4963de3a"></script>
 <script src="../js/painel-tendencias.js?v=128338af"></script>
@@ -1702,7 +1699,7 @@
 <script src="../js/painel-config.js?v=32772bde"></script>
 <script src="../js/painel-alertas.js?v=bcd6d314"></script>
 <script src="../js/painel-relatorios.js?v=287e0c16"></script>
-<script src="../js/painel-pontos.js?v=210cc46f"></script>
+<script src="../js/painel-pontos.js?v=2026102034"></script>
 <script src="../js/assistente-dados.js?v=0d6b0c2c"></script>
 <script src="../js/motion-ui.js?v=7de49da0"></script>
 <script src="../js/motion-extras.js?v=0cb3d83b"></script>

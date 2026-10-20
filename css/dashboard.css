@@ -969,6 +969,25 @@ html.modo-publico .header-acoes{display:flex!important}
 .lanc-listagem > .lanc-cab{margin-bottom:18px}
 
 /* mapa: colorir por serviço ou por volume (escala do maior para o menor) */
+#mapaMecVistaPontos .pontos-barra{padding:0 0 10px}
+#mapaMecVistaPontos .mapa-pontos{margin:0;height:min(64vh,620px)}
+#mapaMecVistaPontos > .sub{margin:8px 0 0}
+.pontos-chk .pt-mun{background:linear-gradient(135deg,#bbf7d0,#16a34a)}
+/* rótulos e balão dos municípios no mapa integrado */
+.mapa-mun-rot{background:none;border:0}
+.mapa-mun-rot span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;
+  font:600 11px 'Segoe UI',Arial,sans-serif;color:#0f172a;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff}
+.leaflet-tooltip.mapa-mun-tip{padding:8px 10px;border-radius:8px;white-space:normal}
+/* "Colorir por": as quatro principais ficam à vista; as demais, no dropdown "Outros" */
+.mapa-mec-outros{position:relative;display:inline-block}
+.mapa-mec-outros-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:30;display:flex;flex-direction:column;gap:4px;min-width:210px;
+  padding:6px;background:var(--superficie);border:1px solid var(--anel);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.mapa-mec-outros-menu[hidden]{display:none}
+.mapa-mec-outros-menu button{width:100%;text-align:left;border-radius:8px}
+/* o dropdown "Outros" flutua por cima do mapa (Leaflet usa z-index alto nos painéis): não cria linha nova nem fica cortado */
+#mapaMecModo{position:relative;z-index:1100}
+.mapa-mec-outros-menu{z-index:1100}
+#mapaMecVistaPontos .mapa-pontos{position:relative;z-index:0;isolation:isolate}
 .mapa-mec-modo{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
 .mapa-mec-modo button{border:1px solid var(--anel);background:var(--superficie);color:var(--tinta2);
   border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}

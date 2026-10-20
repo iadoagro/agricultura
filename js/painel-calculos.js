@@ -147,13 +147,71 @@
          - primeiro dígito trocado (584534364 -> 8,4534364).
      A referência é o centro do município (mediana dos pontos corretos dele). Escolhe-se a leitura
      de menor "custo" = distância ao centro + pequena penalidade por correção aplicada. Se nada
-     ficar plausível, o ponto vai para o centro do município (aproximado). O resultado sempre cai
-     dentro da caixa do Acre. */
+     ficar plausível, o ponto vai para o centro do município (aproximado) — e o mapa de pontos o
+     descarta. Só vale leitura DENTRO do território do Acre (malha do IBGE), não só da caixa. */
   var ACRE = { s: -11.3, n: -6.9, o: -74.1, l: -66.4 };
   var PEN = { digito: 25, truncar: 8, troca: 10, zona: 10, graus: 6, aproximado: 0 };
 
+  /* Território do Acre de verdade: a malha municipal do IBGE (window.MAPA_ACRE, js/mapa-acre.js) é a união dos 22
+     municípios, então "dentro do Acre" = dentro de algum município. A caixa acima (ACRE) é só um pré-filtro barato:
+     ela inclui pedaços do Peru e da Bolívia, e foi por isso que pontos fora do estado apareciam no mapa. Sem a malha
+     carregada (testes em Node), vale só a caixa. */
+  var TERRITORIO = null;
+  function territorio() {
+    if (TERRITORIO) return TERRITORIO;
+    var g = typeof MAPA_ACRE !== 'undefined' && MAPA_ACRE && MAPA_ACRE.geo;
+    if (!g || !g.features) return null;   // ainda não carregou: não guarda, tenta de novo na próxima chamada
+    var lista = [];
+    g.features.forEach(function (f) {
+      var polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+      polys.forEach(function (aneis) {
+        var b = [Infinity, Infinity, -Infinity, -Infinity];   // lng mín, lat mín, lng máx, lat máx
+        aneis[0].forEach(function (p) {
+          if (p[0] < b[0]) b[0] = p[0];
+          if (p[1] < b[1]) b[1] = p[1];
+          if (p[0] > b[2]) b[2] = p[0];
+          if (p[1] > b[3]) b[3] = p[1];
+        });
+        lista.push({ b: b, aneis: aneis });
+      });
+    });
+    TERRITORIO = lista;
+    return lista;
+  }
+  /** Ponto dentro de um anel (raio para a direita, regra par-ímpar). */
+  function noAnel(lng, lat, anel) {
+    var dentro = false;
+    for (var i = 0, j = anel.length - 1; i < anel.length; j = i++) {
+      var xi = anel[i][0], yi = anel[i][1], xj = anel[j][0], yj = anel[j][1];
+      if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi) dentro = !dentro;
+    }
+    return dentro;
+  }
+  function noTerritorio(lat, lng, T) {
+    for (var k = 0; k < T.length; k++) {
+      var b = T[k].b;
+      if (lng < b[0] || lng > b[2] || lat < b[1] || lat > b[3]) continue;
+      var aneis = T[k].aneis;
+      if (!noAnel(lng, lat, aneis[0])) continue;
+      var buraco = false;
+      for (var h = 1; h < aneis.length; h++) if (noAnel(lng, lat, aneis[h])) { buraco = true; break; }
+      if (!buraco) return true;
+    }
+    return false;
+  }
+  /** Dentro do Acre, com folga de ~450 m na divisa (o GPS erra um pouco na fronteira e esse ponto não deve sumir). */
+  var FOLGA_GRAUS = 0.004;
   function dentroDoAcre(lat, lng) {
-    return isFinite(lat) && isFinite(lng) && lat >= ACRE.s && lat <= ACRE.n && lng >= ACRE.o && lng <= ACRE.l;
+    if (!(isFinite(lat) && isFinite(lng) && lat >= ACRE.s && lat <= ACRE.n && lng >= ACRE.o && lng <= ACRE.l)) return false;
+    var T = territorio();
+    if (!T) return true;
+    if (noTerritorio(lat, lng, T)) return true;
+    for (var a = -1; a <= 1; a++) {
+      for (var o = -1; o <= 1; o++) {
+        if ((a || o) && noTerritorio(lat + a * FOLGA_GRAUS, lng + o * FOLGA_GRAUS, T)) return true;
+      }
+    }
+    return false;
   }
 
   function distKm(a, b) {
@@ -261,10 +319,12 @@
   function reinterpretar(x, y, zona, prior) {
     var P = [prior.lat, prior.lng], melhor = null;
     function oferta(lat, lng, custo, metodo) {
-      if (!dentroDoAcre(lat, lng)) return;
+      if (!isFinite(lat) || !isFinite(lng)) return;
       var dist = distKm([lat, lng], P);
       var c = dist + custo;
-      if (!melhor || c < melhor.custo) melhor = { lat: lat, lng: lng, custo: c, dist: dist, metodo: metodo };
+      if (melhor && c >= melhor.custo) return;   // não melhora: nem testa o território
+      if (!dentroDoAcre(lat, lng)) return;       // leitura fora do estado (Peru, Bolívia…) é descartada
+      melhor = { lat: lat, lng: lng, custo: c, dist: dist, metodo: metodo };
     }
     var zonas = [];
     if (zona >= 17 && zona <= 20) zonas.push([zona, 0]);

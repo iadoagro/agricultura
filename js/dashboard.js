@@ -2156,21 +2156,64 @@
       '<ul>' + itens + '</ul>';
   }
 
+  /** Mapa integrado: para quem está logado (e tem a visão "Mapa de pontos" liberada) o mapa Leaflet de
+      js/painel-pontos.js mostra os municípios coloridos pelo "Colorir por" E os pontos dos atendimentos por cima;
+      o mapa SVG fica escondido (mas continua sendo pintado: dele vêm as cores). Sem coordenadas (versão pública)
+      vale só o SVG. */
+  function mapaMecIntegrar(C) {
+    var caixa = el('mapaMecVistaPontos'), svg = el('mapaMec');
+    if (!caixa || !svg) return;
+    var pode = !window.MODO_PUBLICO && !!window.PAINEL_PONTOS_DESENHAR && !caixa.hasAttribute('data-oculta-lista');
+    caixa.hidden = !pode;
+    svg.style.display = pode ? 'none' : '';
+    if (pode) {
+      var st = el('mapaMecStatus');
+      if (st) st.hidden = true;
+      window.PAINEL_PONTOS_DESENHAR(C);
+    }
+  }
+  /* o que o mapa Leaflet precisa saber dos municípios: cor atual, balão, clique (filtra o município) e o destacado */
+  window.PAINEL_MAPA_MUN = {
+    cor: function (id) { return MAPA_MEC && MAPA_MEC.corDe ? MAPA_MEC.corDe(id) : ''; },
+    nome: function (id) { return mapaMecNomePorId(id); },
+    tooltip: function (id) { return mapaMecTooltipHtml(id); },
+    clicar: function (id) { mapaMecCliqueMapa(id); },
+    destacado: function () { return mapaMecDestacado(); }
+  };
+
+  var MAPA_COR_PRINCIPAIS = ['tipo', 'n', 'ha', 'hrs'];
+  var MAPA_COR_OUTROS = ['mul', 'pmul', 'prod', 'ac', 'dap', 'media', 'dae'];
   function mapaMecDesenharModo() {
     var host = el('mapaMecModo');
     if (!host) return;
+    function botao(v) {
+      return '<button type="button" data-v="' + v + '" class="' + (MAPA_COR === v ? 'ativo' : '') + '">' + G.esc(MAPA_COR_ROT[v]) + '</button>';
+    }
+    var outroAtivo = MAPA_COR_OUTROS.indexOf(MAPA_COR) >= 0;
     host.innerHTML = '<span class="sub" style="margin:0 4px 0 0;align-self:center">Colorir por:</span>' +
-      ['tipo', 'n', 'ha', 'hrs', 'mul', 'pmul', 'prod', 'ac', 'dap', 'media', 'dae'].map(function (v) {
-        return '<button type="button" data-v="' + v + '" class="' + (MAPA_COR === v ? 'ativo' : '') + '">' +
-          G.esc(MAPA_COR_ROT[v]) + '</button>';
-      }).join('');
+      MAPA_COR_PRINCIPAIS.map(botao).join('') +
+      '<span class="mapa-mec-outros"><button type="button" id="mapaMecOutrosBtn" class="' + (outroAtivo ? 'ativo' : '') +
+      '" aria-haspopup="true" aria-expanded="false">' + (outroAtivo ? 'Outros: ' + G.esc(MAPA_COR_ROT[MAPA_COR]) : 'Outros') + ' &#9662;</button>' +
+      '<span class="mapa-mec-outros-menu" id="mapaMecOutrosMenu" hidden>' + MAPA_COR_OUTROS.map(botao).join('') + '</span></span>';
     if (host.getAttribute('data-ligado') !== '1') {
       host.setAttribute('data-ligado', '1');
       host.addEventListener('click', function (e) {
+        var ob = e.target.closest('#mapaMecOutrosBtn');
+        if (ob) {   // abre/fecha o dropdown "Outros"
+          var menu = el('mapaMecOutrosMenu');
+          menu.hidden = !menu.hidden;
+          ob.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+          return;
+        }
         var b = e.target.closest('button[data-v]');
         if (!b) return;
         MAPA_COR = b.getAttribute('data-v');
         render();
+      });
+      document.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('.mapa-mec-outros')) return;
+        var menu = el('mapaMecOutrosMenu');
+        if (menu && !menu.hidden) { menu.hidden = true; var ob = el('mapaMecOutrosBtn'); if (ob) ob.setAttribute('aria-expanded', 'false'); }
       });
     }
   }
@@ -2350,6 +2393,7 @@
     mapaMecDesenharTipo();
     mapaMecDesenharRegionais(C);
     mapaMecDesenharMunicipios(C);
+    mapaMecIntegrar(C);
   }
 
   /* ================================================= ABA: ESCRITÓRIO LOCAL */
@@ -3692,7 +3736,7 @@
       ou mes. Só ela fica visível; a barra de opções fica fixa no topo. */
   var insSecao = 'pessoa';
   function escolherInsSecao(sec) {
-    if (['registros', 'pessoa', 'dia', 'semana', 'mes', 'pontos'].concat(SECOES_MODULO).indexOf(sec) < 0) sec = 'pessoa';
+    if (['registros', 'pessoa', 'dia', 'semana', 'mes'].concat(SECOES_MODULO).indexOf(sec) < 0) sec = 'pessoa';
     // versão pública: só as visões sem nome de pessoa (comparativo, metas, tendências, cruzamentos)
     if (window.MODO_PUBLICO && SECOES_INTERNAS.indexOf(sec) >= 0) {
       var livre = Array.prototype.filter.call(document.querySelectorAll('#insNav button[data-sec]'), function (b) {
@@ -3722,8 +3766,6 @@
     if (abas && nav) nav.style.top = abas.offsetHeight + 'px';
     // a lateral some antes do mapa ser desenhado: ele mede a largura do contêiner ao nascer
     atualizarFiltros();
-    // o mapa de pontos (js/painel-pontos.js) só é desenhado quando a visão é aberta
-    if (sec === 'pontos' && window.PAINEL_PONTOS_DESENHAR && TODOS.length) window.PAINEL_PONTOS_DESENHAR(contexto());
     if (TODOS.length) desenharSecaoModulo(contexto());
   }
 
@@ -3790,7 +3832,6 @@
     abaInsSemana(C);
     abaInsMes(C);
     pintarCalendarios(insercoes(C));
-    if (insSecao === 'pontos' && window.PAINEL_PONTOS_DESENHAR) window.PAINEL_PONTOS_DESENHAR(C);
     desenharSecaoModulo(C);
   }
 
@@ -4931,7 +4972,8 @@
   }
 
   function abaValida(nome) {
-    if (nome === 'registros' || nome === 'pontos' || SECOES_MODULO.indexOf(nome) >= 0) nome = 'insercoes';
+    if (nome === 'pontos') nome = 'mapa';   // o mapa de pontos foi integrado ao mapa da aba Mapa
+    if (nome === 'registros' || SECOES_MODULO.indexOf(nome) >= 0) nome = 'insercoes';
     if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) return false;
     return botoes.some(function (b) { return b.getAttribute('data-aba') === nome && !b.hidden; });
   }
@@ -4987,7 +5029,7 @@
     opc = opc || {};
     // "Registros" virou uma visão dentro de "Inserções"
     if (nome === 'registros') { insSecao = 'registros'; nome = 'insercoes'; }
-    if (nome === 'pontos') { insSecao = 'pontos'; nome = 'insercoes'; }
+    if (nome === 'pontos') nome = 'mapa';   // o mapa de pontos foi integrado ao mapa da aba Mapa
     if (SECOES_MODULO.indexOf(nome) >= 0) { insSecao = nome; nome = 'insercoes'; }
     // um cartão de "Ver detalhes" pode apontar para uma aba que o público não tem
     if (window.MODO_PUBLICO && ABAS_FORA_DO_PUBLICO.indexOf(nome) >= 0) nome = 'geral';

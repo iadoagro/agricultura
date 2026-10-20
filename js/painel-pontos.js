@@ -1,5 +1,6 @@
-/* Visão "Mapa de pontos" (dentro de Inserções): um ponto por atendimento georreferenciado, com
-   agrupamento, camada de SATÉLITE (padrão) ou mapa, e cor por serviço ou por cultura.
+/* Mapa integrado da aba Mapa (só logado): os municípios coloridos pelo "Colorir por" e, por cima, um ponto por
+   atendimento georreferenciado, com agrupamento, camada de SATÉLITE (padrão) ou mapa e mapa de calor.
+   Clicar num município filtra por ele; passar o mouse mostra o balão com hectares e horas.
    Coordenadas digitadas errado são CORRIGIDAS automaticamente (js/painel-calculos.js,
    repararPontos): o algoritmo lê o que a pessoa quis digitar (x/y trocados, dígito faltando ou
    sobrando, zona errada, graus sem vírgula…) e escolhe a leitura mais próxima do município.
@@ -19,14 +20,15 @@
   CORES_SERVICO[A.MEC] = '#16a34a';   // mecanização: verde
   CORES_SERVICO[A.ACU] = '#2563eb';   // açudagem: azul
 
-  var MAPA = null, CAMADA = null, CALOR = null, AREAS = null;
-  var PALETA_AREA = ['#f59e0b', '#a855f7', '#06b6d4', '#ef4444', '#84cc16', '#ec4899', '#0ea5e9', '#f97316'];
-  var REPARADOS = null, REPARADOS_N = -1;   // WeakMap(registro -> [leituras]) da base inteira
+  var MAPA = null, CAMADA = null, CALOR = null, MUNS = null, ROTS = null, ULTIMO_FIT = null;
+  var CENTROS = null;   // [id, nome, latlng] do centro de cada município (rótulos)
+  var REPARADOS = null, REPARADOS_N = -1, REPARADOS_T = false;   // WeakMap(registro -> [leituras]) da base inteira
 
   /** Repara a base inteira de uma vez (o centro de cada município vem dos pontos corretos de todos). */
   function repararBase() {
     var reg = A.registros();
-    if (REPARADOS && REPARADOS_N === reg.length) return REPARADOS;
+    var temMalha = !!(window.MAPA_ACRE && window.MAPA_ACRE.geo);   // refaz se a malha do Acre chegou depois
+    if (REPARADOS && REPARADOS_N === reg.length && REPARADOS_T === temMalha) return REPARADOS;
     var itens = [], donos = [];
     reg.forEach(function (r) {
       if (!r.geo || !r.geo.length) return;
@@ -44,6 +46,7 @@
     });
     REPARADOS = mapa;
     REPARADOS_N = reg.length;
+    REPARADOS_T = temMalha;
     return mapa;
   }
 
@@ -99,8 +102,60 @@
     var h = '<b>' + G.esc(r.prod || '—') + '</b><br>' + G.esc(r.propr || '') + (r.propr ? '<br>' : '') +
       G.esc(r.mun || '—') + ' · ' + G.esc(r.pc || '—') + '<br>' + det +
       '<br><small>Vistoria: ' + G.esc(v.split('-').reverse().join('/')) + ' · ' + G.esc(r.rt || '—') + '</small>';
-    if (r.form) h += '<br><a href="' + G.esc(r.form) + '" target="_blank" rel="noopener">abrir formulário</a>';
+    // abre o relatório do produtor DENTRO do sistema (só visualização); ver ligarAbrir()
+    h += '<br><a href="#" class="pt-abrir">abrir formulário</a>';
     return h;
+  }
+
+  var semAcento = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); };
+
+  /** Acha o id do lançamento deste ponto: o registro do painel não traz o id, então busca pelo nome do produtor
+      (ação "listar") e confere serviço, data da vistoria e município. Devolve null se não achar. */
+  function acharLancamento(r) {
+    var CP = window.LANCAMENTO_CAMPOS;
+    if (r.id) return Promise.resolve(r.id);
+    if (!CP || !CP.enviar) return Promise.resolve(null);
+    var fd = new FormData();
+    fd.append('acao', 'listar'); fd.append('token', ''); fd.append('limite', '100'); fd.append('pagina', '1');
+    fd.append('f_pessoa', 'todos'); fd.append('f_busca', r.prod || '');
+    return CP.enviar(fd).then(function (res) {
+      var lista = (res.corpo && res.corpo.lancamentos) || [];
+      var iguais = lista.filter(function (x) {
+        return semAcento(x.nome_beneficiario) === semAcento(r.prod) && String(x.data_vistoria || '').slice(0, 10) === (r.dv || '') &&
+          x.tipo_servico === r.pc;
+      });
+      if (iguais.length > 1) {
+        var damesma = iguais.filter(function (x) { return semAcento(x.municipio) === semAcento(r.mun); });
+        if (damesma.length) iguais = damesma;
+      }
+      return iguais.length ? iguais[0].id : null;
+    });
+  }
+
+  /** "abrir formulário": abre a página do lançamento no sistema (lancamento-editar.html?modo=ver, só leitura) numa
+      aba nova. Se não achar o lançamento, cai no link do formulário digitalizado, quando existir. */
+  function ligarAbrir(popupLeaflet, r) {
+    var el = popupLeaflet.getElement && popupLeaflet.getElement(), a = el && el.querySelector('.pt-abrir');
+    if (!a) return;
+    a.onclick = function (e) {
+      e.preventDefault();
+      var janela = window.open('', '_blank');   // aberta já no clique (senão o bloqueador de pop-up barra)
+      var rotulo = a.textContent;
+      a.textContent = 'abrindo…';
+      acharLancamento(r).then(function (id) {
+        if (id) {
+          var url = 'lancamento-editar.html?modo=ver&id=' + encodeURIComponent(id);
+          if (janela) janela.location.href = url; else window.location.href = url;
+        } else {
+          if (janela) janela.close();
+          if (r.form) window.open(r.form, '_blank', 'noopener');
+          else window.alert('Não foi possível localizar este lançamento no sistema.');
+        }
+      }).catch(function () {
+        if (janela) janela.close();
+        window.alert('Não foi possível abrir o lançamento agora. Tente novamente.');
+      }).then(function () { a.textContent = rotulo; });
+    };
   }
 
   function opcao(id, padrao) {
@@ -114,10 +169,6 @@
     var P = pontosDe(C.D);
     sub.textContent = G.num(P.pts.length) + ' ponto(s) no mapa · ' + G.num(P.semGeo + P.cont.aproximada) +
       ' atendimento(s) sem coordenada utilizável.';
-    if (!P.pts.length && !MAPA) {
-      caixa.innerHTML = '<p class="vazio" style="padding:16px">Nenhum atendimento com coordenada nesta seleção. As coordenadas só chegam para quem está logado.</p>';
-      return;
-    }
     if (!window.L || !window.L.markerClusterGroup || !window.L.heatLayer) {
       caixa.innerHTML = '<p class="vazio" style="padding:16px">Carregando o mapa…</p>';
       carregarLeaflet().then(function () { desenhar(C); }, function (e) {
@@ -139,16 +190,16 @@
       });
       satelite.addTo(MAPA);
       rotulos.addTo(MAPA);
-      L.control.layers({ 'Satélite': satelite, 'Mapa': ruas }, { 'Nomes e limites': rotulos }, { collapsed: false }).addTo(MAPA);
+      L.control.layers({ 'Satélite': satelite, 'Mapa': ruas }, { 'Nomes e limites': rotulos }, { collapsed: true }).addTo(MAPA);
     }
     setTimeout(function () { MAPA.invalidateSize(); }, 50);
     if (CAMADA) MAPA.removeLayer(CAMADA);
     if (CALOR) { MAPA.removeLayer(CALOR); CALOR = null; }
-    if (AREAS) { MAPA.removeLayer(AREAS); AREAS = null; }
+    desenharMunicipios();
     CAMADA = L.markerClusterGroup({ disableClusteringAtZoom: 14, showCoverageOnHover: false, chunkedLoading: true });
 
     var verAcu = opcao('pontosVerAcu', true), verMec = opcao('pontosVerMec', true);
-    var verCalor = opcao('pontosCalor', false), verAreas = opcao('pontosAreas', false);
+    var verCalor = opcao('pontosCalor', false);
     var mostrados = 0, visiveis = [];
     P.pts.forEach(function (p) {
       if (p.r.pc === A.ACU && !verAcu) return;
@@ -158,40 +209,75 @@
       if (verCalor) return;   // no mapa de calor os pontos individuais não aparecem
       L.circleMarker([p.lat, p.lng], {
         radius: 6, color: '#fff', weight: 1.5, fillColor: CORES_SERVICO[p.r.pc] || '#94a3b8', fillOpacity: 0.92
-      }).bindPopup(popup(p)).addTo(CAMADA);
+      }).bindPopup(popup(p)).on('popupopen', function (ev) { ligarAbrir(ev.popup, p.r); }).addTo(CAMADA);
     });
     if (verCalor) {
       CALOR = L.heatLayer(visiveis.map(function (p) { return [p.lat, p.lng, 0.6]; }), {
         radius: 24, blur: 20, maxZoom: 12, gradient: { 0.3: '#38bdf8', 0.55: '#facc15', 0.8: '#f97316', 1: '#dc2626' }
       }).addTo(MAPA);
     }
-    if (verAreas) {
-      // área de atuação de cada escritório: círculo do centro até o ponto que cobre 90% dos atendimentos
-      var por = {};
-      visiveis.forEach(function (p) { var k = p.r.esc; if (k && k !== A.NI) (por[k] = por[k] || []).push(p); });
-      AREAS = L.layerGroup();
-      Object.keys(por).forEach(function (k, idx) {
-        var l = por[k];
-        if (l.length < 3) return;
-        var med = function (v) { v = v.slice().sort(function (a, b) { return a - b; }); return v[Math.floor(v.length / 2)]; };
-        var c = [med(l.map(function (p) { return p.lat; })), med(l.map(function (p) { return p.lng; }))];
-        var ds = l.map(function (p) { return PC.distKm([p.lat, p.lng], c); }).sort(function (a, b) { return a - b; });
-        var raio = ds[Math.min(ds.length - 1, Math.floor(ds.length * 0.9))] * 1000;
-        var cor = PALETA_AREA[idx % PALETA_AREA.length];
-        L.circle(c, { radius: Math.max(raio, 1500), color: cor, weight: 2, fillColor: cor, fillOpacity: 0.12 })
-          .bindTooltip(G.esc(k) + ' · ' + l.length + ' ponto(s) · raio de ' + Math.round(raio / 1000) + ' km', { sticky: true }).addTo(AREAS);
-      });
-      AREAS.addTo(MAPA);
-    }
     MAPA.addLayer(CAMADA);
-    if (mostrados) {
-      try {
-        MAPA.fitBounds(L.latLngBounds(visiveis.map(function (p) { return [p.lat, p.lng]; })).pad(0.15), { maxZoom: 12 });
-      } catch (e) { /* sem limites */ }
-    }
+    ajustarVista(mostrados ? visiveis : []);
   }
 
-  ['pontosVerAcu', 'pontosVerMec', 'pontosCalor', 'pontosAreas'].forEach(function (id) {
+  /** Cor do município vinda do mapa SVG (já resolvida); cinza claro quando não há. */
+  function corMunicipio(id) {
+    var c = window.PAINEL_MAPA_MUN ? window.PAINEL_MAPA_MUN.cor(id) : '';
+    return !c || c === 'none' ? '#e5e7eb' : c;
+  }
+
+  /** Municípios (malha do IBGE) coloridos como o mapa SVG, com balão, clique e rótulo com o nome. */
+  function desenharMunicipios() {
+    if (MUNS) { MAPA.removeLayer(MUNS); MUNS = null; }
+    if (ROTS) { MAPA.removeLayer(ROTS); ROTS = null; }
+    var M = window.PAINEL_MAPA_MUN, geo = window.MAPA_ACRE && window.MAPA_ACRE.geo;
+    if (!M || !geo || !opcao('pontosMunicipios', false)) return;
+    var dest = M.destacado();
+    MUNS = L.geoJSON(geo, {
+      style: function (f) {
+        var id = String(f.properties.codarea);
+        return { fillColor: corMunicipio(id), fillOpacity: 0.62, color: id === dest ? '#1d4ed8' : '#ffffff', weight: id === dest ? 3 : 1.2 };
+      },
+      onEachFeature: function (f, camada) {
+        var id = String(f.properties.codarea);
+        camada.bindTooltip(function () { return M.tooltip(id); }, { sticky: true, className: 'mapa-mun-tip' });
+        camada.on('click', function () { M.clicar(id); });
+      }
+    }).addTo(MAPA);
+    MUNS.bringToBack();
+    if (!CENTROS) {
+      CENTROS = geo.features.map(function (f) {
+        var id = String(f.properties.codarea);
+        return [id, M.nome(id) || id, L.geoJSON(f).getBounds().getCenter()];
+      });
+    }
+    ROTS = L.layerGroup(CENTROS.map(function (c) {
+      return L.marker(c[2], {
+        interactive: false, keyboard: false,
+        icon: L.divIcon({ className: 'mapa-mun-rot', html: '<span>' + G.esc(c[1]) + '</span>', iconSize: [0, 0] })
+      });
+    })).addTo(MAPA);
+  }
+
+  /** Enquadra o mapa: o estado todo na primeira vez; o município escolhido quando o filtro muda; senão não mexe
+      (clicar e filtrar não pode sacudir a vista). Sem malha, cai nos pontos visíveis. */
+  function ajustarVista(visiveis) {
+    var M = window.PAINEL_MAPA_MUN, geo = window.MAPA_ACRE && window.MAPA_ACRE.geo;
+    var dest = M ? M.destacado() : '';
+    var alvo = geo ? (dest ? 'm' + dest : 'estado') : 'pontos';
+    if (alvo === ULTIMO_FIT) return;
+    ULTIMO_FIT = alvo;
+    try {
+      if (geo) {
+        var fs = dest ? geo.features.filter(function (f) { return String(f.properties.codarea) === dest; }) : geo.features;
+        MAPA.fitBounds(L.geoJSON({ type: 'FeatureCollection', features: fs }).getBounds().pad(0.06));
+      } else if (visiveis.length) {
+        MAPA.fitBounds(L.latLngBounds(visiveis.map(function (p) { return [p.lat, p.lng]; })).pad(0.15), { maxZoom: 12 });
+      }
+    } catch (e) { /* sem limites */ }
+  }
+
+  ['pontosMunicipios', 'pontosVerAcu', 'pontosVerMec', 'pontosCalor'].forEach(function (id) {
     var c = document.getElementById(id);
     if (c) c.addEventListener('change', function () { A.redesenhar(); });
   });

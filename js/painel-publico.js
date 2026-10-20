@@ -93,6 +93,8 @@
       if (k === 'insercoes' || k === 'configuracoes') return;
       oculta(b, !tem(k));
     });
+    // o mapa de pontos foi integrado ao mapa da aba Mapa: a mesma liberação (Configurações) vale para ele
+    oculta(document.getElementById('mapaMecVistaPontos'), !tem('pontos'));
     var algumaVisao = false;
     document.querySelectorAll('#insNav button[data-sec]').forEach(function (b) {
       var k = b.getAttribute('data-sec');
