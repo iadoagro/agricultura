@@ -24,6 +24,39 @@
     setTimeout(() => ctrl.abort(), ms);
     return ctrl.signal;
   }
+
+  // Busca com retentativa. Uma falha de rede pontual (Wi-Fi oscilando, DNS lento, proxy/firewall da rede
+  // institucional) não derruba mais a operação: repete (só o que é seguro repetir, op.repetir) quando a
+  // requisição nem chegou a ter resposta ou o gateway devolveu 502/503/504. Quando desiste, diz POR QUE
+  // (sem internet / demorou demais / rede bloqueando) em vez de um "Sem conexão" genérico.
+  function mensagemRede(causa) {
+    let host = '';
+    try { host = new URL(cfg.url).host; } catch (e) {}
+    return causa === 'offline' ? 'Sem conexão com a internet. Confira o Wi-Fi ou o cabo de rede e tente novamente.' :
+      causa === 'tempo' ? 'Sem conexão com o banco: a resposta demorou demais (internet lenta ou instável). Tente novamente.' :
+      'Sem conexão com o banco. Verifique a internet ou se a rede bloqueia ' + (host || 'o endereço do banco') + '. Tente novamente.';
+  }
+  async function buscarRede(url, init, op) {
+    op = op || {};
+    let max = op.repetir ? (op.tentativas || 3) : 1, causa = 'rede';
+    for (let t = 1; t <= max; t++) {
+      try {
+        const r = await fetch(url, { ...init, signal: sinalTimeout(op.timeout || 20000) });
+        if (op.repetir && t < max && (r.status === 502 || r.status === 503 || r.status === 504)) {
+          await new Promise(function (ok) { setTimeout(ok, 700 * t); });
+          continue;
+        }
+        return r;
+      } catch (e) {
+        causa = e && (e.name === 'AbortError' || e.name === 'TimeoutError') ? 'tempo' : 'rede';
+        console.warn('Falha de rede (' + causa + ', tentativa ' + t + '/' + max + '):', e && e.name, e && e.message);
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) { causa = 'offline'; break; }
+        if (causa === 'tempo') max = Math.min(max, 2);   // internet lenta: não prende a pessoa por minutos
+        if (t < max) await new Promise(function (ok) { setTimeout(ok, 700 * t); });
+      }
+    }
+    const erro = new Error(mensagemRede(causa)); erro.rede = true; throw erro;
+  }
   const localKey = 'seagri_fiscais_bairros_v1';
   let cache = [], carregado = false, indisponivel = false;
   const avisar = () => window.dispatchEvent(new Event('bairros-atualizado'));
@@ -42,12 +75,13 @@
     const auth = window.ADMIN_AUTH, sessao = auth && auth.sessaoAtual();
     if (!sessao || sessao.expires_at * 1000 <= Date.now()) throw new Error('Sua sessão expirou. Volte à página inicial e entre de novo.');
     let resposta;
+    const metodo = String(options.method || 'GET').toUpperCase();
     try {
-      resposta = await fetch(cfg.url.replace(/\/$/, '') + caminho, {
-        ...options, signal: sinalTimeout(20000),
+      resposta = await buscarRede(cfg.url.replace(/\/$/, '') + caminho, {
+        ...options,
         headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json', Authorization: 'Bearer ' + sessao.access_token, ...options.headers }
-      });
-    } catch (e) { throw new Error('Sem conexão com o banco. Tente novamente.'); }
+      }, { repetir: metodo === 'GET' || metodo === 'HEAD' });
+    } catch (e) { throw e && e.rede ? e : new Error('Não foi possível enviar o pedido ao banco (' + ((e && e.message) || 'erro inesperado') + ').'); }
     if (!resposta.ok) {
       let corpo = null;
       try { corpo = await resposta.json(); } catch (e) {}
