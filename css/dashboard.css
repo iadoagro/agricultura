@@ -944,8 +944,8 @@ html.checando-publico body{visibility:hidden}
 #publicoRevogado{display:none}
 html[data-publico-revogado="1"] body > :not(#publicoRevogado){display:none!important}
 html[data-publico-revogado="1"] #publicoRevogado{
-  display:flex;position:fixed;inset:0;z-index:2000;background:var(--plano);
-  align-items:center;justify-content:center;padding:24px}
+  display:block;position:fixed;inset:0;z-index:2000;background:#fff}
+html[data-publico-revogado="1"] .publico-revogado-caixa{display:none}
 .publico-revogado-caixa{max-width:420px;text-align:center;background:var(--superficie);
   border:1px solid var(--anel);border-radius:14px;padding:32px 28px}
 .publico-revogado-caixa h1{margin:0 0 10px;font-size:19px;color:var(--tinta)}
