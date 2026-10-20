@@ -400,6 +400,26 @@ function solicitacaoPendente(string $supabaseUrl, string $serviceRole, string $l
     return ($status >= 200 && $status < 300 && is_array($corpo) && count($corpo)) ? $corpo[0] : null;
 }
 
+/** Quantos pedidos de EDIÇÃO desta pessoa estão pendentes desde um dia anterior ao de hoje (fuso do Acre).
+ *  Enquanto o responsável não aprovar/recusar, ela não lança nada novo: o pedido do dia anterior precisa
+ *  ser resolvido antes. Pedidos feitos hoje não bloqueiam. O responsável nunca é bloqueado. */
+function pendenciasDeDiaAnterior(string $supabaseUrl, string $serviceRole, string $email): int
+{
+    if ($email === RESPONSAVEL_EMAIL) {
+        return 0;
+    }
+    $inicioHoje = (new DateTimeImmutable('today', new DateTimeZone('America/Rio_Branco')))
+        ->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'GET',
+        TABELA_SOLICITACOES . '?select=id&status=eq.pendente&tipo=eq.editar&solicitado_por_email=eq.' . urlencode($email)
+            . '&criado_em=lt.' . urlencode($inicioHoje)
+    );
+    return ($status >= 200 && $status < 300 && is_array($corpo)) ? count($corpo) : 0;
+}
+
+const MSG_BLOQUEIO_PENDENCIA = 'Você tem solicitação de alteração pendente de um dia anterior e não pode fazer novos lançamentos até ela ser resolvida. Entre em contato com o administrador.';
+
 /** Grava um pedido de exclusão/edição pendente e encerra a requisição. */
 function criarSolicitacao(string $supabaseUrl, string $serviceRole, array $lancamento, string $tipo, string $motivo, string $email, ?array $dados): void
 {
@@ -424,6 +444,45 @@ function criarSolicitacao(string $supabaseUrl, string $serviceRole, array $lanca
     responder(502, ['ok' => false, 'erro' => (string) ($corpo['message'] ?? $corpo['msg'] ?? 'Não foi possível registrar a solicitação.')]);
 }
 
+/** Intervalos [início, fim) de criado_em (dia do Acre, UTC-5) que batem com ano/mês/dia (0 = qualquer).
+ *  Sem ano, vale cada ano desde 2023 — o PostgREST não filtra "dia/mês" de uma data sozinho. */
+function intervalosDeData(int $ano, int $mes, int $dia): array
+{
+    $fmt = fn(int $t) => gmdate('Y-m-d\TH:i:s\Z', $t);
+    $anoAtual = (int) (new DateTimeImmutable('now', new DateTimeZone('America/Rio_Branco')))->format('Y');
+    $anos = $ano > 0 ? [$ano] : range(2023, max(2023, $anoAtual));
+    $meses = $mes > 0 ? [$mes] : range(1, 12);
+    $lista = [];
+    foreach ($anos as $a) {
+        foreach ($meses as $m) {
+            if ($dia > 0) {
+                if (!checkdate($m, $dia, $a)) continue;   // ex.: 31/02
+                $ini = gmmktime(5, 0, 0, $m, $dia, $a);
+                $lista[] = [$fmt($ini), $fmt($ini + 86400)];
+            } else {
+                $lista[] = [$fmt(gmmktime(5, 0, 0, $m, 1, $a)), $fmt(gmmktime(5, 0, 0, $m + 1, 1, $a))];
+            }
+        }
+    }
+    return $lista;
+}
+
+/** Filtro "só com alteração pendente": lançamentos que têm pedido de EDIÇÃO aguardando aprovação. */
+function filtroSoPendentes(string $supabaseUrl, string $serviceRole): string
+{
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'GET',
+        TABELA_SOLICITACOES . '?select=lancamento_id&status=eq.pendente&tipo=eq.editar&lancamento_id=not.is.null&limit=1000'
+    );
+    $ids = [];
+    if ($status >= 200 && $status < 300 && is_array($corpo)) {
+        foreach ($corpo as $p) {
+            if (!empty($p['lancamento_id'])) $ids[] = (string) $p['lancamento_id'];
+        }
+    }
+    return $ids ? '&id=in.(' . implode(',', array_map('urlencode', $ids)) . ')' : '&id=eq.00000000-0000-0000-0000-000000000000';
+}
+
 /** Filtros da lista (campos "f_*" do POST) no formato de query do
  *  PostgREST. Texto livre perde os caracteres que o PostgREST usa como
  *  sintaxe (vírgula, parênteses, asterisco) antes de entrar no filtro. */
@@ -444,6 +503,21 @@ function filtrosDaLista(array $emailsDoLogin, bool $veTodos = false): string
     if (preg_match('/^\d{4}$/', $f('f_ano'))) {
         $ano = (int) $f('f_ano');
         $q .= '&criado_em=gte.' . urlencode($ano . '-01-01T00:00:00-05:00') . '&criado_em=lt.' . urlencode(($ano + 1) . '-01-01T00:00:00-05:00');
+    }
+    // Dia e/ou mês da inserção (junto com o ano, se escolhido)
+    $mes = (int) $f('f_mes');
+    $dia = (int) $f('f_dia');
+    $mes = ($mes >= 1 && $mes <= 12) ? $mes : 0;
+    $dia = ($dia >= 1 && $dia <= 31) ? $dia : 0;
+    if ($mes > 0 || $dia > 0) {
+        $ints = intervalosDeData(preg_match('/^\d{4}$/', $f('f_ano')) ? (int) $f('f_ano') : 0, $mes, $dia);
+        if (!$ints) {
+            $q .= '&id=eq.00000000-0000-0000-0000-000000000000';   // data inexistente: nada bate
+        } else {
+            $q .= '&and=(or(' . implode(',', array_map(
+                fn($i) => 'and(criado_em.gte.' . urlencode($i[0]) . ',criado_em.lt.' . urlencode($i[1]) . ')', $ints
+            )) . '))';
+        }
     }
     // "Lançado por": só o responsável (root) escolhe "todos" ou outra pessoa
     // (vários e-mails podem ter o mesmo nome). Todos os demais veem apenas os
@@ -567,6 +641,17 @@ if ($acao === 'painel') {
     ]);
 }
 
+/* ============================================================== bloqueio === */
+/* A tela consulta antes de abrir o formulário, para avisar já no botão "Novo relatório". */
+if ($acao === 'bloqueio') {
+    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
+    if ($emailConfirmado === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    $n = pendenciasDeDiaAnterior($supabaseUrl, $serviceRole, $emailConfirmado);
+    responder(200, ['ok' => true, 'bloqueado' => $n > 0, 'pendencias' => $n, 'erro' => $n > 0 ? MSG_BLOQUEIO_PENDENCIA : '']);
+}
+
 /* =============================================================== salvar === */
 if ($acao === 'salvar') {
     // Sem senha de administrador para gravar, o login do site é a única
@@ -575,6 +660,10 @@ if ($acao === 'salvar') {
     $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
     if ($emailConfirmado === null) {
         responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+
+    if (pendenciasDeDiaAnterior($supabaseUrl, $serviceRole, $emailConfirmado) > 0) {
+        responder(403, ['ok' => false, 'bloqueado' => true, 'erro' => MSG_BLOQUEIO_PENDENCIA]);
     }
 
     $registro = lerRegistroDoPost($emailConfirmado);
@@ -613,6 +702,9 @@ if ($acao === 'listar') {
     // responsável (root) enxerga os dos outros.
     $meusEmails = emailsDoUsuario($emailConfirmado);
     $filtro = filtrosDaLista($meusEmails, $emailConfirmado === RESPONSAVEL_EMAIL);
+    if (trim((string) ($_POST['f_pendente'] ?? '')) === '1') {
+        $filtro .= filtroSoPendentes($supabaseUrl, $serviceRole);
+    }
     // Mais recente primeiro (2026 no topo); o primeiro lançado fica por último.
     [$status, $corpo, $headersResp] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'GET',

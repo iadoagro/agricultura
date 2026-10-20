@@ -546,3 +546,8 @@
 .lanc-msg-ok{color:#15803d}
 .lanc-campos input.lanc-campo-erro,.lanc-campos select.lanc-campo-erro{border-color:#dc2626;box-shadow:0 0 0 3px rgba(220,38,38,.14)}
 .lanc-campos input.lanc-campo-aviso,.lanc-form .lc-area.lanc-campo-aviso{border-color:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.16)}
+
+/* ---- seções da lista separadas: "Solicitações pendentes" é um bloco próprio (faixa âmbar à esquerda)
+   e não gruda mais no "Novo relatório" logo abaixo ---- */
+.painel.lanc-solicitacoes{margin-bottom:24px;border-left:4px solid #d97706}
+.painel.lanc-novo{margin-bottom:24px}

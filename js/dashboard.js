@@ -3440,14 +3440,14 @@
 
   function tabelaRegistrosDetalhe(regs) {
     return '<div class="tabela-scroll"><table class="dados"><thead><tr>' +
-      '<th>Inserção</th><th>Hora</th><th>Serviço</th><th>Produtor</th><th>Município</th><th>Escritório</th>' +
+      '<th class="num">Nº</th><th>Inserção</th><th>Hora</th><th>Serviço</th><th>Produtor</th><th>Município</th><th>Escritório</th>' +
       '<th>Técnico</th><th>Inseridor</th><th>Detalhe</th></tr></thead><tbody>' +
-      regs.map(function (r) {
+      regs.map(function (r, i) {
         var det = r.pc === MEC ? (r.ha ? G.num(r.ha, 1) + ' ha' : '—')
           : r.pc === ACU ? (r.hrs ? G.num(r.hrs, 1) + ' h' : '—') : '—';
         var marca = (fimDeSemana(r.d) ? ' <em class="cal-mk cal-mk-fds" title="Fim de semana">FS</em>' : '') +
           (foraDoHorario(r) ? ' <em class="cal-mk cal-mk-noite" title="Fora do expediente">&#9790;</em>' : '');
-        return '<tr><td class="num">' + dataBR(r.d) + '</td><td class="num">' + G.esc(r.h || '—') + marca + '</td>' +
+        return '<tr><td class="num">' + (i + 1) + '</td><td class="num">' + dataBR(r.d) + '</td><td class="num">' + G.esc(r.h || '—') + marca + '</td>' +
           '<td><span class="tag ' + tagServico(r.pc) + '">' + G.esc(r.pc || '—') + '</span></td>' +
           '<td class="forte">' + G.esc(r.prod || '—') + '</td><td>' + G.esc(r.mun || '—') + '</td>' +
           '<td>' + G.esc(r.esc || '—') + '</td><td>' + G.esc(r.rt || '—') + '</td>' +
@@ -3523,11 +3523,11 @@
       function tabela(lista) {
         doc.autoTable({
           startY: y, margin: { left: M, right: M, top: 16, bottom: 16 },
-          head: [['Inserção', 'Serviço', 'Produtor', 'Município', 'Técnico', 'Inseridor', 'Detalhe']],
-          body: lista.map(function (r) {
+          head: [['Nº', 'Inserção', 'Serviço', 'Produtor', 'Município', 'Técnico', 'Inseridor', 'Detalhe']],
+          body: lista.map(function (r, i) {
             var det = r.pc === MEC ? (r.ha ? G.num(r.ha, 1) + ' ha' : '-')
               : r.pc === ACU ? (r.hrs ? G.num(r.hrs, 1) + ' h' : '-') : '-';
-            return [dataBR(r.d), r.pc || '-', r.prod || '-', r.mun || '-', r.rt || '-',
+            return [i + 1, dataBR(r.d), r.pc || '-', r.prod || '-', r.mun || '-', r.rt || '-',
               sigla(r.alim || NI) + ' ' + (r.alim || NI), det];
           }),
           theme: 'grid',
@@ -3535,7 +3535,7 @@
                     lineColor: [216, 222, 229], lineWidth: 0.15, overflow: 'linebreak' },
           headStyles: { fillColor: [238, 242, 244], textColor: [74, 85, 97], fontStyle: 'bold', fontSize: 7 },
           alternateRowStyles: { fillColor: [250, 251, 252] },
-          columnStyles: { 6: { halign: 'right' } }
+          columnStyles: { 0: { halign: 'right', cellWidth: 8 }, 7: { halign: 'right' } }
         });
         y = doc.lastAutoTable.finalY + 6;
       }

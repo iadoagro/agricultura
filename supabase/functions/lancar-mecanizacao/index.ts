@@ -267,6 +267,20 @@ async function solicitacaoPendente(lancamentoId: string): Promise<Record<string,
   return status >= 200 && status < 300 && Array.isArray(corpo) && corpo.length ? corpo[0] as Record<string, unknown> : null;
 }
 
+/** Quantos pedidos de EDIÇÃO desta pessoa estão pendentes desde um dia anterior ao de hoje (fuso do Acre, UTC-5).
+    Enquanto o responsável não aprovar/recusar, ela não lança nada novo. Pedido feito hoje não bloqueia; o
+    responsável nunca é bloqueado — mesma regra de pendenciasDeDiaAnterior() em lancar_mecanizacao.php. */
+async function pendenciasDeDiaAnterior(email: string): Promise<number> {
+  if (email === RESPONSAVEL_EMAIL) return 0;
+  const hojeNoAcre = new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);   // AAAA-MM-DD no Acre
+  const inicioHoje = `${hojeNoAcre}T05:00:00Z`;                                            // 00:00 do Acre em UTC
+  const [status, corpo] = await chamarSupabase('GET',
+    `${TABELA_SOLICITACOES}?select=id&status=eq.pendente&tipo=eq.editar&solicitado_por_email=eq.${encodeURIComponent(email)}&criado_em=lt.${encodeURIComponent(inicioHoje)}`);
+  return status >= 200 && status < 300 && Array.isArray(corpo) ? corpo.length : 0;
+}
+
+const MSG_BLOQUEIO_PENDENCIA = 'Você tem solicitação de alteração pendente de um dia anterior e não pode fazer novos lançamentos até ela ser resolvida. Entre em contato com o administrador.';
+
 /** Grava um pedido de exclusão/edição pendente e encerra a requisição —
     mesma regra de criarSolicitacao() em lancar_mecanizacao.php. */
 async function criarSolicitacao(
@@ -283,6 +297,38 @@ async function criarSolicitacao(
   }, { Prefer: 'return=minimal' });
   if (status >= 200 && status < 300) responder(200, { ok: true, pendente: true });
   responder(502, { ok: false, erro: mensagem(corpo, 'Não foi possível registrar a solicitação.') });
+}
+
+/** Intervalos [início, fim) de criado_em (dia do Acre, UTC-5) que batem com ano/mês/dia (0 = qualquer).
+    Sem ano, vale cada ano desde 2023 — o PostgREST não filtra "dia/mês" de uma data sozinho.
+    Mesma regra de intervalosDeData() em lancar_mecanizacao.php. */
+function intervalosDeData(ano: number, mes: number, dia: number): [string, string][] {
+  const iso = (t: number) => new Date(t).toISOString().slice(0, 19) + 'Z';
+  const anoAtual = new Date(Date.now() - 5 * 3600 * 1000).getUTCFullYear();
+  const anos = ano > 0 ? [ano] : Array.from({ length: Math.max(1, anoAtual - 2022) }, (_, i) => 2023 + i);
+  const meses = mes > 0 ? [mes] : Array.from({ length: 12 }, (_, i) => i + 1);
+  const lista: [string, string][] = [];
+  for (const a of anos) {
+    for (const m of meses) {
+      if (dia > 0) {
+        const ini = Date.UTC(a, m - 1, dia, 5);
+        if (new Date(ini).getUTCDate() !== dia) continue;   // ex.: 31/02
+        lista.push([iso(ini), iso(ini + 86400000)]);
+      } else {
+        lista.push([iso(Date.UTC(a, m - 1, 1, 5)), iso(Date.UTC(a, m, 1, 5))]);
+      }
+    }
+  }
+  return lista;
+}
+
+/** Filtro "só com alteração pendente": lançamentos com pedido de EDIÇÃO aguardando aprovação. */
+async function filtroSoPendentes(): Promise<string> {
+  const [status, corpo] = await chamarSupabase('GET',
+    `${TABELA_SOLICITACOES}?select=lancamento_id&status=eq.pendente&tipo=eq.editar&lancamento_id=not.is.null&limit=1000`);
+  const ids = status >= 200 && status < 300 && Array.isArray(corpo)
+    ? (corpo as Record<string, unknown>[]).map((p) => String(p.lancamento_id ?? '')).filter(Boolean) : [];
+  return ids.length ? `&id=in.(${ids.map(encodeURIComponent).join(',')})` : '&id=eq.00000000-0000-0000-0000-000000000000';
 }
 
 /** Filtros da lista (campos "f_*") no formato do PostgREST — mesma regra de
@@ -304,6 +350,15 @@ function filtrosDaLista(fd: FormData, emailsDoLogin: string[], veTodos = false):
   if (/^\d{4}$/.test(f('f_ano'))) {
     const ano = parseInt(f('f_ano'), 10);
     q += `&criado_em=gte.${encodeURIComponent(ano + '-01-01T00:00:00-05:00')}&criado_em=lt.${encodeURIComponent((ano + 1) + '-01-01T00:00:00-05:00')}`;
+  }
+  // Dia e/ou mês da inserção (junto com o ano, se escolhido)
+  const mes = parseInt(f('f_mes'), 10) || 0, dia = parseInt(f('f_dia'), 10) || 0;
+  const mesOk = mes >= 1 && mes <= 12 ? mes : 0, diaOk = dia >= 1 && dia <= 31 ? dia : 0;
+  if (mesOk || diaOk) {
+    const ints = intervalosDeData(/^\d{4}$/.test(f('f_ano')) ? parseInt(f('f_ano'), 10) : 0, mesOk, diaOk);
+    q += ints.length
+      ? `&and=(or(${ints.map(([a, b]) => `and(criado_em.gte.${encodeURIComponent(a)},criado_em.lt.${encodeURIComponent(b)})`).join(',')}))`
+      : '&id=eq.00000000-0000-0000-0000-000000000000';   // data inexistente: nada bate
   }
   // "Lançado por": só o responsável (root) escolhe "todos" ou outra pessoa; os demais veem só os próprios.
   const pessoa = veTodos ? f('f_pessoa') : '';
@@ -511,8 +566,18 @@ async function tratar(fd: FormData): Promise<never> {
     });
   }
 
+  // A tela consulta antes de abrir o formulário, para avisar já no botão "Novo relatório".
+  if (acao === 'bloqueio') {
+    const email = await exigirSessao(fd);
+    const n = await pendenciasDeDiaAnterior(email);
+    responder(200, { ok: true, bloqueado: n > 0, pendencias: n, erro: n > 0 ? MSG_BLOQUEIO_PENDENCIA : '' });
+  }
+
   if (acao === 'salvar') {
     const email = await exigirSessao(fd);
+    if (await pendenciasDeDiaAnterior(email) > 0) {
+      responder(403, { ok: false, bloqueado: true, erro: MSG_BLOQUEIO_PENDENCIA });
+    }
     const registro = lerRegistro(fd, email);
     await recusarSeRepetido(registro);
     // PDF opcional da ficha: validado antes de gravar o lançamento.
@@ -531,7 +596,8 @@ async function tratar(fd: FormData): Promise<never> {
     const pagina = Math.max(1, parseInt(String(fd.get('pagina') ?? '1'), 10) || 1);
     // Cada pessoa vê só os próprios lançamentos; só o responsável (root) vê os dos outros.
     const meusEmails = await emailsDoUsuario(email);
-    const filtro = filtrosDaLista(fd, meusEmails, email === RESPONSAVEL_EMAIL);
+    let filtro = filtrosDaLista(fd, meusEmails, email === RESPONSAVEL_EMAIL);
+    if (String(fd.get('f_pendente') ?? '').trim() === '1') filtro += await filtroSoPendentes();
     // Mais recente primeiro (2026 no topo); o primeiro lançado fica por último.
     let [status, corpo, headersResp] = await chamarSupabase('GET',
       `${TABELA}?select=id,criado_em,criado_por_email,tipo_servico,nome_beneficiario,` +

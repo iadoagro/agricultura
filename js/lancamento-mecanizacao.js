@@ -384,7 +384,7 @@
     return POR_PAGINA;   // o tamanho da página é o que a pessoa escolheu
   }
   var paginaAtual = 1, totalLinhas = 0, pedidoLista = 0, filtrosProntos = false;
-  var CAMPOS_FILTRO = ['f_busca', 'f_pessoa', 'f_ano', 'f_tipo_servico', 'f_municipio', 'f_escritorio'];
+  var CAMPOS_FILTRO = ['f_busca', 'f_pessoa', 'f_ano', 'f_mes', 'f_dia', 'f_pendente', 'f_tipo_servico', 'f_municipio', 'f_escritorio'];
   var lancadores = [], meusEmails = [], usuariosSistema = [];
 
   /* Pessoas que já lançaram (e-mail → nome) — alimenta o filtro "Lançado
@@ -799,6 +799,11 @@
       for (var a = esteAno; a >= 2023; a--) anos.push(a);
       // padrão: todos os anos, do mais recente pro mais antigo (a ordem vem do servidor)
       anoSel.innerHTML = '<option value="">Todos os anos</option>' + anos.map(function (a) { return '<option>' + a + '</option>'; }).join('');
+      var MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      el('lancFiltroMes').innerHTML = '<option value="">Todos os meses</option>' + MESES.map(function (n, i) { return '<option value="' + (i + 1) + '">' + n + '</option>'; }).join('');
+      var dias = '<option value="">Todos os dias</option>';
+      for (var d = 1; d <= 31; d++) dias += '<option>' + d + '</option>';
+      el('lancFiltroDia').innerHTML = dias;
       el('lancFiltroPessoa').value = pessoaPadrao();
       var espera;
       el('lancFiltros').addEventListener('input', function (e) {
@@ -1149,8 +1154,17 @@
     });
     el('lancNovoBtn').addEventListener('click', function () {
       aviso('lancListaAviso', '', '');
-      limparFormulario(true);
-      mostrarFormulario();
+      var btn = el('lancNovoBtn');
+      btn.disabled = true;
+      // pedido de edição pendente de um dia anterior: não abre o formulário (o servidor também recusa ao salvar)
+      enviarAcao({ acao: 'bloqueio' })
+        .then(function (res) {
+          if (res.corpo && res.corpo.bloqueado) { aviso('lancListaAviso', 'erro', esc(res.corpo.erro)); return; }
+          limparFormulario(true);
+          mostrarFormulario();
+        })
+        .catch(function () { limparFormulario(true); mostrarFormulario(); })   // sem resposta: deixa abrir; o servidor decide ao salvar
+        .then(function () { btn.disabled = false; });
     });
   }
 
