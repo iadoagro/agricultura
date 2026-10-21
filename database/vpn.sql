@@ -26,6 +26,7 @@ create table if not exists public.vpn_solicitacoes (
   atualizado_em timestamptz,
   criado_em timestamptz not null default now()
 );
+alter table public.vpn_solicitacoes add column if not exists whatsapp text;
 alter table public.vpn_solicitacoes add column if not exists vinculo text;
 alter table public.vpn_solicitacoes drop constraint if exists vpn_solicitacoes_vinculo_check;
 alter table public.vpn_solicitacoes add constraint vpn_solicitacoes_vinculo_check
@@ -93,6 +94,7 @@ declare
   v_email text := lower(btrim(coalesce(p->>'email_funcional', '')));
   v_mat text := btrim(coalesce(p->>'matricula', ''));
   v_setor text := btrim(coalesce(p->>'setor', ''));
+  v_zap text := regexp_replace(coalesce(p->>'whatsapp', ''), '\D', '', 'g');
   v_vinculo text := lower(btrim(coalesce(p->>'vinculo', '')));
   v_doc text := coalesce(p->>'documento', '');
   v_nasc date;
@@ -111,6 +113,7 @@ begin
     raise exception 'Data de nascimento inválida.';
   end if;
   if v_email !~ '^[^@\s]+@ac\.gov\.br$' or char_length(v_email) > 160 then raise exception 'Use o e-mail funcional, que termina com @ac.gov.br.'; end if;
+  if v_zap !~ '^\d{2}9?\d{8}$' then raise exception 'Informe o WhatsApp com DDD.'; end if;
   if v_vinculo not in ('comissionado','terceirizado') then raise exception 'Informe se é comissionado ou terceirizado.'; end if;
   if char_length(v_mat) > 30 or (v_vinculo = 'comissionado' and char_length(v_mat) < 1) then raise exception 'Informe a matrícula.'; end if;
   if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;
@@ -121,8 +124,8 @@ begin
     raise exception 'Este envio já foi registrado.';
   end if;
 
-  insert into public.vpn_solicitacoes (nome, cpf, rg, data_nascimento, email_funcional, vinculo, matricula, setor, documento_path, documento_nome)
-  values (v_nome, v_cpf, v_rg, v_nasc, v_email, v_vinculo, v_mat, v_setor, v_doc, nullif(left(btrim(coalesce(p->>'documento_nome', '')), 160), ''))
+  insert into public.vpn_solicitacoes (nome, cpf, rg, data_nascimento, email_funcional, whatsapp, vinculo, matricula, setor, documento_path, documento_nome)
+  values (v_nome, v_cpf, v_rg, v_nasc, v_email, v_zap, v_vinculo, v_mat, v_setor, v_doc, nullif(left(btrim(coalesce(p->>'documento_nome', '')), 160), ''))
   returning id, numero into v_id, v_num;
   return jsonb_build_object('numero', v_num);
 end;

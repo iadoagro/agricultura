@@ -42,12 +42,17 @@
     e.target.value = d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   });
 
+  form.elements.whatsapp.addEventListener('input', function (e) {
+    var d = e.target.value.replace(/\D/g, '').slice(0, 11);
+    e.target.value = d.length > 7 ? d.replace(/(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : d.length > 2 ? d.replace(/(\d{2})(\d+)/, '($1) $2') : d;
+  });
+
   function ler() {
     var f = form.elements;
     return {
       nome: f.nome.value.trim().replace(/\s+/g, ' '), cpf: f.cpf.value, rg: f.rg.value.trim(),
       data_nascimento: f.data_nascimento.value, email_funcional: f.email_funcional.value.trim().toLowerCase(),
-      vinculo: vinculoAtual(), matricula: f.matricula.value.trim(), setor: f.setor.value, arquivo: f.documento.files[0] || null
+      whatsapp: f.whatsapp.value, vinculo: vinculoAtual(), matricula: f.matricula.value.trim(), setor: f.setor.value, arquivo: f.documento.files[0] || null
     };
   }
 
@@ -134,7 +139,7 @@
   function validar(d) {
     var primeiro = null;
     function marcar(n, m) { erroCampo(n, m); if (!primeiro) primeiro = n; }
-    ['nome', 'cpf', 'rg', 'data_nascimento', 'email_funcional', 'vinculo', 'matricula', 'setor', 'documento'].forEach(function (n) { erroCampo(n, ''); });
+    ['nome', 'cpf', 'rg', 'data_nascimento', 'email_funcional', 'whatsapp', 'vinculo', 'matricula', 'setor', 'documento'].forEach(function (n) { erroCampo(n, ''); });
     if (d.nome.length < 5 || d.nome.indexOf(' ') < 0) marcar('nome', 'Informe o nome completo.');
     if (!cpfValido(d.cpf)) marcar('cpf', 'CPF inválido.');
     if (d.rg.length < 3) marcar('rg', 'Informe o RG.');
@@ -142,6 +147,8 @@
     var limite = new Date(); limite.setFullYear(limite.getFullYear() - 14);
     if (!nasc || isNaN(nasc) || nasc > limite || nasc.getFullYear() < 1900) marcar('data_nascimento', 'Informe uma data de nascimento válida.');
     if (!/^[^@\s]+@ac\.gov\.br$/.test(d.email_funcional)) marcar('email_funcional', 'Use o e-mail funcional, que termina com @ac.gov.br.');
+    var zap = d.whatsapp.replace(/\D/g, '');
+    if (zap.length < 10 || zap.length > 11 || (zap.length === 11 && zap[2] !== '9')) marcar('whatsapp', 'Informe o WhatsApp com DDD.');
     if (!d.vinculo) marcar('vinculo', 'Informe se é comissionado ou terceirizado.');
     if (!d.matricula && d.vinculo !== 'terceirizado') marcar('matricula', 'Informe a matrícula.');
     if (!d.setor) marcar('setor', 'Selecione o setor.');
@@ -178,7 +185,7 @@
       method: 'POST', headers: cabecalhos({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ p: {
         nome: d.nome, cpf: d.cpf, rg: d.rg, data_nascimento: d.data_nascimento, email_funcional: d.email_funcional,
-        vinculo: d.vinculo, matricula: d.matricula, setor: d.setor, documento: caminho, documento_nome: d.arquivo.name
+        whatsapp: d.whatsapp, vinculo: d.vinculo, matricula: d.matricula, setor: d.setor, documento: caminho, documento_nome: d.arquivo.name
       } })
     });
     var corpo = null;

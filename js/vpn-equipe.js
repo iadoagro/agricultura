@@ -29,6 +29,7 @@
     return h;
   }
   function cpfBr(c) { return String(c || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
+  function zapBr(n) { return String(n || '').replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); }
   function dataBr(d) { var p = String(d || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
   function dataHoraBr(t) {
     var d = new Date(t); if (isNaN(d)) return '';
@@ -59,13 +60,13 @@
     var q = semAcento(busca.value), st = filtro.value;
     var v = lista.filter(function (l) {
       if (st && l.status !== st) return false;
-      return !q || semAcento([l.nome, l.cpf, cpfBr(l.cpf), l.matricula, l.email_funcional, l.setor, l.rg, ROTULO_VINCULO[l.vinculo]].join(' ')).indexOf(q) >= 0;
+      return !q || semAcento([l.nome, l.cpf, cpfBr(l.cpf), l.matricula, l.email_funcional, l.setor, l.rg, l.whatsapp, ROTULO_VINCULO[l.vinculo]].join(' ')).indexOf(q) >= 0;
     });
-    if (!v.length) { tbody.innerHTML = '<tr><td colspan="12" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
+    if (!v.length) { tbody.innerHTML = '<tr><td colspan="13" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
     tbody.innerHTML = v.map(function (l) {
       return '<tr><td>' + esc(l.numero) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + esc(l.nome) + '</td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
-        '<td>' + esc(l.email_funcional) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(l.setor) + '</td>' +
+        '<td>' + esc(l.email_funcional) + '</td><td>' + esc(zapBr(l.whatsapp)) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(l.setor) + '</td>' +
         '<td><button type="button" class="vpn-acao" data-doc="' + esc(l.id) + '">Ver documento</button></td>' +
         '<td><select data-st="' + esc(l.id) + '" aria-label="Situação">' +
         Object.keys(ROTULO).map(function (k) { return '<option value="' + k + '"' + (k === l.status ? ' selected' : '') + '>' + ROTULO[k] + '</option>'; }).join('') +
@@ -82,7 +83,7 @@
       lista = await r.json();
       desenhar();
     } catch (e) {
-      tbody.innerHTML = '<tr><td colspan="12" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="13" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
     }
   }
 
