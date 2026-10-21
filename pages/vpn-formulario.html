@@ -9,7 +9,7 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102106">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102107">
 </head>
 <body class="vpn-publica">
 <header class="vpn-topo"><div class="vpn-topo-in"><b>Solicitação de acesso à VPN</b><small>Preencha todos os campos e anexe um documento de identificação com foto.</small></div></header>
@@ -23,6 +23,14 @@
 
   <form class="vpn-cartao" id="vpnForm" novalidate>
     <div class="vpn-grade">
+      <div class="vpn-campo vpn-largo" data-campo="vinculo">
+        <label id="vinculoRot">Vínculo</label>
+        <div class="vpn-opcoes" role="radiogroup" aria-labelledby="vinculoRot">
+          <label class="vpn-opcao"><input type="radio" name="vinculo" value="comissionado"><span>Comissionado</span></label>
+          <label class="vpn-opcao"><input type="radio" name="vinculo" value="terceirizado"><span>Terceirizado</span></label>
+        </div>
+        <span class="vpn-erro" role="alert"></span>
+      </div>
       <div class="vpn-campo vpn-largo" data-campo="nome">
         <label for="nome">Nome completo</label>
         <input id="nome" name="nome" type="text" maxlength="120" autocomplete="name">
@@ -58,14 +66,6 @@
         <input id="whatsapp" name="whatsapp" type="tel" inputmode="tel" maxlength="15" placeholder="(68) 90000-0000" autocomplete="tel-national">
         <span class="vpn-erro" role="alert"></span>
       </div>
-      <div class="vpn-campo vpn-largo" data-campo="vinculo">
-        <label id="vinculoRot">Vínculo</label>
-        <div class="vpn-opcoes" role="radiogroup" aria-labelledby="vinculoRot">
-          <label class="vpn-opcao"><input type="radio" name="vinculo" value="comissionado"><span>Comissionado</span></label>
-          <label class="vpn-opcao"><input type="radio" name="vinculo" value="terceirizado"><span>Terceirizado</span></label>
-        </div>
-        <span class="vpn-erro" role="alert"></span>
-      </div>
       <div class="vpn-campo vpn-largo" data-campo="setor">
         <label for="setorBusca">Setor</label>
         <div class="vpn-combo" id="setorCombo">
@@ -89,6 +89,6 @@
   </form>
 </main>
 <script src="../js/contatos-organograma.js?v=2026102101"></script>
-<script src="../js/vpn-publico.js?v=2026102106"></script>
+<script src="../js/vpn-publico.js?v=2026102107"></script>
 </body>
 </html>

@@ -130,8 +130,10 @@
   }
   function atualizarVinculo() {
     var terc = vinculoAtual() === 'terceirizado';
-    form.querySelector('[data-campo="matricula"] label').textContent = terc ? 'Matrícula (se tiver)' : 'Matrícula';
-    if (terc) erroCampo('matricula', '');
+    var mat = form.elements.matricula;
+    mat.disabled = terc;   // terceirizado não tem matrícula: o campo fica bloqueado e vazio
+    if (terc) { mat.value = ''; erroCampo('matricula', ''); }
+    mat.placeholder = terc ? 'Não se aplica a terceirizado' : '';
     if (vinculoAtual()) erroCampo('vinculo', '');
   }
   form.querySelectorAll('input[name="vinculo"]').forEach(function (r) { r.addEventListener('change', atualizarVinculo); });
