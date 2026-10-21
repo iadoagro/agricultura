@@ -68,17 +68,17 @@
       if (st && l.status !== st) return false;
       return !q || semAcento([l.nome, l.cpf, cpfBr(l.cpf), l.matricula, l.email_funcional, l.setor, l.rg, l.whatsapp, l.observacoes, ROTULO_VINCULO[l.vinculo]].join(' ')).indexOf(q) >= 0;
     });
-    if (!v.length) { tbody.innerHTML = '<tr><td colspan="15" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
+    if (!v.length) { tbody.innerHTML = '<tr><td colspan="14" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
     tbody.innerHTML = v.map(function (l) {
       return '<tr><td>' + esc(l.numero) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + esc(l.nome) + '</td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
         '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l.whatsapp) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(l.setor) + '</td>' +
         '<td class="vpn-obs">' + esc(l.observacoes) + '</td>' +
-        '<td><button type="button" class="vpn-acao" data-doc="' + esc(l.id) + '">Ver documento</button></td>' +
         '<td><select data-st="' + esc(l.id) + '" aria-label="Situação">' +
         Object.keys(ROTULO).map(function (k) { return '<option value="' + k + '"' + (k === l.status ? ' selected' : '') + '>' + ROTULO[k] + '</option>'; }).join('') +
         '</select></td>' +
-        '<td><button type="button" class="vpn-acao" data-edit="' + esc(l.id) + '">Editar</button></td></tr>';
+        '<td class="vpn-acoes"><button type="button" class="vpn-acao" data-ver="' + esc(l.id) + '" title="Ver todas as informações">Visualizar</button>' +
+        '<button type="button" class="vpn-acao" data-edit="' + esc(l.id) + '" title="Editar os dados e as observações">Editar</button></td></tr>';
     }).join('');
   }
 
@@ -91,7 +91,7 @@
       lista = await r.json();
       desenhar();
     } catch (e) {
-      tbody.innerHTML = '<tr><td colspan="15" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="14" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
     }
   }
 
@@ -182,9 +182,32 @@
     } finally { salvarEd.disabled = false; salvarEd.textContent = 'Salvar'; }
   });
 
+  // ---- visualizar: todas as informações da solicitação num pop-up
+  var dlgVer = document.getElementById('vpnVer'), verId = null;
+  function abrirVisualizacao(id) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l) return;
+    verId = id;
+    var itens = [
+      ['Nº', l.numero], ['Recebida em', dataHoraBr(l.criado_em)], ['Nome completo', l.nome, 1], ['CPF', cpfBr(l.cpf)], ['RG', l.rg],
+      ['Data de nascimento', dataBr(l.data_nascimento)], ['Vínculo', ROTULO_VINCULO[l.vinculo]], ['Matrícula', l.matricula],
+      ['E-mail funcional', l.email_funcional, 1], ['WhatsApp', zapLink(l.whatsapp), 0, true], ['Setor', l.setor, 1],
+      ['Situação', ROTULO[l.status]], ['Última atualização', l.atualizado_em ? dataHoraBr(l.atualizado_em) + (l.atualizado_por ? ' por ' + l.atualizado_por : '') : ''],
+      ['Observações', l.observacoes, 1]
+    ];
+    document.getElementById('vpnVerDados').innerHTML = itens.map(function (i) {
+      var v = i[3] ? i[1] : esc(i[1]);
+      return '<div' + (i[2] ? ' class="vpn-largo"' : '') + '><dt>' + i[0] + '</dt><dd>' + (v || '—') + '</dd></div>';
+    }).join('');
+    dlgVer.showModal();
+  }
+  document.getElementById('vpnVerFechar').addEventListener('click', function () { dlgVer.close(); });
+  document.getElementById('vpnVerEditar').addEventListener('click', function () { dlgVer.close(); abrirEdicao(verId); });
+  document.getElementById('vpnVerDoc').addEventListener('click', function () { abrirDocumento(verId, this); });
+
   tbody.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-doc]');
-    if (b) abrirDocumento(b.getAttribute('data-doc'), b);
+    var b = e.target.closest('[data-ver]');
+    if (b) abrirVisualizacao(b.getAttribute('data-ver'));
     var ed = e.target.closest('[data-edit]');
     if (ed) abrirEdicao(ed.getAttribute('data-edit'));
   });

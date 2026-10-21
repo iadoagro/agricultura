@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
 <link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/padrao.css?v=2026101701">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102108">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102111">
 </head>
 <body class="vpn-equipe">
 <header class="cab-padrao"><h1>SISTEMA</h1><p>VPN</p></header>
@@ -46,11 +46,23 @@
 
   <div class="vpn-tab-wrap">
     <table class="vpn-tab">
-      <thead><tr><th>Nº</th><th>Recebida em</th><th>Nome</th><th>CPF</th><th>RG</th><th>Nascimento</th><th>E-mail funcional</th><th>WhatsApp</th><th>Vínculo</th><th>Matrícula</th><th>Setor</th><th>Observações</th><th>Documento</th><th>Situação</th><th>Editar</th></tr></thead>
-      <tbody id="vpnLista"><tr><td colspan="15" class="vpn-vazio">Carregando…</td></tr></tbody>
+      <thead><tr><th>Nº</th><th>Recebida em</th><th>Nome</th><th>CPF</th><th>RG</th><th>Nascimento</th><th>E-mail funcional</th><th>WhatsApp</th><th>Vínculo</th><th>Matrícula</th><th>Setor</th><th>Observações</th><th>Situação</th><th>Ações</th></tr></thead>
+      <tbody id="vpnLista"><tr><td colspan="14" class="vpn-vazio">Carregando…</td></tr></tbody>
     </table>
   </div>
 </main>
+
+<dialog class="vpn-dialogo" id="vpnVer" aria-labelledby="vpnVerTitulo">
+  <div class="vpn-dialogo-corpo">
+    <h2 id="vpnVerTitulo">Solicitação</h2>
+    <dl class="vpn-dados" id="vpnVerDados"></dl>
+    <div class="vpn-dialogo-acoes">
+      <button type="button" class="vpn-acao" id="vpnVerFechar">Fechar</button>
+      <button type="button" class="vpn-acao" id="vpnVerEditar">Editar</button>
+      <button type="button" class="vpn-btn" id="vpnVerDoc">Ver documento</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog class="vpn-dialogo" id="vpnEditar" aria-labelledby="vpnEditarTitulo">
   <form id="vpnEditarForm" method="dialog" novalidate>
@@ -74,6 +86,6 @@
     </div>
   </form>
 </dialog>
-<script src="../js/vpn-equipe.js?v=2026102105"></script>
+<script src="../js/vpn-equipe.js?v=2026102107"></script>
 </body>
 </html>

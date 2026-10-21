@@ -84,13 +84,28 @@ a.vpn-btn{text-decoration:none}
 .vpn-selo.recusada{background:#fee2e2;color:#991b1b}
 .vpn-tab select{padding:5px 8px;border:1px solid #cfd6e0;border-radius:7px;font:inherit;font-size:13px}
 .vpn-acao{padding:5px 11px;border:1px solid #cfd6e0;border-radius:7px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
+.vpn-acoes{white-space:nowrap}
+.vpn-acoes .vpn-acao+.vpn-acao{margin-left:6px}
 .vpn-acao:hover{background:#f1f5f9}
 .vpn-zap{color:#15803d;font-weight:600;text-decoration:none;white-space:nowrap}
 .vpn-zap:hover{text-decoration:underline}
 .vpn-obs{max-width:220px;white-space:pre-wrap;word-break:break-word;font-size:13px;color:#374151}
-.vpn-dialogo{width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 24px);padding:0;border:0;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.35)}
+.vpn-dialogo{position:fixed;inset:0;margin:auto;height:fit-content;overflow:auto;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 24px);padding:0;border:0;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.35)}
 .vpn-dialogo::backdrop{background:rgba(15,23,42,.5)}
 .vpn-dialogo form{padding:20px;display:block}
+.vpn-dialogo-corpo{padding:20px}
+.vpn-dialogo-ok{width:min(460px,calc(100vw - 24px));text-align:center}
+.vpn-dialogo-ok .vpn-dialogo-corpo{padding:26px 22px 22px}
+.vpn-dialogo-ok p{margin:0 0 10px;font-size:15px;line-height:1.5;color:#374151}
+.vpn-dialogo-ok .vpn-dialogo-acoes{justify-content:center;margin-top:18px}
+.vpn-dialogo-ok .vpn-btn{min-width:140px}
+.vpn-popup-icone{width:56px;height:56px;margin:0 auto 12px;border-radius:50%;background:#dcfce7;color:#166534;font-size:30px;font-weight:700;line-height:56px}
+.vpn-dados{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin:0}
+.vpn-dados div{min-width:0}
+.vpn-dados .vpn-largo{grid-column:1 / -1}
+.vpn-dados dt{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#6b7280}
+.vpn-dados dd{margin:2px 0 0;font-size:15px;color:var(--texto);word-break:break-word;white-space:pre-wrap}
+@media(max-width:640px){.vpn-dados{grid-template-columns:1fr}.vpn-dialogo-acoes{flex-wrap:wrap}.vpn-dialogo-acoes .vpn-btn,.vpn-dialogo-acoes .vpn-acao{flex:1 1 auto}}
 .vpn-dialogo h2{margin:0 0 14px;font-size:18px}
 .vpn-grade-edit label{display:block;font-size:13px;font-weight:600;color:#374151}
 .vpn-grade-edit input,.vpn-grade-edit select,.vpn-grade-edit textarea{display:block;width:100%;margin-top:5px;padding:9px 11px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:15px;font-weight:400;background:#fff;color:var(--texto)}

@@ -213,6 +213,9 @@
       document.getElementById('vpnNumero').textContent = '#' + (res && res.numero);
       form.hidden = true;
       document.getElementById('vpnOk').hidden = false;
+      document.getElementById('vpnPopupNumero').textContent = '#' + (res && res.numero);
+      var popup = document.getElementById('vpnPopup');
+      if (popup.showModal) popup.showModal();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       mostrar((err && err.message) || 'Não foi possível enviar. Tente novamente.', 'erro');
@@ -221,6 +224,7 @@
     }
   });
 
+  document.getElementById('vpnPopupOk').addEventListener('click', function () { document.getElementById('vpnPopup').close(); });
   document.getElementById('vpnOutra').addEventListener('click', function () {
     form.reset(); busca.value = ''; oculto.value = ''; atualizarVinculo(); form.hidden = false; document.getElementById('vpnOk').hidden = true;
   });
