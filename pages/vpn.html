@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPN | SISTEMA</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<script src="../js/ambiente-cliente.js?v=2026092302"></script>
+<script src="../js/admin-auth.js?v=2026102001"></script>
+<script src="../js/admin-gate.js?v=2026102101"></script>
+<script src="../js/rastreio.js?v=2026092530"></script>
+<script src="../js/nav.js?v=2026102101"></script>
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
+<link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
+<link rel="stylesheet" href="../css/nav.css?v=2026101201">
+<link rel="stylesheet" href="../css/padrao.css?v=2026101701">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102101">
+</head>
+<body class="vpn-equipe">
+<header class="cab-padrao"><h1>SISTEMA</h1><p>VPN</p></header>
+
+<main class="vpn-main">
+  <section class="vpn-link" aria-label="Link público do formulário">
+    <span>Link público do formulário (não precisa de login):</span>
+    <input type="text" id="vpnLink" readonly aria-label="Link público">
+    <button type="button" class="vpn-btn" id="vpnCopiar">Copiar link</button>
+  </section>
+
+  <div class="vpn-barra">
+    <input type="search" id="vpnBusca" placeholder="Buscar por nome, CPF, matrícula, e-mail ou setor" aria-label="Buscar">
+    <select id="vpnFiltro" aria-label="Situação">
+      <option value="">Todas as situações</option>
+      <option value="pendente">Pendentes</option>
+      <option value="atendida">Atendidas</option>
+      <option value="recusada">Recusadas</option>
+    </select>
+  </div>
+
+  <div class="vpn-tab-wrap">
+    <table class="vpn-tab">
+      <thead><tr><th>Nº</th><th>Recebida em</th><th>Nome</th><th>CPF</th><th>RG</th><th>Nascimento</th><th>E-mail funcional</th><th>Matrícula</th><th>Setor</th><th>Documento</th><th>Situação</th></tr></thead>
+      <tbody id="vpnLista"><tr><td colspan="11" class="vpn-vazio">Carregando…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+<script src="../js/vpn-equipe.js?v=2026102101"></script>
+</body>
+</html>

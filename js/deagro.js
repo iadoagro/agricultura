@@ -638,6 +638,19 @@
     });
   }
 
+  /* Café beneficiado por município (planilha Cafe_Beneficiado.pdf). Dado fixo: não vem da planilha do
+     DEAGRO e por isso não responde aos filtros do painel. kg, horas de máquina e sacas (und). */
+  var CAFE_BENEFICIADO = [
+    { mun: 'Acrelândia', kg: 231570, horas: 293.1, sacas: 3865 },
+    { mun: 'Senador Guiomard', kg: 79360, horas: 87.4, sacas: 1343 },
+    { mun: 'Brasiléia', kg: 51120, horas: 42.4, sacas: 852 },
+    { mun: 'Rio Branco', kg: 42470, horas: 38.7, sacas: 738 },
+    { mun: 'Capixaba', kg: 19880, horas: 20.6, sacas: 340 },
+    { mun: 'Plácido de Castro', kg: 9300, horas: 8.2, sacas: 155 },
+    { mun: 'Manoel Urbano', kg: 7380, horas: 9.9, sacas: 123 },
+    { mun: 'Feijó', kg: 780, horas: 1.2, sacas: 13 }
+  ];
+
   /* ============================================================= ABA: CAFÉ */
   function verCafe() {
     var cafe = linhas('cafe');
@@ -669,8 +682,23 @@
         { rot: 'Turmas', val: num(distintos(cursoProd.concat(cursoTec), 'turma')),
           sub: 'de cursos realizadas' },
         { rot: 'Concurso de qualidade', val: num(concurso.length), sub: 'produtores inscritos' }
+      ] },
+      { sec: 'Café beneficiado', cards: [
+        { rot: 'Total beneficiado', val: num(soma(CAFE_BENEFICIADO, 'kg')), un: 'kg', sub: 'produção beneficiada' },
+        { rot: 'Horas/máquina', val: num(soma(CAFE_BENEFICIADO, 'horas'), 1), un: 'h', sub: 'no beneficiamento' },
+        { rot: 'Sacas beneficiadas', val: num(soma(CAFE_BENEFICIADO, 'sacas')), un: 'un', sub: 'em ' + CAFE_BENEFICIADO.length + ' municípios' }
       ] }
     ]);
+
+    desenhar('gCafeBenefKg', agregar(CAFE_BENEFICIADO, 'mun', 'kg'));
+    desenhar('gCafeBenefSacas', agregar(CAFE_BENEFICIADO, 'mun', 'sacas'));
+    desenhar('gCafeBenefHoras', agregar(CAFE_BENEFICIADO, 'mun', 'horas'));
+    tabela('tCafeBenef2', [
+      { rot: 'Município', val: function (l) { return l.mun; } },
+      { rot: 'Total beneficiado (kg)', num: true, val: function (l) { return l.kg; } },
+      { rot: 'Horas/máquina', num: true, dec: 1, val: function (l) { return l.horas; } },
+      { rot: 'Sacas beneficiadas', num: true, val: function (l) { return l.sacas; } }
+    ], CAFE_BENEFICIADO, { total: true });
 
     desenhar('gCafeMun', agregar(cafe, 'mun'));
     desenhar('gCafeSexo', agregar(cafe, 'sexo'));

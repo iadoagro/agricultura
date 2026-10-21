@@ -238,6 +238,8 @@
   .lanc-listagem > .lanc-filtros::before{content:"Filtros";font-size:16px;font-weight:700;color:var(--tinta)}
   .lanc-listagem > .lanc-filtros label,.lanc-listagem > .lanc-filtros .lanc-filtro-busca,.lanc-listagem > .lanc-filtros .lanc-filtro-pessoa{flex:none;width:100%}
   .lanc-listagem > .lanc-filtros .btn{width:100%}
+  .lanc-listagem > .lanc-filtros .lanc-filtro-par{flex:none}   /* Mês/Dia: sem o flex-basis de 290px (virava um vazio no meio da coluna) */
+  .lanc-listagem > .lanc-filtros{justify-content:space-between}   /* a folga da altura da caixa vira espaço igual entre os campos, não um buraco */
   .lanc-listagem > .lanc-lista-cartao{grid-column:2;grid-row:2;min-width:0;padding:16px 18px;
     background:var(--superficie);border:1px solid var(--anel);border-radius:12px;box-shadow:var(--sombra-p)}
 }

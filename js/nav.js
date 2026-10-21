@@ -44,15 +44,17 @@
     'abrir-chamado.html':      { nome: 'Abrir chamado', grupo: 'Chamados', chave: 'chamados', pai: 'chamados.html' },
     'portarias.html':          { nome: 'Portarias', grupo: 'Documentos', chave: 'portarias', pai: 'index.html' },
     'organograma.html':        { nome: 'Organograma', grupo: 'Documentos', chave: 'organograma', pai: 'index.html' },
+    // formulário público (pages/vpn-formulario.html) fica fora do sistema; aqui só a lista da equipe
+    'vpn.html':                { nome: 'VPN', grupo: 'VPN', chave: 'vpn', pai: 'index.html', busca: 'acesso remoto solicitacao formulario' },
     'contatos.html':           { nome: 'Contatos', grupo: 'Documentos', chave: 'contatos', pai: 'index.html' },
     'admin-usuarios.html':     { nome: 'Usuários', grupo: 'Administração', admin: true, pai: 'index.html' },
     'logs.html':               { nome: 'Logs', grupo: 'Administração', admin: true, pai: 'index.html' },
     'cadastros-fiscais.html':  { nome: 'Bairros dos fiscais', grupo: 'Administração', admin: true, pai: 'index.html', busca: 'bairros fiscais eleicoes' },
     'admin-trocar-senha.html': { nome: 'Trocar senha', grupo: null, menu: false }
   };
-  var GRUPOS = ['Eleições', 'Painéis', 'Chamados', 'Documentos', 'Administração'];
+  var GRUPOS = ['Eleições', 'Painéis', 'Chamados', 'VPN', 'Documentos', 'Administração'];
   // Grupo com um item só que vira link solto no menu (como o Início), sem título de grupo.
-  var GRUPOS_SOLTOS = { 'Eleições': true };
+  var GRUPOS_SOLTOS = { 'Eleições': true, 'VPN': true };
   // Grupo que aparece como um link só no menu e vira abas dentro das páginas dele.
   var GRUPO_ABAS = 'Administração';
   var ICONES = {
@@ -60,6 +62,7 @@
     'Eleições': '<path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7z"/><path d="M22 19H2"/>',
     'Painéis': '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
     'Chamados': '<path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/>',
+    'VPN': '<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
     'Documentos': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
     'Administração': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
     'busca': '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',

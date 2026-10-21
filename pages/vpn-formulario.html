@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitação de VPN</title>
+<meta name="description" content="Formulário público para solicitar acesso à VPN.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<script src="../js/banco-config.js?v=2026091406"></script>
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102101">
+</head>
+<body class="vpn-publica">
+<header class="vpn-topo"><div class="vpn-topo-in"><b>Solicitação de acesso à VPN</b><small>Preencha todos os campos e anexe um documento de identificação com foto.</small></div></header>
+
+<main class="vpn-main">
+  <div class="vpn-ok" id="vpnOk" hidden>
+    <h2>Solicitação enviada</h2>
+    <p>Recebemos o seu pedido <b id="vpnNumero"></b>. A equipe responsável vai analisar os dados e entrar em contato pelo e-mail funcional informado.</p>
+    <button type="button" class="vpn-btn" id="vpnOutra">Enviar outra solicitação</button>
+  </div>
+
+  <form class="vpn-cartao" id="vpnForm" novalidate>
+    <div class="vpn-grade">
+      <div class="vpn-campo vpn-largo" data-campo="nome">
+        <label for="nome">Nome completo</label>
+        <input id="nome" name="nome" type="text" maxlength="120" autocomplete="name">
+        <span class="vpn-erro" role="alert"></span>
+      </div>
+      <div class="vpn-campo" data-campo="cpf">
+        <label for="cpf">CPF</label>
+        <input id="cpf" name="cpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off">
+        <span class="vpn-erro" role="alert"></span>
+      </div>
+      <div class="vpn-campo" data-campo="rg">
+        <label for="rg">RG</label>
+        <input id="rg" name="rg" type="text" maxlength="30" autocomplete="off">
+        <span class="vpn-erro" role="alert"></span>
+      </div>
+      <div class="vpn-campo" data-campo="data_nascimento">
+        <label for="data_nascimento">Data de nascimento</label>
+        <input id="data_nascimento" name="data_nascimento" type="date" autocomplete="bday">
+        <span class="vpn-erro" role="alert"></span>
+      </div>
+      <div class="vpn-campo" data-campo="matricula">
+        <label for="matricula">Matrícula</label>
+        <input id="matricula" name="matricula" type="text" maxlength="30" autocomplete="off">
+        <span class="vpn-erro" role="alert"></span>
+      </div>
+      <div class="vpn-campo vpn-largo" data-campo="email_funcional">
+        <label for="email_funcional">E-mail funcional</label>
+        <input id="email_funcional" name="email_funcional" type="email" maxlength="160" placeholder="nome@orgao.gov.br" autocomplete="email">
+        <span class="vpn-erro" role="alert"></span>
+      </div>
+      <div class="vpn-campo vpn-largo" data-campo="setor">
+        <label for="setor">Setor</label>
+        <input id="setor" name="setor" type="text" maxlength="120" autocomplete="organization-title">
+        <span class="vpn-erro" role="alert"></span>
+      </div>
+      <div class="vpn-campo vpn-largo" data-campo="documento">
+        <label for="documento">Documento de identificação com foto</label>
+        <input id="documento" name="documento" type="file" accept="image/jpeg,image/png,image/webp,application/pdf">
+        <small class="vpn-dica">RG ou CNH, frente e verso legíveis. Imagem (JPG, PNG, WEBP) ou PDF, até 5 MB.</small>
+        <span class="vpn-erro" role="alert"></span>
+      </div>
+    </div>
+    <input type="text" id="site" name="site" tabindex="-1" autocomplete="off" aria-hidden="true" class="vpn-isca">
+    <p class="vpn-aviso" id="vpnAviso" role="status" hidden></p>
+    <button class="vpn-btn" type="submit" id="vpnEnviar">Enviar solicitação</button>
+    <p class="vpn-lgpd">Os dados são usados apenas para liberar o acesso à VPN e ficam restritos à equipe responsável.</p>
+  </form>
+</main>
+<script src="../js/vpn-publico.js?v=2026102101"></script>
+</body>
+</html>

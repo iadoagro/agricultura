@@ -24,7 +24,7 @@
   // pessoa abre as páginas liberadas pra ela. Nenhuma página é liberada por padrão
   // (só as marcadas aqui valem).
   var PAGINAS = [['eleicoes', 'Eleições'], ['portarias', 'Portarias'], ['organograma', 'Organograma'],
-    ['chamados', 'Chamados'], ['dashboards', 'Painéis'], ['contatos', 'Contatos']];
+    ['chamados', 'Chamados'], ['vpn', 'VPN'], ['dashboards', 'Painéis'], ['contatos', 'Contatos']];
   var aberto = null;            // id da pessoa com os acessos abertos
   var rascunhos = new Map();    // id → páginas marcadas ainda não salvas
 

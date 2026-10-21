@@ -1,0 +1,50 @@
+/* VPN: formulário público (body.vpn-publica) e página interna da equipe (body.vpn-equipe). */
+.vpn-topo{background:var(--verde);color:#fff}
+.vpn-topo-in{max-width:860px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:4px}
+.vpn-topo-in b{font-size:20px}
+.vpn-topo-in small{opacity:.85;font-size:13px}
+.vpn-main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+.vpn-cartao{background:#fff;border:1px solid var(--linha);border-radius:14px;box-shadow:var(--sombra);padding:22px}
+.vpn-grade{display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}
+.vpn-largo{grid-column:1 / -1}
+.vpn-campo label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:#374151}
+.vpn-campo input{width:100%;padding:10px 12px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:15px;background:#fff;color:var(--texto)}
+.vpn-campo input:focus{outline:none;border-color:var(--verde2);box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+.vpn-campo input[type=file]{padding:8px;background:#f8fafc}
+.vpn-campo.com-erro input{border-color:#dc2626}
+.vpn-erro{display:block;min-height:0;font-size:12px;color:#dc2626;margin-top:4px}
+.vpn-erro:empty{display:none}
+.vpn-dica{display:block;margin-top:5px;font-size:12px;color:var(--cinza)}
+.vpn-isca{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.vpn-btn{display:inline-block;margin-top:20px;padding:12px 22px;border:0;border-radius:10px;background:var(--verde2);color:#fff;font:inherit;font-weight:700;font-size:15px;cursor:pointer}
+.vpn-btn:hover{filter:brightness(1.08)}
+.vpn-btn:disabled{opacity:.6;cursor:wait}
+.vpn-aviso{margin-top:16px;padding:10px 12px;border-radius:9px;background:#eff6ff;color:#1e3a8a;font-size:14px}
+.vpn-aviso.erro{background:#fef2f2;color:#991b1b}
+.vpn-lgpd{margin-top:14px;font-size:12px;color:var(--cinza)}
+.vpn-ok{background:#f0fdf4;border:1px solid #86efac;border-radius:14px;padding:22px;margin-bottom:16px}
+.vpn-ok h2{color:#166534;margin-bottom:8px}
+@media(max-width:640px){.vpn-grade{grid-template-columns:1fr}.vpn-cartao{padding:16px}}
+
+/* ---- página interna (equipe) ---- */
+.vpn-equipe .vpn-main{max-width:1200px}
+.vpn-link{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:14px 16px;box-shadow:var(--sombra);margin-bottom:16px}
+.vpn-link span{font-size:13px;color:#374151;font-weight:600}
+.vpn-link input{flex:1 1 280px;min-width:0;padding:9px 11px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:14px;background:#f8fafc}
+.vpn-link .vpn-btn{margin:0;padding:9px 16px;font-size:14px}
+.vpn-barra{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.vpn-barra input,.vpn-barra select{padding:9px 11px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:14px;background:#fff}
+.vpn-barra input{flex:1 1 260px;min-width:0}
+.vpn-tab-wrap{background:#fff;border:1px solid var(--linha);border-radius:12px;box-shadow:var(--sombra);overflow:auto}
+.vpn-tab{width:100%;border-collapse:collapse;font-size:14px}
+.vpn-tab th{text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#6b7280;border-bottom:1px solid var(--linha);white-space:nowrap}
+.vpn-tab td{padding:10px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.vpn-tab tr:last-child td{border-bottom:0}
+.vpn-selo{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700}
+.vpn-selo.pendente{background:#fef3c7;color:#92400e}
+.vpn-selo.atendida{background:#dcfce7;color:#166534}
+.vpn-selo.recusada{background:#fee2e2;color:#991b1b}
+.vpn-tab select{padding:5px 8px;border:1px solid #cfd6e0;border-radius:7px;font:inherit;font-size:13px}
+.vpn-acao{padding:5px 11px;border:1px solid #cfd6e0;border-radius:7px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
+.vpn-acao:hover{background:#f1f5f9}
+.vpn-vazio{padding:28px;text-align:center;color:var(--cinza)}

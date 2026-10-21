@@ -31,6 +31,7 @@
     { href: 'portarias.html', chave: 'portarias' },
     { href: 'organograma.html', chave: 'organograma' },
     { href: 'chamados.html', chave: 'chamados' },
+    { href: 'vpn.html', chave: 'vpn' },
     { href: 'dashboard.html', chave: 'dashboards' },
     { href: 'contatos.html', chave: 'contatos' }
   ];
@@ -227,6 +228,7 @@
     var h = '';
     if (pode('dashboards')) h += atalho('dashboard.html#lancamento', '+ Novo relatório', 'mais', true);
     if (pode('chamados')) h += atalho('abrir-chamado.html', 'Abrir chamado', 'chamado', false);
+    if (pode('vpn')) h += atalho('vpn.html', 'Solicitações de VPN', 'doc', false);
     if (pode('contatos')) h += atalho('contatos.html', 'Buscar contato', 'contato', false);
     if (pode('eleicoes')) h += atalho('eleicoes.html', 'Buscar fiscal', 'fiscal', false);
     if (pode('dashboards')) h += atalho('dashboard.html', 'Painel de Mecanização', 'painel', false) + atalho('deagro.html#geral', 'Painel do DEAGRO', 'painel', false);

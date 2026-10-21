@@ -14,6 +14,7 @@
     'organograma.html': 'organograma',
     'chamados.html': 'chamados',
     'cadastros-chamados.html': 'chamados',
+    'vpn.html': 'vpn',
     'contatos.html': 'contatos',
     'dashboards.html': 'dashboards',
     'dashboard.html': 'dashboards',
