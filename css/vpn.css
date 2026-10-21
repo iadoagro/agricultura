@@ -62,7 +62,9 @@
 @media(max-width:640px){.vpn-grade{grid-template-columns:1fr}.vpn-cartao{padding:16px}}
 
 /* ---- página interna (equipe) ---- */
-.vpn-equipe .vpn-main{max-width:1200px}
+.vpn-equipe .vpn-main{max-width:none;padding-left:clamp(12px,2vw,32px);padding-right:clamp(12px,2vw,32px)}
+a.vpn-btn{text-decoration:none}
+.vpn-tab td:nth-child(3){min-width:150px}
 .vpn-link{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:14px 16px;box-shadow:var(--sombra);margin-bottom:16px}
 .vpn-link span{font-size:13px;color:#374151;font-weight:600}
 .vpn-link input{flex:1 1 280px;min-width:0;padding:9px 11px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:14px;background:#f8fafc}
@@ -82,4 +84,18 @@
 .vpn-tab select{padding:5px 8px;border:1px solid #cfd6e0;border-radius:7px;font:inherit;font-size:13px}
 .vpn-acao{padding:5px 11px;border:1px solid #cfd6e0;border-radius:7px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
 .vpn-acao:hover{background:#f1f5f9}
+.vpn-zap{color:#15803d;font-weight:600;text-decoration:none;white-space:nowrap}
+.vpn-zap:hover{text-decoration:underline}
+.vpn-obs{max-width:220px;white-space:pre-wrap;word-break:break-word;font-size:13px;color:#374151}
+.vpn-dialogo{width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 24px);padding:0;border:0;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.35)}
+.vpn-dialogo::backdrop{background:rgba(15,23,42,.5)}
+.vpn-dialogo form{padding:20px;display:block}
+.vpn-dialogo h2{margin:0 0 14px;font-size:18px}
+.vpn-grade-edit label{display:block;font-size:13px;font-weight:600;color:#374151}
+.vpn-grade-edit input,.vpn-grade-edit select,.vpn-grade-edit textarea{display:block;width:100%;margin-top:5px;padding:9px 11px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:15px;font-weight:400;background:#fff;color:var(--texto)}
+.vpn-grade-edit textarea{resize:vertical}
+.vpn-dialogo-acoes{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:16px}
+.vpn-dialogo-acoes .vpn-btn{margin:0}
+.vpn-dialogo-acoes .vpn-acao{padding:11px 18px}
+@media(max-width:640px){.vpn-grade-edit input,.vpn-grade-edit select,.vpn-grade-edit textarea{font-size:16px}}
 .vpn-vazio{padding:28px;text-align:center;color:var(--cinza)}

@@ -27,6 +27,7 @@ create table if not exists public.vpn_solicitacoes (
   criado_em timestamptz not null default now()
 );
 alter table public.vpn_solicitacoes add column if not exists whatsapp text;
+alter table public.vpn_solicitacoes add column if not exists observacoes text;
 alter table public.vpn_solicitacoes add column if not exists vinculo text;
 alter table public.vpn_solicitacoes drop constraint if exists vpn_solicitacoes_vinculo_check;
 alter table public.vpn_solicitacoes add constraint vpn_solicitacoes_vinculo_check
@@ -152,5 +153,50 @@ end;
 $$;
 revoke all on function public.vpn_atualizar_status(uuid, text) from public;
 grant execute on function public.vpn_atualizar_status(uuid, text) to authenticated;
+
+-- ----------------------------------------------- edição pela equipe (dados + observações)
+create or replace function public.vpn_editar(p_id uuid, p jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_nome text := btrim(coalesce(p->>'nome', ''));
+  v_cpf text := regexp_replace(coalesce(p->>'cpf', ''), '\D', '', 'g');
+  v_rg text := btrim(coalesce(p->>'rg', ''));
+  v_email text := lower(btrim(coalesce(p->>'email_funcional', '')));
+  v_zap text := regexp_replace(coalesce(p->>'whatsapp', ''), '\D', '', 'g');
+  v_mat text := btrim(coalesce(p->>'matricula', ''));
+  v_setor text := btrim(coalesce(p->>'setor', ''));
+  v_vinculo text := lower(btrim(coalesce(p->>'vinculo', '')));
+  v_obs text := nullif(left(btrim(coalesce(p->>'observacoes', '')), 2000), '');
+  v_nasc date;
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  begin
+    v_nasc := (p->>'data_nascimento')::date;
+  exception when others then
+    raise exception 'Data de nascimento inválida.';
+  end;
+  if char_length(v_nome) < 5 or char_length(v_nome) > 120 then raise exception 'Informe o nome completo.'; end if;
+  if char_length(v_cpf) <> 11 or v_cpf ~ '^(\d)\1{10}$' then raise exception 'CPF inválido.'; end if;
+  if char_length(v_rg) < 3 or char_length(v_rg) > 30 then raise exception 'Informe o RG.'; end if;
+  if v_nasc is null or v_nasc < date '1900-01-01' or v_nasc > current_date then raise exception 'Data de nascimento inválida.'; end if;
+  if v_email !~ '^[^@\s]+@ac\.gov\.br$' or char_length(v_email) > 160 then raise exception 'Use o e-mail funcional, que termina com @ac.gov.br.'; end if;
+  if v_zap !~ '^\d{2}9?\d{8}$' then raise exception 'Informe o WhatsApp com DDD.'; end if;
+  if v_vinculo not in ('comissionado','terceirizado') then raise exception 'Informe o vínculo.'; end if;
+  if char_length(v_mat) > 30 then raise exception 'Matrícula muito longa.'; end if;
+  if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;
+  update public.vpn_solicitacoes
+     set nome = v_nome, cpf = v_cpf, rg = v_rg, data_nascimento = v_nasc, email_funcional = v_email,
+         whatsapp = v_zap, vinculo = v_vinculo, matricula = v_mat, setor = v_setor, observacoes = v_obs,
+         atualizado_por = initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' ')),
+         atualizado_em = now()
+   where id = p_id;
+end;
+$$;
+revoke all on function public.vpn_editar(uuid, jsonb) from public;
+grant execute on function public.vpn_editar(uuid, jsonb) to authenticated;
 
 commit;
