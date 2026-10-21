@@ -10,9 +10,9 @@
 <meta property="og:description" content="Painel de acompanhamento das vistorias de mecaniza&ccedil;&atilde;o agr&iacute;cola e a&ccedil;udagem.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=96e317c8">
-<link rel="stylesheet" href="../css/dashboard.css?v=2026102031">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026102123">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=04476821">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026102025">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026102102">
 <script src="../js/banco-config.js?v=61ce7c3f"></script>
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
@@ -1361,6 +1361,9 @@
             <p class="sub">Pedidos de exclus&atilde;o e edi&ccedil;&atilde;o aguardando sua aprova&ccedil;&atilde;o.</p>
             <div id="lancSolicitacoesAviso"></div>
             <div id="lancSolicitacoes"></div>
+            <h3 class="lanc-codigos-titulo">C&oacute;digos de libera&ccedil;&atilde;o</h3>
+            <p class="sub">Quem tem pedido de edi&ccedil;&atilde;o pendente de um dia anterior v&ecirc; o pr&oacute;prio c&oacute;digo e precisa digit&aacute;-lo para lan&ccedil;ar (m&aacute;ximo de 3 c&oacute;digos, um por dia). Aqui aparece quem j&aacute; digitou e a que horas; ao chegar em 3, a pessoa s&oacute; volta a lan&ccedil;ar quando voc&ecirc; aprovar ou recusar as solicita&ccedil;&otilde;es dela.</p>
+            <div id="lancCodigos"></div>
           </div>
         </section>
 
@@ -1375,6 +1378,23 @@
             <div class="lanc-dialogo-acoes">
               <button class="btn" type="button" id="lancMotivoCancelar">Cancelar</button>
               <button class="btn btn-verde" type="submit" id="lancMotivoConfirmar">Enviar solicita&ccedil;&atilde;o</button>
+            </div>
+          </form>
+        </dialog>
+
+        <!-- Pendência de um dia anterior: a pessoa só abre o formulário depois de digitar o código de liberação. -->
+        <dialog class="lanc-dialogo" id="lancCodigoDialogo" aria-labelledby="lancCodigoTitulo">
+          <form id="lancCodigoForm" method="dialog">
+            <h3 id="lancCodigoTitulo">C&oacute;digo de libera&ccedil;&atilde;o</h3>
+            <p>Voc&ecirc; tem solicita&ccedil;&atilde;o de altera&ccedil;&atilde;o pendente de um dia anterior. Para fazer novos lan&ccedil;amentos, digite o c&oacute;digo de libera&ccedil;&atilde;o abaixo. Isso vale por no m&aacute;ximo 3 dias: depois disso, s&oacute; o administrador libera, aprovando ou recusando as altera&ccedil;&otilde;es pendentes.</p>
+            <p class="lanc-codigo-seu">Seu c&oacute;digo: <b class="lanc-codigo-txt" id="lancCodigoMostrar"></b><span id="lancCodigoRestam"></span></p>
+            <label>Digite o c&oacute;digo
+              <input type="text" id="lancCodigoTexto" class="lanc-codigo-input" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX">
+            </label>
+            <p class="lanc-erro" id="lancCodigoErro" hidden></p>
+            <div class="lanc-dialogo-acoes">
+              <button class="btn" type="button" id="lancCodigoCancelar">Cancelar</button>
+              <button class="btn btn-verde" type="submit" id="lancCodigoConfirmar">Liberar</button>
             </div>
           </form>
         </dialog>
@@ -1685,7 +1705,7 @@
 <script src="../js/lancamento-ux.js?v=47fa56b2"></script>
 <script src="../js/lancamento-validacao.js?v=653eebb8"></script>
 <script src="../js/lancamento-pdf.js?v=278a38f6"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026102025"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026102102"></script>
 <script src="../js/painel-calculos.js?v=2026102034"></script>
 <script src="../js/tabela-ferramentas.js?v=2fd63664"></script>
 <script src="../js/painel-publico.js?v=2026102030"></script>
@@ -1697,9 +1717,9 @@
 <script src="../js/painel-cruzamentos.js?v=4628c41b"></script>
 <script src="../js/painel-produtores.js?v=5b52a3dc"></script>
 <script src="../js/painel-config.js?v=32772bde"></script>
-<script src="../js/painel-alertas.js?v=bcd6d314"></script>
+<script src="../js/painel-alertas.js?v=2026102103"></script>
 <script src="../js/painel-relatorios.js?v=287e0c16"></script>
-<script src="../js/painel-pontos.js?v=2026102034"></script>
+<script src="../js/painel-pontos.js?v=2026102124"></script>
 <script src="../js/assistente-dados.js?v=0d6b0c2c"></script>
 <script src="../js/motion-ui.js?v=7de49da0"></script>
 <script src="../js/motion-extras.js?v=0cb3d83b"></script>

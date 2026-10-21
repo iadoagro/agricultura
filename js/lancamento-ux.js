@@ -94,7 +94,7 @@
         var g = campo.nextElementSibling;
         if (g) alvo = g.querySelector('.lanc-seg-op') || campo;
       }
-      alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      alvo.scrollIntoView({ behavior: 'auto', block: 'center' });
       try { alvo.focus({ preventScroll: true }); } catch (e) { /* sem foco */ }
     }
 
@@ -216,6 +216,21 @@
       if (i >= 0 && lista2[i + 1]) { lista2[i + 1].focus(); if (lista2[i + 1].select) { try { lista2[i + 1].select(); } catch (er) { /* tipo sem seleção */ } } }
     });
 
+    /* Escolheu uma opção nos botões (sexo, CAF...) → o foco já vai ao próximo
+       campo. Só no clique/Enter/espaço: as setas só passeiam entre as opções. */
+    form.addEventListener('click', function (e) {
+      var op = e.target.closest && e.target.closest('.lanc-seg-op');
+      if (!op) return;
+      var grupo = op.closest('.lanc-seg');
+      setTimeout(function () {
+        if (!op.classList.contains('on')) return;   // clicou de novo e desmarcou: fica
+        var proximo = focaveis().filter(function (c) {
+          return !grupo.contains(c) && (grupo.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING);
+        })[0];
+        if (proximo) { proximo.focus(); if (proximo.select) { try { proximo.select(); } catch (er) { /* sem seleção */ } } }
+      }, 60);
+    });
+
     /* ----------------------------------------------- telefone: máscara */
     form.addEventListener('input', function (e) {
       var t = e.target;
@@ -236,7 +251,7 @@
           : el('lancSecAcudagem') && !el('lancSecAcudagem').hidden ? el('lancSecAcudagem') : null;
         if (!sec) return;
         var primeiro = sec.querySelector('select, input:not([type=hidden])');
-        sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        sec.scrollIntoView({ behavior: 'auto', block: 'start' });
         if (primeiro) { try { primeiro.focus({ preventScroll: true }); } catch (er) { /* sem foco */ } }
       }, 80);
     });

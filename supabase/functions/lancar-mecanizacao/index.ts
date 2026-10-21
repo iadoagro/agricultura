@@ -279,7 +279,82 @@ async function pendenciasDeDiaAnterior(email: string): Promise<number> {
   return status >= 200 && status < 300 && Array.isArray(corpo) ? corpo.length : 0;
 }
 
-const MSG_BLOQUEIO_PENDENCIA = 'Você tem solicitação de alteração pendente de um dia anterior e não pode fazer novos lançamentos até ela ser resolvida. Entre em contato com o administrador.';
+const MSG_BLOQUEIO_PENDENCIA = 'Você tem solicitação de alteração pendente de um dia anterior. Para fazer novos lançamentos, digite o código de liberação que o administrador vai te passar.';
+
+/* ------------------------------------------- código de liberação (pendência) --
+   Com pedido de edição pendente de um dia anterior, a pessoa só lança depois de
+   digitar um código gerado pelo sistema (database/mecanizacao-codigos-liberacao.sql).
+   O código é aleatório e único para sempre (coluna "codigo" única, linhas nunca
+   apagadas); quem digita fica registrado com data e hora (usado_em) e a conta
+   responsável vê isso na aba de solicitações. Código usado vale pelo resto do dia
+   (Acre); no dia seguinte, se a pendência continuar, pede outro. */
+const TABELA_CODIGOS = '/rest/v1/mecanizacao_codigos_liberacao';
+const ALFABETO_CODIGO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // sem 0/O/1/I: não confunde ao ler ou digitar
+
+const inicioDeHojeAcre = () => `${new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10)}T05:00:00Z`;
+const normalizarCodigo = (v: unknown) => String(v ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+function gerarCodigo(): string {
+  const b = crypto.getRandomValues(new Uint8Array(8));
+  return Array.from(b, (x) => ALFABETO_CODIGO[x % ALFABETO_CODIGO.length]).join('');
+}
+
+/** Já digitou um código hoje? Então a pendência não bloqueia até a virada do dia. */
+async function liberadoHoje(email: string): Promise<boolean> {
+  const [st, c] = await chamarSupabase('GET',
+    `${TABELA_CODIGOS}?select=id&usuario_email=eq.${encodeURIComponent(email)}&usado_em=gte.${encodeURIComponent(inicioDeHojeAcre())}&limit=1`);
+  return st >= 200 && st < 300 && Array.isArray(c) && c.length > 0;
+}
+
+/** Garante que a pessoa bloqueada tenha um código aguardando ser digitado e o devolve (aparece na janela dela
+    e na aba de solicitações do responsável). */
+async function garantirCodigoAberto(email: string): Promise<string> {
+  const [st, c] = await chamarSupabase('GET',
+    `${TABELA_CODIGOS}?select=codigo&usuario_email=eq.${encodeURIComponent(email)}&usado_em=is.null&limit=1`);
+  if (st >= 200 && st < 300 && Array.isArray(c) && c.length) return String((c[0] as Record<string, unknown>).codigo);
+  for (let i = 0; i < 5; i++) {   // 409 = código já existiu (nunca repete): sorteia outro
+    const codigo = gerarCodigo();
+    const [s2] = await chamarSupabase('POST', TABELA_CODIGOS, { codigo, usuario_email: email }, { Prefer: 'return=minimal' });
+    if (s2 >= 200 && s2 < 300) return codigo;
+    if (s2 !== 409) return '';
+  }
+  return '';
+}
+
+/** Cada pendência de dia anterior dá direito a no máximo 3 códigos (3 dias). Passou disso, só o responsável
+    destrava: aprovando ou recusando os pedidos pendentes da pessoa. */
+const MAX_CODIGOS = 3;
+const MSG_TRAVADO = 'Você já usou os 3 códigos de liberação e ainda tem solicitação de alteração pendente. Você só volta a fazer lançamentos quando o administrador aprovar ou recusar as alterações pendentes.';
+
+/** Códigos que a pessoa já digitou desde o pedido pendente mais antigo (desde = criado_em dele). */
+async function codigosUsadosDesde(email: string, desde: string): Promise<{ codigo: string; usado_em: string }[]> {
+  const [st, c] = await chamarSupabase('GET',
+    `${TABELA_CODIGOS}?select=codigo,usado_em&usuario_email=eq.${encodeURIComponent(email)}&usado_em=gte.${encodeURIComponent(desde)}&order=usado_em.asc`);
+  return st >= 200 && st < 300 && Array.isArray(c) ? c as { codigo: string; usado_em: string }[] : [];
+}
+
+/** Situação de quem tem pedido de edição pendente de dia anterior:
+    livre (nada a fazer), codigo (precisa digitar o código mostrado) ou travado (já gastou os 3 códigos). */
+async function situacaoBloqueio(email: string): Promise<{ estado: 'livre' | 'codigo' | 'travado'; codigo?: string; restantes?: number }> {
+  if (email === RESPONSAVEL_EMAIL) return { estado: 'livre' };
+  const [st, c] = await chamarSupabase('GET',
+    `${TABELA_SOLICITACOES}?select=criado_em&status=eq.pendente&tipo=eq.editar&solicitado_por_email=eq.${encodeURIComponent(email)}` +
+    `&criado_em=lt.${encodeURIComponent(inicioDeHojeAcre())}&order=criado_em.asc&limit=1`);
+  if (!(st >= 200 && st < 300 && Array.isArray(c) && c.length)) return { estado: 'livre' };
+  if (await liberadoHoje(email)) return { estado: 'livre' };
+  const usados = await codigosUsadosDesde(email, String((c[0] as Record<string, unknown>).criado_em));
+  if (usados.length >= MAX_CODIGOS) return { estado: 'travado' };
+  return { estado: 'codigo', codigo: await garantirCodigoAberto(email), restantes: MAX_CODIGOS - usados.length };
+}
+
+/** Responde "bloqueio" e fala o mesmo nos erros do "salvar". */
+function corpoBloqueio(s: { estado: string; codigo?: string; restantes?: number }): Record<string, unknown> {
+  return {
+    bloqueado: s.estado !== 'livre', exige_codigo: s.estado === 'codigo', travado: s.estado === 'travado',
+    codigo: s.codigo ?? '', restantes: s.restantes ?? 0,
+    erro: s.estado === 'travado' ? MSG_TRAVADO : s.estado === 'codigo' ? MSG_BLOQUEIO_PENDENCIA : '',
+  };
+}
 
 /** Grava um pedido de exclusão/edição pendente e encerra a requisição —
     mesma regra de criarSolicitacao() em lancar_mecanizacao.php. */
@@ -569,15 +644,52 @@ async function tratar(fd: FormData): Promise<never> {
   // A tela consulta antes de abrir o formulário, para avisar já no botão "Novo relatório".
   if (acao === 'bloqueio') {
     const email = await exigirSessao(fd);
-    const n = await pendenciasDeDiaAnterior(email);
-    responder(200, { ok: true, bloqueado: n > 0, pendencias: n, erro: n > 0 ? MSG_BLOQUEIO_PENDENCIA : '' });
+    responder(200, { ok: true, ...corpoBloqueio(await situacaoBloqueio(email)) });
+  }
+
+  // A pessoa digita o código de liberação: vale uma vez só e fica registrado com a hora.
+  if (acao === 'liberar') {
+    const email = await exigirSessao(fd);
+    const codigo = normalizarCodigo(fd.get('codigo'));
+    if (codigo === '') responder(400, { ok: false, erro: 'Digite o código de liberação.' });
+    if ((await situacaoBloqueio(email)).estado === 'travado') responder(403, { ok: false, travado: true, erro: MSG_TRAVADO });
+    const [st, c] = await chamarSupabase('PATCH',
+      `${TABELA_CODIGOS}?codigo=eq.${encodeURIComponent(codigo)}&usuario_email=eq.${encodeURIComponent(email)}&usado_em=is.null`,
+      { usado_em: new Date().toISOString() }, { Prefer: 'return=representation' });
+    if (st >= 200 && st < 300 && Array.isArray(c) && c.length) responder(200, { ok: true });
+    responder(403, { ok: false, erro: 'Código inválido ou já utilizado.' });
+  }
+
+  // Só a conta responsável: códigos gerados e quem já digitou (e quando).
+  if (acao === 'codigos') {
+    const email = await exigirSessao(fd);
+    if (email !== RESPONSAVEL_EMAIL) responder(403, { ok: false, erro: 'Só a conta responsável vê os códigos de liberação.' });
+    const [st, c] = await chamarSupabase('GET', `${TABELA_CODIGOS}?select=codigo,usuario_email,criado_em,usado_em&order=criado_em.desc&limit=200`);
+    if (st >= 200 && st < 300 && Array.isArray(c)) {
+      // quem já gastou os 3 códigos e continua com pedido pendente: o responsável precisa aprovar/recusar
+      const [sp, pend] = await chamarSupabase('GET',
+        `${TABELA_SOLICITACOES}?select=solicitado_por_email,criado_em&status=eq.pendente&tipo=eq.editar&criado_em=lt.${encodeURIComponent(inicioDeHojeAcre())}&order=criado_em.asc`);
+      const desde = new Map<string, string>();
+      if (sp >= 200 && sp < 300 && Array.isArray(pend)) {
+        for (const p of pend as Record<string, unknown>[]) {
+          const e = String(p.solicitado_por_email ?? '').toLowerCase();
+          if (e && !desde.has(e)) desde.set(e, String(p.criado_em));
+        }
+      }
+      const travados: Record<string, unknown>[] = [];
+      for (const [e, d] of desde) {
+        const usados = (c as Record<string, unknown>[]).filter((x) => String(x.usuario_email).toLowerCase() === e && x.usado_em && String(x.usado_em) >= d);
+        if (usados.length >= MAX_CODIGOS) travados.push({ usuario_email: e, desde: d, usos: usados.length });
+      }
+      responder(200, { ok: true, codigos: c, travados });
+    }
+    responder(502, { ok: false, erro: 'Não foi possível carregar os códigos. Confira se database/mecanizacao-codigos-liberacao.sql já foi executado.' });
   }
 
   if (acao === 'salvar') {
     const email = await exigirSessao(fd);
-    if (await pendenciasDeDiaAnterior(email) > 0) {
-      responder(403, { ok: false, bloqueado: true, erro: MSG_BLOQUEIO_PENDENCIA });
-    }
+    const situacao = await situacaoBloqueio(email);
+    if (situacao.estado !== 'livre') responder(403, { ok: false, ...corpoBloqueio(situacao) });
     const registro = lerRegistro(fd, email);
     await recusarSeRepetido(registro);
     // PDF opcional da ficha: validado antes de gravar o lançamento.

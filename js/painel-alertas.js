@@ -127,13 +127,9 @@
   function desenharGeral() {
     var alvo = el('kpisAlertasGeral');
     if (!alvo || !ULTIMO) return;
-    var n = total(ULTIMO);
-    if (!n) { alvo.innerHTML = ''; alvo.hidden = true; return; }
-    alvo.hidden = false;
-    A.tiles('kpisAlertasGeral', [{ _sec: 'Alertas' }, {
-      rot: 'Alertas de produtividade', val: G.num(n), ir: 'alertas', cls: 'alerta-kpi',
-      sub: G.num(ULTIMO.tec.lista.length) + ' técnico(s) · ' + G.num(ULTIMO.esc.lista.length) + ' escritório(s) · ' + G.num(ULTIMO.mun.length) + ' município(s)'
-    }]);
+    // o indicador "Alertas de produtividade" na visão geral foi removido; os alertas seguem na aba Alertas
+    alvo.innerHTML = '';
+    alvo.hidden = true;
   }
 
   function desenharConfig() {

@@ -16,10 +16,14 @@
   // Depois que uma vistoria é salva, um lote costuma continuar com o mesmo
   // técnico, escritório, data e município (ver os 3 exemplos reais: mesma
   // vistoria, mesmo dia, 3 beneficiários diferentes) — vale a pena manter.
-  var CAMPOS_MANTIDOS_APOS_SALVAR = ['tipo_servico', 'data_vistoria', 'escritorio_local', 'responsavel_tecnico', 'municipio'];
+  // Máquinas e implementos usados também se repetem no lote (mesmo trator, mesmo
+  // dia): vão junto, em loteCaixas, e se desmarcam com um clique quando mudam.
+  var CAMPOS_MANTIDOS_APOS_SALVAR = ['tipo_servico', 'data_vistoria', 'escritorio_local', 'responsavel_tecnico', 'municipio',
+    'tipo_uso', 'num_identificacao_patrimonio'];
 
   var form, ajuda, iniciado = false;
-  var loteAnterior = null;  // {tipo_servico, data_vistoria, escritorio_local, responsavel_tecnico, municipio} do último salvo
+  var loteAnterior = null;  // {tipo_servico, data_vistoria, escritorio_local, responsavel_tecnico, municipio, ...} do último salvo
+  var loteCaixas = null;    // {maquinas, implementos} marcados no último salvo
 
   var esc = window.LANCAMENTO_CAMPOS.esc;
   function el(id) { return document.getElementById(id); }
@@ -61,7 +65,7 @@
       Object.keys(loteAnterior).forEach(function (c) { if (loteAnterior[c]) form.elements[c].value = loteAnterior[c]; });
     }
     ajuda.sincronizarEscritorioPorMunicipio();   // trava/destrava conforme o município (seedado ou vazio)
-    ajuda.preencherDinamicos();
+    ajuda.preencherDinamicos(seedLote && loteCaixas ? loteCaixas : undefined);
     ajuda.alternarSecoesServico();
     ajuda.alternarEtnia();
     ajuda.alternarAssociacao();
@@ -116,12 +120,18 @@
         botao.disabled = false;
         if (!res.corpo.ok) {
           aviso('lancSalvarStatus', 'erro', esc(res.corpo.erro || 'Não foi possível salvar.'));
+          // a pendência passou a valer com o formulário aberto (virou o dia): pede o código e deixa salvar de novo
+          if (res.corpo.exige_codigo) {
+            pedirCodigo(res.corpo).then(function (liberou) { if (liberou) aviso('lancSalvarStatus', 'ok', 'Código aceito. Clique em Salvar de novo.'); });
+            return;
+          }
           // fica no log: "Enviou o formulário" sozinho não diz se gravou
           window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('erro', 'mecanizacao', 'Não conseguiu salvar o lançamento de mecanização (HTTP ' + res.status + '): ' + (res.corpo.erro || 'sem detalhe'));
           return;
         }
         loteAnterior = {};
         CAMPOS_MANTIDOS_APOS_SALVAR.forEach(function (c) { loteAnterior[c] = form.elements[c].value; });
+        loteCaixas = { maquinas: ajuda.marcadosDe(el('lancMaquinas')), implementos: ajuda.marcadosDe(el('lancImplementos')) };
         var nome = form.elements['nome_beneficiario'].value;
         window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('criar', 'mecanizacao', 'Cadastrou o lançamento de mecanização de "' + nome + '"');
         perguntarOutro(res.corpo.registro || {}, nome);
@@ -191,6 +201,47 @@
       };
       el('lancMotivoCancelar').onclick = function () { fechar(null); };
       dlg.onclose = function () { fechar(null); };
+      dlg.showModal();
+      campo.focus();
+    });
+  }
+
+  /* Pop-up do código de liberação (pendência de um dia anterior). Promise com
+     true quando o servidor aceitou o código, ou false se cancelou. O código
+     digitado fica registrado, com a hora, na aba de solicitações do responsável. */
+  function pedirCodigo(info) {
+    var dlg = el('lancCodigoDialogo'), campo = el('lancCodigoTexto'), erro = el('lancCodigoErro'), ok = el('lancCodigoConfirmar');
+    erro.hidden = true;
+    // o código aparece para a própria pessoa; o limite é de 3 códigos por pendência (depois só o responsável destrava)
+    var cod = String((info && info.codigo) || '');
+    el('lancCodigoMostrar').textContent = cod ? cod.slice(0, 4) + '-' + cod.slice(4) : '—';
+    var restam = info && info.restantes;
+    el('lancCodigoRestam').textContent = restam ? (restam === 1 ? 'Este é o seu último código de liberação.' : 'Você ainda tem ' + restam + ' códigos de liberação (um por dia).') : '';
+    campo.value = '';
+    return new Promise(function (resolve) {
+      function fechar(valor) {
+        el('lancCodigoForm').onsubmit = null;
+        el('lancCodigoCancelar').onclick = null;
+        dlg.onclose = null;
+        if (dlg.open) dlg.close();
+        resolve(valor);
+      }
+      el('lancCodigoForm').onsubmit = function (e) {
+        e.preventDefault();
+        var codigo = campo.value.trim();
+        if (!codigo) { erro.textContent = 'Digite o código.'; erro.hidden = false; campo.focus(); return; }
+        ok.disabled = true;
+        enviarAcao({ acao: 'liberar', codigo: codigo })
+          .then(function (res) {
+            ok.disabled = false;
+            if (!res.corpo.ok) { erro.textContent = res.corpo.erro || 'Código inválido.'; erro.hidden = false; campo.select(); return; }
+            window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento('liberar', 'mecanizacao', 'Digitou o código de liberação ' + codigo.toUpperCase() + ' para lançar com pendência de dia anterior');
+            fechar(true);
+          })
+          .catch(function () { ok.disabled = false; erro.textContent = 'Sem conexão com o servidor.'; erro.hidden = false; });
+      };
+      el('lancCodigoCancelar').onclick = function () { fechar(false); };
+      dlg.onclose = function () { fechar(false); };
       dlg.showModal();
       campo.focus();
     });
@@ -312,19 +363,34 @@
   }
 
   function executarResolucao(sol, decisao) {
+    var nome = sol.nome_beneficiario || '';
     aviso('lancSolicitacoesAviso', 'carregando', 'Registrando decisão…');
+    function concluido() {
+      var oque = sol.tipo === 'excluir' ? 'exclusão' : 'edição';
+      window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento(decisao === 'aprovar' ? 'aprovar' : 'recusar', 'mecanizacao',
+        (decisao === 'aprovar' ? 'Aprovou' : 'Recusou') + ' a ' + oque + ' do lançamento de mecanização de "' + nome + '"',
+        { solicitado_por: sol.solicitado_por_email, motivo: sol.motivo });
+      aviso('lancSolicitacoesAviso', 'ok', 'Solicitação ' + (decisao === 'aprovar' ? 'aprovada' : 'recusada') + '.');
+      carregarSolicitacoes();
+      carregarRecentes();
+    }
+    /* A resposta pode se perder (conexão oscilando, função demorando) com a decisão já gravada no banco: antes
+       de mostrar erro, confere se o pedido ainda está pendente. Se saiu da lista, a decisão valeu. */
+    function confirmar() {
+      aviso('lancSolicitacoesAviso', 'carregando', 'Confirmando se a decisão foi registrada…');
+      return enviarAcao({ acao: 'solicitacoes' }).then(function (r) {
+        var lista = r.corpo.ok ? (r.corpo.solicitacoes || []) : null;
+        if (lista && !lista.some(function (s) { return s.id === sol.id; })) { concluido(); return; }
+        aviso('lancSolicitacoesAviso', 'erro', lista ? 'A decisão não foi registrada. Tente de novo.' : 'Não foi possível confirmar se a decisão foi registrada. Recarregue a página para conferir.');
+      });
+    }
     enviarAcao({ acao: 'resolver', id: sol.id, decisao: decisao })
       .then(function (res) {
+        if (res.status === 404) return confirmar();   // "não encontrada ou já resolvida": uma tentativa anterior pode ter valido
         if (!res.corpo.ok) { aviso('lancSolicitacoesAviso', 'erro', esc(res.corpo.erro || 'Não foi possível registrar a decisão.')); return; }
-        var oque = sol.tipo === 'excluir' ? 'exclusão' : 'edição';
-        window.ADMIN_AUTH && window.ADMIN_AUTH.registrarEvento(decisao === 'aprovar' ? 'aprovar' : 'recusar', 'mecanizacao',
-          (decisao === 'aprovar' ? 'Aprovou' : 'Recusou') + ' a ' + oque + ' do lançamento de mecanização de "' + nome + '"',
-          { solicitado_por: sol.solicitado_por_email, motivo: sol.motivo });
-        aviso('lancSolicitacoesAviso', 'ok', 'Solicitação ' + (decisao === 'aprovar' ? 'aprovada' : 'recusada') + '.');
-        carregarSolicitacoes();
-        carregarRecentes();
-      }, function (e) { if (e !== null) throw e; })
-      .catch(function () { aviso('lancSolicitacoesAviso', 'erro', 'Sem conexão com o servidor.'); });
+        concluido();
+      }, function () { return confirmar(); })
+      .catch(function () { aviso('lancSolicitacoesAviso', 'erro', 'Sem conexão com o servidor. Recarregue a página para conferir se a decisão foi registrada.'); });
   }
 
   /* Abas da lista: "Lançamentos" (tabela de sempre) e, só para o responsável, "Solicitações pendentes",
@@ -340,10 +406,40 @@
     ind.setAttribute('aria-pressed', nome === 'solicitacoes' ? 'true' : 'false');
   }
 
+  /* Códigos de liberação (só responsável): o código de cada pessoa bloqueada e, para os já digitados, quem digitou e quando. */
+  function carregarCodigos() {
+    enviarAcao({ acao: 'codigos' })
+      .then(function (res) {
+        if (!res.corpo.ok) { el('lancCodigos').innerHTML = '<p class="nota">' + esc(res.corpo.erro || 'Não foi possível carregar os códigos.') + '</p>'; return; }
+        var lista = res.corpo.codigos || [];
+        // quem gastou os 3 códigos e segue com pedido pendente: só volta a lançar quando o responsável aprovar/recusar
+        var alerta = (res.corpo.travados || []).map(function (t) {
+          var usos = lista.filter(function (c) { return c.usuario_email === t.usuario_email && c.usado_em && c.usado_em >= t.desde; })
+            .map(function (c) { return '<span class="lanc-codigo-txt">' + esc(c.codigo.slice(0, 4) + '-' + c.codigo.slice(4)) + '</span> (' + esc(window.DATA_BR.dataHoraBr(c.usado_em)) + ')'; });
+          return '<div class="lanc-codigos-alerta"><b>' + esc(nomeDeEmail(t.usuario_email)) + '</b> já usou os 3 códigos de liberação: ' + usos.join(', ') +
+            '. Está impedida de lançar até você <b>aprovar ou recusar</b> as solicitações pendentes dela.</div>';
+        }).join('');
+        if (!lista.length) { el('lancCodigos').innerHTML = '<p class="nota">Nenhum código gerado ainda.</p>'; return; }
+        el('lancCodigos').innerHTML = alerta + '<div class="tabela-scroll"><table class="lanc-tabela"><thead><tr>' +
+          '<th>Código</th><th>Pessoa</th><th>Gerado em</th><th>Situação</th>' +
+          '</tr></thead><tbody>' + lista.map(function (c) {
+            var cod = String(c.codigo || '');
+            return '<tr><td><span class="lanc-codigo-txt">' + esc(cod.slice(0, 4) + '-' + cod.slice(4)) + '</span></td>' +
+              '<td>' + esc(nomeDeEmail(c.usuario_email)) + '</td>' +
+              '<td>' + esc(window.DATA_BR.dataHoraBr(c.criado_em)) + '</td>' +
+              '<td>' + (c.usado_em
+                ? '<span class="lanc-selo lanc-selo-editar">Digitado em ' + esc(window.DATA_BR.dataHoraBr(c.usado_em)) + '</span>'
+                : '<span class="lanc-selo lanc-selo-excluir">Aguardando digitação</span>') + '</td></tr>';
+          }).join('') + '</tbody></table></div>';
+      }, function () {})
+      .catch(function () { /* painel de apoio: falha aqui não impede o resto */ });
+  }
+
   function carregarSolicitacoes() {
     var aba = el('lancAbaSolic');
     if (!ehResponsavel) { aba.hidden = true; mostrarAba('lancamentos'); return; }
     aba.hidden = false;
+    carregarCodigos();
     enviarAcao({ acao: 'solicitacoes' })
       .then(function (res) {
         var lista = (res.corpo.ok && res.corpo.solicitacoes) || [];
@@ -1105,7 +1201,7 @@
       // segue no formulário: serviço, data, município, escritório e técnico ficam; o resto zera
       limparFormulario(true);
       aviso('lancSalvarStatus', '', '');
-      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      form.scrollIntoView({ behavior: 'auto', block: 'start' });
       if (ux) { ux.atualizar(); setTimeout(ux.focarPrimeiro, 250); }
     }
     function nao() {
@@ -1215,7 +1311,14 @@
       // pedido de edição pendente de um dia anterior: não abre o formulário (o servidor também recusa ao salvar)
       enviarAcao({ acao: 'bloqueio' })
         .then(function (res) {
-          if (res.corpo && res.corpo.bloqueado) { aviso('lancListaAviso', 'erro', esc(res.corpo.erro)); return; }
+          if (res.corpo && res.corpo.bloqueado) {
+            if (res.corpo.travado) { aviso('lancListaAviso', 'erro', esc(res.corpo.erro)); return; }
+            return pedirCodigo(res.corpo).then(function (liberou) {
+              if (!liberou) { aviso('lancListaAviso', 'erro', esc(res.corpo.erro)); return; }
+              limparFormulario(true);
+              mostrarFormulario();
+            });
+          }
           limparFormulario(true);
           mostrarFormulario();
         })

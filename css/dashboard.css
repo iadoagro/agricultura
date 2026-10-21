@@ -1041,15 +1041,11 @@ table.dados tr.tf-grupo td{font-weight:600;border-top:1px solid var(--linha-t,#d
 table.dados tr.tf-grupo .tf-n{font-weight:400;opacity:.7}
 table.dados tr.tf-grupo:focus-visible{outline:2px solid var(--acento);outline-offset:-2px}
 
-/* "Lançar relatórios" vem logo DEPOIS de Exportar (inclusive no link público), com destaque próprio em verde,
-   diferente das demais; "Mostrar mais" fica por último */
+/* "Lançar relatórios" vem logo DEPOIS de Exportar (inclusive no link público), sem destaque próprio;
+   "Mostrar mais" fica por último */
 .abas-pista>.aba[data-aba="relatorio"]{order:98}
 .abas-pista>.aba[data-aba="lancamento"],.abas-pista>.aba-lancar-publico{order:99}
 .abas-pista>.aba[data-aba="insercoes"]{order:100}
-.abas-pista>.aba[data-aba="lancamento"],.abas-pista>.aba-lancar-publico{color:#15803d;background:rgba(34,197,94,.10);border-radius:10px 10px 0 0}
-.abas-pista>.aba[data-aba="lancamento"] svg,.abas-pista>.aba-lancar-publico svg{opacity:1}
-.abas-pista>.aba[data-aba="lancamento"]:hover,.abas-pista>.aba-lancar-publico:hover{color:#166534;background:rgba(34,197,94,.20)}
-.abas-pista>.aba[data-aba="lancamento"].ativa{color:#166534;border-bottom-color:#16a34a;background:rgba(34,197,94,.16)}
 
 /* calendários de inserção (aba Inserções) */
 .cal-meses{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
@@ -1445,3 +1441,48 @@ html.pub-travado,html.pub-travado body{overflow:hidden}
 @keyframes pub-giro{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pub-login-ov,.pub-login,.pub-campo.pub-tremer{animation:none!important}}
 @media (max-width:420px){.pub-login{padding:26px 20px 20px;border-radius:18px}.pub-login h1{font-size:20px}}
+
+/* ---- animações curtas (painel de mecanização e formulário de lançamento) ----
+   Quem digita muitas fichas por dia não deve esperar o movimento acabar: as
+   transições caem para 0,1 s e as entradas para 0,12 s, sem atraso. Os giros
+   infinitos (carregando) e o destaque .painel-piscar ficam como estão. */
+html{scroll-behavior:auto!important}
+body *,body *::before,body *::after{transition-duration:.1s!important;transition-delay:0s!important}
+body>*:not(script,style,link,template),
+header h1,header p,.kpi,.cards .card-link,tbody tr,
+.aba-conteudo.ativa,.conteudo-abas>.ativa,.select-busca-painel,
+.admin-overlay.show,.admin-overlay.show>.admin-box,
+.mdl-fundo,.mdl-caixa,dialog[open],dialog[open]::backdrop{animation-duration:.12s!important;animation-delay:0s!important}
+
+/* balão de um atendimento no mapa de pontos (js/painel-pontos.js, popup) */
+.pt-popup .leaflet-popup-content-wrapper{padding:0;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.28)}
+.pt-popup .leaflet-popup-content{margin:0;width:auto !important}
+.pt-card{padding:14px 16px 12px;border-top:5px solid #94a3b8;font:13px/1.4 "Roboto","Segoe UI",Arial,sans-serif;color:#1f2937}
+.pt-card.pt-mec{border-top-color:#16a34a}.pt-card.pt-acu{border-top-color:#2563eb}
+.pt-tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#f3f4f6;color:#4b5563}
+.pt-mec .pt-tag{background:#dcfce7;color:#166534}.pt-acu .pt-tag{background:#dbeafe;color:#1e40af}
+.pt-card h4{margin:8px 0 2px;font-size:16px;line-height:1.25;color:#111827}
+.pt-sub{margin:0 0 10px;color:#6b7280}
+.pt-dados{display:flex;gap:8px;margin-bottom:8px}
+.pt-dados>div{flex:1;padding:6px 8px;border-radius:10px;background:#f4f6f4;text-align:center}
+.pt-dados b{display:block;font-size:16px}.pt-dados span{font-size:11px;color:#6b7280}
+.pt-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.pt-chips span{padding:2px 9px;border-radius:999px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:600}
+.pt-info{margin:0 0 10px;padding-top:8px;border-top:1px solid #e5e7eb;display:grid;gap:3px}
+.pt-info>div{display:flex;gap:8px}.pt-info dt{flex:0 0 78px;color:#6b7280}.pt-info dd{margin:0;font-weight:600}
+a.pt-abrir{display:block;padding:8px 10px;border-radius:10px;background:#1d4ed8;color:#fff !important;text-align:center;font-weight:700;text-decoration:none}
+a.pt-abrir:hover{background:#1e40af}
+
+/* balão do mapa: mais largo e baixo (2 colunas nos dados da vistoria) */
+.pt-popup .leaflet-popup-content{width:300px !important}
+.pt-card{padding:12px 14px 12px}
+.pt-card h4{margin:6px 0 1px;font-size:15px}
+.pt-sub{margin:0 0 8px;font-size:12.5px}
+.pt-dados{margin-bottom:8px}
+.pt-dados>div{padding:5px 8px}
+.pt-info{grid-template-columns:1fr 1fr;gap:6px 12px;margin-bottom:6px}
+.pt-info>div{display:block}
+.pt-info dt{font-size:11px}
+.pt-info dd{font-size:13px}
+.pt-lanc{margin:0 0 10px;font-size:11.5px;color:#6b7280}
+a.pt-abrir{padding:7px 10px}

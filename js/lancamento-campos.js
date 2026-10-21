@@ -586,7 +586,7 @@
       var nomes = faltando.map(function (f) { return f.rotulo; });
       aviso.textContent = 'Antes de escolher o serviço, corrija/preencha: ' + nomes.join(', ') + '.';
       aviso.hidden = false;
-      faltando[0].campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      faltando[0].campo.scrollIntoView({ behavior: 'auto', block: 'center' });
       try { faltando[0].campo.focus({ preventScroll: true }); } catch (e) { /* sem foco */ }
       return false;
     }
@@ -638,7 +638,7 @@
       if (erroMaq) erroMaq.hidden = true;
       if (tipo === 'Mecanização' && culturasAtuais().length < 1) {
         el('lancCulturaErro').hidden = false;
-        el('lancCulturaErro').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el('lancCulturaErro').scrollIntoView({ behavior: 'auto', block: 'center' });
         return false;
       }
       if (tipo === 'Açudagem') {
@@ -657,7 +657,7 @@
       }
       if (tipo && coletarMarcados(el('lancMaquinas')).length < 1) {
         if (erroMaq) erroMaq.hidden = false;
-        el('lancMaquinas').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el('lancMaquinas').scrollIntoView({ behavior: 'auto', block: 'center' });
         return false;
       }
       return true;

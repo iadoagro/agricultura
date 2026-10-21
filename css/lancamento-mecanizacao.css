@@ -579,6 +579,13 @@
 .lanc-aba:hover{color:var(--tinta)}
 .lanc-aba.ativa{color:var(--acento-fundo);border-bottom-color:var(--acento-fundo)}
 .lanc-sol-cartao > .sub{margin:0 0 12px}
+.lanc-codigos-titulo{margin:22px 0 4px;font-size:15px}
+.lanc-codigo-input{width:100%;box-sizing:border-box;font:700 20px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.18em;text-transform:uppercase;text-align:center}
+.lanc-codigo-seu{margin:10px 0;font-size:14px}
+.lanc-codigo-seu .lanc-codigo-txt{font-size:20px}
+.lanc-codigo-seu span{display:block;margin-top:2px;font-size:12px;color:var(--cinza,#6b7280)}
+.lanc-codigos-alerta{margin:0 0 12px;padding:10px 14px;border:1px solid var(--tag-acu-tx);border-radius:10px;background:var(--tag-acu-bg);color:var(--tag-acu-tx);font-size:13px;line-height:1.5}
+.lanc-codigo-txt{font:700 13px ui-monospace,Consolas,monospace;letter-spacing:.1em}
 /* na aba Lançar relatórios a margem de baixo e o rodapé encolhem: o espaço vira altura da lista e dos filtros */
 html:has(#painel-lancamento.ativa) .wrap{padding-bottom:6px}
 html:has(#painel-lancamento.ativa) footer{padding:8px 24px}
@@ -627,3 +634,171 @@ html:has(#painel-lancamento.ativa) footer{padding:8px 24px}
   .lanc-listagem > .lanc-lista-cartao > .lanc-filtros-topo,.lanc-listagem > .lanc-lista-cartao > .lanc-paginacao,
   .lanc-listagem > .lanc-lista-cartao > #lancListaAviso,.lanc-listagem > .lanc-lista-cartao > #lancSolicitacoesAviso,.lanc-listagem > .lanc-lista-cartao > .sub{flex:none}
 }
+
+/* ---- Ficha de visualização (pages/lancamento-editar.html?modo=ver): dados formatados, só leitura ---- */
+.ficha{grid-column:1/-1;display:flex;flex-direction:column;gap:16px}
+.ficha-topo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:20px 22px;border:1px solid var(--linha);border-radius:14px;background:var(--superficie,#fff)}
+.ficha-topo-id h2{margin:6px 0 2px;font-size:1.5rem;line-height:1.2}
+.ficha-topo-id p{margin:0;color:var(--cinza)}
+.ficha-selo{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700}
+.ficha-selo-mec{background:var(--acento-suave);color:var(--acento-fundo)}
+.ficha-selo-acu{background:var(--tag-acu-bg);color:var(--tag-acu-tx)}
+.ficha-resumo{display:flex;flex-wrap:wrap;gap:12px}
+.ficha-resumo>div{min-width:120px;padding:10px 16px;border-radius:12px;background:var(--superficie2,#f4f6f4);text-align:center}
+.ficha-resumo b{display:block;font-size:1.25rem}
+.ficha-resumo span{font-size:12px;color:var(--cinza)}
+.ficha-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
+.ficha-secao{padding:18px 20px;border:1px solid var(--linha);border-radius:14px;background:var(--superficie,#fff)}
+.ficha-secao h3{margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--linha);font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cinza)}
+.ficha-secao h4{margin:14px 0 6px;font-size:.82rem;color:var(--cinza)}
+.ficha-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;margin:0}
+.ficha-campo{min-width:0}
+.ficha-larga{grid-column:1/-1}
+.ficha-campo dt{font-size:12px;color:var(--cinza);margin-bottom:2px}
+.ficha-campo dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.ficha-vazio{color:var(--cinza);font-weight:400}
+.ficha-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ficha-chip{padding:4px 11px;border-radius:999px;background:var(--acento-suave);color:var(--acento-fundo);font-size:13px;font-weight:600}
+.ficha-tabela{width:100%;border-collapse:collapse;font-size:14px}
+.ficha-tabela th{text-align:left;font-size:12px;color:var(--cinza);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--linha)}
+.ficha-tabela td{padding:8px;border-bottom:1px solid var(--linha)}
+.ficha-tabela .num{text-align:right;font-variant-numeric:tabular-nums}
+.ficha-tabela tfoot td{font-weight:700;border-bottom:0}
+.ficha-obs{margin:0;white-space:pre-wrap;line-height:1.55}
+@media (max-width:600px){.ficha-grade{grid-template-columns:1fr}.ficha-campos{grid-template-columns:1fr}}
+
+/* a página de edição/visualização ocupa a largura inteira da tela */
+.wrap>.lanc-grid{flex:1;min-width:0;width:100%}
+
+/* ficha: grade de 12 colunas, topo com quem lançou e ações */
+.ficha-grade{grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:dense}
+.ficha-c4{grid-column:span 4}.ficha-c6{grid-column:span 6}.ficha-c8{grid-column:span 8}
+.ficha-c4 .ficha-campos{grid-template-columns:1fr}
+.ficha-topo-dir{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.ficha-acoes{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;align-items:center}
+.ficha-acoes a{font-size:13px}
+.ficha-acoes:empty{display:none}
+.ficha-topo-id p.ficha-lancou{margin-top:8px;font-size:13px}
+.ficha-lancou span{color:var(--cinza)}
+.ficha-lancou b{color:var(--texto)}
+@media (max-width:1100px){.ficha-c4,.ficha-c6,.ficha-c8{grid-column:1/-1}.ficha-topo-dir{align-items:flex-start}}
+
+/* ficha compacta: Beneficiário, Serviço e Unidade na 1ª linha; detalhamento na 2ª — cabe na tela sem rolar */
+.ficha{gap:10px}
+.ficha-grade{gap:10px}
+.ficha-topo{padding:12px 18px;gap:10px 20px}
+.ficha-topo-id h2{margin:4px 0 0;font-size:1.25rem}
+.ficha-topo-id p{font-size:13px}
+.ficha-topo-dir{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:12px 18px}
+.ficha-resumo{gap:8px}
+.ficha-resumo>div{min-width:96px;padding:6px 12px}
+.ficha-resumo b{font-size:1.05rem}
+.ficha-acoes{gap:8px}
+.ficha-voltar{order:1}
+.ficha-pdf{order:2;padding:10px 20px;font-size:14px;box-shadow:0 4px 14px rgba(22,163,74,.35)}
+.ficha-secao{padding:12px 16px}
+.ficha-secao h3{margin:0 0 8px;padding-bottom:6px}
+.ficha-secao h4{margin:8px 0 4px}
+.ficha-campos{gap:8px 16px}
+.ficha-c6 .ficha-campos{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ficha-c6 .ficha-campos .ficha-larga{grid-column:1/-1}
+.ficha-campo dd{font-size:14px}
+.ficha-tabela td,.ficha-tabela th{padding:5px 8px}
+.ficha-chip{padding:2px 9px;font-size:12px}
+@media (max-width:1100px){.ficha-c6 .ficha-campos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* botão de PDF da ficha: cor própria, sem sombra */
+.ficha-pdf,.ficha-pdf:hover{background:#1d4ed8;border-color:#1d4ed8;color:#fff;box-shadow:none}
+.ficha-pdf:hover{background:#1e40af;border-color:#1e40af}
+.ficha-c5{grid-column:span 5}
+.ficha-c3 .ficha-campos,.ficha-c4 .ficha-campos{grid-template-columns:1fr}
+.ficha-c5 .ficha-campos{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:1100px){.ficha-c5{grid-column:1/-1}}
+
+/* ficha: três cartões iguais por linha (beneficiário/unidade/georreferenciamento e serviço/açudagem-cultivo/maquinário) */
+.ficha-grade{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
+.ficha-grade>.ficha-secao{grid-column:span 1}
+.ficha-grade>.ficha-secao .ficha-campos{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ficha-grade>.ficha-secao .ficha-campos .ficha-larga{grid-column:1/-1}
+.ficha-grade>.ficha-secao[style*="order:20"]{grid-column:1/-1}
+@media (max-width:1100px){.ficha-grade{grid-template-columns:1fr}.ficha-grade>.ficha-secao[style*="order:20"]{grid-column:auto}}
+
+/* ficha: reforço — exatamente 3 colunas iguais, cartões da mesma linha com a mesma altura */
+.ficha .ficha-grade{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;grid-auto-flow:row !important;align-items:stretch !important}
+.ficha .ficha-grade>.ficha-secao{grid-column:auto !important;min-width:0;width:auto}
+.ficha .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:1/-1 !important}
+.ficha .ficha-grade>.ficha-secao .ficha-campos{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+@media (max-width:1100px){.ficha .ficha-grade{grid-template-columns:1fr !important}.ficha .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:auto !important}}
+
+/* ficha: linha 1 = beneficiário 50% + unidade 25% + georreferenciamento 25%; linha 2 = serviço 25% + açudagem/cultivo 25% + maquinário 50% */
+.ficha .ficha-grade{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
+.ficha .ficha-grade>.ficha-q1{grid-column:span 1 !important}
+.ficha .ficha-grade>.ficha-q2{grid-column:span 2 !important}
+.ficha .ficha-grade>.ficha-q1 .ficha-campos{grid-template-columns:1fr !important}
+.ficha .ficha-grade>.ficha-q2 .ficha-campos{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+.ficha .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:span 2 !important}
+@media (max-width:1100px){.ficha .ficha-grade{grid-template-columns:1fr !important}.ficha .ficha-grade>.ficha-secao{grid-column:auto !important}}
+
+/* ficha, posições (grade de 4 colunas):
+   linha 1: beneficiário (50%) | unidade (25%) | georreferenciamento (25%)
+   linha 2: serviço | açudagem/cultivo | mapa (50%, ocupa as linhas 2 e 3)
+   linha 3: maquinário (sob serviço e açudagem/cultivo) */
+.ficha .ficha-grade{grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-auto-flow:row !important}
+.ficha .ficha-grade>.ficha-a-ben{grid-column:1/3 !important;grid-row:1 !important}
+.ficha .ficha-grade>.ficha-a-uni{grid-column:3 !important;grid-row:1 !important}
+.ficha .ficha-grade>.ficha-a-geo{grid-column:4 !important;grid-row:1 !important}
+.ficha .ficha-grade>.ficha-a-srv{grid-column:1 !important;grid-row:2 !important}
+.ficha .ficha-grade>.ficha-a-cul{grid-column:2 !important;grid-row:2 !important}
+.ficha .ficha-grade>.ficha-a-maq{grid-column:1/3 !important;grid-row:3 !important}
+.ficha .ficha-grade>.ficha-a-mapa{grid-column:3/5 !important;grid-row:2/4 !important;display:flex;flex-direction:column}
+.ficha .ficha-grade>.ficha-a-dae{grid-column:1/3 !important;grid-row:4 !important}
+.ficha .ficha-grade>.ficha-a-obs{grid-column:3/5 !important;grid-row:4 !important}
+.ficha .ficha-grade>.ficha-a-ben .ficha-campos{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+.ficha .ficha-grade>.ficha-a-uni .ficha-campos,.ficha .ficha-grade>.ficha-a-geo .ficha-campos,
+.ficha .ficha-grade>.ficha-a-srv .ficha-campos,.ficha .ficha-grade>.ficha-a-cul .ficha-campos{grid-template-columns:1fr !important}
+.ficha .ficha-grade>.ficha-a-maq .ficha-campos{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+.ficha-mapa{position:relative;flex:1;min-height:260px;border-radius:10px;overflow:hidden;background:var(--superficie2,#eef1ee)}
+.ficha-mapa-msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;max-width:80%;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,.95);color:#374151;font-size:14px;font-weight:600;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+@media (max-width:1100px){
+  .ficha .ficha-grade{grid-template-columns:1fr !important}
+  .ficha .ficha-grade>.ficha-secao{grid-column:auto !important;grid-row:auto !important}
+  .ficha-mapa{min-height:300px}
+}
+
+/* aviso do mapa sem ponto: embaixo, para não cobrir a área do município */
+.ficha-mapa-msg{top:auto;bottom:14px;transform:translateX(-50%);font-size:13px}
+
+/* seta de voltar ao lado do nome do beneficiário */
+.ficha-nome{display:flex;align-items:center;gap:10px}
+.ficha-seta{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border:1px solid var(--linha);border-radius:50%;background:var(--superficie2,#f4f6f4);color:var(--texto);text-decoration:none;font-size:18px;line-height:1}
+.ficha-seta:hover{background:var(--acento-suave);color:var(--acento-fundo)}
+
+/* topo da ficha: seta de voltar à esquerda e as informações à direita dela */
+.ficha-topo-id{display:flex;align-items:flex-start;gap:14px}
+.ficha-topo-info{min-width:0}
+.ficha-topo-id .ficha-seta{margin-top:8px}
+
+/* seta de voltar centralizada na vertical em relação ao bloco de informações */
+.ficha-topo-id{align-items:center}
+.ficha-topo-id .ficha-seta{margin-top:0}
+
+/* tipo de serviço na ficha: etiqueta com ícone e uma cor por serviço (Mecanização = verde, Açudagem = azul) */
+.ficha-servico{display:inline-flex;align-items:center;gap:7px;padding:5px 14px 5px 10px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.02em;border:1px solid transparent}
+.ficha-servico-mec{background:#dcfce7;color:#166534;border-color:#86efac}
+.ficha-servico-acu{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+.ficha-servico-nd{background:#f3f4f6;color:#4b5563;border-color:#d1d5db}
+.ficha-topo-mec{border-left:6px solid #22c55e}
+.ficha-topo-acu{border-left:6px solid #3b82f6}
+:root[data-tema="escuro"] .ficha-servico-mec{background:rgba(34,197,94,.18);color:#86efac;border-color:rgba(134,239,172,.4)}
+:root[data-tema="escuro"] .ficha-servico-acu{background:rgba(59,130,246,.2);color:#93c5fd;border-color:rgba(147,197,253,.4)}
+
+/* etiqueta do tipo de serviço à direita do nome */
+.ficha-nome{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.ficha-nome .ficha-servico{font-size:12px;padding:4px 12px 4px 9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.02)}
+.ficha-nome .ficha-servico svg{width:16px;height:16px}
+
+/* cartões-resumo e botão de PDF do topo: mesmo tamanho */
+.ficha-topo-dir{align-items:center}
+.ficha-resumo>div,.ficha-pdf{box-sizing:border-box;width:150px;height:62px;min-width:0;padding:0 10px;border-radius:12px}
+.ficha-resumo>div{display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ficha-pdf{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin:0;font-size:14px}

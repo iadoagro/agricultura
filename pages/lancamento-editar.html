@@ -10,7 +10,7 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/dashboard.css?v=2026092538">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026101415">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026102120">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
 <script src="../js/admin-auth.js?v=2026102001"></script>
@@ -47,8 +47,8 @@
 <div class="wrap">
   <div class="lanc-grid">
 
-    <section class="painel largo">
-      <div class="painel-cab"><div class="painel-cab-tit">
+    <section class="painel largo" id="lancCabecalho">
+      <div class="painel-cab" id="lancCabecalhoTit"><div class="painel-cab-tit">
         <h2 id="lancEditarTitulo">Editando lan&ccedil;amento</h2>
         <p class="sub" id="lancEditarContexto">Carregando&hellip;</p>
       </div></div>
@@ -64,6 +64,9 @@
       </div></div>
       <div id="lancAlteracoesCorpo"></div>
     </section>
+
+    <!-- Visualização: ficha formatada, só leitura (lancamento-editar.js, montarFicha) -->
+    <div id="lancFicha" class="ficha" hidden></div>
 
     <form id="lancForm" class="painel-grid lanc-form" hidden>
 
@@ -233,7 +236,8 @@
 <script src="../js/lancamento-ux.js?v=2026101413"></script>
 <script src="../js/lancamento-validacao.js?v=2026101414"></script>
 <script src="../js/lancamento-pdf.js?v=2026101404"></script>
-<script src="../js/lancamento-editar.js?v=2026101404"></script>
+<script src="../js/mapa-acre.js?v=6f66c78d"></script>
+<script src="../js/lancamento-editar.js?v=2026102119"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026100901"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

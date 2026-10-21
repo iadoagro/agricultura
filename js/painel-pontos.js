@@ -94,17 +94,31 @@
   }
 
   function popup(p) {
-    var r = p.r;
-    var det = r.pc === A.MEC
-      ? G.num(r.ha, 1) + ' ha' + (r.cult.length ? ' · ' + r.cult.map(function (c) { return G.esc(c[0]); }).join(', ') : '')
-      : G.num(r.hrs, 1) + ' h' + (r.ac ? ' · ' + G.num(r.ac) + ' tanque(s)' : '');
+    var r = p.r, mec = r.pc === A.MEC;
+    var dados = [];   // [valor, rótulo] dos números do atendimento
+    if (mec) {
+      if (r.ha > 0) dados.push([G.num(r.ha, 1), 'hectares']);
+      if (r.hrs > 0) dados.push([G.num(r.hrs, 1), 'horas']);
+    } else {
+      if (r.ac > 0) dados.push([G.num(r.ac), r.ac === 1 ? 'tanque' : 'tanques']);
+      if (r.hrs > 0) dados.push([G.num(r.hrs, 1), 'horas']);
+    }
     var v = r.dv || r.d;
-    var h = '<b>' + G.esc(r.prod || '—') + '</b><br>' + G.esc(r.propr || '') + (r.propr ? '<br>' : '') +
-      G.esc(r.mun || '—') + ' · ' + G.esc(r.pc || '—') + '<br>' + det +
-      '<br><small>Vistoria: ' + G.esc(v.split('-').reverse().join('/')) + ' · ' + G.esc(r.rt || '—') + '</small>';
-    // abre o relatório do produtor DENTRO do sistema (só visualização); ver ligarAbrir()
-    h += '<br><a href="#" class="pt-abrir">abrir formulário</a>';
-    return h;
+    var linha = function (rot, val) { return val ? '<div><dt>' + rot + '</dt><dd>' + G.esc(val) + '</dd></div>' : ''; };
+    var lancado = r.alim && r.alim !== 'Não informado' ? r.alim + (r.d ? ' · ' + r.d.split('-').reverse().join('/') + (r.h ? ' ' + r.h : '') : '') : '';
+    return '<div class="pt-card ' + (mec ? 'pt-mec' : 'pt-acu') + '">' +
+      '<span class="pt-tag">' + G.esc(r.pc || 'Atendimento') + '</span>' +
+      '<h4>' + G.esc(r.prod || '—') + '</h4>' +
+      '<p class="pt-sub">' + [r.propr, r.mun].filter(Boolean).map(G.esc).join(' · ') + '</p>' +
+      (dados.length ? '<div class="pt-dados">' + dados.map(function (d) { return '<div><b>' + d[0] + '</b><span>' + d[1] + '</span></div>'; }).join('') + '</div>' : '') +
+      (mec && r.cult && r.cult.length ? '<div class="pt-chips">' + r.cult.map(function (c) { return '<span>' + G.esc(c[0]) + '</span>'; }).join('') + '</div>' : '') +
+      '<dl class="pt-info">' +
+        linha('Vistoria', v ? v.split('-').reverse().join('/') : '') + linha('Técnico', r.rt && r.rt !== 'Não informado' ? r.rt : '') +
+      '</dl>' +
+      (lancado ? '<p class="pt-lanc">Lançado por ' + G.esc(lancado) + '</p>' : '') +
+      // abre o relatório do produtor DENTRO do sistema (só visualização); ver ligarAbrir()
+      '<a href="#" class="pt-abrir">Abrir ficha completa &rarr;</a>' +
+    '</div>';
   }
 
   var semAcento = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); };
@@ -209,7 +223,7 @@
       if (verCalor) return;   // no mapa de calor os pontos individuais não aparecem
       L.circleMarker([p.lat, p.lng], {
         radius: 6, color: '#fff', weight: 1.5, fillColor: CORES_SERVICO[p.r.pc] || '#94a3b8', fillOpacity: 0.92
-      }).bindPopup(popup(p)).on('popupopen', function (ev) { ligarAbrir(ev.popup, p.r); }).addTo(CAMADA);
+      }).bindPopup(popup(p), { minWidth: 300, maxWidth: 300, className: 'pt-popup' }).on('popupopen', function (ev) { ligarAbrir(ev.popup, p.r); }).addTo(CAMADA);
     });
     if (verCalor) {
       CALOR = L.heatLayer(visiveis.map(function (p) { return [p.lat, p.lng, 0.6]; }), {

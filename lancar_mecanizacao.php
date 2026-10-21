@@ -418,7 +418,118 @@ function pendenciasDeDiaAnterior(string $supabaseUrl, string $serviceRole, strin
     return ($status >= 200 && $status < 300 && is_array($corpo)) ? count($corpo) : 0;
 }
 
-const MSG_BLOQUEIO_PENDENCIA = 'Você tem solicitação de alteração pendente de um dia anterior e não pode fazer novos lançamentos até ela ser resolvida. Entre em contato com o administrador.';
+const MSG_BLOQUEIO_PENDENCIA = 'Você tem solicitação de alteração pendente de um dia anterior. Para fazer novos lançamentos, digite o código de liberação que o administrador vai te passar.';
+
+/* ------------------------------------------- código de liberação (pendência) --
+ * Com pedido de edição pendente de um dia anterior, a pessoa só lança depois de
+ * digitar um código gerado pelo sistema (database/mecanizacao-codigos-liberacao.sql).
+ * O código é aleatório e único para sempre (coluna "codigo" única, linhas nunca
+ * apagadas); quem digita fica registrado com data e hora (usado_em) e a conta
+ * responsável vê isso na aba de solicitações. Código usado vale pelo resto do dia
+ * (Acre); no dia seguinte, se a pendência continuar, pede outro. */
+const TABELA_CODIGOS = '/rest/v1/mecanizacao_codigos_liberacao';
+const ALFABETO_CODIGO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // sem 0/O/1/I: não confunde ao ler ou digitar
+
+function normalizarCodigo($v): string
+{
+    return preg_replace('/[^A-Z0-9]/', '', strtoupper((string) $v));
+}
+
+function gerarCodigo(): string
+{
+    $c = '';
+    for ($i = 0; $i < 8; $i++) {
+        $c .= ALFABETO_CODIGO[random_int(0, strlen(ALFABETO_CODIGO) - 1)];
+    }
+    return $c;
+}
+
+/** Já digitou um código hoje? Então a pendência não bloqueia até a virada do dia. */
+function liberadoHoje(string $supabaseUrl, string $serviceRole, string $email): bool
+{
+    $inicioHoje = (new DateTimeImmutable('today', new DateTimeZone('America/Rio_Branco')))
+        ->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'GET',
+        TABELA_CODIGOS . '?select=id&usuario_email=eq.' . urlencode($email) . '&usado_em=gte.' . urlencode($inicioHoje) . '&limit=1'
+    );
+    return $status >= 200 && $status < 300 && is_array($corpo) && count($corpo) > 0;
+}
+
+/** Garante que a pessoa bloqueada tenha um código aguardando ser digitado e o devolve (aparece na janela dela
+ *  e na aba de solicitações do responsável). */
+function garantirCodigoAberto(string $supabaseUrl, string $serviceRole, string $email): string
+{
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'GET',
+        TABELA_CODIGOS . '?select=codigo&usuario_email=eq.' . urlencode($email) . '&usado_em=is.null&limit=1'
+    );
+    if ($status >= 200 && $status < 300 && is_array($corpo) && count($corpo)) {
+        return (string) $corpo[0]['codigo'];
+    }
+    for ($i = 0; $i < 5; $i++) {   // 409 = código já existiu (nunca repete): sorteia outro
+        $codigo = gerarCodigo();
+        [$s2] = chamarSupabase(
+            $supabaseUrl, $serviceRole, 'POST', TABELA_CODIGOS,
+            ['codigo' => $codigo, 'usuario_email' => $email], ['Prefer: return=minimal']
+        );
+        if ($s2 >= 200 && $s2 < 300) {
+            return $codigo;
+        }
+        if ($s2 !== 409) {
+            return '';
+        }
+    }
+    return '';
+}
+
+/* Cada pendência de dia anterior dá direito a no máximo 3 códigos (3 dias). Passou disso, só o responsável
+ * destrava: aprovando ou recusando os pedidos pendentes da pessoa. */
+const MAX_CODIGOS = 3;
+const MSG_TRAVADO = 'Você já usou os 3 códigos de liberação e ainda tem solicitação de alteração pendente. Você só volta a fazer lançamentos quando o administrador aprovar ou recusar as alterações pendentes.';
+
+/** Situação de quem tem pedido de edição pendente de dia anterior: livre, codigo (digitar o código mostrado)
+ *  ou travado (já gastou os 3 códigos). */
+function situacaoBloqueio(string $supabaseUrl, string $serviceRole, string $email): array
+{
+    if ($email === RESPONSAVEL_EMAIL) {
+        return ['estado' => 'livre'];
+    }
+    $inicioHoje = (new DateTimeImmutable('today', new DateTimeZone('America/Rio_Branco')))
+        ->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'GET',
+        TABELA_SOLICITACOES . '?select=criado_em&status=eq.pendente&tipo=eq.editar&solicitado_por_email=' . urlencode($email)
+            . '&criado_em=lt.' . urlencode($inicioHoje) . '&order=criado_em.asc&limit=1'
+    );
+    if (!($status >= 200 && $status < 300 && is_array($corpo) && count($corpo))) {
+        return ['estado' => 'livre'];
+    }
+    if (liberadoHoje($supabaseUrl, $serviceRole, $email)) {
+        return ['estado' => 'livre'];
+    }
+    [$s2, $usados] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'GET',
+        TABELA_CODIGOS . '?select=codigo,usado_em&usuario_email=eq.' . urlencode($email)
+            . '&usado_em=gte.' . urlencode((string) $corpo[0]['criado_em']) . '&order=usado_em.asc'
+    );
+    $n = ($s2 >= 200 && $s2 < 300 && is_array($usados)) ? count($usados) : 0;
+    if ($n >= MAX_CODIGOS) {
+        return ['estado' => 'travado'];
+    }
+    return ['estado' => 'codigo', 'codigo' => garantirCodigoAberto($supabaseUrl, $serviceRole, $email), 'restantes' => MAX_CODIGOS - $n];
+}
+
+/** Campos que o "bloqueio" responde e o "salvar" repete no erro. */
+function corpoBloqueio(array $s): array
+{
+    $e = $s['estado'];
+    return [
+        'bloqueado' => $e !== 'livre', 'exige_codigo' => $e === 'codigo', 'travado' => $e === 'travado',
+        'codigo' => $s['codigo'] ?? '', 'restantes' => $s['restantes'] ?? 0,
+        'erro' => $e === 'travado' ? MSG_TRAVADO : ($e === 'codigo' ? MSG_BLOQUEIO_PENDENCIA : ''),
+    ];
+}
 
 /** Grava um pedido de exclusão/edição pendente e encerra a requisição. */
 function criarSolicitacao(string $supabaseUrl, string $serviceRole, array $lancamento, string $tipo, string $motivo, string $email, ?array $dados): void
@@ -648,8 +759,81 @@ if ($acao === 'bloqueio') {
     if ($emailConfirmado === null) {
         responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
     }
-    $n = pendenciasDeDiaAnterior($supabaseUrl, $serviceRole, $emailConfirmado);
-    responder(200, ['ok' => true, 'bloqueado' => $n > 0, 'pendencias' => $n, 'erro' => $n > 0 ? MSG_BLOQUEIO_PENDENCIA : '']);
+    responder(200, ['ok' => true] + corpoBloqueio(situacaoBloqueio($supabaseUrl, $serviceRole, $emailConfirmado)));
+}
+
+/* ================================================================ liberar === */
+/* A pessoa digita o código de liberação: vale uma vez só e fica registrado com a hora. */
+if ($acao === 'liberar') {
+    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
+    if ($emailConfirmado === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    $codigo = normalizarCodigo($_POST['codigo'] ?? '');
+    if ($codigo === '') {
+        responder(400, ['ok' => false, 'erro' => 'Digite o código de liberação.']);
+    }
+    if (situacaoBloqueio($supabaseUrl, $serviceRole, $emailConfirmado)['estado'] === 'travado') {
+        responder(403, ['ok' => false, 'travado' => true, 'erro' => MSG_TRAVADO]);
+    }
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'PATCH',
+        TABELA_CODIGOS . '?codigo=eq.' . urlencode($codigo) . '&usuario_email=eq.' . urlencode($emailConfirmado) . '&usado_em=is.null',
+        ['usado_em' => gmdate('Y-m-d\TH:i:s\Z')], ['Prefer: return=representation']
+    );
+    if ($status >= 200 && $status < 300 && is_array($corpo) && count($corpo)) {
+        responder(200, ['ok' => true]);
+    }
+    responder(403, ['ok' => false, 'erro' => 'Código inválido ou já utilizado.']);
+}
+
+/* ================================================================ codigos === */
+/* Só a conta responsável: códigos gerados e quem já digitou (e quando). */
+if ($acao === 'codigos') {
+    $emailConfirmado = emailAutenticado($supabaseUrl, $serviceRole);
+    if ($emailConfirmado === null) {
+        responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
+    }
+    if ($emailConfirmado !== RESPONSAVEL_EMAIL) {
+        responder(403, ['ok' => false, 'erro' => 'Só a conta responsável vê os códigos de liberação.']);
+    }
+    [$status, $corpo] = chamarSupabase(
+        $supabaseUrl, $serviceRole, 'GET',
+        TABELA_CODIGOS . '?select=codigo,usuario_email,criado_em,usado_em&order=criado_em.desc&limit=200'
+    );
+    if ($status >= 200 && $status < 300 && is_array($corpo)) {
+        // quem já gastou os 3 códigos e continua com pedido pendente: o responsável precisa aprovar/recusar
+        $inicioHoje = (new DateTimeImmutable('today', new DateTimeZone('America/Rio_Branco')))
+            ->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
+        [$sp, $pend] = chamarSupabase(
+            $supabaseUrl, $serviceRole, 'GET',
+            TABELA_SOLICITACOES . '?select=solicitado_por_email,criado_em&status=eq.pendente&tipo=eq.editar&criado_em=lt.'
+                . urlencode($inicioHoje) . '&order=criado_em.asc'
+        );
+        $desde = [];
+        if ($sp >= 200 && $sp < 300 && is_array($pend)) {
+            foreach ($pend as $p) {
+                $e = strtolower((string) ($p['solicitado_por_email'] ?? ''));
+                if ($e !== '' && !isset($desde[$e])) {
+                    $desde[$e] = (string) $p['criado_em'];
+                }
+            }
+        }
+        $travados = [];
+        foreach ($desde as $e => $d) {
+            $n = 0;
+            foreach ($corpo as $x) {
+                if (strtolower((string) $x['usuario_email']) === $e && !empty($x['usado_em']) && (string) $x['usado_em'] >= $d) {
+                    $n++;
+                }
+            }
+            if ($n >= MAX_CODIGOS) {
+                $travados[] = ['usuario_email' => $e, 'desde' => $d, 'usos' => $n];
+            }
+        }
+        responder(200, ['ok' => true, 'codigos' => $corpo, 'travados' => $travados]);
+    }
+    responder(502, ['ok' => false, 'erro' => 'Não foi possível carregar os códigos. Confira se database/mecanizacao-codigos-liberacao.sql já foi executado.']);
 }
 
 /* =============================================================== salvar === */
@@ -662,8 +846,9 @@ if ($acao === 'salvar') {
         responder(401, ['ok' => false, 'erro' => 'Sua sessão do site expirou. Recarregue a página e entre de novo.']);
     }
 
-    if (pendenciasDeDiaAnterior($supabaseUrl, $serviceRole, $emailConfirmado) > 0) {
-        responder(403, ['ok' => false, 'bloqueado' => true, 'erro' => MSG_BLOQUEIO_PENDENCIA]);
+    $situacao = situacaoBloqueio($supabaseUrl, $serviceRole, $emailConfirmado);
+    if ($situacao['estado'] !== 'livre') {
+        responder(403, ['ok' => false] + corpoBloqueio($situacao));
     }
 
     $registro = lerRegistroDoPost($emailConfirmado);
