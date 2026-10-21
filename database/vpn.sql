@@ -28,6 +28,8 @@ create table if not exists public.vpn_solicitacoes (
 );
 alter table public.vpn_solicitacoes add column if not exists whatsapp text;
 alter table public.vpn_solicitacoes add column if not exists observacoes text;
+alter table public.vpn_solicitacoes add column if not exists visto_em timestamptz;   -- null = "Novo" (ninguém da equipe abriu ainda)
+alter table public.vpn_solicitacoes add column if not exists visto_por text;
 alter table public.vpn_solicitacoes add column if not exists vinculo text;
 alter table public.vpn_solicitacoes drop constraint if exists vpn_solicitacoes_vinculo_check;
 alter table public.vpn_solicitacoes add constraint vpn_solicitacoes_vinculo_check
@@ -344,6 +346,24 @@ end;
 $$;
 revoke all on function public.vpn_editar(uuid, jsonb) from public;
 grant execute on function public.vpn_editar(uuid, jsonb) to authenticated;
+
+-- ------------------------------------------------------------ "Novo" até alguém da equipe ver
+create or replace function public.vpn_marcar_visto(p_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  update public.vpn_solicitacoes
+     set visto_em = now(),
+         visto_por = initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' '))
+   where id = p_id and visto_em is null;
+end;
+$$;
+revoke all on function public.vpn_marcar_visto(uuid) from public;
+grant execute on function public.vpn_marcar_visto(uuid) to authenticated;
 
 -- ------------------------------------------------------------ exclusão pela equipe
 -- O arquivo do documento é apagado pela API de Storage (policy abaixo); aqui sai o registro.

@@ -122,6 +122,16 @@
     editar: SVG + '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
     excluir: SVG + '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
   };
+  // "Novo" (destaque verde) até a equipe ver: abrir Visualizar, Editar ou o documento marca sozinho; clicar em "Novo" marca na mão
+  function marcarVisto(id) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l || l.visto_em) return;
+    l.visto_em = new Date().toISOString();
+    desenhar();
+    fetch(base() + '/rest/v1/rpc/vpn_marcar_visto', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id }) })
+      .then(function (r) { if (!r.ok) throw new Error(); })
+      .catch(function () { l.visto_em = null; desenhar(); });   // não gravou: volta a aparecer como novo
+  }
   function desenhar() {
     var q = semAcento(busca.value), st = filtro.value;
     var v = lista.filter(function (l) {
@@ -130,7 +140,7 @@
     });
     if (!v.length) { tbody.innerHTML = '<tr><td colspan="13" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
     tbody.innerHTML = v.map(function (l) {
-      return '<tr><td>' + esc(l.numero) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + esc(l.nome) + '</td>' +
+      return '<tr' + (l.visto_em ? '' : ' class="vpn-nova"') + '><td>' + esc(l.numero) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + (l.visto_em ? '' : '<button type="button" class="vpn-selo-novo" data-visto="' + esc(l.id) + '" title="Marcar como visto">Novo</button> ') + esc(l.nome) + '</td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
         '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l.whatsapp) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td>' +
         '<td class="vpn-acoes"><button type="button" class="vpn-acao" data-ver="' + esc(l.id) + '" title="Visualizar" aria-label="Visualizar">' + ICONE.ver + '</button>' +
@@ -186,6 +196,7 @@
   async function abrirDocumento(id, botao) {
     var l = lista.filter(function (x) { return x.id === id; })[0];
     if (!l) return;
+    marcarVisto(id);
     var texto = botao.textContent; botao.disabled = true; botao.textContent = 'Abrindo…';
     var janela = window.open('', '_blank');   // abre já no clique, para o navegador não bloquear
     try {
@@ -234,6 +245,7 @@
     var l = lista.filter(function (x) { return x.id === id; })[0];
     if (!l) return;
     editando = l; erroEd.hidden = true;
+    marcarVisto(id);
     var f = fe.elements;
     f.nome.value = l.nome || ''; f.cpf.value = maskCpf(l.cpf || ''); f.rg.value = l.rg || '';
     f.data_nascimento.value = String(l.data_nascimento || '').slice(0, 10);
@@ -276,6 +288,7 @@
     var l = lista.filter(function (x) { return x.id === id; })[0];
     if (!l) return;
     verId = id;
+    marcarVisto(id);
     var itens = [
       ['Nº', l.numero], ['Recebida em', dataHoraBr(l.criado_em)], ['Nome completo', l.nome, 1], ['CPF', cpfBr(l.cpf)], ['RG', l.rg],
       ['Data de nascimento', dataBr(l.data_nascimento)], ['Vínculo', ROTULO_VINCULO[l.vinculo]], ['Matrícula', l.matricula],
@@ -321,6 +334,8 @@
   }
 
   tbody.addEventListener('click', function (e) {
+    var nv = e.target.closest('[data-visto]');
+    if (nv) marcarVisto(nv.getAttribute('data-visto'));
     var x = e.target.closest('[data-del]');
     if (x) excluir(x.getAttribute('data-del'), x);
     var b = e.target.closest('[data-ver]');

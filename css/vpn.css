@@ -87,6 +87,10 @@ a.vpn-btn{text-decoration:none}
 .vpn-selo.recusada{background:#fee2e2;color:#991b1b}
 .vpn-tab select{padding:5px 8px;border:1px solid #cfd6e0;border-radius:7px;font:inherit;font-size:13px}
 .vpn-acao{padding:5px 11px;border:1px solid #cfd6e0;border-radius:7px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
+.vpn-tab tr.vpn-nova td{background:#ecfdf3}
+.vpn-tab tr.vpn-nova td:first-child{box-shadow:inset 4px 0 0 #16a34a}
+.vpn-selo-novo{display:inline-block;padding:1px 8px;margin-right:4px;border:0;border-radius:99px;background:#16a34a;color:#fff;font:inherit;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.vpn-selo-novo:hover{background:#15803d}
 .vpn-acoes{white-space:nowrap}
 .vpn-acoes .vpn-acao{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0}
 .vpn-acoes .vpn-acao svg{display:block}
