@@ -22,7 +22,7 @@
   #setorLista li{padding:12px 10px;font-size:15.5px}
 }
 @media(max-width:340px){.vpn-opcoes{grid-template-columns:1fr}}
-@media(min-width:1000px){.vpn-publica .vpn-grade{grid-template-columns:repeat(3,1fr)}.vpn-publica [data-campo=email_funcional]{grid-column:span 2}}
+@media(min-width:1000px){.vpn-publica .vpn-grade{grid-template-columns:repeat(3,1fr)}}
 .vpn-campo label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:#374151}
 .vpn-campo input{width:100%;padding:10px 12px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:15px;background:#fff;color:var(--texto)}
 .vpn-campo input:focus{outline:none;border-color:var(--verde2);box-shadow:0 0 0 3px rgba(37,99,235,.18)}
