@@ -1409,7 +1409,7 @@
      têm a mesma altura) passar do que sobra embaixo do cabeçalho, os dois encolhem até caber; o Filtros rola por
      dentro e a tabela mostra menos linhas por tela. Mede sempre a altura natural primeiro (limpa e remede),
      então volta a crescer sozinho quando a janela aumenta. */
-  var ALTURA_MINIMA_LISTA = 420;
+  var ALTURA_MINIMA_LISTA = 260;
   function ajustarAlturaLista() {
     var f = el('lancFiltros'), cartoes = [el('lancListaCartao'), el('lancSolicitacoesSec')];
     if (!f) return;
@@ -1425,14 +1425,16 @@
     var abaixo = (wrap ? parseFloat(getComputedStyle(wrap).paddingBottom) || 0 : 0) + (rodape ? rodape.offsetHeight : 0);
     var natural = fim - topo;
     var disponivel = Math.max(ALTURA_MINIMA_LISTA, Math.floor(window.innerHeight - topo - abaixo - 2));
-    var alvo = Math.min(Math.round(natural * 1.1), disponivel);   // a tabela cresce 10% para baixo, no máximo até o fim da janela
-    if (alvo >= natural) {
-      f.style.minHeight = alvo + 'px';
-      cartoes.forEach(function (c) { c.style.minHeight = alvo + 'px'; });
-    } else {   // a natural não cabe: encolhe; o Filtros rola por dentro
-      f.style.height = alvo + 'px'; f.style.overflowY = 'auto';
-      cartoes.forEach(function (c) { c.style.height = alvo + 'px'; });
+    // os cartões ocupam exatamente o que sobra da janela: a página não rola; o Filtros e a tabela rolam por dentro
+    var alvo = disponivel;
+    function aplicar(h) {
+      f.style.height = h + 'px'; f.style.overflowY = 'auto';
+      cartoes.forEach(function (c) { c.style.height = h + 'px'; });
     }
+    aplicar(alvo);
+    // conferência: se a página ainda rola (algo abaixo que a conta não previu), tira o excesso dos cartões
+    var sobra = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    if (sobra > 0) aplicar(Math.max(ALTURA_MINIMA_LISTA, alvo - sobra));
   }
 
   function abrir(municipios) {

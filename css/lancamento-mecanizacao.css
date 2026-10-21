@@ -611,7 +611,7 @@ html:has(#painel-lancamento.ativa) footer{padding:8px 24px}
     background:var(--superficie);border:1px solid var(--anel);border-radius:12px;box-shadow:var(--sombra-p)}
   /* a lista tem a MESMA altura do cartão de Filtros: "contain:size" faz o cartão da lista não contar na altura da linha
      (quem manda é o Filtros) e ele estica até ela; o que passar disso rola dentro da tabela, com a paginação fixa embaixo */
-  .lanc-listagem > .lanc-lista-cartao{display:flex;flex-direction:column;align-self:stretch;contain:size;min-height:420px;overflow:hidden}
+  .lanc-listagem > .lanc-lista-cartao{display:flex;flex-direction:column;align-self:stretch;contain:size;min-height:260px;overflow:hidden}
   .lanc-listagem > .lanc-lista-cartao[hidden]{display:none}
   /* cartão de Filtros compacto: a lista (que tem a mesma altura dele) cabe na tela sem rolar a página */
   .lanc-listagem > .lanc-filtros{gap:8px;padding:12px 14px}
