@@ -93,25 +93,37 @@
       if (r.status === 401 || r.status === 403) throw new Error('Esta conta não tem acesso às solicitações de VPN.');
       if (!r.ok) throw new Error('Não foi possível carregar (' + r.status + ').');
       var nova = await r.json();
+      ultima = new Date();
       if (silencioso && JSON.stringify(nova) === JSON.stringify(lista)) return;
       lista = nova;
       desenhar();
     } catch (e) {
       if (silencioso) return;
       tbody.innerHTML = '<tr><td colspan="14" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
-    } finally { carregando = false; }
+    } finally { carregando = false; restante = INTERVALO; mostrarAtualizacao(); }
   }
 
-  // atualização automática a cada 10 s; pausa com a aba escondida, pop-up aberto ou situação sendo mudada
-  var INTERVALO = 10000;
-  setInterval(function () {
-    if (!carregado || document.hidden) return;
-    if (dlg.open || dlgVer.open) return;
+  // atualização automática a cada 10 s (contagem regressiva na barra, com a hora da última leitura);
+  // pausa com a aba escondida, pop-up aberto ou situação sendo mudada
+  var INTERVALO = 10, restante = INTERVALO, ultima = null;
+  var rotuloAtualiza = document.getElementById('vpnAtualiza');
+  function pausado() {
+    if (document.hidden || dlg.open || dlgVer.open) return true;
     var a = document.activeElement;
-    if (a && a.matches && a.matches('select[data-st]')) return;
-    if (tbody.querySelector('select[data-st]:disabled')) return;
-    carregar(true);
-  }, INTERVALO);
+    if (a && a.matches && a.matches('select[data-st]')) return true;
+    return Boolean(tbody.querySelector('select[data-st]:disabled'));
+  }
+  function mostrarAtualizacao() {
+    if (!ultima) { rotuloAtualiza.textContent = carregado ? 'Carregando…' : 'Aguardando login…'; return; }
+    var hora = ultima.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'medium' });
+    var prox = carregando ? 'Atualizando…' : pausado() ? 'Atualização automática em pausa' : 'Atualiza em <b>' + restante + 's</b>';
+    rotuloAtualiza.innerHTML = prox + '<br>Última atualização: <b>' + esc(hora) + '</b>';
+  }
+  setInterval(function () {
+    if (!carregado) return;
+    if (!pausado() && !carregando && --restante <= 0) carregar(true);
+    mostrarAtualizacao();
+  }, 1000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && carregado) carregar(true); });
 
   async function abrirDocumento(id, botao) {
