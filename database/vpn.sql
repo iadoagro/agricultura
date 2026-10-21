@@ -110,7 +110,7 @@ begin
   if v_nasc is null or v_nasc > current_date - interval '14 years' or v_nasc < date '1900-01-01' then
     raise exception 'Data de nascimento inválida.';
   end if;
-  if v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or char_length(v_email) > 160 then raise exception 'E-mail funcional inválido.'; end if;
+  if v_email !~ '^[^@\s]+@ac\.gov\.br$' or char_length(v_email) > 160 then raise exception 'Use o e-mail funcional, que termina com @ac.gov.br.'; end if;
   if v_vinculo not in ('comissionado','terceirizado') then raise exception 'Informe se é comissionado ou terceirizado.'; end if;
   if char_length(v_mat) > 30 or (v_vinculo = 'comissionado' and char_length(v_mat) < 1) then raise exception 'Informe a matrícula.'; end if;
   if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;

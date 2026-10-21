@@ -141,7 +141,7 @@
     var nasc = d.data_nascimento && new Date(d.data_nascimento + 'T00:00:00');
     var limite = new Date(); limite.setFullYear(limite.getFullYear() - 14);
     if (!nasc || isNaN(nasc) || nasc > limite || nasc.getFullYear() < 1900) marcar('data_nascimento', 'Informe uma data de nascimento válida.');
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email_funcional)) marcar('email_funcional', 'Informe um e-mail válido.');
+    if (!/^[^@\s]+@ac\.gov\.br$/.test(d.email_funcional)) marcar('email_funcional', 'Use o e-mail funcional, que termina com @ac.gov.br.');
     if (!d.vinculo) marcar('vinculo', 'Informe se é comissionado ou terceirizado.');
     if (!d.matricula && d.vinculo !== 'terceirizado') marcar('matricula', 'Informe a matrícula.');
     if (!d.setor) marcar('setor', 'Selecione o setor.');
