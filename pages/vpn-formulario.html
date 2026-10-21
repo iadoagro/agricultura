@@ -9,7 +9,7 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102101">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102106">
 </head>
 <body class="vpn-publica">
 <header class="vpn-topo"><div class="vpn-topo-in"><b>Solicitação de acesso à VPN</b><small>Preencha todos os campos e anexe um documento de identificação com foto.</small></div></header>
@@ -53,9 +53,21 @@
         <input id="email_funcional" name="email_funcional" type="email" maxlength="160" placeholder="nome@orgao.gov.br" autocomplete="email">
         <span class="vpn-erro" role="alert"></span>
       </div>
+      <div class="vpn-campo vpn-largo" data-campo="vinculo">
+        <label id="vinculoRot">Vínculo</label>
+        <div class="vpn-opcoes" role="radiogroup" aria-labelledby="vinculoRot">
+          <label class="vpn-opcao"><input type="radio" name="vinculo" value="comissionado"><span>Comissionado</span></label>
+          <label class="vpn-opcao"><input type="radio" name="vinculo" value="terceirizado"><span>Terceirizado</span></label>
+        </div>
+        <span class="vpn-erro" role="alert"></span>
+      </div>
       <div class="vpn-campo vpn-largo" data-campo="setor">
-        <label for="setor">Setor</label>
-        <input id="setor" name="setor" type="text" maxlength="120" autocomplete="organization-title">
+        <label for="setorBusca">Setor</label>
+        <div class="vpn-combo" id="setorCombo">
+          <input id="setorBusca" type="text" role="combobox" aria-expanded="false" aria-controls="setorLista" aria-autocomplete="list" autocomplete="off" placeholder="Carregando setores…">
+          <input id="setor" name="setor" type="hidden">
+          <ul id="setorLista" role="listbox" hidden></ul>
+        </div>
         <span class="vpn-erro" role="alert"></span>
       </div>
       <div class="vpn-campo vpn-largo" data-campo="documento">
@@ -71,6 +83,7 @@
     <p class="vpn-lgpd">Os dados são usados apenas para liberar o acesso à VPN e ficam restritos à equipe responsável.</p>
   </form>
 </main>
-<script src="../js/vpn-publico.js?v=2026102101"></script>
+<script src="../js/contatos-organograma.js?v=2026102101"></script>
+<script src="../js/vpn-publico.js?v=2026102104"></script>
 </body>
 </html>

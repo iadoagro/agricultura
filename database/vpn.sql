@@ -26,6 +26,11 @@ create table if not exists public.vpn_solicitacoes (
   atualizado_em timestamptz,
   criado_em timestamptz not null default now()
 );
+alter table public.vpn_solicitacoes add column if not exists vinculo text;
+alter table public.vpn_solicitacoes drop constraint if exists vpn_solicitacoes_vinculo_check;
+alter table public.vpn_solicitacoes add constraint vpn_solicitacoes_vinculo_check
+  check (vinculo is null or vinculo in ('comissionado','terceirizado'));
+alter table public.vpn_solicitacoes alter column matricula drop not null;
 create index if not exists vpn_solicitacoes_status_idx on public.vpn_solicitacoes (status, criado_em desc);
 create index if not exists vpn_solicitacoes_cpf_idx on public.vpn_solicitacoes (cpf);
 
@@ -88,6 +93,7 @@ declare
   v_email text := lower(btrim(coalesce(p->>'email_funcional', '')));
   v_mat text := btrim(coalesce(p->>'matricula', ''));
   v_setor text := btrim(coalesce(p->>'setor', ''));
+  v_vinculo text := lower(btrim(coalesce(p->>'vinculo', '')));
   v_doc text := coalesce(p->>'documento', '');
   v_nasc date;
   v_id uuid;
@@ -105,7 +111,8 @@ begin
     raise exception 'Data de nascimento inválida.';
   end if;
   if v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or char_length(v_email) > 160 then raise exception 'E-mail funcional inválido.'; end if;
-  if char_length(v_mat) < 1 or char_length(v_mat) > 30 then raise exception 'Informe a matrícula.'; end if;
+  if v_vinculo not in ('comissionado','terceirizado') then raise exception 'Informe se é comissionado ou terceirizado.'; end if;
+  if char_length(v_mat) > 30 or (v_vinculo = 'comissionado' and char_length(v_mat) < 1) then raise exception 'Informe a matrícula.'; end if;
   if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;
   if not exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = v_doc) then
     raise exception 'Envie o documento de identificação com foto.';
@@ -114,8 +121,8 @@ begin
     raise exception 'Este envio já foi registrado.';
   end if;
 
-  insert into public.vpn_solicitacoes (nome, cpf, rg, data_nascimento, email_funcional, matricula, setor, documento_path, documento_nome)
-  values (v_nome, v_cpf, v_rg, v_nasc, v_email, v_mat, v_setor, v_doc, nullif(left(btrim(coalesce(p->>'documento_nome', '')), 160), ''))
+  insert into public.vpn_solicitacoes (nome, cpf, rg, data_nascimento, email_funcional, vinculo, matricula, setor, documento_path, documento_nome)
+  values (v_nome, v_cpf, v_rg, v_nasc, v_email, v_vinculo, v_mat, v_setor, v_doc, nullif(left(btrim(coalesce(p->>'documento_nome', '')), 160), ''))
   returning id, numero into v_id, v_num;
   return jsonb_build_object('numero', v_num);
 end;

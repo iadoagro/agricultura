@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
 <link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/padrao.css?v=2026101701">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102101">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102102">
 </head>
 <body class="vpn-equipe">
 <header class="cab-padrao"><h1>SISTEMA</h1><p>VPN</p></header>
@@ -27,6 +27,11 @@
     <span>Link público do formulário (não precisa de login):</span>
     <input type="text" id="vpnLink" readonly aria-label="Link público">
     <button type="button" class="vpn-btn" id="vpnCopiar">Copiar link</button>
+  </section>
+  <section class="vpn-link" id="vpnLinkLocalBox" aria-label="Link local do formulário" hidden>
+    <span>Link local, só para testar (visível só ao responsável):</span>
+    <input type="text" id="vpnLinkLocal" readonly aria-label="Link local">
+    <a class="vpn-btn" id="vpnAbrirLocal" href="#" target="_blank" rel="noopener">Abrir</a>
   </section>
 
   <div class="vpn-barra">
@@ -41,11 +46,11 @@
 
   <div class="vpn-tab-wrap">
     <table class="vpn-tab">
-      <thead><tr><th>Nº</th><th>Recebida em</th><th>Nome</th><th>CPF</th><th>RG</th><th>Nascimento</th><th>E-mail funcional</th><th>Matrícula</th><th>Setor</th><th>Documento</th><th>Situação</th></tr></thead>
-      <tbody id="vpnLista"><tr><td colspan="11" class="vpn-vazio">Carregando…</td></tr></tbody>
+      <thead><tr><th>Nº</th><th>Recebida em</th><th>Nome</th><th>CPF</th><th>RG</th><th>Nascimento</th><th>E-mail funcional</th><th>Vínculo</th><th>Matrícula</th><th>Setor</th><th>Documento</th><th>Situação</th></tr></thead>
+      <tbody id="vpnLista"><tr><td colspan="12" class="vpn-vazio">Carregando…</td></tr></tbody>
     </table>
   </div>
 </main>
-<script src="../js/vpn-equipe.js?v=2026102101"></script>
+<script src="../js/vpn-equipe.js?v=2026102103"></script>
 </body>
 </html>

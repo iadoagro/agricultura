@@ -7,9 +7,44 @@
 .vpn-cartao{background:#fff;border:1px solid var(--linha);border-radius:14px;box-shadow:var(--sombra);padding:22px}
 .vpn-grade{display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}
 .vpn-largo{grid-column:1 / -1}
+.vpn-publica .vpn-topo-in,.vpn-publica .vpn-main{max-width:none}
+.vpn-publica .vpn-topo-in,.vpn-publica .vpn-main{padding-left:clamp(16px,3vw,48px);padding-right:clamp(16px,3vw,48px)}
+@media(max-width:640px){
+  .vpn-publica .vpn-topo-in{padding:16px 14px}
+  .vpn-publica .vpn-main{padding:14px 12px 36px}
+  .vpn-publica .vpn-cartao{padding:16px 14px;border-radius:12px}
+  .vpn-publica .vpn-campo input,.vpn-publica .vpn-campo select{font-size:16px;min-height:46px}   /* 16px evita o zoom automático do iPhone ao focar */
+  .vpn-publica .vpn-campo input[type=file]{min-height:0}
+  .vpn-publica .vpn-campo input[type=radio]{min-height:0;width:20px;height:20px}
+  .vpn-publica .vpn-campo label.vpn-opcao{padding:13px 12px;min-height:48px}
+  .vpn-publica .vpn-btn{width:100%;min-height:48px}
+  #setorLista{max-height:min(280px,45vh)}
+  #setorLista li{padding:12px 10px;font-size:15.5px}
+}
+@media(max-width:340px){.vpn-opcoes{grid-template-columns:1fr}}
+@media(min-width:1000px){.vpn-publica .vpn-grade{grid-template-columns:repeat(3,1fr)}.vpn-publica [data-campo=email_funcional]{grid-column:span 2}}
 .vpn-campo label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:#374151}
 .vpn-campo input{width:100%;padding:10px 12px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:15px;background:#fff;color:var(--texto)}
 .vpn-campo input:focus{outline:none;border-color:var(--verde2);box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+.vpn-campo select{width:100%;padding:10px 38px 10px 12px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:15px;color:var(--texto);cursor:pointer;-webkit-appearance:none;appearance:none;text-overflow:ellipsis;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center}
+.vpn-campo select:focus{outline:none;border-color:var(--verde2);box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+.vpn-campo.com-erro select{border-color:#dc2626}
+.vpn-campo optgroup{font-weight:700;color:#111827}
+.vpn-campo option{font-weight:400}
+.vpn-combo{position:relative}
+.vpn-campo .vpn-combo input[type=text]{padding-right:38px;text-overflow:ellipsis;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat right 13px center}
+#setorLista{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);max-height:280px;overflow-y:auto;margin:0;padding:4px;list-style:none;background:#fff;border:1.5px solid #cfd6e0;border-radius:9px;box-shadow:0 10px 28px rgba(15,23,42,.16)}
+#setorLista li{padding:9px 10px;border-radius:6px;font-size:14.5px;line-height:1.3;cursor:pointer}
+#setorLista li.ativo,#setorLista li[data-i]:hover{background:#eff6ff}
+#setorLista li[aria-selected=true]{font-weight:700;color:var(--verde2)}
+#setorLista .vpn-combo-grupo{padding:8px 10px 4px;font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#6b7280;cursor:default}
+#setorLista .vpn-combo-vazio{color:#6b7280;cursor:default}
+.vpn-campo.com-erro .vpn-combo input[type=text]{border-color:#dc2626}
+.vpn-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vpn-campo label.vpn-opcao{display:flex;align-items:center;gap:9px;margin:0;padding:11px 14px;border:1.5px solid #cfd6e0;border-radius:9px;background:#fff;font-size:15px;font-weight:500;color:var(--texto);cursor:pointer}
+.vpn-opcao input{width:auto;margin:0;padding:0;accent-color:var(--verde2)}
+.vpn-opcao:has(input:checked){border-color:var(--verde2);background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.vpn-campo.com-erro .vpn-opcao{border-color:#dc2626}
 .vpn-campo input[type=file]{padding:8px;background:#f8fafc}
 .vpn-campo.com-erro input{border-color:#dc2626}
 .vpn-erro{display:block;min-height:0;font-size:12px;color:#dc2626;margin-top:4px}

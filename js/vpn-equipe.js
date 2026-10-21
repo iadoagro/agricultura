@@ -9,6 +9,7 @@
   var busca = document.getElementById('vpnBusca');
   var filtro = document.getElementById('vpnFiltro');
   var ROTULO = { pendente: 'Pendente', atendida: 'Atendida', recusada: 'Recusada' };
+  var ROTULO_VINCULO = { comissionado: 'Comissionado', terceirizado: 'Terceirizado' };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -34,8 +35,19 @@
     return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
   }
 
-  // link público: mesma pasta desta página
-  document.getElementById('vpnLink').value = new URL('vpn-formulario.html', location.href).href;
+  // link público: sempre o do GitHub Pages, mesmo quando a página é aberta em localhost
+  document.getElementById('vpnLink').value = 'https://iadoagro.github.io/agricultura/pages/vpn-formulario.html';
+  // link local: só a conta responsável (root) vê, para testar o formulário no XAMPP
+  var LINK_LOCAL = 'http://localhost/agricultura/pages/vpn-formulario.html';
+  function linkLocal() {
+    var s = auth && auth.sessaoAtual && auth.sessaoAtual();
+    var root = Boolean(s && s.user && auth.RESPONSAVEL_EMAIL && String(s.user.email || '').toLowerCase() === auth.RESPONSAVEL_EMAIL);
+    document.getElementById('vpnLinkLocalBox').hidden = !root;
+    document.getElementById('vpnLinkLocal').value = LINK_LOCAL;
+    document.getElementById('vpnAbrirLocal').href = LINK_LOCAL;
+  }
+  linkLocal();
+  window.addEventListener('admin-auth-atualizado', linkLocal);
   document.getElementById('vpnCopiar').addEventListener('click', function () {
     var campo = document.getElementById('vpnLink'), b = this;
     function ok() { b.textContent = 'Link copiado'; setTimeout(function () { b.textContent = 'Copiar link'; }, 1800); }
@@ -47,13 +59,13 @@
     var q = semAcento(busca.value), st = filtro.value;
     var v = lista.filter(function (l) {
       if (st && l.status !== st) return false;
-      return !q || semAcento([l.nome, l.cpf, cpfBr(l.cpf), l.matricula, l.email_funcional, l.setor, l.rg].join(' ')).indexOf(q) >= 0;
+      return !q || semAcento([l.nome, l.cpf, cpfBr(l.cpf), l.matricula, l.email_funcional, l.setor, l.rg, ROTULO_VINCULO[l.vinculo]].join(' ')).indexOf(q) >= 0;
     });
-    if (!v.length) { tbody.innerHTML = '<tr><td colspan="11" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
+    if (!v.length) { tbody.innerHTML = '<tr><td colspan="12" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
     tbody.innerHTML = v.map(function (l) {
       return '<tr><td>' + esc(l.numero) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + esc(l.nome) + '</td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
-        '<td>' + esc(l.email_funcional) + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(l.setor) + '</td>' +
+        '<td>' + esc(l.email_funcional) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(l.setor) + '</td>' +
         '<td><button type="button" class="vpn-acao" data-doc="' + esc(l.id) + '">Ver documento</button></td>' +
         '<td><select data-st="' + esc(l.id) + '" aria-label="Situação">' +
         Object.keys(ROTULO).map(function (k) { return '<option value="' + k + '"' + (k === l.status ? ' selected' : '') + '>' + ROTULO[k] + '</option>'; }).join('') +
@@ -70,7 +82,7 @@
       lista = await r.json();
       desenhar();
     } catch (e) {
-      tbody.innerHTML = '<tr><td colspan="11" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
     }
   }
 
