@@ -1467,7 +1467,7 @@ header h1,header p,.kpi,.cards .card-link,tbody tr,
 .pt-dados>div{flex:1;padding:6px 8px;border-radius:10px;background:#f4f6f4;text-align:center}
 .pt-dados b{display:block;font-size:16px}.pt-dados span{font-size:11px;color:#6b7280}
 .pt-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
-.pt-chips span{padding:2px 9px;border-radius:999px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:600}
+.pt-chips>span{padding:2px 9px;border-radius:999px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:600}
 .pt-info{margin:0 0 10px;padding-top:8px;border-top:1px solid #e5e7eb;display:grid;gap:3px}
 .pt-info>div{display:flex;gap:8px}.pt-info dt{flex:0 0 78px;color:#6b7280}.pt-info dd{margin:0;font-weight:600}
 a.pt-abrir{display:block;padding:8px 10px;border-radius:10px;background:#1d4ed8;color:#fff !important;text-align:center;font-weight:700;text-decoration:none}
@@ -1486,3 +1486,134 @@ a.pt-abrir:hover{background:#1e40af}
 .pt-info dd{font-size:13px}
 .pt-lanc{margin:0 0 10px;font-size:11.5px;color:#6b7280}
 a.pt-abrir{padding:7px 10px}
+.pt-chips>span{display:inline-flex;align-items:center}
+
+/* números (hectares/horas) compactos, com as culturas ao lado na mesma linha */
+.pt-linha{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px}
+.pt-linha .pt-dados,.pt-linha .pt-chips{display:contents}
+.pt-linha .pt-dados>div{flex:none;display:inline-flex;align-items:baseline;gap:5px;padding:3px 10px;border-radius:999px;text-align:left}
+.pt-linha .pt-dados b{display:inline;font-size:14px}
+.pt-linha .pt-dados span{font-size:11.5px}
+.pt-linha .pt-chips>span{margin:0}
+
+/* ficha do produtor: campos longos ocupam duas colunas (nas telas largas) */
+@media (min-width:700px){.ficha-item-larga{grid-column:span 2}}
+
+/* ficha do produtor em cartões (js/dashboard.js, benFicha) */
+.bp{display:flex;flex-direction:column;gap:14px}
+.bp-topo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 22px;padding:16px 20px;border:1px solid var(--anel);border-left:6px solid var(--acento,#1d4ed8);border-radius:14px;background:var(--superficie)}
+.bp-id h2{margin:0;font-size:1.35rem;line-height:1.2;color:var(--tinta)}
+.bp-id p{margin:3px 0 8px;color:var(--tinta3);font-size:13px}
+.bp-tags{display:flex;flex-wrap:wrap;gap:6px}
+.bp-tag{display:inline-flex;align-items:center;gap:6px;padding:3px 12px 3px 9px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid transparent}
+.bp-tag svg{width:16px;height:16px}
+.bp-tag-mec{background:#dcfce7;color:#166534;border-color:#86efac}
+.bp-tag-acu{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+.bp-kpis{display:flex;flex-wrap:wrap;gap:8px}
+.bp-kpi{display:flex;flex-direction:column;justify-content:center;min-width:112px;padding:8px 14px;border-radius:12px;background:var(--superficie2);border:1px solid var(--anel);text-align:center}
+.bp-kpi-mec{border-bottom:3px solid #22c55e}.bp-kpi-acu{border-bottom:3px solid #3b82f6}
+.bp-kpi-rot{font-size:10.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--tinta3)}
+.bp-kpi b{font-size:1.2rem;line-height:1.25;color:var(--tinta)}
+.bp-kpi b small{font-size:.65em;font-weight:600;color:var(--tinta3)}
+.bp-kpi-sub{font-size:10.5px;color:var(--tinta3)}
+.bp-grade{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+.bp-card{padding:14px 16px;border:1px solid var(--anel);border-radius:14px;background:var(--superficie);min-width:0}
+.bp-card h3{margin:0 0 10px;padding-bottom:7px;border-bottom:1px solid var(--anel);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta3)}
+.bp-card h4{margin:10px 0 5px;font-size:12px;color:var(--tinta3)}
+.bp-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 14px;margin:0}
+.bp-campo dt{font-size:11.5px;color:var(--tinta3);margin-bottom:1px}
+.bp-campo dd{margin:0;font-weight:600;font-size:14px;overflow-wrap:anywhere;color:var(--tinta)}
+.bp-larga{grid-column:1/-1}
+.bp-vazio{margin:0;color:var(--tinta3)}
+.bp-cult{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.bp-cult li{position:relative;display:flex;justify-content:space-between;gap:10px;padding-bottom:7px;font-size:13.5px}
+.bp-cult li i{position:absolute;left:0;bottom:0;height:4px;border-radius:2px;background:#86efac}
+.bp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.bp-chips>span{padding:3px 11px;border-radius:999px;background:var(--superficie2);border:1px solid var(--anel);font-size:12.5px;font-weight:600}
+.bp-card-linha{grid-column:span 1}
+.bp-card-linha .linha-tempo{margin:0;max-height:230px;overflow:auto}
+.bp-hist .tabela-scroll{margin:0}
+@media (max-width:1100px){.bp-grade{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:700px){.bp-grade{grid-template-columns:1fr}.bp-campos{grid-template-columns:1fr 1fr}.bp-kpi{flex:1 1 40%}}
+
+/* botão "PDF" nas linhas das tabelas do painel */
+.btn-pdf-linha{padding:3px 12px;font-size:12px;font-weight:700;border-radius:8px;line-height:1.4}
+
+/* ficha do produtor compacta: cabe na tela sem rolar a página (os blocos longos rolam por dentro) */
+.bp{gap:10px}
+.bp-topo{padding:10px 16px;gap:8px 16px}
+.bp-id h2{font-size:1.15rem}
+.bp-id p{margin:1px 0 5px;font-size:12px}
+.bp-kpi{min-width:98px;padding:5px 10px}
+.bp-kpi b{font-size:1.05rem;line-height:1.2}
+.bp-kpi-rot{font-size:9.5px}
+.bp-kpi-sub{font-size:9.5px}
+.bp-grade{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.bp-card{padding:10px 12px}
+.bp-card h3{margin:0 0 7px;padding-bottom:5px;font-size:11px}
+.bp-campos{gap:6px 12px}
+.bp-campo dd{font-size:13px}
+.bp-campo dt{font-size:11px}
+.bp-card h4{margin:6px 0 4px;font-size:11px}
+.bp-cult{gap:6px}
+.bp-cult li{font-size:13px;padding-bottom:5px}
+.bp-chips>span{padding:2px 9px;font-size:12px}
+.bp-card-linha{grid-column:span 2}
+.bp-hist{grid-column:span 3}
+.ben-vazio .bp-hist{grid-column:1/-1}
+.bp-card-linha .linha-tempo,.bp-hist .tabela-scroll{max-height:clamp(120px,calc(100vh - 530px),360px);overflow:auto;margin:0}
+.bp-hist .tabela-scroll thead th{position:sticky;top:0;z-index:1;background:var(--superficie2)}
+.bp-hist table.dados th,.bp-hist table.dados td{padding:5px 8px;font-size:12px}
+@media (max-width:1500px){
+  .bp-grade{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .bp-card-linha{grid-column:span 1}
+  .bp-hist{grid-column:span 2}
+}
+@media (max-width:1100px){
+  .bp-grade{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bp-card-linha,.bp-hist{grid-column:1/-1}
+}
+@media (max-width:700px){.bp-grade{grid-template-columns:1fr}.bp-card-linha,.bp-hist{grid-column:auto}}
+
+/* ficha do produtor — versão final: 4 cartões em cima, linha do tempo e histórico embaixo (cabe sem rolar a página) */
+.bp-grade{grid-template-columns:repeat(4,minmax(0,1fr))}
+.bp-card-linha{grid-column:span 1}
+.bp-hist{grid-column:span 3}
+.ben-vazio .bp-hist{grid-column:1/-1}
+.bp-card-linha .bp-lt,.bp-hist .tabela-scroll{max-height:clamp(110px,calc(100vh - 500px),340px);overflow:auto;margin:0}
+@media (max-width:1100px){
+  .bp-grade{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bp-card-linha,.bp-hist{grid-column:1/-1}
+}
+@media (max-width:700px){.bp-grade{grid-template-columns:1fr}.bp-card-linha,.bp-hist{grid-column:auto}}
+
+/* linha do tempo: pontos coloridos por serviço, data em destaque e o intervalo entre atendimentos */
+.bp-lt{list-style:none;margin:0;padding:0 4px 0 0;position:relative}
+.bp-lt>li{position:relative;display:flex;gap:10px;padding:0 0 12px 0}
+.bp-lt>li:not(:last-child)::before{content:"";position:absolute;left:5px;top:14px;bottom:0;width:2px;background:var(--anel)}
+.bp-lt-ponto{flex:none;width:12px;height:12px;margin-top:3px;border-radius:50%;border:2px solid var(--superficie);box-shadow:0 0 0 2px currentColor;background:currentColor}
+.bp-lt-mec .bp-lt-ponto{color:#22c55e}.bp-lt-acu .bp-lt-ponto{color:#3b82f6}
+.bp-lt-corpo{min-width:0;flex:1}
+.bp-lt-topo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.bp-lt-topo>b{font-size:13.5px;color:var(--tinta)}
+.bp-lt-topo .bp-tag{padding:1px 9px;font-size:11px}
+.bp-lt-det{margin-top:2px;font-size:12.5px;color:var(--tinta2,var(--tinta));overflow-wrap:anywhere}
+.bp-lt-det .ia-rot{gap:4px}
+.bp-lt-det .ia{width:14px;height:14px}
+.bp-lt-corpo>em{display:block;margin-top:1px;font-size:11px;font-style:normal;color:var(--tinta3)}
+
+/* ficha do produtor: ~15% mais alta (mais respiro vertical, cartões com altura mínima) */
+.bp{gap:12px}
+.bp-grade{gap:12px}
+.bp-topo{min-height:94px;padding-top:13px;padding-bottom:13px}
+.bp-grade>.bp-card{min-height:188px;padding-top:13px;padding-bottom:13px}
+.bp-grade>.bp-card-linha,.bp-grade>.bp-hist{min-height:123px}
+.bp-campos{gap:8px 14px}
+.bp-card-linha .bp-lt,.bp-hist .tabela-scroll{max-height:clamp(125px,calc(100vh - 470px),380px)}
+@media (max-width:1100px){.bp-grade>.bp-card{min-height:0}}
+
+/* botão "Exportar PDF" da ficha do produtor */
+.bp-kpis{align-items:center}
+.bp-pdf{align-self:stretch;margin-left:6px;padding:0 20px;border-radius:12px;background:#1d4ed8;border-color:#1d4ed8;color:#fff;font-weight:700;box-shadow:none}
+.bp-pdf:hover:not(:disabled){background:#1e40af;border-color:#1e40af;color:#fff}
+.bp-pdf:disabled{opacity:.7;cursor:progress}

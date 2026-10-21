@@ -215,6 +215,10 @@ function lerRegistroDoPost(string $emailConfirmado): array
         'area_total_ha' => $num('area_total_ha'),
         'horas_maquina' => $num('horas_maquina'),
         'quantidade_acudes' => $inteiro('quantidade_acudes'),
+        // Piscicultura é um serviço da Açudagem (não um implemento): o formulário pergunta "Sim"/"Não"
+        'piscicultura' => $txt('tipo_servico') === 'Açudagem' && $txt('piscicultura') === 'Sim',
+        // Destoca é um serviço da Mecanização (não um implemento): o formulário pergunta "Sim"/"Não"
+        'destoca' => $txt('tipo_servico') === 'Mecanização' && $txt('destoca') === 'Sim',
         'pontos_geo' => $json('pontos_geo', []),
         'maquinas' => $lista('maquinas'),
         'implementos' => $lista('implementos'),
@@ -234,6 +238,12 @@ function lerRegistroDoPost(string $emailConfirmado): array
     }
     if ($registro['tipo_servico'] === 'Açudagem' && (int) ($registro['quantidade_acudes'] ?? 0) < 1) {
         responder(400, ['ok' => false, 'erro' => 'Informe pelo menos 1 tanque/açude para um lançamento de Açudagem.']);
+    }
+    if ($registro['tipo_servico'] === 'Mecanização' && !in_array($txt('destoca'), ['Sim', 'Não'], true)) {
+        responder(400, ['ok' => false, 'erro' => 'Informe se a Mecanização é para destoca (Sim ou Não).']);
+    }
+    if ($registro['tipo_servico'] === 'Açudagem' && !in_array($txt('piscicultura'), ['Sim', 'Não'], true)) {
+        responder(400, ['ok' => false, 'erro' => 'Informe se a Açudagem é de piscicultura (Sim ou Não).']);
     }
     if ($registro['tipo_servico'] === 'Açudagem' && (float) ($registro['horas_maquina'] ?? 0) <= 0) {
         responder(400, ['ok' => false, 'erro' => 'Informe as horas de máquina para um lançamento de Açudagem.']);
@@ -675,10 +685,10 @@ if ($acao === 'painel') {
         return $u === '' ? $email : implode(' ', array_map(function ($p) { return mb_strtoupper(mb_substr($p, 0, 1)) . mb_substr($p, 1); }, preg_split('/\s+/', $u)));
     };
 
-    $campos = 'criado_em,criado_por_email,tipo_servico,data_vistoria,escritorio_local,responsavel_tecnico,' .
+    $campos = 'id,criado_em,criado_por_email,tipo_servico,data_vistoria,escritorio_local,responsavel_tecnico,' .
         'nome_beneficiario,sexo,estado_civil,possui_dap,associacao_cooperativa,endereco,nome_propriedade,municipio,' .
         'culturas,area_total_ha,horas_maquina,quantidade_acudes,pontos_geo,tipo_uso,maquinas,implementos,daes,' .
-        'observacao,formulario_url';
+        'observacao,formulario_url,piscicultura,destoca';
     $registros = [];
     $semGeo = $semForm = $outroAno = 0;
     $produtores = [];
@@ -731,10 +741,12 @@ if ($acao === 'painel') {
                 'cult' => $cult,
                 'ha' => $numero($l['area_total_ha'] ?? 0), 'hrs' => $numero($l['horas_maquina'] ?? 0),
                 'ac' => (int) $numero($l['quantidade_acudes'] ?? 0),
+                'pisc' => ($l['piscicultura'] ?? false) === true,
+                'dest' => ($l['destoca'] ?? false) === true,
                 'tt' => $ou($l['tipo_uso'] ?? null),
                 'maq' => $listaTxt($l['maquinas'] ?? null), 'impl' => $listaTxt($l['implementos'] ?? null),
                 'dae' => $dae, 'form' => $form, 'obs' => $ou($l['observacao'] ?? null, ''),
-            ] + ($geo ? ['geo' => $geo] : []);
+            ] + ($geo ? ['geo' => $geo] : []) + ($logado && !empty($l['id']) ? ['id' => (string) $l['id']] : []);
         }
         if (count($corpo) < $tam) break;
     }

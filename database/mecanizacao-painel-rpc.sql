@@ -99,6 +99,8 @@ begin
       coalesce(l.area_total_ha, 0)::float8 as ha,
       coalesce(l.horas_maquina, 0)::float8 as hrs,
       coalesce(l.quantidade_acudes, 0) as ac,
+      coalesce(l.piscicultura, false) as pisc,
+      coalesce(l.destoca, false) as dest,
       public.mec_ou(l.tipo_uso) as tt,
       coalesce(to_json(array(select m from unnest(l.maquinas) m where m <> '')), '[]'::json) as maq,
       coalesce(to_json(array(select m from unnest(l.implementos) m where m <> '')), '[]'::json) as impl,
@@ -125,12 +127,12 @@ begin
         case when p_logado then json_strip_nulls(json_build_object(   -- strip: sem pontos, a chave "geo" nem aparece
           'd', b.d, 'h', b.h, 'ex', b.ex, 'dv', b.dv, 'pc', b.pc, 'mun', b.mun, 'esc', b.esc, 'rt', b.rt, 'alim', b.alim,
           'prod', b.prod, 'sexo', b.sexo, 'ec', b.ec, 'dap', b.dap, 'assoc', b.assoc, 'loc', b.loc, 'propr', b.propr,
-          'cult', b.cult, 'ha', b.ha, 'hrs', b.hrs, 'ac', b.ac, 'tt', b.tt, 'maq', b.maq, 'impl', b.impl, 'dae', b.dae,
-          'form', b.form, 'obs', b.obs, 'geo', b.geo))
+          'cult', b.cult, 'ha', b.ha, 'hrs', b.hrs, 'ac', b.ac, 'pisc', b.pisc, 'dest', b.dest, 'tt', b.tt, 'maq', b.maq, 'impl', b.impl, 'dae', b.dae,
+          'form', b.form, 'obs', b.obs, 'geo', b.geo, 'id', b.id))
         else json_build_object(
           'd', b.d, 'h', b.h, 'ex', b.ex, 'dv', b.dv, 'pc', b.pc, 'mun', b.mun, 'esc', b.esc, 'rt', b.rt, 'alim', b.alim,
           'prod', b.prod, 'sexo', b.sexo, 'ec', b.ec, 'dap', b.dap, 'assoc', b.assoc, 'loc', b.loc, 'propr', b.propr,
-          'cult', b.cult, 'ha', b.ha, 'hrs', b.hrs, 'ac', b.ac, 'tt', b.tt, 'maq', b.maq, 'impl', b.impl, 'dae', b.dae,
+          'cult', b.cult, 'ha', b.ha, 'hrs', b.hrs, 'ac', b.ac, 'pisc', b.pisc, 'dest', b.dest, 'tt', b.tt, 'maq', b.maq, 'impl', b.impl, 'dae', b.dae,
           'form', b.form, 'obs', b.obs) end
         order by b.criado_em, b.id), '[]'::json) as regs,
       count(*) as n,

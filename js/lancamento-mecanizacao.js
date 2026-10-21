@@ -59,6 +59,8 @@
       município) do último lançamento salvo — quem digita várias fichas do
       mesmo dia/lote não precisa repetir esses campos toda vez. */
   function limparFormulario(seedLote) {
+    form.removeAttribute('data-simulacao');   // sai do modo simulação do root
+    var sair = el('lancSimSair'); if (sair) sair.hidden = true;
     form.reset();
     ajuda.marcarHorarioInsercao();   // form.reset() também limpa este campo, sem "name"
     if (seedLote && loteAnterior) {
@@ -76,6 +78,10 @@
 
   function salvar(e) {
     e.preventDefault();
+    if (form.getAttribute('data-simulacao') === '1') {
+      aviso('lancSalvarStatus', 'ok', 'Simulação: nada foi gravado. Use "Sair da simulação" para voltar ao formulário vazio.');
+      return;
+    }
     if (!form.reportValidity()) return;
     if (!ajuda.validarServico()) return;
 
@@ -142,6 +148,73 @@
       });
   }
 
+  /* ----------------------------------------------- simulação (só root) */
+  /** Mostra TODAS as seções e campos do formulário, em branco (Mecanização e Açudagem juntas, implementos, georreferenciamento,
+      DAE, observações...), sem bloqueio entre seções e sem gravar. Serve para o root ver o que existe sem preencher nada. */
+  function verTudo() {
+    limparFormulario(false);
+    form.setAttribute('data-simulacao', '1');
+    ['lancSecMecanizacao', 'lancSecAcudagem', 'lancFieldsetImplementos'].forEach(function (id) { if (el(id)) el(id).hidden = false; });
+    Array.prototype.forEach.call(form.querySelectorAll('.lanc-sec-servico'), function (sec) { sec.hidden = false; });
+    el('lancSimSair').hidden = false;
+    aviso('lancSalvarStatus', 'carregando', 'Visualização de todos os campos (em branco): nada será gravado.');
+    if (ux) ux.atualizar();
+    window.scrollTo({ top: 0 });
+  }
+
+  /** Preenche um lançamento de exemplo (Mecanização ou Açudagem), libera todas as seções e trava o salvar:
+      serve para o root ver o formulário completo, como se alguém estivesse lançando, sem preencher nada. */
+  function simular(tipo) {
+    limparFormulario(false);
+    form.setAttribute('data-simulacao', '1');
+    var hoje = new Date(), iso = hoje.getFullYear() + '-' + ('0' + (hoje.getMonth() + 1)).slice(-2) + '-' + ('0' + hoje.getDate()).slice(-2);
+    function definir(c, v) {
+      if (!c) return;
+      c.value = v;
+      c.dispatchEvent(new Event('input', { bubbles: true }));
+      c.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    var campo = function (n) { return form.elements[n]; };
+    try {
+      var radio = form.querySelector('input[name="tipo_servico"][value="' + tipo + '"]');
+      radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true }));
+      definir(campo('data_vistoria'), window.DATA_BR.isoParaBr(iso));
+      definir(campo('municipio'), 'Rio Branco');
+      ajuda.garantirTecnico('Técnico de exemplo');
+      definir(campo('responsavel_tecnico'), 'Técnico de exemplo');
+      definir(campo('nome_beneficiario'), 'Beneficiário de Exemplo');
+      definir(campo('cpf'), '529.982.247-25');
+      definir(campo('data_nascimento'), '01/01/1980');
+      definir(campo('telefone'), '(68) 99999-0000');
+      definir(campo('estado_civil'), 'Solteiro(a)');
+      definir(campo('sexo'), 'F');
+      definir(campo('possui_dap'), 'Sim');
+      definir(campo('indigena'), 'Não');
+      definir(el('lancPossuiAssociacao'), 'Não');
+      definir(campo('endereco'), 'Ramal de exemplo, km 10');
+      definir(campo('nome_propriedade'), 'Sítio Exemplo');
+      if (tipo === 'Mecanização') {
+        var linha = form.querySelector('.lanc-cultura-linha');
+        if (linha) {
+          definir(linha.querySelector('.lc-cultura'), 'Milho - safra');
+          definir(linha.querySelector('.lc-area'), '2');
+          definir(linha.querySelector('.lc-sistema'), 'M');
+        }
+        definir(campo('destoca'), 'Sim');
+      } else {
+        definir(campo('quantidade_acudes'), '1');
+        definir(campo('horas_maquina'), '8');
+        definir(campo('piscicultura'), 'Sim');
+      }
+      var maq = form.querySelector('#lancMaquinas input[value="' + (tipo === 'Mecanização' ? 'Trator agrícola' : 'Escavadeira hidráulica') + '"]');
+      if (maq) { maq.checked = true; maq.dispatchEvent(new Event('change', { bubbles: true })); }
+    } catch (e) { /* simulação é só para ver: se um campo faltar, o resto continua */ }
+    el('lancSimSair').hidden = false;
+    aviso('lancSalvarStatus', 'carregando', 'Simulação de ' + tipo + ': nada será gravado.');
+    if (ux) ux.atualizar();
+    window.scrollTo({ top: 0 });
+  }
+
   /* ---------------------------------------------------- alternar lista/formulário */
   function mostrarLista() {
     el('lancListaView').hidden = false;
@@ -151,6 +224,7 @@
   function mostrarFormulario() {
     el('lancListaView').hidden = true;
     el('lancFormView').hidden = false;
+    var barraSim = el('lancSimulacao'); if (barraSim) barraSim.hidden = !ehResponsavel;   // só o root simula
     ajuda.marcarHorarioInsercao();
     if (ux) { ux.atualizar(); setTimeout(ux.focarPrimeiro, 120); }
   }
@@ -1282,6 +1356,10 @@
     form.addEventListener('submit', salvar);
     el('lancLimpar').addEventListener('click', function () { limparFormulario(false); aviso('lancSalvarStatus', '', ''); });
     el('lancVoltarLista').addEventListener('click', mostrarLista);
+    el('lancSimTudo').addEventListener('click', verTudo);
+    el('lancSimMec').addEventListener('click', function () { simular('Mecanização'); });
+    el('lancSimAcu').addEventListener('click', function () { simular('Açudagem'); });
+    el('lancSimSair').addEventListener('click', function () { limparFormulario(false); aviso('lancSalvarStatus', '', ''); if (ux) ux.atualizar(); });
     el('lancDiffFechar').addEventListener('click', function () { el('lancDiffDialogo').close(); });
     ligarPessoas();
     var esperaRedimensionar;

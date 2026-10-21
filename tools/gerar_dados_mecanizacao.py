@@ -149,9 +149,6 @@ IMPLEMENTOS = [
     ("Colheitadeira", ("colheitadeira",)),
     ("Pulverizador", ("pulverizador",)),
     ("Jogadora de calcário", ("calcario",)),
-    ("Destoca", ("destoca",)),
-    ("Roçadeira", ("rocad",)),
-    ("Piscicultura", ("piscicultura", "psicultura", "pisicultura", "piscicultuta", "picicultura")),
     ("Tanque / açude", ("tanque", "acude", "reforma")),
 ]
 

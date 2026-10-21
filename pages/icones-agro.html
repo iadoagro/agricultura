@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SISTEMA</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta property="og:title" content="&Iacute;cones agro">
+<meta property="og:description" content="Cat&aacute;logo dos &iacute;cones de culturas, m&aacute;quinas e implementos usados no sistema.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/dashboard.css?v=2026102124">
+<link rel="stylesheet" href="../css/icones-agro.css?v=2026102101">
+<script>
+  /* aplica o tema antes da pintura para não piscar branco */
+  (function () {
+    try {
+      var t = localStorage.getItem('seagri_tema');
+      if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro';
+      document.documentElement.setAttribute('data-tema', t);
+    } catch (e) { document.documentElement.setAttribute('data-tema', 'claro'); }
+  })();
+</script>
+</head>
+<body>
+
+<header class="cab-padrao">
+  <h1>SISTEMA</h1>
+  <p>&Iacute;cones de culturas, m&aacute;quinas e implementos</p>
+</header>
+
+<div class="cat-wrap">
+  <div class="cat-barra">
+    <input type="search" id="catBusca" placeholder="Buscar &iacute;cone (ex.: milho, trator, grade)" autocomplete="off">
+    <button type="button" class="cat-filtro ativo" data-grupo="">Todos</button>
+    <button type="button" class="cat-filtro" data-grupo="cultura">Culturas</button>
+    <button type="button" class="cat-filtro" data-grupo="maquina">M&aacute;quinas</button>
+    <button type="button" class="cat-filtro" data-grupo="implemento">Implementos</button>
+    <button type="button" class="cat-filtro" data-grupo="mecanizacao">Mecaniza&ccedil;&atilde;o</button>
+    <button type="button" class="cat-filtro" data-grupo="acudagem">A&ccedil;udagem</button>
+  </div>
+  <div id="catLista"></div>
+
+  <section class="cat-amostra">
+    <h2>Como aparece no sistema</h2>
+    <div class="linha" id="catAmostraChips"></div>
+    <div class="linha" id="catAmostraTamanhos"></div>
+    <p class="sub">No c&oacute;digo: <code>ICONES_AGRO.svg('milho')</code> (herda a cor do texto) &middot; <code>ICONES_AGRO.rotulado('Milho - safrinha')</code> (&iacute;cone colorido + nome)
+      &middot; <code>ICONES_AGRO.chave('Trator de esteira')</code> (reconhece os nomes das fichas).</p>
+  </section>
+</div>
+<div class="cat-aviso" id="catAviso" role="status"></div>
+
+<script src="../js/icones-agro.js?v=2026102148"></script>
+<script>
+(function () {
+  var NOMES_GRUPO = { cultura: 'Culturas', maquina: 'Máquinas', implemento: 'Implementos', mecanizacao: 'Serviço da Mecanização', acudagem: 'Açudagem (serviços)' };
+  var lista = ICONES_AGRO.lista(), grupo = '', busca = '';
+  var semAcento = function (t) { return String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
+
+  function desenhar() {
+    var html = '';
+    Object.keys(NOMES_GRUPO).forEach(function (g) {
+      if (grupo && grupo !== g) return;
+      var itens = lista.filter(function (i) {
+        return i.grupo === g && (!busca || semAcento(i.nome + ' ' + i.chave).indexOf(busca) >= 0);
+      });
+      if (!itens.length) return;
+      html += '<h2 class="cat-grupo">' + NOMES_GRUPO[g] + ' (' + itens.length + ')</h2><div class="cat-grade">' +
+        itens.map(function (i) {
+          return '<button type="button" class="cat-card" data-chave="' + i.chave + '" title="Copiar a chave">' +
+            ICONES_AGRO.svg(i.chave, { cor: true }) + '<b>' + i.nome + '</b><code>' + i.chave + '</code></button>';
+        }).join('') + '</div>';
+    });
+    document.getElementById('catLista').innerHTML = html || '<p class="sub">Nenhum ícone encontrado.</p>';
+  }
+
+  document.getElementById('catBusca').addEventListener('input', function (e) { busca = semAcento(e.target.value.trim()); desenhar(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.cat-filtro'), function (b) {
+    b.addEventListener('click', function () {
+      grupo = b.getAttribute('data-grupo');
+      Array.prototype.forEach.call(document.querySelectorAll('.cat-filtro'), function (x) { x.classList.toggle('ativo', x === b); });
+      desenhar();
+    });
+  });
+  document.getElementById('catLista').addEventListener('click', function (e) {
+    var c = e.target.closest('.cat-card');
+    if (!c) return;
+    var k = c.getAttribute('data-chave'), av = document.getElementById('catAviso');
+    try { navigator.clipboard.writeText(k); av.textContent = 'Chave "' + k + '" copiada'; } catch (er) { av.textContent = 'Chave: ' + k; }
+    av.classList.add('on'); setTimeout(function () { av.classList.remove('on'); }, 1400);
+  });
+
+  desenhar();
+  document.getElementById('catAmostraChips').innerHTML = ['Pastagem - Corte', 'Milho - safrinha', 'Soja - safra', 'Mandioca', 'Açaí', 'Café', 'Trator de esteira',
+    'Escavadeira hidráulica', 'Grade aradora', 'Colheitadeira', 'Tanque / açude'].map(function (n) {
+    return '<span class="cat-chip">' + ICONES_AGRO.rotulado(n) + '</span>';
+  }).join('');
+  document.getElementById('catAmostraTamanhos').innerHTML = [16, 20, 24, 32, 48].map(function (t) {
+    return ICONES_AGRO.svg('trator', { tamanho: t, cor: true }) + ICONES_AGRO.svg('milho', { tamanho: t, cor: true });
+  }).join('<span style="width:14px"></span>');
+})();
+</script>
+</body>
+</html>

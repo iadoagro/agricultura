@@ -636,7 +636,7 @@ html:has(#painel-lancamento.ativa) footer{padding:8px 24px}
 }
 
 /* ---- Ficha de visualização (pages/lancamento-editar.html?modo=ver): dados formatados, só leitura ---- */
-.ficha{grid-column:1/-1;display:flex;flex-direction:column;gap:16px}
+.ficha-pagina{grid-column:1/-1;display:flex;flex-direction:column;gap:16px}
 .ficha-topo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:20px 22px;border:1px solid var(--linha);border-radius:14px;background:var(--superficie,#fff)}
 .ficha-topo-id h2{margin:6px 0 2px;font-size:1.5rem;line-height:1.2}
 .ficha-topo-id p{margin:0;color:var(--cinza)}
@@ -684,7 +684,7 @@ html:has(#painel-lancamento.ativa) footer{padding:8px 24px}
 @media (max-width:1100px){.ficha-c4,.ficha-c6,.ficha-c8{grid-column:1/-1}.ficha-topo-dir{align-items:flex-start}}
 
 /* ficha compacta: Beneficiário, Serviço e Unidade na 1ª linha; detalhamento na 2ª — cabe na tela sem rolar */
-.ficha{gap:10px}
+.ficha-pagina{gap:10px}
 .ficha-grade{gap:10px}
 .ficha-topo{padding:12px 18px;gap:10px 20px}
 .ficha-topo-id h2{margin:4px 0 0;font-size:1.25rem}
@@ -724,44 +724,44 @@ html:has(#painel-lancamento.ativa) footer{padding:8px 24px}
 @media (max-width:1100px){.ficha-grade{grid-template-columns:1fr}.ficha-grade>.ficha-secao[style*="order:20"]{grid-column:auto}}
 
 /* ficha: reforço — exatamente 3 colunas iguais, cartões da mesma linha com a mesma altura */
-.ficha .ficha-grade{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;grid-auto-flow:row !important;align-items:stretch !important}
-.ficha .ficha-grade>.ficha-secao{grid-column:auto !important;min-width:0;width:auto}
-.ficha .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:1/-1 !important}
-.ficha .ficha-grade>.ficha-secao .ficha-campos{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
-@media (max-width:1100px){.ficha .ficha-grade{grid-template-columns:1fr !important}.ficha .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:auto !important}}
+.ficha-pagina .ficha-grade{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;grid-auto-flow:row !important;align-items:stretch !important}
+.ficha-pagina .ficha-grade>.ficha-secao{grid-column:auto !important;min-width:0;width:auto}
+.ficha-pagina .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:1/-1 !important}
+.ficha-pagina .ficha-grade>.ficha-secao .ficha-campos{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+@media (max-width:1100px){.ficha-pagina .ficha-grade{grid-template-columns:1fr !important}.ficha-pagina .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:auto !important}}
 
 /* ficha: linha 1 = beneficiário 50% + unidade 25% + georreferenciamento 25%; linha 2 = serviço 25% + açudagem/cultivo 25% + maquinário 50% */
-.ficha .ficha-grade{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
-.ficha .ficha-grade>.ficha-q1{grid-column:span 1 !important}
-.ficha .ficha-grade>.ficha-q2{grid-column:span 2 !important}
-.ficha .ficha-grade>.ficha-q1 .ficha-campos{grid-template-columns:1fr !important}
-.ficha .ficha-grade>.ficha-q2 .ficha-campos{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
-.ficha .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:span 2 !important}
-@media (max-width:1100px){.ficha .ficha-grade{grid-template-columns:1fr !important}.ficha .ficha-grade>.ficha-secao{grid-column:auto !important}}
+.ficha-pagina .ficha-grade{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
+.ficha-pagina .ficha-grade>.ficha-q1{grid-column:span 1 !important}
+.ficha-pagina .ficha-grade>.ficha-q2{grid-column:span 2 !important}
+.ficha-pagina .ficha-grade>.ficha-q1 .ficha-campos{grid-template-columns:1fr !important}
+.ficha-pagina .ficha-grade>.ficha-q2 .ficha-campos{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+.ficha-pagina .ficha-grade>.ficha-secao[style*="order:20"]{grid-column:span 2 !important}
+@media (max-width:1100px){.ficha-pagina .ficha-grade{grid-template-columns:1fr !important}.ficha-pagina .ficha-grade>.ficha-secao{grid-column:auto !important}}
 
 /* ficha, posições (grade de 4 colunas):
    linha 1: beneficiário (50%) | unidade (25%) | georreferenciamento (25%)
    linha 2: serviço | açudagem/cultivo | mapa (50%, ocupa as linhas 2 e 3)
    linha 3: maquinário (sob serviço e açudagem/cultivo) */
-.ficha .ficha-grade{grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-auto-flow:row !important}
-.ficha .ficha-grade>.ficha-a-ben{grid-column:1/3 !important;grid-row:1 !important}
-.ficha .ficha-grade>.ficha-a-uni{grid-column:3 !important;grid-row:1 !important}
-.ficha .ficha-grade>.ficha-a-geo{grid-column:4 !important;grid-row:1 !important}
-.ficha .ficha-grade>.ficha-a-srv{grid-column:1 !important;grid-row:2 !important}
-.ficha .ficha-grade>.ficha-a-cul{grid-column:2 !important;grid-row:2 !important}
-.ficha .ficha-grade>.ficha-a-maq{grid-column:1/3 !important;grid-row:3 !important}
-.ficha .ficha-grade>.ficha-a-mapa{grid-column:3/5 !important;grid-row:2/4 !important;display:flex;flex-direction:column}
-.ficha .ficha-grade>.ficha-a-dae{grid-column:1/3 !important;grid-row:4 !important}
-.ficha .ficha-grade>.ficha-a-obs{grid-column:3/5 !important;grid-row:4 !important}
-.ficha .ficha-grade>.ficha-a-ben .ficha-campos{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
-.ficha .ficha-grade>.ficha-a-uni .ficha-campos,.ficha .ficha-grade>.ficha-a-geo .ficha-campos,
-.ficha .ficha-grade>.ficha-a-srv .ficha-campos,.ficha .ficha-grade>.ficha-a-cul .ficha-campos{grid-template-columns:1fr !important}
-.ficha .ficha-grade>.ficha-a-maq .ficha-campos{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+.ficha-pagina .ficha-grade{grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-auto-flow:row !important}
+.ficha-pagina .ficha-grade>.ficha-a-ben{grid-column:1/3 !important;grid-row:1 !important}
+.ficha-pagina .ficha-grade>.ficha-a-uni{grid-column:3 !important;grid-row:1 !important}
+.ficha-pagina .ficha-grade>.ficha-a-geo{grid-column:4 !important;grid-row:1 !important}
+.ficha-pagina .ficha-grade>.ficha-a-srv{grid-column:1 !important;grid-row:2 !important}
+.ficha-pagina .ficha-grade>.ficha-a-cul{grid-column:2 !important;grid-row:2 !important}
+.ficha-pagina .ficha-grade>.ficha-a-maq{grid-column:1/3 !important;grid-row:3 !important}
+.ficha-pagina .ficha-grade>.ficha-a-mapa{grid-column:3/5 !important;grid-row:2/4 !important;display:flex;flex-direction:column}
+.ficha-pagina .ficha-grade>.ficha-a-dae{grid-column:1/3 !important;grid-row:4 !important}
+.ficha-pagina .ficha-grade>.ficha-a-obs{grid-column:3/5 !important;grid-row:4 !important}
+.ficha-pagina .ficha-grade>.ficha-a-ben .ficha-campos{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+.ficha-pagina .ficha-grade>.ficha-a-uni .ficha-campos,.ficha-pagina .ficha-grade>.ficha-a-geo .ficha-campos,
+.ficha-pagina .ficha-grade>.ficha-a-srv .ficha-campos,.ficha-pagina .ficha-grade>.ficha-a-cul .ficha-campos{grid-template-columns:1fr !important}
+.ficha-pagina .ficha-grade>.ficha-a-maq .ficha-campos{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
 .ficha-mapa{position:relative;flex:1;min-height:260px;border-radius:10px;overflow:hidden;background:var(--superficie2,#eef1ee)}
 .ficha-mapa-msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;max-width:80%;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,.95);color:#374151;font-size:14px;font-weight:600;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 @media (max-width:1100px){
-  .ficha .ficha-grade{grid-template-columns:1fr !important}
-  .ficha .ficha-grade>.ficha-secao{grid-column:auto !important;grid-row:auto !important}
+  .ficha-pagina .ficha-grade{grid-template-columns:1fr !important}
+  .ficha-pagina .ficha-grade>.ficha-secao{grid-column:auto !important;grid-row:auto !important}
   .ficha-mapa{min-height:300px}
 }
 
@@ -802,3 +802,28 @@ html:has(#painel-lancamento.ativa) footer{padding:8px 24px}
 .ficha-resumo>div,.ficha-pdf{box-sizing:border-box;width:150px;height:62px;min-width:0;padding:0 10px;border-radius:12px}
 .ficha-resumo>div{display:flex;flex-direction:column;align-items:center;justify-content:center}
 .ficha-pdf{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin:0;font-size:14px}
+
+/* máquinas por categoria: Tratores (com marca/modelo) e Escavação e carga; em Açudagem só as de obra de terra */
+.lanc-caixas [hidden]{display:none !important}
+.lanc-caixas .lanc-grupo{flex:1 1 100%;grid-column:1 / -1}
+.lanc-caixas .lanc-grupo h5{margin:6px 0 6px;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta3)}
+.lanc-caixas .lanc-subgrupo{margin-top:8px;padding-left:12px;border-left:3px solid var(--acento-suave)}
+.lanc-caixas .lanc-subgrupo h6{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--tinta3)}
+.lanc-caixas .lanc-grupo-itens{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px}
+@media (max-width:700px){.lanc-caixas .lanc-grupo-itens{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 8px}}
+
+/* modo simulação do root (formulário do painel) */
+.lanc-sim{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0 0 12px;padding:10px 14px;border:1px dashed #a16207;border-radius:12px;background:#fef9c3;color:#713f12;font-size:13px}
+.lanc-sim .lanc-sim-tit{flex:1 1 280px}
+.lanc-sim .btn{padding:6px 12px;font-size:13px}
+
+/* opções bloqueadas pelas regras de coerência (máquinas x implementos) */
+.lanc-caixas label.desativada{opacity:.4;cursor:not-allowed}
+.lanc-caixas label.desativada input{cursor:not-allowed}
+.lanc-regra-nota{margin:0 0 8px;padding:8px 12px;border-radius:10px;background:var(--acento-suave);color:var(--acento-fundo);font-size:12.5px;line-height:1.4}
+
+/* "Outro" de cada grupo de máquinas (e dos implementos): o bloco ocupa a linha inteira */
+.lanc-caixas .lc-outra-bloco{flex:1 1 100%;grid-column:1 / -1}
+.lanc-caixas .lc-outra-bloco .lc-outra-linha{margin-top:4px}
+.lanc-caixas .lanc-grupo > .lc-outra-bloco{margin-top:6px}
+.lanc-caixas .lc-outra-bloco > label.lanc-caixa-outra{max-width:230px}

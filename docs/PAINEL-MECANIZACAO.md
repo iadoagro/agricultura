@@ -22,7 +22,6 @@ cada aba nova vive em um arquivo próprio e se registra pela **`window.PAINEL_AP
 | `js/painel-cruzamentos.js` | Tabela dinâmica (linhas × colunas × valor). |
 | `js/painel-alertas.js` | Alertas de produtividade (só interno). |
 | `js/painel-relatorios.js` | Relatórios semanal/mensal (só interno); PDF baixado direto no padrão visual dos relatórios do sistema. |
-| `js/painel-produtores.js` | Recorrência e produtores que não voltaram; aparece dentro da aba **Produtor** (ficha + recorrência, só interno). |
 | `js/painel-insercoes-extra.js` | Visões **Por município, Por escritório, Por serviço, Por técnico e Por horário** (lançamentos pela data/hora de inserção; só internas). |
 | `js/painel-pontos.js` | Mapa de pontos (satélite, calor, área por escritório). Vive em *Mostrar mais → Mapa de pontos*. |
 | `js/assistente-dados.js` | Assistente de perguntas (opção de usar os filtros; perguntas fixadas). |

@@ -52,6 +52,8 @@
       var tipo = form.elements['tipo_servico'] ? form.elements['tipo_servico'].value : '';
       if (tipo === 'Mecanização') {
         // ao menos uma cultura com área e sistema de cultivo preenchidos
+        var dst = form.elements['destoca'];
+        if (dst) itens.push({ campo: dst, rotulo: 'A mecanização é para destoca?', ok: !!dst.value, secao: dst.closest('section') });
         var linhas = Array.prototype.slice.call(form.querySelectorAll('.lanc-cultura-linha'));
         var completa = function (l) {
           return !!l.querySelector('.lc-cultura').value && parseFloat(l.querySelector('.lc-area').value) > 0 && !!l.querySelector('.lc-sistema').value;
@@ -68,13 +70,15 @@
         itens.push({ campo: q, rotulo: 'Quantidade de tanques/açudes', ok: parseInt(q.value, 10) >= 1, secao: q.closest('section') });
         var h = form.elements['horas_maquina'];
         if (h) itens.push({ campo: h, rotulo: 'Horas de máquina', ok: parseFloat(String(h.value).replace(',', '.')) > 0, secao: h.closest('section') });
+        var pi = form.elements['piscicultura'];
+        if (pi) itens.push({ campo: pi, rotulo: 'A açudagem é para piscicultura?', ok: !!pi.value, secao: pi.closest('section') });
       }
       // máquina utilizada: obrigatória nos dois serviços
       var hostMaq = el('lancMaquinas');
       if (tipo && hostMaq && !hostMaq.closest('[hidden]')) {
         var marcada = Array.prototype.some.call(hostMaq.querySelectorAll('input[type=checkbox]:checked'), function (i) {
           if (!i.classList.contains('lc-outra-check')) return true;
-          var t = hostMaq.querySelector('.lc-outra-texto');
+          var t = (i.closest('.lc-outra-bloco') || hostMaq).querySelector('.lc-outra-texto');
           return !!(t && t.value.trim());
         });
         itens.push({ campo: hostMaq.querySelector('input[type=checkbox]') || hostMaq, rotulo: 'Máquina utilizada', ok: marcada, secao: hostMaq.closest('section') });
@@ -101,6 +105,12 @@
     /* Libera as seções em ordem: cada uma só abre quando os obrigatórios da
        anterior estão preenchidos (seção sem obrigatório não trava a próxima). */
     function bloquearSecoes(itens) {
+      if (form.getAttribute('data-simulacao') === '1') {   // modo simulação do root: tudo liberado para ver o formulário completo
+        Array.prototype.forEach.call(form.querySelectorAll('section.painel'), function (s) {
+          s.classList.remove('lanc-bloqueada'); s.removeAttribute('inert'); s.setAttribute('data-estado', 'opcional');
+        });
+        return;
+      }
       var porSecao = new Map();
       itens.forEach(function (i) {
         if (!i.secao) return;

@@ -10,7 +10,8 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/dashboard.css?v=2026092538">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026102120">
+<link rel="stylesheet" href="../css/icones-agro.css?v=2026102101">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026102149">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
 <script src="../js/admin-auth.js?v=2026102001"></script>
@@ -66,7 +67,7 @@
     </section>
 
     <!-- Visualização: ficha formatada, só leitura (lancamento-editar.js, montarFicha) -->
-    <div id="lancFicha" class="ficha" hidden></div>
+    <div id="lancFicha" class="ficha-pagina" hidden></div>
 
     <form id="lancForm" class="painel-grid lanc-form" hidden>
 
@@ -141,23 +142,30 @@
         <div id="lancCulturas" class="lanc-culturas"></div>
         <button type="button" class="lanc-add-mais" id="lancAddCultura" title="Adicionar cultura" aria-label="Adicionar cultura" disabled>+</button>
         <p id="lancCulturaErro" class="lanc-erro" hidden>Adicione pelo menos uma cultura.</p>
+        <p id="lancDestocaErro" class="lanc-erro" hidden>Informe se a mecaniza&ccedil;&atilde;o &eacute; para destoca (Sim ou N&atilde;o).</p>
         <div class="lanc-campos" style="margin-top:14px">
           <label>&Aacute;rea total (ha)<input type="number" step="0.01" min="0" name="area_total_ha" id="lancAreaTotal">
             <small class="lanc-dica">Soma autom&aacute;tica das &aacute;reas acima — pode alterar se precisar.</small>
           </label>
+            <label>A mecaniza&ccedil;&atilde;o &eacute; para destoca?<span class="lanc-obrig">*</span>
+              <select name="destoca"><option value="">Selecione&hellip;</option><option>Sim</option><option>N&atilde;o</option></select>
+            </label>
         </div>
       </section>
 
       <section class="painel duplo" id="lancSecAcudagem" hidden>
         <div class="painel-cab"><div class="painel-cab-tit">
           <h2>5. A&ccedil;udagem</h2>
-          <p class="sub">Informe o total de tanques/açudes feitos e as horas de máquina usadas neste serviço.</p>
+          <p class="sub">Informe o total de tanques/açudes feitos, as horas de máquina usadas e se o serviço é de piscicultura.</p>
         </div></div>
         <div class="lanc-campos">
           <label>Quantidade de tanques/a&ccedil;udes<span class="lanc-obrig">*</span><input type="number" step="1" min="1" name="quantidade_acudes" placeholder="Ex.: 1"></label>
           <label>Horas de máquina<span class="lanc-obrig">*</span><input type="number" step="0.01" min="0.01" name="horas_maquina" placeholder="Ex.: 8"></label>
+            <label>A a&ccedil;udagem &eacute; para piscicultura?<span class="lanc-obrig">*</span>
+              <select name="piscicultura"><option value="">Selecione&hellip;</option><option>Sim</option><option>N&atilde;o</option></select>
+            </label>
         </div>
-        <p id="lancAcudeErro" class="lanc-erro" hidden>Para Açudagem, informe pelo menos 1 tanque/açude e as horas de máquina.</p>
+        <p id="lancAcudeErro" class="lanc-erro" hidden>Para Açudagem, informe pelo menos 1 tanque/açude, as horas de máquina e se é piscicultura.</p>
       </section>
 
       <section class="painel duplo lanc-sec-servico" hidden>
@@ -231,13 +239,14 @@
 
 <script src="../js/data-br.js?v=2026101207"></script>
 <script src="../js/select-busca.js?v=2026101203" defer></script>
-<script src="../js/lancamento-campos.js?v=2026101418"></script>
+<script src="../js/icones-agro.js?v=2026102148"></script>
+<script src="../js/lancamento-campos.js?v=2026102149"></script>
 <script src="../js/lancamento-nomes.js?v=2026101301"></script>
-<script src="../js/lancamento-ux.js?v=2026101413"></script>
+<script src="../js/lancamento-ux.js?v=2026102149"></script>
 <script src="../js/lancamento-validacao.js?v=2026101414"></script>
-<script src="../js/lancamento-pdf.js?v=2026101404"></script>
+<script src="../js/lancamento-pdf.js?v=2026102148"></script>
 <script src="../js/mapa-acre.js?v=6f66c78d"></script>
-<script src="../js/lancamento-editar.js?v=2026102119"></script>
+<script src="../js/lancamento-editar.js?v=2026102148"></script>
 <script src="../js/motion-ui.js?v=2026091904"></script>
 <script src="../js/motion-extras.js?v=2026100901"></script>
 <script src="../js/fx-ui.js?v=2026092102" defer></script>

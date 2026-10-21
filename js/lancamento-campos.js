@@ -27,20 +27,32 @@
   // aqui são opções de marcar, não palavras-chave de reconhecimento.
   // Só o que já foi usado nas fichas do banco, do mais para o menos frequente
   // (contagem de mecanizacao_lancamentos em 25/09/2026).
+  /* Máquinas por categoria. Marca/modelo (John Deere, Massey Ferguson, New Holland, Solis 90) são tratores agrícolas, por
+     isso ficam dentro de "Tratores". O segundo número marca o que faz sentido em Açudagem (obra de terra): no
+     serviço de Açudagem as demais opções somem (as já marcadas continuam visíveis). */
+  var MAQUINAS_GRUPOS = [
+    { grupo: 'Tratores', itens: [['Trator agrícola', 0, 1], ['Trator de pneu', 0, 1], ['Trator de esteira', 1, 1]],
+      sub: { titulo: 'Marca / modelo do trator (opcional — preencha só se souber)', itens: [['John Deere', 0, 1], ['Massey Ferguson', 0, 1], ['New Holland', 0, 1], ['Solis 90', 0, 1]] } },
+    { grupo: 'Escavação e carga', itens: [['Escavadeira hidráulica', 1, 0], ['Pá carregadeira', 1, 0], ['Retroescavadeira', 1, 0]] }
+  ];
   var MAQUINAS_OPCOES = [
     'Trator agrícola', 'Escavadeira hidráulica', 'Trator de pneu', 'Trator de esteira',
     'John Deere', 'Pá carregadeira', 'Massey Ferguson', 'New Holland',
     'Retroescavadeira', 'Solis 90'
   ];
-  // Piscicultura e Tanque / açude não são implementos: são tipos de serviço
-  // associados à Açudagem, não a máquinas de Mecanização (por isso saíram
-  // daqui).
+  // Piscicultura é uma vertente da Açudagem (campo "piscicultura", Sim/Não) e Destoca um serviço da Mecanização
+  // (campo "destoca", Sim/Não): nenhum dos dois é implemento nem cultura.
+  // Tanque / açude também não é implemento.
+  // já foram implemento na planilha antiga; hoje são serviços ou nem entram: não voltam como opção vindo do banco
+  var NAO_SAO_IMPLEMENTOS = ['Piscicultura', 'Destoca', 'Roçadeira', 'Tanque / açude'];
   var IMPLEMENTOS_OPCOES = [
-    'Grade aradora', 'Grade niveladora', 'Destoca', 'Plantadeira', 'Colheitadeira',
-    'Pulverizador', 'Jogadora de calcário', 'Roçadeira'
+    'Grade aradora', 'Grade niveladora', 'Plantadeira', 'Colheitadeira',
+    'Pulverizador', 'Jogadora de calcário'
   ];
 
   function el(id) { return document.getElementById(id); }
+  /** Nome com o ícone agro ao lado (js/icones-agro.js); sem a biblioteca, só o texto. */
+  function comIcone(n) { return window.ICONES_AGRO ? window.ICONES_AGRO.rotulado(n) : esc(n); }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -137,18 +149,57 @@
     return r;
   }
 
-  function caixasDeOpcoes(host, opcoes, name) {
-    host.innerHTML = opcoes.map(function (o, i) {
-      var id = name + i;
-      return '<label for="' + id + '"><input type="checkbox" id="' + id + '" value="' + esc(o) + '"><span>' + esc(o) + '</span></label>';
-    }).join('') +
+  function caixaOpcao(o, id, acu, mec) {
+    return '<label for="' + id + '"' + (acu == null ? '' : ' data-acu="' + acu + '" data-mec="' + mec + '"') + '><input type="checkbox" id="' + id + '" value="' + esc(o) + '"><span>' + comIcone(o) + '</span></label>';
+  }
+  /** "Outro" com a linha de texto logo abaixo (só aparece com "Outro" marcado). grupo: usado para saber onde cai um valor
+      desconhecido ao carregar uma ficha; acu/mec: em quais serviços o bloco aparece (máquinas). */
+  function htmlOutra(name, grupo, acu, mec) {
+    return '<div class="lc-outra-bloco"' + (grupo ? ' data-grupo="' + grupo + '"' : '') + (acu == null ? '' : ' data-acu="' + acu + '" data-mec="' + mec + '"') + '>' +
       '<label class="lanc-caixa-outra" for="' + name + 'Outra">' +
         '<input type="checkbox" id="' + name + 'Outra" class="lc-outra-check"><span>Outro</span>' +
       '</label>' +
-      // a linha de texto só aparece (inteira, abaixo das opções) com "Outro" marcado
       '<div class="lc-outra-linha" hidden>' +
         '<input type="text" class="lc-outra-texto" placeholder="Especifique qual…" aria-label="Especifique qual" disabled>' +
-      '</div>';
+      '</div></div>';
+  }
+  /** Máquina que não está no catálogo (veio do banco): em qual grupo entra. */
+  function grupoDaMaquina(nome) {
+    var t = String(nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (/trator/.test(t)) return 'trator';
+    if (/valtra|case ih|ford|yanmar|kubota|agrale|massey|john deere|new holland|solis|mahindra|jinma|lamborghini|fendt|claas|deutz|zetor|landini|\bmf\b/.test(t)) return 'marca';
+    return 'escavacao';
+  }
+  /** Nomes usados no banco que ainda não são opção (comparação sem acento/maiúscula), sem os que deixaram de ser implemento. */
+  function novosDoBanco(uso, conhecidos, ignorar) {
+    var chave = function (v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); };
+    var tem = {};
+    conhecidos.concat(ignorar || []).forEach(function (n) { tem[chave(n)] = true; });
+    return Object.keys(uso || {}).filter(function (n) { n = String(n).trim(); return n && !tem[chave(n)] && (tem[chave(n)] = true); })
+      .map(function (n) { return String(n).trim(); }).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
+  }
+  /** Caixas de máquinas, por categoria: Tratores (com marca/modelo) e Escavação e carga, cada uma com o seu "Outro".
+      Máquinas novas que já existem na base entram sozinhas na categoria certa. */
+  function caixasDeMaquinas(host, name, usoBanco) {
+    var n = 0;
+    var itens = function (lista) { return lista.map(function (p) { return caixaOpcao(p[0], name + (n++), p[1], p[2]); }).join(''); };
+    var catalogo = [];
+    MAQUINAS_GRUPOS.forEach(function (g) { g.itens.concat(g.sub ? g.sub.itens : []).forEach(function (p) { catalogo.push(p[0]); }); });
+    var extras = { trator: [], marca: [], escavacao: [] };
+    novosDoBanco(usoBanco, catalogo).forEach(function (nome) { extras[grupoDaMaquina(nome)].push(nome); });
+    var pares = function (lista, acu, mec) { return lista.map(function (nome) { return [nome, acu, mec]; }); };
+    host.innerHTML = MAQUINAS_GRUPOS.map(function (g, i) {
+      var trat = i === 0;
+      var lista = g.itens.concat(trat ? pares(extras.trator, 0, 1) : pares(extras.escavacao, 1, 0));
+      var sub = g.sub ? g.sub.itens.concat(pares(extras.marca, 0, 1)) : null;
+      return '<div class="lanc-grupo"><h5>' + esc(g.grupo) + '</h5><div class="lanc-grupo-itens">' + itens(lista) + '</div>' +
+        (sub ? '<div class="lanc-subgrupo"><h6>' + esc(g.sub.titulo) + '</h6><div class="lanc-grupo-itens">' + itens(sub) + '</div></div>' : '') +
+        htmlOutra(name + (trat ? 'T' : 'E'), trat ? 'tratores' : 'escavacao', trat ? 0 : 1, trat ? 1 : 0) + '</div>';
+    }).join('');
+  }
+  function caixasDeOpcoes(host, opcoes, name, usoBanco, ignorar) {
+    var todas = opcoes.concat(novosDoBanco(usoBanco, opcoes, ignorar));
+    host.innerHTML = todas.map(function (o, i) { return caixaOpcao(o, name + i); }).join('') + htmlOutra(name);
   }
 
   /** Marca as opções já escolhidas (edição); o que sobrar (não bate com
@@ -161,23 +212,36 @@
       var i = restantes.indexOf(input.value);
       if (i >= 0) { input.checked = true; restantes.splice(i, 1); }
     });
-    var outraCheck = host.querySelector('.lc-outra-check');
-    var outraTexto = host.querySelector('.lc-outra-texto');
-    outraCheck.checked = restantes.length > 0;
-    outraTexto.disabled = !outraCheck.checked;
-    outraTexto.value = restantes.join(', ');
-    var linhaOutra = host.querySelector('.lc-outra-linha');
-    if (linhaOutra) linhaOutra.hidden = !outraCheck.checked;
+    var blocos = Array.prototype.slice.call(host.querySelectorAll('.lc-outra-bloco'));
+    var destino = blocos.map(function () { return []; });
+    restantes.forEach(function (v) {
+      // sem opção própria: vai para o "Outro" do grupo certo (máquinas) ou o único que existe
+      var k = 0;
+      if (blocos.length > 1) {
+        var t = String(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        var tratores = /trator|valtra|case ih|ford|yanmar|kubota|agrale|massey|john deere|new holland|solis|mahindra|jinma|lamborghini|fendt|claas|deutz|zetor|landini/.test(t);
+        blocos.forEach(function (b, i) { if (b.getAttribute('data-grupo') === (tratores ? 'tratores' : 'escavacao')) k = i; });
+      }
+      if (destino[k]) destino[k].push(v);
+    });
+    blocos.forEach(function (b, i) {
+      var check = b.querySelector('.lc-outra-check'), texto = b.querySelector('.lc-outra-texto'), linha = b.querySelector('.lc-outra-linha');
+      check.checked = destino[i].length > 0;
+      texto.disabled = !check.checked;
+      texto.value = destino[i].join(', ');
+      if (linha) linha.hidden = !check.checked;
+    });
   }
 
   function coletarMarcados(host) {
     var valores = Array.prototype.slice.call(host.querySelectorAll('label:not(.lanc-caixa-outra) input:checked'))
       .map(function (i) { return i.value; });
-    var outraCheck = host.querySelector('.lc-outra-check');
-    if (outraCheck && outraCheck.checked) {
-      var texto = host.querySelector('.lc-outra-texto').value.trim();
-      if (texto) valores.push(texto);
-    }
+    Array.prototype.forEach.call(host.querySelectorAll('.lc-outra-bloco'), function (b) {
+      var check = b.querySelector('.lc-outra-check');
+      if (!check || !check.checked) return;
+      // vários nomes no mesmo "Outro" (separados por vírgula ou ponto e vírgula) viram valores separados
+      b.querySelector('.lc-outra-texto').value.split(/[,;]/).forEach(function (t) { t = t.trim(); if (t) valores.push(t); });
+    });
     return valores;
   }
 
@@ -608,6 +672,7 @@
         fsImpl.hidden = !mostrarImpl;
         if (!mostrarImpl) marcarCaixas(el('lancImplementos'), []);
       }
+      filtrarMaquinas();
       // destaque visual do botão marcado: feito por classe (não por CSS
       // :has(), que não reagiu de forma confiável nos navegadores testados)
       Array.prototype.forEach.call(form.querySelectorAll('.lanc-radio-grande'), function (lbl) {
@@ -634,11 +699,17 @@
       var tipo = form.elements['tipo_servico'].value;
       el('lancCulturaErro').hidden = true;
       el('lancAcudeErro').hidden = true;
+      if (el('lancDestocaErro')) el('lancDestocaErro').hidden = true;
       var erroMaq = el('lancMaquinaErro');
       if (erroMaq) erroMaq.hidden = true;
       if (tipo === 'Mecanização' && culturasAtuais().length < 1) {
         el('lancCulturaErro').hidden = false;
         el('lancCulturaErro').scrollIntoView({ behavior: 'auto', block: 'center' });
+        return false;
+      }
+      if (tipo === 'Mecanização' && form.elements['destoca'] && !form.elements['destoca'].value) {
+        el('lancDestocaErro').hidden = false;
+        form.elements['destoca'].focus();
         return false;
       }
       if (tipo === 'Açudagem') {
@@ -654,6 +725,11 @@
           form.elements['horas_maquina'].focus();
           return false;
         }
+      }
+      if (tipo === 'Açudagem' && form.elements['piscicultura'] && !form.elements['piscicultura'].value) {
+        el('lancAcudeErro').hidden = false;
+        form.elements['piscicultura'].focus();
+        return false;
       }
       if (tipo && coletarMarcados(el('lancMaquinas')).length < 1) {
         if (erroMaq) erroMaq.hidden = false;
@@ -681,10 +757,78 @@
       // refaz as caixas mantendo o que já estava marcado (quando o banco responde depois)
       var maq = el('lancMaquinas'), impl = el('lancImplementos');
       var marcadasMaq = coletarMarcados(maq), marcadasImpl = coletarMarcados(impl);
-      caixasDeOpcoes(maq, ordenarPorUso(MAQUINAS_OPCOES, usoMaquinas), 'lancMaq');
-      caixasDeOpcoes(impl, ordenarPorUso(IMPLEMENTOS_OPCOES, usoImplementos), 'lancImpl');
+      caixasDeMaquinas(maq, 'lancMaq', usoMaquinas);
+      caixasDeOpcoes(impl, ordenarPorUso(IMPLEMENTOS_OPCOES, usoImplementos), 'lancImpl', usoImplementos, NAO_SAO_IMPLEMENTOS);
       if (marcadasMaq.length) marcarCaixas(maq, marcadasMaq);
       if (marcadasImpl.length) marcarCaixas(impl, marcadasImpl);
+      filtrarMaquinas();
+      aplicarRegrasMaquinas(false);
+    }
+
+    /* Coerência das marcações de máquinas e implementos:
+       - marca/modelo (John Deere, Massey Ferguson, New Holland, Solis 90) é trator agrícola de pneu: ao marcar, já marca
+         "Trator agrícola" e "Trator de pneu" e bloqueia "Trator de esteira";
+       - trator de esteira e trator de pneu/marca não combinam: um bloqueia o outro;
+       - implemento precisa de trator para ser engatado: escavadeira, pá carregadeira e retroescavadeira não usam implemento,
+         então sem trator marcado (ou "Outro") os implementos ficam bloqueados.
+       "limpar" = o que a pessoa acabou de marcar manda (desmarca o que ficou bloqueado); ao carregar uma ficha já salva,
+       só bloqueia e não apaga nada. */
+    var MARCAS_TRATOR = ['John Deere', 'Massey Ferguson', 'New Holland', 'Solis 90'];
+    function caixaMaquina(nome) { return el('lancMaquinas').querySelector('input[value="' + nome + '"]'); }
+    function marcadaMaq(nome) { var i = caixaMaquina(nome); return !!(i && i.checked); }
+    function bloquearCaixa(input, bloquear, limpar, motivo) {
+      if (!input) return;
+      if (bloquear && limpar) input.checked = false;
+      input.disabled = bloquear;
+      var lbl = input.closest('label');
+      if (lbl) { lbl.classList.toggle('desativada', bloquear); if (bloquear && motivo) lbl.title = motivo; else lbl.removeAttribute('title'); }
+    }
+    function aplicarRegrasMaquinas(limpar, origem) {
+      var host = el('lancMaquinas'), impl = el('lancImplementos');
+      if (!host || !impl) return;
+      // marca escolhida agora → trator agrícola de pneu
+      if (origem && MARCAS_TRATOR.indexOf(origem.value) >= 0 && origem.checked) {
+        ['Trator agrícola', 'Trator de pneu'].forEach(function (n) { var c = caixaMaquina(n); if (c) c.checked = true; });
+      }
+      var marca = MARCAS_TRATOR.some(marcadaMaq), pneu = marcadaMaq('Trator de pneu'), esteira = marcadaMaq('Trator de esteira');
+      var rodas = marca || pneu;
+      bloquearCaixa(caixaMaquina('Trator de esteira'), rodas, limpar, 'Incompatível com trator de pneu e marcas (John Deere, Massey Ferguson, New Holland, Solis 90).');
+      bloquearCaixa(caixaMaquina('Trator de pneu'), esteira && !marca, limpar, 'Incompatível com trator de esteira.');
+      MARCAS_TRATOR.forEach(function (n) { bloquearCaixa(caixaMaquina(n), esteira, limpar, 'Marca de trator de pneu: incompatível com trator de esteira.'); });
+      // implementos: só com trator (ou "Outro", que não dá para saber)
+      var outraTrator = host.querySelector('.lc-outra-bloco[data-grupo="tratores"] .lc-outra-check');
+      var temTrator = marcadaMaq('Trator agrícola') || pneu || esteira || marca || !!(outraTrator && outraTrator.checked);
+      Array.prototype.forEach.call(impl.querySelectorAll('input[type=checkbox]'), function (i) {
+        if (!temTrator && limpar) i.checked = false;
+        i.disabled = !temTrator;
+        var l = i.closest('label'); if (l) l.classList.toggle('desativada', !temTrator);
+      });
+      var texto = impl.querySelector('.lc-outra-texto');
+      if (texto && !temTrator && limpar) texto.value = '';
+      var nota = el('lancRegraImpl');
+      if (!nota) {
+        var fs = el('lancFieldsetImplementos');
+        if (fs) {
+          nota = document.createElement('p');
+          nota.id = 'lancRegraImpl'; nota.className = 'lanc-regra-nota';
+          nota.textContent = 'Implementos precisam de um trator para serem engatados: marque um trator acima. Escavadeira, pá carregadeira e retroescavadeira não usam implementos.';
+          impl.parentNode.insertBefore(nota, impl);
+        }
+      }
+      if (nota) nota.hidden = temTrator;
+    }
+
+    /** Em Açudagem só ficam as máquinas de obra de terra (data-acu="1"); em Mecanização somem as de escavação e carga
+        (data-mec="0"); as que já estão marcadas continuam à vista (fichas antigas não perdem nada) e dá para desmarcar. Grupos sem nenhuma opção visível somem. */
+    function filtrarMaquinas() {
+      var host = el('lancMaquinas');
+      if (!host) return;
+      var servico = form.elements['tipo_servico'].value;
+      Array.prototype.forEach.call(host.querySelectorAll('[data-acu]'), function (lbl) {
+        var serve = servico === 'Açudagem' ? lbl.getAttribute('data-acu') === '1' : servico === 'Mecanização' ? lbl.getAttribute('data-mec') === '1' : true;
+        lbl.hidden = !(serve || lbl.querySelector('input').checked);
+      });
+      Array.prototype.forEach.call(host.querySelectorAll('.lanc-subgrupo, .lanc-grupo'), function (g) { g.hidden = !g.querySelector('[data-acu]:not([hidden])'); });
     }
 
     /** Zera as linhas dinâmicas e reconstrói a partir de "dados" — usado
@@ -703,6 +847,8 @@
       daes.forEach(function (d) { el('lancDaes').appendChild(linhaDae(d)); });
       marcarCaixas(el('lancMaquinas'), dados.maquinas);
       marcarCaixas(el('lancImplementos'), dados.implementos);
+      aplicarRegrasMaquinas(false);
+      filtrarMaquinas();
       atualizarBotoesAdicionar();
     }
 
@@ -714,11 +860,13 @@
     function ligarEventosComuns() {
       el('lancAddCultura').addEventListener('click', function () { el('lancCulturas').appendChild(linhaCultura()); atualizarBotoesAdicionar(); });
       el('lancAddDae').addEventListener('click', function () { el('lancDaes').appendChild(linhaDae()); atualizarBotoesAdicionar(); });
+      el('lancMaquinas').addEventListener('change', function (e) { aplicarRegrasMaquinas(true, e.target); filtrarMaquinas(); });
       Array.prototype.forEach.call(form.querySelectorAll('.lanc-caixas'), function (host) {
         host.addEventListener('change', function (e) {
           if (!e.target.classList.contains('lc-outra-check')) return;
-          var outraTexto = host.querySelector('.lc-outra-texto');
-          var linhaOutra = host.querySelector('.lc-outra-linha');
+          var bloco = e.target.closest('.lc-outra-bloco') || host;
+          var outraTexto = bloco.querySelector('.lc-outra-texto');
+          var linhaOutra = bloco.querySelector('.lc-outra-linha');
           outraTexto.disabled = !e.target.checked;
           if (linhaOutra) linhaOutra.hidden = !e.target.checked;
           if (e.target.checked) outraTexto.focus(); else outraTexto.value = '';

@@ -235,7 +235,7 @@
     var culturas = Array.isArray(d.culturas) ? d.culturas : [];
     if (d.tipo_servico === 'Açudagem') {
       secao('4. Açudagem');
-      pares([['Horas de máquina', num(d.horas_maquina, 1)], ['Tanques / açudes', num(d.quantidade_acudes, 0)]]);
+      pares([['Horas de máquina', num(d.horas_maquina, 1)], ['Tanques / açudes', num(d.quantidade_acudes, 0)], ['Piscicultura', d.piscicultura ? 'Sim' : 'Não']]);
     } else {
       secao('4. Área mecanizada e culturas');
       if (culturas.length) {
@@ -243,7 +243,7 @@
           return [txt(c.cultura), num(c.area_ha, 2), txt(c.sistema_cultivo)];
         }), { 1: { halign: 'right', cellWidth: 30 } });
       }
-      pares([['Área total (ha)', num(d.area_total_ha, 2)], ['', '']]);
+      pares([['Área total (ha)', num(d.area_total_ha, 2)], ['Destoca', d.destoca ? 'Sim' : 'Não']]);
     }
 
     var geo = (Array.isArray(d.pontos_geo) && d.pontos_geo[0]) || null;
@@ -302,5 +302,72 @@
     });
   }
 
-  window.LANCAMENTO_PDF = { listagem: listagem, ficha: ficha };
+  /* ---------------------------------------------- ficha do produtor (PDF) */
+  /** p: { nome, municipio, propriedade, resumo:[[rot,val]], cadastro:[[rot,val]], culturas:[[nome,'x ha']], maquinas:[], implementos:[],
+      historico:[[inserção, vistoria, serviço, município, culturas, ha, horas, tanques, técnico]] }  — o que a aba Produtor mostra. */
+  function produtor(p) {
+    return carregarPdf().then(function () {
+      var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+      var PW = 210, PH = 297, M = 14, CW = PW - 2 * M;
+      var y = cabecalho(doc, PW, M, 'Ficha do produtor', [
+        txt(p.nome), [p.municipio, p.propriedade].filter(function (v) { return v && v !== '—'; }).join('  |  ') || ' ',
+        'Gerado em ' + agora()
+      ]);
+      var estilo = { font: 'helvetica', fontSize: 9.5, cellPadding: 2.6, textColor: TINTA, lineColor: [216, 222, 229], lineWidth: 0.15, overflow: 'linebreak', valign: 'middle' };
+      function secao(titulo) {
+        if (y > PH - 40) { doc.addPage(); y = 16; }
+        doc.setTextColor(AZUL[0], AZUL[1], AZUL[2]);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5);
+        doc.text(titulo, M, y);
+        doc.setDrawColor(AZUL[0], AZUL[1], AZUL[2]); doc.setLineWidth(0.4);
+        doc.line(M, y + 1.8, M + CW, y + 1.8);
+        y += 5.5;
+      }
+      function pares(lista) {
+        var corpo = [];
+        for (var i = 0; i < lista.length; i += 2) {
+          var a = lista[i], b = lista[i + 1] || ['', ''];
+          corpo.push([a[0], txt(a[1]), b[0], b[1] === '' ? '' : txt(b[1])]);
+        }
+        doc.autoTable({
+          startY: y, margin: { left: M, right: M, top: 16, bottom: 16 }, body: corpo, theme: 'grid', styles: estilo,
+          columnStyles: {
+            0: { cellWidth: 36, fontStyle: 'bold', fillColor: [244, 246, 248], textColor: [74, 85, 97] }, 1: { cellWidth: CW / 2 - 36 },
+            2: { cellWidth: 36, fontStyle: 'bold', fillColor: [244, 246, 248], textColor: [74, 85, 97] }, 3: { cellWidth: CW / 2 - 36 }
+          }
+        });
+        y = doc.lastAutoTable.finalY + 7;
+      }
+      function tabela(cab, linhas, cols, fonte) {
+        doc.autoTable({
+          startY: y, margin: { left: M, right: M, top: 16, bottom: 16 }, head: [cab], body: linhas, theme: 'grid',
+          styles: Object.assign({}, estilo, fonte ? { fontSize: fonte, cellPadding: 1.8 } : {}),
+          headStyles: { fillColor: [238, 242, 244], textColor: [74, 85, 97], fontStyle: 'bold' }, columnStyles: cols || {}
+        });
+        y = doc.lastAutoTable.finalY + 7;
+      }
+
+      secao('Resumo');
+      pares(p.resumo || []);
+      secao('Dados cadastrais');
+      pares(p.cadastro || []);
+      if ((p.culturas || []).length) {
+        secao('Culturas mecanizadas');
+        tabela(['Cultura', 'Área'], p.culturas, { 1: { halign: 'right', cellWidth: 36 } });
+      }
+      if ((p.maquinas || []).length || (p.implementos || []).length) {
+        secao('Equipamentos utilizados');
+        pares([['Máquinas', (p.maquinas || []).join(', ')], ['Implementos', (p.implementos || []).join(', ')]]);
+      }
+      if ((p.historico || []).length) {
+        secao('Histórico de atendimentos (' + p.historico.length + ')');
+        tabela(['Inserção', 'Vistoria', 'Serviço', 'Município', 'Culturas / área', 'Hectares', 'Horas', 'Tanques', 'Técnico'], p.historico,
+          { 5: { halign: 'right' }, 6: { halign: 'right' }, 7: { halign: 'right' } }, 8);
+      }
+      rodape(doc, PW, PH, M, 'SEAGRI — Ficha do produtor');
+      doc.save('produtor-' + arquivoSeguro(p.nome) + '-' + hojeArquivo() + '.pdf');
+    });
+  }
+
+  window.LANCAMENTO_PDF = { listagem: listagem, ficha: ficha, produtor: produtor };
 })();

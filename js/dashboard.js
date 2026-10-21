@@ -25,6 +25,9 @@
 (function () {
   'use strict';
 
+  /** Nome com o ícone agro ao lado (js/icones-agro.js); sem a biblioteca, só o texto escapado. */
+  function ia(n) { return window.ICONES_AGRO ? window.ICONES_AGRO.rotulado(String(n)) : G.esc(String(n)); }
+
   var NI = 'Não informado';
   var MEC = 'Mecanização';
   var ACU = 'Açudagem';
@@ -1206,11 +1209,38 @@
   var FICHA_ROTULOS = ['Produtor', 'Município', 'Escritório local', 'Propriedade',
     'Endereço / local', 'Sexo', 'Estado civil', 'Associação / coop.', 'CAF', 'Técnico(s)'];
   var HIST_COLUNAS = ['Inserção', 'Vistoria', 'Serviço', 'Município', 'Culturas / área',
-    'Hectares', 'Horas', 'Tanques', 'Técnico', 'Obs.', 'Form.'];
+    'Hectares', 'Horas', 'Tanques', 'Técnico', 'Obs.', 'PDF'];
 
   function fichaItem(rot, val) {
-    return '<div class="ficha-item"><div class="ficha-rot">' + G.esc(rot) +
+    // nome, propriedade e endereço são textos longos: ocupam duas colunas da grade
+    var larga = /^(Produtor|Propriedade|Endereço)/.test(rot) ? ' ficha-item-larga' : '';
+    return '<div class="ficha-item' + larga + '"><div class="ficha-rot">' + G.esc(rot) +
       '</div><div class="ficha-val">' + (val || '—') + '</div></div>';
+  }
+
+  var PDF_PRODUTOR = null;   // dados da ficha do produtor na tela (para o botão "Exportar PDF")
+
+  /** Botão "PDF" de uma linha do painel: gera a ficha do lançamento (js/lancamento-pdf.js). Só existe para quem está
+      logado (o registro traz o id do lançamento); na versão pública não há botão. */
+  function botaoPdf(r, vazio) {
+    return r.id
+      ? '<button type="button" class="btn btn-pdf-linha" data-pdf-id="' + G.esc(r.id) + '" title="Exportar a ficha em PDF" aria-label="Exportar a ficha em PDF">PDF</button>'
+      : (vazio || '—');
+  }
+  function exportarPdfDaLinha(btn) {
+    var CP = window.LANCAMENTO_CAMPOS, PDF = window.LANCAMENTO_PDF;
+    if (!CP || !PDF || btn.disabled) return;
+    var rotulo = btn.textContent;
+    btn.disabled = true; btn.textContent = '…';
+    var fd = new FormData();
+    fd.append('acao', 'carregar'); fd.append('token', ''); fd.append('id', btn.getAttribute('data-pdf-id'));
+    CP.enviar(fd)
+      .then(function (res) {
+        if (!res.corpo || !res.corpo.ok) throw new Error((res.corpo && res.corpo.erro) || 'Não foi possível abrir o lançamento.');
+        return PDF.ficha(res.corpo.lancamento, {});
+      })
+      .catch(function (e) { window.alert((e && e.message) || 'Não foi possível gerar o PDF agora.'); })
+      .then(function () { btn.disabled = false; btn.textContent = rotulo; });
   }
 
   /** Contadores do produtor, embutidos na própria ficha — os números e o
@@ -1229,31 +1259,28 @@
       : !achados ? 'Nenhum produtor encontrado com esse nome.'
         : G.num(achados) + ' produtores contêm esse texto — continue digitando ou escolha um na lista.';
 
+    // mesmo desenho da ficha preenchida, só que sem valores
+    var cardV = function (titulo, campos) {
+      return '<section class="bp-card"><h3>' + titulo + '</h3><dl class="bp-campos">' + campos.map(function (c) {
+        return '<div class="bp-campo"><dt>' + c + '</dt><dd>—</dd></div>';
+      }).join('') + '</dl></section>';
+    };
+    var kpisV = ['Atendimentos', 'Hectares', 'Horas de máquina', 'Tanques / açudes', 'DAE arrecadada', 'Período'];
     el('fichaProd').innerHTML =
-      '<div class="ben-vazio">' +
+      '<div class="bp ben-vazio">' +
       '<p class="vazio" style="padding:10px 0 16px">' + G.esc(msg) + '</p>' +
-      '<h3 class="ben-sec">Resumo</h3>' +
-      blocoKpis([
-        { rot: 'Atendimentos', val: '—' },
-        { rot: 'Hectares mecanizados', val: '—', un: 'ha', cls: 'mec' },
-        { rot: 'Horas de máquina', val: '—', un: 'h', cls: 'acu' },
-        { rot: 'Tanques / açudes', val: '—', cls: 'acu' },
-        { rot: 'DAE arrecadada', val: '—', cls: 'texto' },
-        { rot: 'Período', val: '—' }
-      ]) +
-      '<h3 class="ben-sec">Dados cadastrais</h3>' +
-      '<div class="ficha">' + FICHA_ROTULOS.map(function (r) { return fichaItem(r, ''); }).join('') + '</div>' +
-      '<h3 class="ben-sec">Culturas mecanizadas</h3>' +
-      '<div class="ficha">' + fichaItem('Cultura', '') + '</div>' +
-      '<h3 class="ben-sec">Equipamentos utilizados</h3>' +
-      '<div class="ficha">' + fichaItem('Máquina', '') + fichaItem('Implemento', '') + '</div>' +
-      '<h3 class="ben-sec">Histórico de atendimentos</h3>' +
-      '<div class="tabela-scroll"><table class="dados"><thead><tr>' +
-      HIST_COLUNAS.filter(function (c) { return !(window.MODO_PUBLICO && c === 'Form.'); })   // versão pública: sem o link do formulário
+      '<div class="bp-topo"><div class="bp-id"><h2>Nome do produtor</h2><p>Município · propriedade</p></div><div class="bp-kpis">' +
+      kpisV.map(function (k) { return '<div class="bp-kpi"><span class="bp-kpi-rot">' + k + '</span><b>—</b></div>'; }).join('') + '</div></div>' +
+      '<div class="bp-grade">' + cardV('Produtor e técnico', ['Sexo', 'Estado civil', 'CAF', 'Associação / coop.', 'Técnico(s)', 'Último atendimento']) +
+      cardV('Localização', ['Município', 'Escritório local', 'Propriedade', 'Endereço / local']) +
+      '<section class="bp-card"><h3>Culturas mecanizadas</h3><p class="bp-vazio">—</p></section>' +
+      '<section class="bp-card"><h3>Equipamentos utilizados</h3><p class="bp-vazio">—</p></section>' +
+      '<section class="bp-card bp-hist"><h3>Histórico de atendimentos</h3><div class="tabela-scroll"><table class="dados"><thead><tr>' +
+      HIST_COLUNAS.filter(function (c) { return !(window.MODO_PUBLICO && c === 'PDF'); })   // versão pública: sem a coluna de PDF
         .map(function (c) { return '<th>' + G.esc(c) + '</th>'; }).join('') +
       '</tr></thead><tbody><tr>' +
-      HIST_COLUNAS.map(function () { return '<td>—</td>'; }).join('') +
-      '</tr></tbody></table></div></div>';
+      HIST_COLUNAS.filter(function (c) { return !(window.MODO_PUBLICO && c === 'PDF'); }).map(function () { return '<td>—</td>'; }).join('') +
+      '</tr></tbody></table></div></section></div></div>';
   }
 
   /** Rótulo do recorte de município, para os textos da aba. */
@@ -1417,63 +1444,75 @@
     var implP = Array.from(new Set([].concat.apply([], R.map(function (r) { return r.impl; }))));
     var cultP = ranking(areaCultP, 30);
 
-    var secResumo = (F.mun.length
-      ? '<button type="button" class="painel-link ben-voltar">&larr; benefici&aacute;rios de ' +
-        G.esc(rotuloMun()) + '</button>' : '') +
-      '<h3 class="ben-sec ben-nome">' + G.esc(nome) + '</h3>' +
-      blocoKpis([
-        { rot: 'Atendimentos', val: G.num(R.length), sub: G.num(mec.length) + ' mecaniz. + ' + G.num(acu.length) + ' açudagem' },
-        { rot: 'Hectares mecanizados', val: G.num(haP, 1), un: 'ha', cls: 'mec',
-          sub: mec.length ? 'média ' + G.num(haP / mec.length, 1) + ' ha/atend.' : '—' },
-        { rot: 'Horas de máquina', val: G.num(hrsP, 1), un: 'h', cls: 'acu',
-          sub: acu.length ? 'média ' + G.num(hrsP / acu.length, 1) + ' h/atend.' : '—' },
-        { rot: 'Tanques / açudes', val: G.num(acP), cls: 'acu' },
-        { rot: 'DAE arrecadada', val: moeda(daeP), cls: 'texto',
-          sub: G.num(R.filter(function (r) { return r.dae > 0; }).length) + ' registros com DAE' },
-        { rot: 'Período', val: G.num(new Set(R.map(function (r) { return mesChave(r); })).size) }
-      ]);
-
-    /* Dados cadastrais — mesma ordem de FICHA_ROTULOS, para a ficha preenchida
-       e a vazia terem exatamente o mesmo desenho */
-    var valores = [
-      G.esc(nome),
-      uniV(function (r) { return r.mun; }),
-      uniV(function (r) { return r.esc; }),
-      uniV(function (r) { return r.propr; }),
-      uniV(function (r) { return r.loc; }),
-      uniV(function (r) { return r.sexo; }),
-      uniV(function (r) { return r.ec; }),
-      uniV(function (r) { return r.assoc; }),
-      uniV(function (r) { return r.dap; }),
-      uniV(function (r) { return r.rt; })
+    /* Ficha do produtor em cartões: topo (nome, serviços e números) e blocos de cadastro, culturas, equipamentos
+       e linha do tempo lado a lado; o histórico completo fica embaixo. */
+    var voltar = F.mun.length
+      ? '<button type="button" class="painel-link ben-voltar">&larr; benefici&aacute;rios de ' + G.esc(rotuloMun()) + '</button>' : '';
+    var pisc = acu.filter(function (r) { return r.pisc; }).length;
+    var tags = (mec.length ? '<span class="bp-tag bp-tag-mec">' + (window.ICONES_AGRO ? ICONES_AGRO.svg('trator') : '') + 'Mecanização · ' + G.num(mec.length) + '</span>' : '') +
+      (acu.length ? '<span class="bp-tag bp-tag-acu">' + (window.ICONES_AGRO ? ICONES_AGRO.svg('tanque') : '') + 'Açudagem · ' + G.num(acu.length) + '</span>' : '') +
+      (mec.some(function (r) { return r.dest; }) ? '<span class="bp-tag bp-tag-mec">' + (window.ICONES_AGRO ? ICONES_AGRO.svg('destoca') : '') + 'Destoca</span>' : '') +
+      (pisc ? '<span class="bp-tag bp-tag-acu">' + (window.ICONES_AGRO ? ICONES_AGRO.svg('piscicultura') : '') + 'Piscicultura</span>' : '');
+    var kpis = [
+      { rot: 'Atendimentos', val: G.num(R.length), sub: G.num(mec.length) + ' mecaniz. + ' + G.num(acu.length) + ' açudagem' },
+      { rot: 'Hectares', val: G.num(haP, 1), un: 'ha', cls: 'mec', sub: mec.length ? 'média ' + G.num(haP / mec.length, 1) + ' ha/atend.' : '—' },
+      { rot: 'Horas de máquina', val: G.num(hrsP, 1), un: 'h', cls: 'acu', sub: acu.length ? 'média ' + G.num(hrsP / acu.length, 1) + ' h/atend.' : '—' },
+      { rot: 'Tanques / açudes', val: G.num(acP), cls: 'acu' },
+      { rot: 'DAE arrecadada', val: moeda(daeP), sub: G.num(R.filter(function (r) { return r.dae > 0; }).length) + ' registros com DAE' },
+      { rot: 'Período', val: G.num(new Set(R.map(function (r) { return mesChave(r); })).size), sub: 'meses com atendimento' }
     ];
+    var uniT = function (f) {
+      var vs = Array.from(new Set(R.map(f))).filter(function (v) { return v && v !== NI; });
+      return vs.length ? vs.join(', ') : '—';
+    };
+    PDF_PRODUTOR = {
+      nome: nome, municipio: uniT(function (r) { return r.mun; }), propriedade: uniT(function (r) { return r.propr; }),
+      resumo: kpis.map(function (k) { return [k.rot, k.val + (k.un ? ' ' + k.un : '')]; }),
+      cadastro: [
+        ['Sexo', uniT(function (r) { return r.sexo; })], ['Estado civil', uniT(function (r) { return r.ec; })],
+        ['CAF', uniT(function (r) { return r.dap; })], ['Associação / coop.', uniT(function (r) { return r.assoc; })],
+        ['Município', uniT(function (r) { return r.mun; })], ['Escritório local', uniT(function (r) { return r.esc; })],
+        ['Propriedade', uniT(function (r) { return r.propr; })], ['Endereço / local', uniT(function (r) { return r.loc; })],
+        ['Técnico(s)', uniT(function (r) { return r.rt; })], ['Último atendimento', R.length ? dataBR(R.map(dataRef).sort().pop()) : '—']
+      ],
+      culturas: cultP.map(function (c) { return [c.rot, G.num(c.val, 1) + ' ha']; }),
+      maquinas: maqP, implementos: implP,
+      historico: R.map(function (r) {
+        return [dataBR(r.d), dataBR(r.dv), r.pc || '—', r.mun || '—',
+          r.cult.length ? r.cult.map(function (c) { return c[0] + ' (' + G.num(c[1], 1) + ' ha)'; }).join(', ') : '—',
+          r.ha ? G.num(r.ha, 1) : '—', r.hrs ? G.num(r.hrs, 1) : '—', r.ac ? G.num(r.ac) : '—', r.rt || '—'];
+      })
+    };
+    var secResumo = voltar + '<div class="bp-topo"><div class="bp-id"><h2>' + G.esc(nome) + '</h2><p>' +
+      [uniV(function (r) { return r.mun; }), uniV(function (r) { return r.propr; })].filter(function (v) { return v !== '—'; }).join(' · ') +
+      '</p><div class="bp-tags">' + tags + '</div></div><div class="bp-kpis">' +
+      kpis.map(function (k) {
+        return '<div class="bp-kpi' + (k.cls ? ' bp-kpi-' + k.cls : '') + '"><span class="bp-kpi-rot">' + G.esc(k.rot) + '</span><b>' + k.val +
+          (k.un ? '<small> ' + k.un + '</small>' : '') + '</b>' + (k.sub ? '<span class="bp-kpi-sub">' + G.esc(k.sub) + '</span>' : '') + '</div>';
+      }).join('') + '<button type="button" class="btn bp-pdf" data-pdf-produtor title="Exportar a ficha deste produtor em PDF">Exportar PDF</button></div></div>';
 
-    var secFicha = '<h3 class="ben-sec">Dados cadastrais</h3>' +
-      '<div class="ficha">' + FICHA_ROTULOS.map(function (rot, i) {
-        return fichaItem(rot, valores[i]);
-      }).join('') + '</div>';
+    var campo = function (rot, v) { return '<div class="bp-campo"><dt>' + rot + '</dt><dd>' + v + '</dd></div>'; };
+    var card = function (titulo, corpo, cls) { return '<section class="bp-card' + (cls ? ' ' + cls : '') + '"><h3>' + titulo + '</h3>' + corpo + '</section>'; };
 
-    /* Culturas */
-    var secCult = '';
-    if (cultP.length) {
-      secCult = '<h3 class="ben-sec">Culturas mecanizadas</h3>' +
-        '<div class="ficha">' + cultP.map(function (c) {
-          return '<div class="ficha-item"><div class="ficha-rot">' + G.esc(c.rot) +
-            '</div><div class="ficha-val">' + G.num(c.val, 1) + '<span class="kpi-un"> ha</span></div></div>';
-        }).join('') + '</div>';
-    }
-
-    /* Máquinas e implementos */
-    var secMaq = (maqP.length || implP.length) ?
-      '<h3 class="ben-sec">Equipamentos utilizados</h3>' +
-      '<div class="ficha">' +
-      maqP.map(function (m) {
-        return '<div class="ficha-item"><div class="ficha-rot">Máquina</div><div class="ficha-val">' + G.esc(m) + '</div></div>';
-      }).join('') +
-      implP.map(function (i) {
-        return '<div class="ficha-item"><div class="ficha-rot">Implemento</div><div class="ficha-val">' + G.esc(i) + '</div></div>';
-      }).join('') +
-      '</div>' : '';
+    var cardProdutor = card('Produtor e técnico', '<dl class="bp-campos">' +
+      campo('Sexo', uniV(function (r) { return r.sexo; })) + campo('Estado civil', uniV(function (r) { return r.ec; })) +
+      campo('CAF', uniV(function (r) { return r.dap; })) + campo('Associação / coop.', uniV(function (r) { return r.assoc; })) +
+      campo('Técnico(s)', uniV(function (r) { return r.rt; })) +
+      campo('Último atendimento', R.length ? dataBR(R.map(dataRef).sort().pop()) : '—') + '</dl>');
+    var cardLocal = card('Localização', '<dl class="bp-campos">' +
+      campo('Município', uniV(function (r) { return r.mun; })) + campo('Escritório local', uniV(function (r) { return r.esc; })) +
+      campo('Propriedade', uniV(function (r) { return r.propr; })) + '<div class="bp-campo bp-larga"><dt>Endereço / local</dt><dd>' +
+      uniV(function (r) { return r.loc; }) + '</dd></div></dl>');
+    var maxCult = cultP.length ? cultP[0].val : 1;
+    var cardCult = card('Culturas mecanizadas', cultP.length
+      ? '<ul class="bp-cult">' + cultP.map(function (c) {
+          return '<li><span>' + ia(c.rot) + '</span><b>' + G.num(c.val, 1) + ' ha</b><i style="width:' + Math.max(4, Math.round(c.val / maxCult * 100)) + '%"></i></li>';
+        }).join('') + '</ul>'
+      : '<p class="bp-vazio">Sem culturas mecanizadas.</p>');
+    var cardEquip = card('Equipamentos utilizados', (maqP.length || implP.length)
+      ? (maqP.length ? '<h4>Máquinas</h4><div class="bp-chips">' + maqP.map(function (m) { return '<span>' + ia(m) + '</span>'; }).join('') + '</div>' : '') +
+        (implP.length ? '<h4>Implementos</h4><div class="bp-chips">' + implP.map(function (m) { return '<span>' + ia(m) + '</span>'; }).join('') + '</div>' : '')
+      : '<p class="bp-vazio">Sem equipamentos registrados.</p>');
 
     /* Tabela de registros */
     var secTabela = '<h3 class="ben-sec">Histórico de atendimentos (' + G.num(R.length) + ')</h3>' +
@@ -1492,7 +1531,7 @@
           '<td class="num">' + (r.ac  ? G.num(r.ac)    : '—') + '</td>' +
           '<td>' + G.esc(r.rt || '—') + '</td>' +
           '<td class="fraco">' + G.esc(r.obs || '—') + '</td>' +
-          (window.MODO_PUBLICO ? '' : '<td>' + (r.form ? '<a href="' + G.esc(r.form) + '" target="_blank" rel="noopener">abrir</a>' : '—') + '</td>') +
+          (window.MODO_PUBLICO ? '' : '<td>' + botaoPdf(r) + '</td>') +
           '</tr>';
       }).join('') +
       '</tbody></table></div>';
@@ -1505,19 +1544,25 @@
     var diasEntre = function (a, b) {
       return Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 86400000);
     };
-    var secLinha = ord.length < 1 ? '' : '<h3 class="ben-sec">Linha do tempo</h3><ol class="linha-tempo">' +
+    var secLinha = ord.length < 1 ? '' : '<h3 class="ben-sec">Linha do tempo</h3><ol class="bp-lt">' +
       ord.map(function (r, i) {
         var gap = i ? diasEntre(dataRef(ord[i - 1]), dataRef(r)) : null;
-        var det = r.pc === MEC
-          ? (r.cult.length ? r.cult.map(function (c) { return G.esc(c[0]); }).join(', ') + ' · ' : '') + G.num(r.ha, 1) + ' ha'
-          : G.num(r.hrs, 1) + ' h de máquina' + (r.ac ? ' · ' + G.num(r.ac) + ' tanque(s)' : '');
-        return '<li class="lt-' + (r.pc === MEC ? 'mec' : 'acu') + '"><span class="lt-data">' + dataBR(dataRef(r)) + '</span>' +
-          '<div><b>' + G.esc(r.pc || '—') + '</b> · ' + G.esc(r.mun || '—') + ' <small>' + det + '</small>' +
-          (gap != null ? '<em>' + (gap === 0 ? 'no mesmo dia do anterior' : gap + ' dia(s) depois do anterior') + '</em>' : '<em>primeiro atendimento</em>') +
-          '</div></li>';
+        var mecR = r.pc === MEC;
+        var det = mecR
+          ? (r.cult.length ? r.cult.map(function (c) { return ia(c[0]); }).join(' · ') + ' · ' : '') + '<b>' + G.num(r.ha, 1) + ' ha</b>' + (r.dest ? ' · destoca' : '')
+          : '<b>' + G.num(r.hrs, 1) + ' h</b> de máquina' + (r.ac ? ' · ' + G.num(r.ac) + ' tanque(s)' : '') + (r.pisc ? ' · piscicultura' : '');
+        var intervalo = gap == null ? 'primeiro atendimento' : gap === 0 ? 'no mesmo dia do anterior' : gap + ' dia(s) depois do anterior';
+        return '<li class="bp-lt-' + (mecR ? 'mec' : 'acu') + '"><span class="bp-lt-ponto"></span><div class="bp-lt-corpo">' +
+          '<div class="bp-lt-topo"><b>' + dataBR(dataRef(r)) + '</b><span class="bp-tag bp-tag-' + (mecR ? 'mec' : 'acu') + '">' + G.esc(r.pc || '—') + '</span></div>' +
+          '<div class="bp-lt-det">' + G.esc(r.mun || '—') + ' · ' + det + '</div>' +
+          '<em>' + intervalo + '</em></div></li>';
       }).join('') + '</ol>';
 
-    el('fichaProd').innerHTML = secResumo + secFicha + secCult + secMaq + secLinha + secTabela;
+    var histTitulo = 'Histórico de atendimentos (' + G.num(R.length) + ')';
+    var cardHist = '<section class="bp-card bp-hist"><h3>' + histTitulo + '</h3>' + secTabela.replace(/^<h3 class="ben-sec">[^<]*<\/h3>/, '') + '</section>';
+    var cardLinha = secLinha ? card('Linha do tempo', secLinha.replace('<h3 class="ben-sec">Linha do tempo</h3>', ''), 'bp-card-linha') : '';
+    el('fichaProd').innerHTML = '<div class="bp">' + secResumo + '<div class="bp-grade">' + cardProdutor + cardLocal +
+      cardCult + cardEquip + cardLinha + cardHist + '</div></div>';
   }
 
   /* -------------------------------------------------------------- renderizar */
@@ -1610,7 +1655,6 @@
     var nMeses = new Set(D.map(function (r) { return mesChave(r); })).size;
     var dae = soma(D, function (r) { return r.dae; });
     var nComDae  = D.filter(function (r) { return r.dae > 0; }).length;
-    var nComForm = D.filter(function (r) { return r.form; }).length;
     var nComCult = D.filter(function (r) { return r.cult.length; }).length;
     var nMulher  = D.filter(function (r) { return r.sexo === 'Feminino'; }).length;
 
@@ -1645,7 +1689,7 @@
       ativos: ativos, noAno: noAno,
       nProd: nProd, nProdRec: nProdRec, nEsc: nEsc, nTec: nTec, nMun: nMun,
       nAssoc: nAssoc, nMeses: nMeses, dae: dae, nComDae: nComDae,
-      nComForm: nComForm, nComCult: nComCult, nMulher: nMulher,
+      nComCult: nComCult, nMulher: nMulher,
       anoAnt: anoAnt, temAnt: temAnt, Dant: Dant, mecAnt: mecAnt, acuAnt: acuAnt,
       acuProd: acuProd, horasPorTanque: horasPorTanque,
       semServico: D.length - mec.length - acu.length,
@@ -1806,7 +1850,9 @@
       { rot: 'Tipos de máquina', val: G.num(C.maqMec.size), cls: 'mec' },
       { rot: 'Máquina mais usada', val: C.topMaq ? G.esc(C.topMaq.rot) : '—', cls: 'mec texto',
         sub: C.topMaq ? G.num(C.topMaq.val) + ' atendimentos' : '' },
-      { rot: 'Implementos e serviços', val: G.num(C.implMec.size), cls: 'mec' },
+      { rot: 'Implementos', val: G.num(C.implMec.size), cls: 'mec' },
+      { rot: 'Com destoca', val: G.num(mec.filter(function (r) { return r.dest; }).length), cls: 'mec',
+        sub: C.pct(mec.filter(function (r) { return r.dest; }).length, mec.length) + ' das mecanizações' },
       { rot: 'DAE arrecadada', val: C.daeVal(soma(mec, function (r) { return r.dae; })), cls: 'mec texto',
         sub: C.daeSub(mec.filter(function (r) { return r.dae > 0; }).length) },
       { rot: 'Escritórios envolvidos', val: G.num(nDistintos(mec, function (r) { return r.esc; })), cls: 'mec',
@@ -1833,6 +1879,8 @@
       { rot: 'Horas de máquina', val: G.num(C.hrs, 1), un: 'h', cls: 'acu' },
       { rot: 'Tanques / açudes', val: G.num(C.nAc), cls: 'acu' },
       { rot: 'Vistorias de açudagem', val: G.num(acu.length), cls: 'acu', sub: C.pct(acu.length, D.length) + ' dos atendimentos' },
+      { rot: 'Com piscicultura', val: G.num(acu.filter(function (r) { return r.pisc; }).length), cls: 'acu',
+        sub: C.pct(acu.filter(function (r) { return r.pisc; }).length, acu.length) + ' das açudagens' },
       { rot: 'Produtores atendidos', val: G.num(nProdutores(acu)), cls: 'acu', ir: 'beneficiario' },
       { rot: 'Municípios atendidos', val: G.num(nDistintos(acu, function (r) { return r.mun; })), cls: 'acu',
         ir: 'municipio' },
@@ -2442,7 +2490,6 @@
      ~2.600 nomes com localeCompare é caro, e antes rodava em todo render. */
   function abaBeneficiario(C) {
     montarSelProd(C.D);
-    if (window.PAINEL_PRODUTORES_DESENHAR) window.PAINEL_PRODUTORES_DESENHAR(C);   // recorrência e retorno
   }
 
   /* ======================================================== ABA: REGISTROS */
@@ -2486,8 +2533,6 @@
         sub: G.num(D.length - comDap) + ' sem resposta sobre CAF' },
       { rot: 'Propriedade informada', val: C.pct(comPropr, D.length), cls: 'texto',
         sub: G.num(D.length - comPropr) + ' sem nome do imóvel' },
-      { rot: 'Formulário digitalizado', val: C.pct(C.nComForm, D.length), cls: 'texto',
-        sub: G.num(D.length - C.nComForm) + ' sem link do formulário' },
       { rot: 'Cultura declarada', val: C.pct(C.nComCult, D.length), cls: 'mec texto',
         sub: G.num(D.length - C.nComCult) + ' sem nenhuma cultura' },
       { rot: 'Observação preenchida', val: C.pct(comObs, D.length), cls: 'texto',
@@ -4048,7 +4093,7 @@
         '<td>' + (r.maq.length ? G.esc(r.maq.join(', ')) : nada) + '<br><small class="fraco">' +
         (r.impl.length ? G.esc(r.impl.join(', ')) : '') + '</small></td>' +
         '<td class="num">' + (r.dae ? moeda(r.dae) : nada) + '</td>' +
-        '<td>' + (r.form ? '<a href="' + G.esc(r.form) + '" target="_blank" rel="noopener">abrir</a>' : nada) + '</td>' +
+        '<td>' + botaoPdf(r, nada) + '</td>' +
         '</tr>';
     }).join('') : '<tr><td colspan="12" class="vazio">Nenhum registro encontrado.</td></tr>';
 
@@ -4364,8 +4409,8 @@
         }
         var rkImpl = ranking(contar(mec, function (r) { return r.impl; }), 10);
         if (rkImpl.length) {
-          secao('Implementos e serviços');
-          tabela(['Implemento / Serviço', 'Ocorrências'], rkImpl.map(function (d) { return [d.rot, G.num(d.val)]; }), { cols: { 1: dir } });
+          secao('Implementos');
+          tabela(['Implemento', 'Ocorrências'], rkImpl.map(function (d) { return [d.rot, G.num(d.val)]; }), { cols: { 1: dir } });
         }
         var tempo = chavesTempo(sub);
         if (tempo.length) {
@@ -4651,13 +4696,13 @@
         '</div>' +
         (rkCult.length ? '<h3>Culturas</h3>' + tTbl(['Cultura', 'Hectares', '%'],
           rkCult.map(function (d) {
-            return '<tr><td>' + G.esc(d.rot) + '</td><td class="num">' + G.num(d.val, 1) +
+            return '<tr><td>' + ia(d.rot) + '</td><td class="num">' + G.num(d.val, 1) +
               '</td><td class="num">' + (ha ? (d.val / ha * 100).toFixed(1).replace('.', ',') : '0') + '%</td></tr>';
           }).join('')) : '') +
         (rkMaq.length ? '<h3>M&aacute;quinas utilizadas</h3>' + tTbl(['Equipamento', 'Ocorr&ecirc;ncias'],
-          rkMaq.map(function (d) { return '<tr><td>' + G.esc(d.rot) + '</td><td class="num">' + G.num(d.val) + '</td></tr>'; }).join('')) : '') +
-        (rkImpl.length ? '<h3>Implementos e servi&ccedil;os</h3>' + tTbl(['Implemento / Servi&ccedil;o', 'Ocorr&ecirc;ncias'],
-          rkImpl.map(function (d) { return '<tr><td>' + G.esc(d.rot) + '</td><td class="num">' + G.num(d.val) + '</td></tr>'; }).join('')) : '') +
+          rkMaq.map(function (d) { return '<tr><td>' + ia(d.rot) + '</td><td class="num">' + G.num(d.val) + '</td></tr>'; }).join('')) : '') +
+        (rkImpl.length ? '<h3>Implementos</h3>' + tTbl(['Implemento', 'Ocorr&ecirc;ncias'],
+          rkImpl.map(function (d) { return '<tr><td>' + ia(d.rot) + '</td><td class="num">' + G.num(d.val) + '</td></tr>'; }).join('')) : '') +
         (mesesMec.length ? '<h3>Por ' + tituloTempo() + '</h3>' + tTbl([colunaTempo(), 'Atendimentos', 'Hectares'],
           mesesMec.map(function (k) {
             return '<tr><td class="forte">' + rotTempo(k) + '</td>' +
@@ -5404,11 +5449,11 @@
       return [dataBR(r.d), r.dv ? dataBR(r.dv) : '', r.pc, r.prod || '', r.propr || '', r.mun || '', r.esc || '', r.rt || '',
         r.cult.map(function (c) { return c[0] + (c[1] ? ' (' + String(c[1]).replace('.', ',') + ' ha)' : ''); }).join('; '),
         r.ha ? String(r.ha).replace('.', ',') : '', r.hrs ? String(r.hrs).replace('.', ',') : '', r.ac || '',
-        r.maq.join('; '), r.impl.join('; '), r.dae ? String(r.dae).replace('.', ',') : '', r.form || ''];
+        r.maq.join('; '), r.impl.join('; '), r.dae ? String(r.dae).replace('.', ',') : ''];
     });
   }
   var CAB_REGISTROS = ['Inserção', 'Vistoria', 'Serviço', 'Produtor', 'Propriedade', 'Município', 'Escritório', 'Responsável técnico',
-    'Culturas', 'Área (ha)', 'Horas', 'Tanques', 'Máquinas', 'Implementos', 'DAE (R$)', 'Formulário'];
+    'Culturas', 'Área (ha)', 'Horas', 'Tanques', 'Máquinas', 'Implementos', 'DAE (R$)'];
 
   function ligarFase1() {
     var de = el('perDe'), ate = el('perAte');
@@ -5544,7 +5589,7 @@
      Guarda o último pacote recebido, com a versão. Na próxima abertura o painel desenha NA HORA com ele e só depois
      pergunta ao servidor se a versão mudou (resposta de poucos bytes quando não mudou): abre sem esperar a rede.
      É um cache por perfil (p = público, i = logado). O do logado vale 12 h e é apagado ao sair da conta. */
-  var IDB_NOME = 'seagri_mecanizacao', IDB_LOJA = 'painel', CACHE_FORMATO = 2;
+  var IDB_NOME = 'seagri_mecanizacao', IDB_LOJA = 'painel', CACHE_FORMATO = 3;
   function chaveCache() { return window.MODO_PUBLICO ? 'p' : 'i'; }
   function idbAbrir() {
     return new Promise(function (ok, falha) {
@@ -5791,6 +5836,21 @@
       fecharSugestoes();
     }
   });
+  // botão "PDF" das tabelas (histórico do produtor e aba Registros): vale para qualquer linha, mesmo redesenhada
+  document.addEventListener('click', function (e) {
+    var bpdf = e.target.closest && e.target.closest('[data-pdf-id]');
+    if (bpdf) { e.preventDefault(); exportarPdfDaLinha(bpdf); return; }
+    var bprod = e.target.closest && e.target.closest('[data-pdf-produtor]');
+    if (bprod && PDF_PRODUTOR && window.LANCAMENTO_PDF) {
+      e.preventDefault();
+      var rotulo = bprod.textContent;
+      bprod.disabled = true; bprod.textContent = 'Gerando PDF…';
+      window.LANCAMENTO_PDF.produtor(PDF_PRODUTOR)
+        .catch(function (er) { window.alert((er && er.message) || 'Não foi possível gerar o PDF agora.'); })
+        .then(function () { bprod.disabled = false; bprod.textContent = rotulo; });
+    }
+  });
+
   /* lista de beneficiários do município: a linha abre a ficha, o botão volta.
      Delegado, porque o conteúdo de #fichaProd é redesenhado a cada seleção. */
   el('fichaProd').addEventListener('click', function (e) {

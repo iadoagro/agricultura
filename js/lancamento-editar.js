@@ -57,6 +57,7 @@
   }
 
   /* ---- Ficha de visualização (só leitura) ---- */
+  function fIcone(n) { return window.ICONES_AGRO && !fVazio(n) ? window.ICONES_AGRO.rotulado(n) : fTexto(n); }
   function fVazio(v) { return v === null || v === undefined || String(v).trim() === ''; }
   function fTexto(v) { return fVazio(v) ? '<span class="ficha-vazio">Não informado</span>' : esc(String(v)); }
   function fNum(v, casas) {
@@ -156,7 +157,7 @@
   }
   function fChips(lista) {
     return Array.isArray(lista) && lista.length
-      ? '<div class="ficha-chips">' + lista.map(function (x) { return '<span class="ficha-chip">' + esc(String(x)) + '</span>'; }).join('') + '</div>'
+      ? '<div class="ficha-chips">' + lista.map(function (x) { return '<span class="ficha-chip">' + (window.ICONES_AGRO ? window.ICONES_AGRO.rotulado(String(x), { cor: false }) : esc(String(x))) + '</span>'; }).join('') + '</div>'
       : '<span class="ficha-vazio">Nenhum marcado</span>';
   }
 
@@ -216,12 +217,12 @@
         fCampo('Propriedade', fTexto(r.nome_propriedade)) + fCampo('Endereço', fTexto(r.endereco)) + '</dl>') +
 
       (acudagem
-        ? fSecao('Açudagem', '<dl class="ficha-campos">' + fCampo('Tanques/açudes', fNum(r.quantidade_acudes, 0)) + fCampo('Horas de máquina', fNum(r.horas_maquina)) + '</dl>')
-        : fSecao('Área mecanizada / cultivo', cult.length
+        ? fSecao('Açudagem', '<dl class="ficha-campos">' + fCampo('Tanques/açudes', fNum(r.quantidade_acudes, 0)) + fCampo('Horas de máquina', fNum(r.horas_maquina)) + fCampo('Piscicultura', r.piscicultura ? 'Sim' : 'Não') + '</dl>')
+        : fSecao('Área mecanizada / cultivo', (cult.length
             ? '<table class="ficha-tabela"><thead><tr><th>Cultura</th><th>Sistema de cultivo</th><th class="num">Área (ha)</th></tr></thead><tbody>' +
-              cult.map(function (c) { return '<tr><td>' + fTexto(c.cultura) + '</td><td>' + fTexto(c.sistema_cultivo) + '</td><td class="num">' + fNum(c.area_ha) + '</td></tr>'; }).join('') +
+              cult.map(function (c) { return '<tr><td>' + fIcone(c.cultura) + '</td><td>' + fTexto(c.sistema_cultivo) + '</td><td class="num">' + fNum(c.area_ha) + '</td></tr>'; }).join('') +
               '</tbody><tfoot><tr><td colspan="2">Área total</td><td class="num">' + fNum(r.area_total_ha) + '</td></tr></tfoot></table>'
-            : '<p class="ficha-vazio">Nenhuma cultura informada.</p>')) +
+            : '<p class="ficha-vazio">Nenhuma cultura informada.</p>') + '<dl class="ficha-campos" style="margin-top:10px">' + fCampo('Destoca', r.destoca ? 'Sim' : 'Não') + '</dl>')) +
 
       fSecao('Georreferenciamento (UTM WGS84)', '<dl class="ficha-campos">' +
         fCampo('X', fTexto(ponto.x)) + fCampo('Y', fTexto(ponto.y)) + fCampo('Zona', fTexto(ponto.zona)) + '</dl>') +
@@ -378,6 +379,9 @@
     if (dados.responsavel_tecnico) ajuda.garantirTecnico(dados.responsavel_tecnico);
     if (form.elements['cpf']) form.elements['cpf'].value = window.LANCAMENTO_CAMPOS.formatarCpf(dados.cpf);
     if (dados.tipo_servico) form.elements['tipo_servico'].value = dados.tipo_servico;
+    // piscicultura é um serviço da Açudagem (Sim/Não); em Mecanização não se aplica
+    if (form.elements['destoca']) form.elements['destoca'].value = dados.tipo_servico === 'Mecanização' ? (dados.destoca ? 'Sim' : 'Não') : '';
+    if (form.elements['piscicultura']) form.elements['piscicultura'].value = dados.tipo_servico === 'Açudagem' ? (dados.piscicultura ? 'Sim' : 'Não') : '';
     ajuda.alternarSecoesServico();
 
     form.elements['municipio'].value = dados.municipio || '';

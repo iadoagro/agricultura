@@ -110,8 +110,12 @@
       '<span class="pt-tag">' + G.esc(r.pc || 'Atendimento') + '</span>' +
       '<h4>' + G.esc(r.prod || '—') + '</h4>' +
       '<p class="pt-sub">' + [r.propr, r.mun].filter(Boolean).map(G.esc).join(' · ') + '</p>' +
+      '<div class="pt-linha">' +
       (dados.length ? '<div class="pt-dados">' + dados.map(function (d) { return '<div><b>' + d[0] + '</b><span>' + d[1] + '</span></div>'; }).join('') + '</div>' : '') +
-      (mec && r.cult && r.cult.length ? '<div class="pt-chips">' + r.cult.map(function (c) { return '<span>' + G.esc(c[0]) + '</span>'; }).join('') + '</div>' : '') +
+      (mec && r.dest ? '<div class="pt-chips"><span>' + (window.ICONES_AGRO ? window.ICONES_AGRO.rotulado('Destoca', { cor: true, tamanho: 16 }) : 'Destoca') + '</span></div>' : '') +
+      (!mec && r.pisc ? '<div class="pt-chips"><span>' + (window.ICONES_AGRO ? window.ICONES_AGRO.rotulado('Piscicultura', { cor: true, tamanho: 16 }) : 'Piscicultura') + '</span></div>' : '') +
+      (mec && r.cult && r.cult.length ? '<div class="pt-chips">' + r.cult.map(function (c) { return '<span>' + (window.ICONES_AGRO ? window.ICONES_AGRO.rotulado(String(c[0]), { cor: true, tamanho: 16 }) : G.esc(c[0])) + '</span>'; }).join('') + '</div>' : '') +
+      '</div>' +
       '<dl class="pt-info">' +
         linha('Vistoria', v ? v.split('-').reverse().join('/') : '') + linha('Técnico', r.rt && r.rt !== 'Não informado' ? r.rt : '') +
       '</dl>' +
@@ -147,7 +151,7 @@
   }
 
   /** "abrir formulário": abre a página do lançamento no sistema (lancamento-editar.html?modo=ver, só leitura) numa
-      aba nova. Se não achar o lançamento, cai no link do formulário digitalizado, quando existir. */
+      aba nova. */
   function ligarAbrir(popupLeaflet, r) {
     var el = popupLeaflet.getElement && popupLeaflet.getElement(), a = el && el.querySelector('.pt-abrir');
     if (!a) return;
@@ -162,8 +166,7 @@
           if (janela) janela.location.href = url; else window.location.href = url;
         } else {
           if (janela) janela.close();
-          if (r.form) window.open(r.form, '_blank', 'noopener');
-          else window.alert('Não foi possível localizar este lançamento no sistema.');
+          window.alert('Não foi possível localizar este lançamento no sistema.');
         }
       }).catch(function () {
         if (janela) janela.close();

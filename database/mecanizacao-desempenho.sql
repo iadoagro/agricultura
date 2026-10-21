@@ -52,7 +52,7 @@ returns json language sql stable security definer set search_path = public as $$
       select id, criado_em, criado_por_email, tipo_servico, data_vistoria, escritorio_local, responsavel_tecnico,
              nome_beneficiario, sexo, estado_civil, possui_dap, associacao_cooperativa, endereco, nome_propriedade,
              municipio, culturas, area_total_ha, horas_maquina, quantidade_acudes, pontos_geo, tipo_uso, maquinas,
-             implementos, daes, observacao, formulario_url
+             implementos, daes, observacao, formulario_url, piscicultura, destoca
         from public.mecanizacao_lancamentos
     ) t;
 $$;

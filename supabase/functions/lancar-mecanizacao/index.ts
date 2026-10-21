@@ -195,6 +195,10 @@ function lerRegistro(fd: FormData, emailDono: string): Record<string, unknown> {
     area_total_ha: num('area_total_ha'),
     horas_maquina: num('horas_maquina'),
     quantidade_acudes: inteiro('quantidade_acudes'),
+    // Piscicultura é um serviço da Açudagem (não um implemento): o formulário pergunta "Sim"/"Não"
+    piscicultura: txt('tipo_servico') === 'Açudagem' && txt('piscicultura') === 'Sim',
+    // Destoca é um serviço da Mecanização (não um implemento): o formulário pergunta "Sim"/"Não"
+    destoca: txt('tipo_servico') === 'Mecanização' && txt('destoca') === 'Sim',
     pontos_geo: arr('pontos_geo'),
     maquinas: lista('maquinas'),
     implementos: lista('implementos'),
@@ -209,6 +213,12 @@ function lerRegistro(fd: FormData, emailDono: string): Record<string, unknown> {
   }
   if (registro.tipo_servico === 'Açudagem' && (registro.quantidade_acudes ?? 0) < 1) {
     responder(400, { ok: false, erro: 'Informe pelo menos 1 tanque/açude para um lançamento de Açudagem.' });
+  }
+  if (registro.tipo_servico === 'Mecanização' && !['Sim', 'Não'].includes(txt('destoca') ?? '')) {
+    responder(400, { ok: false, erro: 'Informe se a Mecanização é para destoca (Sim ou Não).' });
+  }
+  if (registro.tipo_servico === 'Açudagem' && !['Sim', 'Não'].includes(txt('piscicultura') ?? '')) {
+    responder(400, { ok: false, erro: 'Informe se a Açudagem é de piscicultura (Sim ou Não).' });
   }
   if (registro.tipo_servico === 'Açudagem' && !(Number(registro.horas_maquina ?? 0) > 0)) {
     responder(400, { ok: false, erro: 'Informe as horas de máquina para um lançamento de Açudagem.' });
@@ -457,7 +467,7 @@ function exigirId(fd: FormData, msg: string): string {
 const NAO_INFORMADO = 'Não informado';
 const CAMPOS_PAINEL = 'criado_em,criado_por_email,tipo_servico,data_vistoria,escritorio_local,responsavel_tecnico,' +
   'nome_beneficiario,sexo,estado_civil,possui_dap,associacao_cooperativa,endereco,nome_propriedade,municipio,' +
-  'culturas,area_total_ha,horas_maquina,quantidade_acudes,pontos_geo,tipo_uso,maquinas,implementos,daes,' +
+  'culturas,area_total_ha,horas_maquina,quantidade_acudes,pontos_geo,tipo_uso,maquinas,implementos,daes,piscicultura,destoca,' +
   'observacao,formulario_url';
 
 function nomeSugeridoDoEmail(email: string): string {
@@ -512,11 +522,15 @@ function paraRegistroPainel(l: Record<string, unknown>, nomes: Map<string, strin
     ha: numero(l.area_total_ha),
     hrs: numero(l.horas_maquina),
     ac: Math.trunc(numero(l.quantidade_acudes)),
+    pisc: l.piscicultura === true,
+    dest: l.destoca === true,
     tt: ou(l.tipo_uso),
     maq: lista(l.maquinas),
     impl: lista(l.implementos),
     dae: daes.reduce((a, x) => a + numero(x.valor), 0),
     form: logado && typeof l.formulario_url === 'string' ? l.formulario_url : '',
+    // id do lançamento: só para quem está logado (liga a linha ao PDF da ficha)
+    ...(logado && l.id ? { id: String(l.id) } : {}),
     obs: ou(l.observacao, ''),
     _geo: Array.isArray(l.pontos_geo) && l.pontos_geo.length > 0,
     // coordenadas UTM [x, y, zona]: só para quem está logado (localização da propriedade)
