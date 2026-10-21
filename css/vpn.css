@@ -74,7 +74,7 @@ a.vpn-btn{text-decoration:none}
 .vpn-barra{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
 .vpn-barra input,.vpn-barra select{padding:9px 11px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:14px;background:#fff}
 .vpn-barra input{flex:1 1 260px;min-width:0}
-.vpn-atualiza{font-size:13px;color:#6b7280;text-align:left;white-space:nowrap;line-height:1.35}
+.vpn-atualiza{margin-left:auto;font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;line-height:1.35}
 .vpn-atualiza b{color:#374151;font-weight:600}
 .vpn-tab-wrap{background:#fff;border:1px solid var(--linha);border-radius:12px;box-shadow:var(--sombra);overflow:auto}
 .vpn-tab{width:100%;border-collapse:collapse;font-size:14px}
