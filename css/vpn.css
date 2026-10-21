@@ -88,6 +88,8 @@ a.vpn-btn{text-decoration:none}
 .vpn-tab select{padding:5px 8px;border:1px solid #cfd6e0;border-radius:7px;font:inherit;font-size:13px}
 .vpn-acao{padding:5px 11px;border:1px solid #cfd6e0;border-radius:7px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
 .vpn-acoes{white-space:nowrap}
+.vpn-acoes .vpn-acao{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0}
+.vpn-acoes .vpn-acao svg{display:block}
 .vpn-excluir{color:#b91c1c;border-color:#fecaca}
 .vpn-excluir:hover{background:#fef2f2}
 .vpn-acoes .vpn-acao+.vpn-acao{margin-left:6px}
