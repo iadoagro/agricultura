@@ -74,12 +74,149 @@ on conflict (id) do update
       allowed_mime_types = array['image/jpeg','image/png','image/webp','application/pdf'];
 
 -- O público só ENVIA (insert); não lista nem baixa. A equipe lê.
-drop policy if exists "Publico envia documento vpn" on storage.objects;
-create policy "Publico envia documento vpn" on storage.objects
-  for insert to anon, authenticated with check (bucket_id = 'vpn-documentos');
 drop policy if exists "Equipe le documento vpn" on storage.objects;
 create policy "Equipe le documento vpn" on storage.objects
   for select to authenticated using (bucket_id = 'vpn-documentos' and public.pode_vpn());
+
+-- ------------------------------------------------ nome próprio e duplicidade
+-- Nome sempre com iniciais maiúsculas (nunca tudo maiúsculo); de/da/do/das/dos/e ficam minúsculas.
+create or replace function public.vpn_nome_proprio(n text)
+returns text
+language plpgsql
+immutable
+as $$
+declare
+  r text := '';
+  w text;
+  i int := 0;
+begin
+  foreach w in array regexp_split_to_array(btrim(coalesce(n, '')), '\s+') loop
+    i := i + 1;
+    w := initcap(lower(w));
+    if i > 1 and lower(w) in ('de','da','do','das','dos','e') then w := lower(w); end if;
+    r := r || case when i > 1 then ' ' else '' end || w;
+  end loop;
+  return r;
+end;
+$$;
+
+-- Chave para comparar nomes sem diferença de maiúscula, acento ou espaço duplo.
+create or replace function public.vpn_chave_nome(n text)
+returns text
+language sql
+immutable
+as $$
+  select translate(lower(regexp_replace(btrim(coalesce(n, '')), '\s+', ' ', 'g')),
+                   'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc');
+$$;
+
+-- O formulário consulta antes de enviar o documento: já existe cadastro com este CPF e/ou nome?
+create or replace function public.vpn_verificar_duplicado(p_cpf text, p_nome text, p_ignorar uuid default null)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'cpf', exists (select 1 from public.vpn_solicitacoes
+                    where cpf = regexp_replace(coalesce(p_cpf, ''), '\D', '', 'g') and (p_ignorar is null or id <> p_ignorar)),
+    'nome', exists (select 1 from public.vpn_solicitacoes
+                     where public.vpn_chave_nome(nome) = public.vpn_chave_nome(p_nome) and (p_ignorar is null or id <> p_ignorar))
+  );
+$$;
+revoke all on function public.vpn_verificar_duplicado(text, text, uuid) from public;
+grant execute on function public.vpn_verificar_duplicado(text, text, uuid) to anon, authenticated;
+
+-- Corrige os nomes já gravados (ex.: JOÃO PAULO -> João Paulo)
+update public.vpn_solicitacoes set nome = public.vpn_nome_proprio(nome) where nome <> public.vpn_nome_proprio(nome);
+
+-- ------------------------------------------------------ configuração do link público
+-- Uma linha só: link ativo/desativado e senha de acesso opcional (liga/desliga na página VPN, só o root).
+create table if not exists public.vpn_config (
+  id int primary key default 1 check (id = 1),
+  link_ativo boolean not null default true,
+  senha_ativa boolean not null default false,
+  senha text not null default '221830',
+  atualizado_em timestamptz,
+  atualizado_por text
+);
+insert into public.vpn_config (id) values (1) on conflict (id) do nothing;
+alter table public.vpn_config enable row level security;
+revoke all on public.vpn_config from anon, authenticated;
+
+create or replace function public.vpn_link_ativo()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((select link_ativo from public.vpn_config where id = 1), true);
+$$;
+grant execute on function public.vpn_link_ativo() to anon, authenticated;
+
+-- O formulário pergunta: o link está ativo? exige senha?
+create or replace function public.vpn_config_publica()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object('ativo', link_ativo, 'senha', senha_ativa) from public.vpn_config where id = 1;
+$$;
+grant execute on function public.vpn_config_publica() to anon, authenticated;
+
+create or replace function public.vpn_verificar_senha(p_senha text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from public.vpn_config
+                  where id = 1 and link_ativo and (not senha_ativa or senha = coalesce(p_senha, '')));
+$$;
+grant execute on function public.vpn_verificar_senha(text) to anon, authenticated;
+
+create or replace function public.vpn_config_ler()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  return (select jsonb_build_object('link_ativo', link_ativo, 'senha_ativa', senha_ativa) from public.vpn_config where id = 1);
+end;
+$$;
+revoke all on function public.vpn_config_ler() from public;
+grant execute on function public.vpn_config_ler() to authenticated;
+
+create or replace function public.vpn_config_salvar(p_link_ativo boolean, p_senha_ativa boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if lower(trim(coalesce((select auth.jwt() ->> 'email'), ''))) <> 'root@root.com' then raise exception 'Só o responsável altera isto.'; end if;
+  update public.vpn_config
+     set link_ativo = coalesce(p_link_ativo, link_ativo), senha_ativa = coalesce(p_senha_ativa, senha_ativa),
+         atualizado_em = now(),
+         atualizado_por = initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' '))
+   where id = 1;
+end;
+$$;
+revoke all on function public.vpn_config_salvar(boolean, boolean) from public;
+grant execute on function public.vpn_config_salvar(boolean, boolean) to authenticated;
+
+-- Com o link desativado, ninguém envia documento nem solicitação.
+drop policy if exists "Publico envia documento vpn" on storage.objects;
+create policy "Publico envia documento vpn" on storage.objects
+  for insert to anon, authenticated with check (bucket_id = 'vpn-documentos' and public.vpn_link_ativo());
 
 -- -------------------------------------------------------------- função pública
 create or replace function public.enviar_vpn_solicitacao(p jsonb)
@@ -89,7 +226,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_nome text := btrim(coalesce(p->>'nome', ''));
+  v_nome text := public.vpn_nome_proprio(p->>'nome');
   v_cpf text := regexp_replace(coalesce(p->>'cpf', ''), '\D', '', 'g');
   v_rg text := btrim(coalesce(p->>'rg', ''));
   v_email text := lower(btrim(coalesce(p->>'email_funcional', '')));
@@ -102,6 +239,10 @@ declare
   v_id uuid;
   v_num bigint;
 begin
+  if not public.vpn_link_ativo() then raise exception 'Este formulário está desativado.'; end if;
+  if exists (select 1 from public.vpn_config where id = 1 and senha_ativa and senha <> coalesce(p->>'senha', '')) then
+    raise exception 'Senha incorreta.';
+  end if;
   begin
     v_nasc := (p->>'data_nascimento')::date;
   exception when others then
@@ -109,6 +250,8 @@ begin
   end;
   if char_length(v_nome) < 5 or char_length(v_nome) > 120 then raise exception 'Informe o nome completo.'; end if;
   if char_length(v_cpf) <> 11 or v_cpf ~ '^(\d)\1{10}$' then raise exception 'CPF inválido.'; end if;
+  if exists (select 1 from public.vpn_solicitacoes where cpf = v_cpf) then raise exception 'Já existe um cadastro com este CPF.'; end if;
+  if exists (select 1 from public.vpn_solicitacoes where public.vpn_chave_nome(nome) = public.vpn_chave_nome(v_nome)) then raise exception 'Já existe um cadastro com este nome.'; end if;
   if char_length(v_rg) < 3 or char_length(v_rg) > 30 then raise exception 'Informe o RG.'; end if;
   if v_nasc is null or v_nasc > current_date - interval '14 years' or v_nasc < date '1900-01-01' then
     raise exception 'Data de nascimento inválida.';
@@ -162,7 +305,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_nome text := btrim(coalesce(p->>'nome', ''));
+  v_nome text := public.vpn_nome_proprio(p->>'nome');
   v_cpf text := regexp_replace(coalesce(p->>'cpf', ''), '\D', '', 'g');
   v_rg text := btrim(coalesce(p->>'rg', ''));
   v_email text := lower(btrim(coalesce(p->>'email_funcional', '')));
@@ -181,6 +324,8 @@ begin
   end;
   if char_length(v_nome) < 5 or char_length(v_nome) > 120 then raise exception 'Informe o nome completo.'; end if;
   if char_length(v_cpf) <> 11 or v_cpf ~ '^(\d)\1{10}$' then raise exception 'CPF inválido.'; end if;
+  if exists (select 1 from public.vpn_solicitacoes where cpf = v_cpf and id <> p_id) then raise exception 'Já existe outro cadastro com este CPF.'; end if;
+  if exists (select 1 from public.vpn_solicitacoes where public.vpn_chave_nome(nome) = public.vpn_chave_nome(v_nome) and id <> p_id) then raise exception 'Já existe outro cadastro com este nome.'; end if;
   if char_length(v_rg) < 3 or char_length(v_rg) > 30 then raise exception 'Informe o RG.'; end if;
   if v_nasc is null or v_nasc < date '1900-01-01' or v_nasc > current_date then raise exception 'Data de nascimento inválida.'; end if;
   if v_email !~ '^[^@\s]+@ac\.gov\.br$' or char_length(v_email) > 160 then raise exception 'Use o e-mail funcional, que termina com @ac.gov.br.'; end if;
@@ -199,5 +344,25 @@ end;
 $$;
 revoke all on function public.vpn_editar(uuid, jsonb) from public;
 grant execute on function public.vpn_editar(uuid, jsonb) to authenticated;
+
+-- ------------------------------------------------------------ exclusão pela equipe
+-- O arquivo do documento é apagado pela API de Storage (policy abaixo); aqui sai o registro.
+drop policy if exists "Equipe exclui documento vpn" on storage.objects;
+create policy "Equipe exclui documento vpn" on storage.objects
+  for delete to authenticated using (bucket_id = 'vpn-documentos' and public.pode_vpn());
+
+create or replace function public.vpn_excluir(p_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  delete from public.vpn_solicitacoes where id = p_id;
+end;
+$$;
+revoke all on function public.vpn_excluir(uuid) from public;
+grant execute on function public.vpn_excluir(uuid) to authenticated;
 
 commit;

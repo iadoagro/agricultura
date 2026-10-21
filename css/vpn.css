@@ -88,6 +88,8 @@ a.vpn-btn{text-decoration:none}
 .vpn-tab select{padding:5px 8px;border:1px solid #cfd6e0;border-radius:7px;font:inherit;font-size:13px}
 .vpn-acao{padding:5px 11px;border:1px solid #cfd6e0;border-radius:7px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
 .vpn-acoes{white-space:nowrap}
+.vpn-excluir{color:#b91c1c;border-color:#fecaca}
+.vpn-excluir:hover{background:#fef2f2}
 .vpn-acoes .vpn-acao+.vpn-acao{margin-left:6px}
 .vpn-acao:hover{background:#f1f5f9}
 .vpn-zap{color:#15803d;font-weight:600;text-decoration:none;white-space:nowrap}
@@ -102,6 +104,20 @@ a.vpn-btn{text-decoration:none}
 .vpn-dialogo-ok p{margin:0 0 10px;font-size:15px;line-height:1.5;color:#374151}
 .vpn-dialogo-ok .vpn-dialogo-acoes{justify-content:center;margin-top:18px}
 .vpn-dialogo-ok .vpn-btn{min-width:140px}
+body.vpn-carregando{visibility:hidden}
+.vpn-senha{max-width:420px;margin:40px auto}
+.vpn-senha h2{margin:0 0 6px;font-size:20px}
+.vpn-senha p{margin:0 0 14px;color:#4b5563}
+.vpn-senha input{width:100%;padding:12px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:18px;letter-spacing:.2em;text-align:center}
+.vpn-senha .vpn-btn{width:100%}
+.vpn-config{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:14px 16px;box-shadow:var(--sombra);margin-bottom:16px}
+.vpn-config>span{font-size:13px;color:#374151;font-weight:600}
+.vpn-troca{display:inline-flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;user-select:none}
+.vpn-troca input{width:18px;height:18px;accent-color:var(--verde2);cursor:pointer}
+.vpn-config small{color:#6b7280;font-size:12px}
+.vpn-popup-icone.vpn-popup-aviso{background:#fef3c7;color:#92400e}
+.vpn-dup-acoes{flex-wrap:wrap}
+.vpn-dup-acoes .vpn-btn[hidden]{display:none}
 .vpn-popup-icone{width:56px;height:56px;margin:0 auto 12px;border-radius:50%;background:#dcfce7;color:#166534;font-size:30px;font-weight:700;line-height:56px}
 .vpn-dados{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin:0}
 .vpn-dados div{min-width:0}

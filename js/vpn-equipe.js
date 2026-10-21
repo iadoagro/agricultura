@@ -36,6 +36,30 @@
     if (!d) return '';
     return '<a class="vpn-zap" href="https://wa.me/55' + esc(d) + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">' + esc(zapBr(d)) + '</a>';
   }
+  function nomeProprio(s) {
+    return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase().split(' ').map(function (p, i) {
+      if (i > 0 && /^(de|da|do|das|dos|e)$/.test(p)) return p;
+      return p.replace(/(^|['\u2019-])(\S)/g, function (m, a, c) { return a + c.toUpperCase(); });
+    }).join(' ');
+  }
+  // Sigla do setor: vem das caixas do organograma (o banco guarda só o nome do setor)
+  var siglas = {};
+  function chaveSetor(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function guardarSiglas(dados) {
+    siglas = {};
+    ((dados && dados.nos) || []).forEach(function (n) {
+      if (n.title && n.sigla && chaveSetor(n.sigla) !== chaveSetor(n.title)) siglas[chaveSetor(n.title)] = n.sigla;
+    });
+  }
+  function setorComSigla(setor) {
+    var s = siglas[chaveSetor(setor)];
+    return s ? setor + ' (' + s + ')' : (setor || '');
+  }
+  if (window.OrgContatos) {
+    var emCache = window.OrgContatos.doCache();
+    if (emCache) guardarSiglas(emCache);
+    window.OrgContatos.carregar().then(function (r) { guardarSiglas(r.dados); if (lista.length) desenhar(); }, function () { /* sem sigla: mostra só o nome */ });
+  }
   function dataBr(d) { var p = String(d || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
   function dataHoraBr(t) {
     var d = new Date(t); if (isNaN(d)) return '';
@@ -44,12 +68,42 @@
 
   // link público: sempre o do GitHub Pages, mesmo quando a página é aberta em localhost
   document.getElementById('vpnLink').value = 'https://iadoagro.github.io/agricultura/pages/vpn-formulario.html';
+  // link público: ativo/desativado (página em branco) e senha de acesso — só o responsável altera
+  var cfgAtivo = document.getElementById('vpnCfgAtivo'), cfgSenha = document.getElementById('vpnCfgSenha'), cfgMsg = document.getElementById('vpnCfgMsg');
+  var cfgCarregada = false;
+  async function carregarConfig() {
+    if (cfgCarregada) return;
+    cfgCarregada = true;
+    try {
+      var r = await fetch(base() + '/rest/v1/rpc/vpn_config_ler', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: '{}' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var c = await r.json();
+      cfgAtivo.checked = Boolean(c.link_ativo); cfgSenha.checked = Boolean(c.senha_ativa);
+    } catch (e) { cfgCarregada = false; cfgMsg.textContent = 'Não foi possível ler a configuração. Rode database/vpn.sql no Supabase.'; }
+  }
+  async function salvarConfig() {
+    cfgAtivo.disabled = cfgSenha.disabled = true;
+    try {
+      var r = await fetch(base() + '/rest/v1/rpc/vpn_config_salvar', {
+        method: 'POST', headers: cab({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ p_link_ativo: cfgAtivo.checked, p_senha_ativa: cfgSenha.checked })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      cfgMsg.textContent = (cfgAtivo.checked ? 'Link ativo' : 'Link desativado: quem abrir vê uma página em branco') + (cfgAtivo.checked && cfgSenha.checked ? ', com senha.' : '.') + ' Salvo.';
+    } catch (e) { cfgMsg.textContent = 'Não foi possível salvar. Tente de novo.'; cfgCarregada = false; carregarConfig(); }
+    cfgAtivo.disabled = cfgSenha.disabled = false;
+  }
+  cfgAtivo.addEventListener('change', salvarConfig);
+  cfgSenha.addEventListener('change', salvarConfig);
+
   // link local: só a conta responsável (root) vê, para testar o formulário no XAMPP
   var LINK_LOCAL = 'http://localhost/agricultura/pages/vpn-formulario.html';
   function linkLocal() {
     var s = auth && auth.sessaoAtual && auth.sessaoAtual();
     var root = Boolean(s && s.user && auth.RESPONSAVEL_EMAIL && String(s.user.email || '').toLowerCase() === auth.RESPONSAVEL_EMAIL);
     document.getElementById('vpnLinkLocalBox').hidden = !root;
+    document.getElementById('vpnConfigBox').hidden = !root;
+    if (root) carregarConfig();
     document.getElementById('vpnLinkLocal').value = LINK_LOCAL;
     document.getElementById('vpnAbrirLocal').href = LINK_LOCAL;
   }
@@ -68,17 +122,14 @@
       if (st && l.status !== st) return false;
       return !q || semAcento([l.nome, l.cpf, cpfBr(l.cpf), l.matricula, l.email_funcional, l.setor, l.rg, l.whatsapp, l.observacoes, ROTULO_VINCULO[l.vinculo]].join(' ')).indexOf(q) >= 0;
     });
-    if (!v.length) { tbody.innerHTML = '<tr><td colspan="14" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
+    if (!v.length) { tbody.innerHTML = '<tr><td colspan="13" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
     tbody.innerHTML = v.map(function (l) {
       return '<tr><td>' + esc(l.numero) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + esc(l.nome) + '</td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
-        '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l.whatsapp) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(l.setor) + '</td>' +
-        '<td class="vpn-obs">' + esc(l.observacoes) + '</td>' +
-        '<td><select data-st="' + esc(l.id) + '" aria-label="Situação">' +
-        Object.keys(ROTULO).map(function (k) { return '<option value="' + k + '"' + (k === l.status ? ' selected' : '') + '>' + ROTULO[k] + '</option>'; }).join('') +
-        '</select></td>' +
+        '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l.whatsapp) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td>' +
         '<td class="vpn-acoes"><button type="button" class="vpn-acao" data-ver="' + esc(l.id) + '" title="Ver todas as informações">Visualizar</button>' +
-        '<button type="button" class="vpn-acao" data-edit="' + esc(l.id) + '" title="Editar os dados e as observações">Editar</button></td></tr>';
+        '<button type="button" class="vpn-acao" data-edit="' + esc(l.id) + '" title="Editar os dados e as observações">Editar</button>' +
+        '<button type="button" class="vpn-acao vpn-excluir" data-del="' + esc(l.id) + '" title="Excluir esta solicitação">Excluir</button></td></tr>';
     }).join('');
   }
 
@@ -99,7 +150,7 @@
       desenhar();
     } catch (e) {
       if (silencioso) return;
-      tbody.innerHTML = '<tr><td colspan="14" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="13" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
     } finally { carregando = false; restante = INTERVALO; mostrarAtualizacao(); }
   }
 
@@ -191,7 +242,7 @@
     if (!editando) return;
     var f = fe.elements, id = editando.id;
     var dados = {
-      nome: f.nome.value.trim().replace(/\s+/g, ' '), cpf: f.cpf.value, rg: f.rg.value.trim(), data_nascimento: f.data_nascimento.value,
+      nome: nomeProprio(f.nome.value), cpf: f.cpf.value, rg: f.rg.value.trim(), data_nascimento: f.data_nascimento.value,
       email_funcional: f.email_funcional.value.trim().toLowerCase(), whatsapp: f.whatsapp.value, vinculo: f.vinculo.value,
       matricula: f.matricula.value.trim(), setor: f.setor.value.trim().replace(/\s+/g, ' '), observacoes: f.observacoes.value
     };
@@ -236,7 +287,36 @@
   document.getElementById('vpnVerEditar').addEventListener('click', function () { dlgVer.close(); abrirEdicao(verId); });
   document.getElementById('vpnVerDoc').addEventListener('click', function () { abrirDocumento(verId, this); });
 
+  // ---- excluir: pede confirmação, apaga o arquivo do documento e depois o registro
+  async function excluir(id, botao) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l) return;
+    if (!confirm('Excluir a solicitação nº ' + l.numero + ' de ' + l.nome + '?\n\nOs dados e o documento anexado serão apagados e não dá para desfazer.')) return;
+    botao.disabled = true; botao.textContent = 'Excluindo…';
+    try {
+      if (l.documento_path) {
+        var d = await fetch(base() + '/storage/v1/object/vpn-documentos/' + l.documento_path.split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+        if (!d.ok && d.status !== 404) throw new Error('Não foi possível apagar o documento (' + d.status + ').');
+      }
+      var r = await fetch(base() + '/rest/v1/rpc/vpn_excluir', {
+        method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id })
+      });
+      if (!r.ok) {
+        var c = null; try { c = await r.json(); } catch (x) { /* sem corpo */ }
+        if (r.status === 404 || (c && c.code === 'PGRST202')) throw new Error('A exclusão ainda não foi ativada no banco. Rode database/vpn.sql.');
+        throw new Error('Não foi possível excluir (' + r.status + ').');
+      }
+      lista = lista.filter(function (x) { return x.id !== id; });
+      desenhar();
+    } catch (err) {
+      alert(err.message || 'Não foi possível excluir.');
+      botao.disabled = false; botao.textContent = 'Excluir';
+    }
+  }
+
   tbody.addEventListener('click', function (e) {
+    var x = e.target.closest('[data-del]');
+    if (x) excluir(x.getAttribute('data-del'), x);
     var b = e.target.closest('[data-ver]');
     if (b) abrirVisualizacao(b.getAttribute('data-ver'));
     var ed = e.target.closest('[data-edit]');

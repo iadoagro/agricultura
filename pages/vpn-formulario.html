@@ -9,9 +9,9 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102113">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102118">
 </head>
-<body class="vpn-publica">
+<body class="vpn-publica vpn-carregando">
 <header class="vpn-topo"><div class="vpn-topo-in"><b>Solicitação de acesso à VPN</b><small>Preencha todos os campos e anexe um documento de identificação com foto.</small></div></header>
 
 <main class="vpn-main">
@@ -20,6 +20,16 @@
     <p>Recebemos o seu pedido <b id="vpnNumero"></b>. A equipe responsável vai analisar os dados e entrar em contato pelo e-mail funcional informado.</p>
     <button type="button" class="vpn-btn" id="vpnOutra">Enviar outra solicitação</button>
   </div>
+
+  <section class="vpn-cartao vpn-senha" id="vpnSenhaBox" hidden>
+    <h2>Acesso protegido</h2>
+    <p>Informe a senha para abrir o formulário.</p>
+    <form id="vpnSenhaForm" novalidate>
+      <input id="vpnSenha" type="password" inputmode="numeric" autocomplete="off" maxlength="30" aria-label="Senha de acesso">
+      <p class="vpn-aviso erro" id="vpnSenhaErro" role="alert" hidden></p>
+      <button class="vpn-btn" type="submit" id="vpnSenhaEntrar">Entrar</button>
+    </form>
+  </section>
 
   <form class="vpn-cartao" id="vpnForm" novalidate>
     <div class="vpn-grade">
@@ -89,6 +99,20 @@
     <p class="vpn-lgpd">Os dados são usados apenas para liberar o acesso à VPN e ficam restritos à equipe responsável.</p>
   </form>
 </main>
+<dialog class="vpn-dialogo vpn-dialogo-ok" id="vpnDuplicado" aria-labelledby="vpnDuplicadoTitulo">
+  <div class="vpn-dialogo-corpo">
+    <div class="vpn-popup-icone vpn-popup-aviso" aria-hidden="true">!</div>
+    <h2 id="vpnDuplicadoTitulo">Você já tem cadastro</h2>
+    <p id="vpnDuplicadoTexto"></p>
+    <p>Se você já enviou a solicitação, não precisa enviar de novo: a equipe vai dar andamento ao pedido que já existe. O que você quer editar?</p>
+    <div class="vpn-dialogo-acoes vpn-dup-acoes">
+      <button type="button" class="vpn-btn" id="vpnDupCpf" hidden>Editar o CPF</button>
+      <button type="button" class="vpn-btn" id="vpnDupNome" hidden>Editar o nome</button>
+      <button type="button" class="vpn-acao" id="vpnDupFechar">Fechar</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog class="vpn-dialogo vpn-dialogo-ok" id="vpnPopup" aria-labelledby="vpnPopupTitulo">
   <div class="vpn-dialogo-corpo">
     <div class="vpn-popup-icone" aria-hidden="true">✓</div>
@@ -99,6 +123,6 @@
   </div>
 </dialog>
 <script src="../js/contatos-organograma.js?v=2026102101"></script>
-<script src="../js/vpn-publico.js?v=2026102110"></script>
+<script src="../js/vpn-publico.js?v=2026102112"></script>
 </body>
 </html>

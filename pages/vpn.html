@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
 <link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/padrao.css?v=2026101701">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102116">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102118">
 </head>
 <body class="vpn-equipe">
 <header class="cab-padrao"><h1>SISTEMA</h1><p>VPN</p></header>
@@ -27,6 +27,12 @@
     <span>Link público do formulário (não precisa de login):</span>
     <input type="text" id="vpnLink" readonly aria-label="Link público">
     <button type="button" class="vpn-btn" id="vpnCopiar">Copiar link</button>
+  </section>
+  <section class="vpn-config" id="vpnConfigBox" aria-label="Acesso ao formulário público" hidden>
+    <span>Acesso ao formulário público (só o responsável altera):</span>
+    <label class="vpn-troca"><input type="checkbox" id="vpnCfgAtivo"> Link ativo</label>
+    <label class="vpn-troca"><input type="checkbox" id="vpnCfgSenha"> Exigir senha <b>221830</b></label>
+    <small id="vpnCfgMsg" role="status">Desativado = quem abrir o link vê uma página em branco.</small>
   </section>
   <section class="vpn-link" id="vpnLinkLocalBox" aria-label="Link local do formulário" hidden>
     <span>Link local, só para testar (visível só ao responsável):</span>
@@ -47,8 +53,8 @@
 
   <div class="vpn-tab-wrap">
     <table class="vpn-tab">
-      <thead><tr><th>Nº</th><th>Recebida em</th><th>Nome</th><th>CPF</th><th>RG</th><th>Nascimento</th><th>E-mail funcional</th><th>WhatsApp</th><th>Vínculo</th><th>Matrícula</th><th>Setor</th><th>Observações</th><th>Situação</th><th>Ações</th></tr></thead>
-      <tbody id="vpnLista"><tr><td colspan="14" class="vpn-vazio">Carregando…</td></tr></tbody>
+      <thead><tr><th>Nº</th><th>Recebida em</th><th>Nome</th><th>CPF</th><th>RG</th><th>Nascimento</th><th>E-mail funcional</th><th>WhatsApp</th><th>Vínculo</th><th>Matrícula</th><th>Setor</th><th>Ações</th></tr></thead>
+      <tbody id="vpnLista"><tr><td colspan="12" class="vpn-vazio">Carregando…</td></tr></tbody>
     </table>
   </div>
 </main>
@@ -87,6 +93,7 @@
     </div>
   </form>
 </dialog>
-<script src="../js/vpn-equipe.js?v=2026102110"></script>
+<script src="../js/contatos-organograma.js?v=2026102101"></script>
+<script src="../js/vpn-equipe.js?v=2026102113"></script>
 </body>
 </html>

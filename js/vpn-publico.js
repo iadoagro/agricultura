@@ -47,10 +47,19 @@
     e.target.value = d.length > 7 ? d.replace(/(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : d.length > 2 ? d.replace(/(\d{2})(\d+)/, '($1) $2') : d;
   });
 
+  // Nome com iniciais maiúsculas (nunca tudo maiúsculo); de/da/do/das/dos/e ficam minúsculas
+  function nomeProprio(s) {
+    return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase().split(' ').map(function (p, i) {
+      if (i > 0 && /^(de|da|do|das|dos|e)$/.test(p)) return p;
+      return p.replace(/(^|['\u2019-])(\S)/g, function (m, a, c) { return a + c.toUpperCase(); });
+    }).join(' ');
+  }
+  form.elements.nome.addEventListener('blur', function (e) { e.target.value = nomeProprio(e.target.value); });
+
   function ler() {
     var f = form.elements;
     return {
-      nome: f.nome.value.trim().replace(/\s+/g, ' '), cpf: f.cpf.value, rg: f.rg.value.trim(),
+      nome: nomeProprio(f.nome.value), cpf: f.cpf.value, rg: f.rg.value.trim(),
       data_nascimento: f.data_nascimento.value, email_funcional: f.email_funcional.value.trim().toLowerCase(),
       whatsapp: f.whatsapp.value, vinculo: vinculoAtual(), matricula: f.matricula.value.trim(), setor: f.setor.value, arquivo: f.documento.files[0] || null
     };
@@ -173,6 +182,42 @@
     });
   }
 
+  // Já existe cadastro com este CPF e/ou nome? (consulta antes de enviar o documento)
+  async function consultarDuplicado(d) {
+    try {
+      var r = await fetch(base() + '/rest/v1/rpc/vpn_verificar_duplicado', {
+        method: 'POST', headers: cabecalhos({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ p_cpf: d.cpf, p_nome: d.nome })
+      });
+      if (!r.ok) return null;   // função ainda não instalada: o banco confere de novo ao gravar
+      return await r.json();
+    } catch (e) { return null; }
+  }
+  var dlgDup = document.getElementById('vpnDuplicado'), btnDupCpf = document.getElementById('vpnDupCpf'), btnDupNome = document.getElementById('vpnDupNome');
+  function avisarDuplicado(dup) {
+    var cpf = Boolean(dup.cpf), nome = Boolean(dup.nome);
+    document.getElementById('vpnDuplicadoTexto').textContent = cpf && nome ? 'Já existe um cadastro com este CPF e com este nome.'
+      : cpf ? 'Já existe um cadastro com este CPF.' : 'Já existe um cadastro com este nome.';
+    btnDupCpf.hidden = !cpf; btnDupNome.hidden = !nome;
+    if (cpf) erroCampo('cpf', 'CPF já cadastrado.');
+    if (nome) erroCampo('nome', 'Nome já cadastrado.');
+    dlgDup.showModal();
+  }
+  function editarCampo(nome) {
+    dlgDup.close();
+    var c = form.querySelector('[data-campo="' + nome + '"]');
+    c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var i = c.querySelector('input'); i.focus({ preventScroll: true }); i.select();
+  }
+  btnDupCpf.addEventListener('click', function () { editarCampo('cpf'); });
+  btnDupNome.addEventListener('click', function () { editarCampo('nome'); });
+  document.getElementById('vpnDupFechar').addEventListener('click', function () { dlgDup.close(); });
+  function duplicadoDoErro(msg) {
+    var m = String(msg || '');
+    if (!/Já existe/i.test(m)) return null;
+    return { cpf: /CPF/.test(m), nome: /nome/.test(m) };
+  }
+
   async function subirDocumento(arquivo) {
     var caminho = uuid() + '/documento.' + TIPOS[arquivo.type];
     var r = await fetch(base() + '/storage/v1/object/vpn-documentos/' + caminho, {
@@ -187,7 +232,7 @@
       method: 'POST', headers: cabecalhos({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ p: {
         nome: d.nome, cpf: d.cpf, rg: d.rg, data_nascimento: d.data_nascimento, email_funcional: d.email_funcional,
-        whatsapp: d.whatsapp, vinculo: d.vinculo, matricula: d.matricula, setor: d.setor, documento: caminho, documento_nome: d.arquivo.name
+        whatsapp: d.whatsapp, vinculo: d.vinculo, matricula: d.matricula, setor: d.setor, senha: senhaGuardada(), documento: caminho, documento_nome: d.arquivo.name
       } })
     });
     var corpo = null;
@@ -208,6 +253,8 @@
     if (!validar(d)) return;
     enviando = true; botao.disabled = true; botao.textContent = 'Enviando…';
     try {
+      var dup = await consultarDuplicado(d);
+      if (dup && (dup.cpf || dup.nome)) { avisarDuplicado(dup); return; }
       var caminho = await subirDocumento(d.arquivo);
       var res = await gravar(d, caminho);
       document.getElementById('vpnNumero').textContent = '#' + (res && res.numero);
@@ -218,11 +265,65 @@
       if (popup.showModal) popup.showModal();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      mostrar((err && err.message) || 'Não foi possível enviar. Tente novamente.', 'erro');
+      if (/Senha incorreta/i.test(err && err.message)) { pedirSenha(); return; }
+      if (/desativado/i.test(err && err.message)) { paginaEmBranco(); return; }
+      var dd = duplicadoDoErro(err && err.message);
+      if (dd) avisarDuplicado(dd);
+      else mostrar((err && err.message) || 'Não foi possível enviar. Tente novamente.', 'erro');
     } finally {
       enviando = false; botao.disabled = false; botao.textContent = 'Enviar solicitação';
     }
   });
+
+
+  // ---- link desativado (página em branco) e senha de acesso: configurados na página VPN pelo responsável
+  var caixaSenha = document.getElementById('vpnSenhaBox'), formSenha = document.getElementById('vpnSenhaForm');
+  function senhaGuardada() { try { return sessionStorage.getItem('vpn_senha') || ''; } catch (e) { return ''; } }
+  function guardarSenha(v) { try { sessionStorage.setItem('vpn_senha', v); } catch (e) { /* sem armazenamento */ } }
+  function rpcPublica(nome, corpo) {
+    return fetch(base() + '/rest/v1/rpc/' + nome, { method: 'POST', headers: cabecalhos({ 'Content-Type': 'application/json' }), body: JSON.stringify(corpo || {}) })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
+  function paginaEmBranco() {
+    document.title = ' ';
+    document.documentElement.style.background = '#fff';
+    document.body.innerHTML = '';
+    document.body.style.cssText = 'background:#fff;margin:0';
+    document.body.classList.remove('vpn-carregando');
+  }
+  function mostrarFormulario() { caixaSenha.hidden = true; form.hidden = false; }
+  function pedirSenha() { form.hidden = true; caixaSenha.hidden = false; setTimeout(function () { document.getElementById('vpnSenha').focus(); }, 50); }
+  async function iniciar() {
+    form.hidden = true;
+    try {
+      var c = await rpcPublica('vpn_config_publica');
+      if (c && c.ativo === false) { paginaEmBranco(); return; }
+      if (c && c.senha) {
+        var guardada = senhaGuardada();
+        var ok = guardada && await rpcPublica('vpn_verificar_senha', { p_senha: guardada }).catch(function () { return false; });
+        if (ok === true) mostrarFormulario(); else pedirSenha();
+      } else mostrarFormulario();
+    } catch (e) {
+      mostrarFormulario();   // configuração ainda não instalada no banco: abre normalmente
+    }
+    document.body.classList.remove('vpn-carregando');
+  }
+  formSenha.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var campo = document.getElementById('vpnSenha'), erro = document.getElementById('vpnSenhaErro'), b = document.getElementById('vpnSenhaEntrar');
+    var v = campo.value.trim();
+    erro.hidden = true;
+    if (!v) { erro.textContent = 'Informe a senha.'; erro.hidden = false; return; }
+    b.disabled = true;
+    try {
+      var ok = await rpcPublica('vpn_verificar_senha', { p_senha: v });
+      if (ok === true) { guardarSenha(v); campo.value = ''; mostrarFormulario(); }
+      else { erro.textContent = 'Senha incorreta.'; erro.hidden = false; campo.select(); }
+    } catch (x) { erro.textContent = 'Não foi possível conferir a senha. Tente de novo.'; erro.hidden = false; }
+    b.disabled = false;
+  });
+  setTimeout(function () { document.body.classList.remove('vpn-carregando'); }, 5000);   // rede lenta: não deixa a tela escondida
+  iniciar();
 
   document.getElementById('vpnPopupOk').addEventListener('click', function () { document.getElementById('vpnPopup').close(); });
   document.getElementById('vpnOutra').addEventListener('click', function () {
