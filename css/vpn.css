@@ -21,7 +21,7 @@
   #setorLista{max-height:min(280px,45vh)}
   #setorLista li{padding:12px 10px;font-size:15.5px}
 }
-@media(max-width:340px){.vpn-opcoes{grid-template-columns:1fr}}
+
 @media(min-width:1000px){.vpn-publica .vpn-grade{grid-template-columns:repeat(3,1fr)}}
 .vpn-campo label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:#374151}
 .vpn-campo input{width:100%;padding:10px 12px;border:1.5px solid #cfd6e0;border-radius:9px;font:inherit;font-size:15px;background:#fff;color:var(--texto)}
@@ -41,7 +41,8 @@
 #setorLista .vpn-combo-vazio{color:#6b7280;cursor:default}
 .vpn-campo.com-erro .vpn-combo input[type=text]{border-color:#dc2626}
 .vpn-campo input:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
-.vpn-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vpn-opcoes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:520px){.vpn-opcoes{grid-template-columns:1fr}}
 .vpn-campo label.vpn-opcao{display:flex;align-items:center;gap:9px;margin:0;padding:11px 14px;border:1.5px solid #cfd6e0;border-radius:9px;background:#fff;font-size:15px;font-weight:500;color:var(--texto);cursor:pointer}
 .vpn-opcao input{width:auto;margin:0;padding:0;accent-color:var(--verde2)}
 .vpn-opcao:has(input:checked){border-color:var(--verde2);background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,.12)}

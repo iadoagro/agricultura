@@ -9,7 +9,7 @@
   var aviso = document.getElementById('vpnAviso');
   var enviando = false;
   var TIPOS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' };
-  var MAX = 5 * 1024 * 1024;
+  var MAX = 3 * 1024 * 1024;
 
   function base() { return String(cfg.url || '').replace(/\/$/, ''); }
   function cabecalhos(extra) {
@@ -151,12 +151,12 @@
     if (!/^[^@\s]+@ac\.gov\.br$/.test(d.email_funcional)) marcar('email_funcional', 'Use o e-mail funcional, que termina com @ac.gov.br.');
     var zap = d.whatsapp.replace(/\D/g, '');
     if (zap.length < 10 || zap.length > 11 || (zap.length === 11 && zap[2] !== '9')) marcar('whatsapp', 'Informe o WhatsApp com DDD.');
-    if (!d.vinculo) marcar('vinculo', 'Informe se é comissionado ou terceirizado.');
+    if (!d.vinculo) marcar('vinculo', 'Informe se é efetivo, comissionado ou terceirizado.');
     if (!d.matricula && d.vinculo !== 'terceirizado') marcar('matricula', 'Informe a matrícula.');
     if (!d.setor) marcar('setor', 'Selecione o setor.');
     if (!d.arquivo) marcar('documento', 'Anexe o documento de identificação com foto.');
     else if (!TIPOS[d.arquivo.type]) marcar('documento', 'Use uma imagem (JPG, PNG, WEBP) ou PDF.');
-    else if (d.arquivo.size > MAX) marcar('documento', 'O arquivo passa de 5 MB.');
+    else if (d.arquivo.size > MAX) marcar('documento', 'O arquivo passa de 3 MB.');
     if (primeiro) {
       var c = form.querySelector('[data-campo="' + primeiro + '"]');
       c.scrollIntoView({ behavior: 'smooth', block: 'center' });

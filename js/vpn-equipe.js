@@ -9,7 +9,7 @@
   var busca = document.getElementById('vpnBusca');
   var filtro = document.getElementById('vpnFiltro');
   var ROTULO = { pendente: 'Pendente', atendida: 'Atendida', recusada: 'Recusada' };
-  var ROTULO_VINCULO = { comissionado: 'Comissionado', terceirizado: 'Terceirizado' };
+  var ROTULO_VINCULO = { efetivo: 'Efetivo', comissionado: 'Comissionado', terceirizado: 'Terceirizado' };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -82,18 +82,37 @@
     }).join('');
   }
 
-  async function carregar() {
+  // silencioso = atualização automática: não troca a tabela por mensagem de erro e só redesenha se algo mudou
+  var carregando = false;
+  async function carregar(silencioso) {
+    if (carregando) return;
+    carregando = true;
     try {
       var r = await fetch(base() + '/rest/v1/vpn_solicitacoes?select=*&order=criado_em.desc&limit=1000', { headers: cab() });
       if (r.status === 404) throw new Error('O módulo VPN ainda não foi instalado no banco. Rode database/vpn.sql no SQL Editor do Supabase.');
       if (r.status === 401 || r.status === 403) throw new Error('Esta conta não tem acesso às solicitações de VPN.');
       if (!r.ok) throw new Error('Não foi possível carregar (' + r.status + ').');
-      lista = await r.json();
+      var nova = await r.json();
+      if (silencioso && JSON.stringify(nova) === JSON.stringify(lista)) return;
+      lista = nova;
       desenhar();
     } catch (e) {
+      if (silencioso) return;
       tbody.innerHTML = '<tr><td colspan="14" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
-    }
+    } finally { carregando = false; }
   }
+
+  // atualização automática a cada 10 s; pausa com a aba escondida, pop-up aberto ou situação sendo mudada
+  var INTERVALO = 10000;
+  setInterval(function () {
+    if (!carregado || document.hidden) return;
+    if (dlg.open || dlgVer.open) return;
+    var a = document.activeElement;
+    if (a && a.matches && a.matches('select[data-st]')) return;
+    if (tbody.querySelector('select[data-st]:disabled')) return;
+    carregar(true);
+  }, INTERVALO);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && carregado) carregar(true); });
 
   async function abrirDocumento(id, botao) {
     var l = lista.filter(function (x) { return x.id === id; })[0];
@@ -150,7 +169,7 @@
     f.nome.value = l.nome || ''; f.cpf.value = maskCpf(l.cpf || ''); f.rg.value = l.rg || '';
     f.data_nascimento.value = String(l.data_nascimento || '').slice(0, 10);
     f.whatsapp.value = maskZap(l.whatsapp || ''); f.email_funcional.value = l.email_funcional || '';
-    f.vinculo.value = l.vinculo || 'comissionado'; f.matricula.value = l.matricula || '';
+    f.vinculo.value = l.vinculo || 'efetivo'; f.matricula.value = l.matricula || '';
     f.setor.value = l.setor || ''; f.observacoes.value = l.observacoes || '';
     dlg.showModal();
   }

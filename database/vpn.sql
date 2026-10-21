@@ -31,7 +31,7 @@ alter table public.vpn_solicitacoes add column if not exists observacoes text;
 alter table public.vpn_solicitacoes add column if not exists vinculo text;
 alter table public.vpn_solicitacoes drop constraint if exists vpn_solicitacoes_vinculo_check;
 alter table public.vpn_solicitacoes add constraint vpn_solicitacoes_vinculo_check
-  check (vinculo is null or vinculo in ('comissionado','terceirizado'));
+  check (vinculo is null or vinculo in ('efetivo','comissionado','terceirizado'));
 alter table public.vpn_solicitacoes alter column matricula drop not null;
 create index if not exists vpn_solicitacoes_status_idx on public.vpn_solicitacoes (status, criado_em desc);
 create index if not exists vpn_solicitacoes_cpf_idx on public.vpn_solicitacoes (cpf);
@@ -65,12 +65,12 @@ create policy "Equipe le vpn" on public.vpn_solicitacoes
   for select to authenticated using (public.pode_vpn());
 
 -- ------------------------------------------------------------------ documentos
--- Bucket privado: 5 MB por arquivo, só imagem ou PDF.
+-- Bucket privado: 3 MB por arquivo, só imagem ou PDF.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('vpn-documentos', 'vpn-documentos', false, 5242880,
+values ('vpn-documentos', 'vpn-documentos', false, 3145728,
         array['image/jpeg','image/png','image/webp','application/pdf'])
 on conflict (id) do update
-  set public = false, file_size_limit = 5242880,
+  set public = false, file_size_limit = 3145728,
       allowed_mime_types = array['image/jpeg','image/png','image/webp','application/pdf'];
 
 -- O público só ENVIA (insert); não lista nem baixa. A equipe lê.
@@ -115,8 +115,8 @@ begin
   end if;
   if v_email !~ '^[^@\s]+@ac\.gov\.br$' or char_length(v_email) > 160 then raise exception 'Use o e-mail funcional, que termina com @ac.gov.br.'; end if;
   if v_zap !~ '^\d{2}9?\d{8}$' then raise exception 'Informe o WhatsApp com DDD.'; end if;
-  if v_vinculo not in ('comissionado','terceirizado') then raise exception 'Informe se é comissionado ou terceirizado.'; end if;
-  if char_length(v_mat) > 30 or (v_vinculo = 'comissionado' and char_length(v_mat) < 1) then raise exception 'Informe a matrícula.'; end if;
+  if v_vinculo not in ('efetivo','comissionado','terceirizado') then raise exception 'Informe se é efetivo, comissionado ou terceirizado.'; end if;
+  if char_length(v_mat) > 30 or (v_vinculo in ('efetivo','comissionado') and char_length(v_mat) < 1) then raise exception 'Informe a matrícula.'; end if;
   if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;
   if not exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = v_doc) then
     raise exception 'Envie o documento de identificação com foto.';
@@ -185,7 +185,8 @@ begin
   if v_nasc is null or v_nasc < date '1900-01-01' or v_nasc > current_date then raise exception 'Data de nascimento inválida.'; end if;
   if v_email !~ '^[^@\s]+@ac\.gov\.br$' or char_length(v_email) > 160 then raise exception 'Use o e-mail funcional, que termina com @ac.gov.br.'; end if;
   if v_zap !~ '^\d{2}9?\d{8}$' then raise exception 'Informe o WhatsApp com DDD.'; end if;
-  if v_vinculo not in ('comissionado','terceirizado') then raise exception 'Informe o vínculo.'; end if;
+  if v_vinculo not in ('efetivo','comissionado','terceirizado') then raise exception 'Informe o vínculo.'; end if;
+  if v_vinculo in ('efetivo','comissionado') and char_length(v_mat) < 1 then raise exception 'Informe a matrícula.'; end if;
   if char_length(v_mat) > 30 then raise exception 'Matrícula muito longa.'; end if;
   if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;
   update public.vpn_solicitacoes
