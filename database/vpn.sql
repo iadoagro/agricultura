@@ -364,6 +364,10 @@ create table if not exists public.vpn_anexos (
 );
 alter table public.vpn_anexos add column if not exists assinado_servidor boolean;
 alter table public.vpn_anexos add column if not exists assinado_secretaria boolean;
+alter table public.vpn_anexos add column if not exists origem text not null default 'publico';   -- 'publico' = a pessoa enviou pelo link; 'equipe' = o operador anexou (recebeu por fora)
+alter table public.vpn_anexos add column if not exists enviado_por text;   -- quem da equipe anexou (origem 'equipe')
+alter table public.vpn_anexos drop constraint if exists vpn_anexos_origem_check;
+alter table public.vpn_anexos add constraint vpn_anexos_origem_check check (origem in ('publico','equipe'));
 create index if not exists vpn_anexos_solicitacao_idx on public.vpn_anexos (solicitacao_id, criado_em);
 alter table public.vpn_anexos enable row level security;
 revoke all on public.vpn_anexos from anon, authenticated;
@@ -419,7 +423,10 @@ begin
   select split_part(nome, ' ', 1) into v_nome from public.vpn_solicitacoes
    where cpf = v_cpf and data_nascimento = v_nasc order by criado_em limit 1;
   if v_nome is null then return jsonb_build_object('encontrado', false); end if;
-  return jsonb_build_object('encontrado', true, 'nome', v_nome);
+  -- 'bloqueado': a equipe já anexou o termo assinado (recebido por fora); a pessoa não precisa enviar de novo
+  return jsonb_build_object('encontrado', true, 'nome', v_nome,
+    'bloqueado', exists (select 1 from public.vpn_anexos x join public.vpn_solicitacoes q on q.id = x.solicitacao_id
+                          where q.cpf = v_cpf and q.data_nascimento = v_nasc and x.origem = 'equipe'));
 end;
 $$;
 revoke all on function public.vpn_identificar(jsonb) from public;
@@ -445,6 +452,9 @@ begin
   end;
   select id into v_id from public.vpn_solicitacoes where cpf = v_cpf and data_nascimento = v_nasc order by criado_em limit 1;
   if v_id is null then raise exception 'Não encontramos cadastro com estes dados.'; end if;
+  if exists (select 1 from public.vpn_anexos where solicitacao_id = v_id and origem = 'equipe') then
+    raise exception 'O termo assinado já foi recebido pela equipe. Não é preciso enviar de novo.';
+  end if;
   if coalesce(p->>'assinado_servidor', '') <> 'true' or coalesce(p->>'assinado_secretaria', '') <> 'true' then
     raise exception 'O termo precisa estar assinado pelo servidor e pela secretaria.';
   end if;
@@ -587,5 +597,57 @@ end;
 $$;
 revoke all on function public.vpn_remover_chamado(uuid) from public;
 grant execute on function public.vpn_remover_chamado(uuid) to authenticated;
+
+-- ------------------------------------------------ termo assinado anexado pela equipe
+-- O operador recebeu o termo assinado por fora do sistema (e-mail, WhatsApp, papel) e anexa na solicitação.
+-- Depois disso a pessoa não consegue mais enviar pelo link público (ver vpn_identificar / vpn_enviar_anexo).
+drop policy if exists "Equipe envia documento vpn" on storage.objects;
+create policy "Equipe envia documento vpn" on storage.objects
+  for insert to authenticated with check (bucket_id = 'vpn-documentos' and public.pode_vpn());
+
+create or replace function public.vpn_anexar_termo_equipe(p_id uuid, p_path text, p_nome text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  if not exists (select 1 from public.vpn_solicitacoes where id = p_id) then raise exception 'Solicitação não encontrada.'; end if;
+  if not exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = p_path) then
+    raise exception 'Envie o arquivo.';
+  end if;
+  if exists (select 1 from public.vpn_anexos where arquivo_path = p_path) or exists (select 1 from public.vpn_solicitacoes where documento_path = p_path) then
+    raise exception 'Este envio já foi registrado.';
+  end if;
+  insert into public.vpn_anexos (solicitacao_id, arquivo_path, arquivo_nome, assinado_servidor, assinado_secretaria, origem, enviado_por)
+  values (p_id, p_path, nullif(left(btrim(coalesce(p_nome, '')), 160), ''), true, true, 'equipe',
+          initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' ')));
+end;
+$$;
+revoke all on function public.vpn_anexar_termo_equipe(uuid, text, text) from public;
+grant execute on function public.vpn_anexar_termo_equipe(uuid, text, text) to authenticated;
+
+-- ------------------------------------------------ quem chamou no WhatsApp
+-- Cada clique no número do WhatsApp (página VPN) grava quem foi e quando; vale o último clique.
+alter table public.vpn_solicitacoes add column if not exists whatsapp_por text;
+alter table public.vpn_solicitacoes add column if not exists whatsapp_em timestamptz;
+
+create or replace function public.vpn_registrar_whatsapp(p_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  update public.vpn_solicitacoes
+     set whatsapp_por = initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' ')),
+         whatsapp_em = now()
+   where id = p_id;
+end;
+$$;
+revoke all on function public.vpn_registrar_whatsapp(uuid) from public;
+grant execute on function public.vpn_registrar_whatsapp(uuid) to authenticated;
 
 commit;

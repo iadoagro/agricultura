@@ -311,7 +311,10 @@
   function guardarSenha(v) { try { sessionStorage.setItem('vpn_senha', v); } catch (e) { /* sem armazenamento */ } }
   function rpcPublica(nome, corpo) {
     return fetch(base() + '/rest/v1/rpc/' + nome, { method: 'POST', headers: cabecalhos({ 'Content-Type': 'application/json' }), body: JSON.stringify(corpo || {}) })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+      .then(function (r) {
+        if (r.ok) return r.json();
+        return r.json().catch(function () { return null; }).then(function (c) { throw new Error((c && c.message) || 'HTTP ' + r.status); });
+      });
   }
   function paginaEmBranco() {
     document.title = ' ';
@@ -400,7 +403,9 @@
     b.disabled = true;
     try {
       var r = await rpcPublica('vpn_identificar', { p: { cpf: identCpf.value, data_nascimento: identNasc.value, senha: senhaGuardada() } });
-      if (r && r.encontrado) {
+      if (r && r.encontrado && r.bloqueado) {
+        identErro.textContent = 'Olá, ' + r.nome + '! O seu termo assinado já foi recebido pela equipe da VPN. Não é preciso enviar de novo.'; identErro.hidden = false;
+      } else if (r && r.encontrado) {
         pessoa = { cpf: identCpf.value, data_nascimento: identNasc.value };
         document.getElementById('vpnAnexoTitulo').textContent = 'Olá, ' + r.nome + '!';
         document.getElementById('anexoArquivo').value = ''; anexoForm.reset(); atualizarAssinaturas(); atualizarUpload(document.getElementById('anexoArquivo'));
@@ -427,7 +432,7 @@
       var pp = document.getElementById('vpnAnexoPopup'); if (pp.showModal) pp.showModal();
       mostrarEscolha();
     } catch (x) {
-      anexoErro.textContent = /Senha incorreta/.test(x.message) ? 'A senha mudou. Recarregue a página.' : 'Não foi possível enviar o termo. Tente de novo.'; anexoErro.hidden = false;
+      anexoErro.textContent = /Senha incorreta/.test(x.message) ? 'A senha mudou. Recarregue a página.' : /já foi recebido pela equipe/.test(x.message) ? 'O seu termo assinado já foi recebido pela equipe da VPN. Não é preciso enviar de novo.' : 'Não foi possível enviar o termo. Tente de novo.'; anexoErro.hidden = false;
     }
     b.textContent = 'Enviar termo'; atualizarAssinaturas();
   });

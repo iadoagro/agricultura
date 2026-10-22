@@ -31,11 +31,38 @@
   function cpfBr(c) { return String(c || '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
   function zapBr(n) { return String(n || '').replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); }
   // número com link direto para abrir a conversa no WhatsApp (wa.me, com o 55 do Brasil)
-  function zapLink(n) {
-    var d = String(n || '').replace(/\D/g, '');
+  function zapLink(l) {
+    var d = String(l.whatsapp || '').replace(/\D/g, '');
     if (!d) return '';
-    return '<a class="vpn-zap" href="https://wa.me/55' + esc(d) + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">' + esc(zapBr(d)) + '</a>';
+    // abaixo do número: quem clicou por último (responsável pelo contato) e quando
+    var quem = l.whatsapp_por ? '<span class="vpn-zap-quem" title="Último a abrir a conversa no WhatsApp">Chamado por ' + esc(l.whatsapp_por) + ' · ' + esc(dataCurtaHoraBr(l.whatsapp_em)) + '</span>' : '';
+    return '<a class="vpn-zap" data-zap="' + esc(l.id) + '" href="https://wa.me/55' + esc(d) + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">' + esc(zapBr(d)) + '</a>' + quem;
   }
+  function dataCurtaHoraBr(t) {
+    var d = new Date(t); if (isNaN(d)) return '';
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+  }
+  // clicou no número: grava quem foi (o link abre normalmente, a gravação segue em paralelo)
+  function registrarZap(id) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l) return;
+    var s = auth && auth.sessaoAtual && auth.sessaoAtual();
+    var email = String((s && s.user && s.user.email) || '').split('@')[0].replace(/\./g, ' ');
+    var antes = { por: l.whatsapp_por, em: l.whatsapp_em };
+    l.whatsapp_por = nomeProprio(email); l.whatsapp_em = new Date().toISOString();
+    desenhar(); atualizarZapNoDialogo(l);
+    fetch(base() + '/rest/v1/rpc/vpn_registrar_whatsapp', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id }) })
+      .then(function (r) { if (!r.ok) throw new Error(); })
+      .catch(function () { l.whatsapp_por = antes.por; l.whatsapp_em = antes.em; desenhar(); atualizarZapNoDialogo(l); });
+  }
+  function atualizarZapNoDialogo(l) {
+    var alvo = document.getElementById('vpnVerZap');
+    if (alvo && verId === l.id) alvo.innerHTML = zapLink(l);
+  }
+  document.addEventListener('click', function (e) {
+    var z = e.target.closest && e.target.closest('a[data-zap]');
+    if (z) { var zid = z.getAttribute('data-zap'); setTimeout(function () { registrarZap(zid); }, 0); }   // depois do clique, para o link abrir antes de a tabela ser redesenhada
+  });
   function nomeProprio(s) {
     return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase().split(' ').map(function (p, i) {
       if (i > 0 && /^(de|da|do|das|dos|e)$/.test(p)) return p;
@@ -146,17 +173,21 @@
     }
     return seqMapa[l.id] || l.numero;
   }
+  function celulaDoc(html) { return html || '<span class="vpn-doc-vazio" title="Não enviado">—</span>'; }
   function desenhar() {
     var q = semAcento(busca.value), st = filtro.value;
     var v = lista.filter(function (l) {
       if (st && l.status !== st) return false;
       return !q || semAcento([l.nome, l.cpf, cpfBr(l.cpf), l.matricula, l.email_funcional, l.setor, l.rg, l.whatsapp, l.observacoes, ROTULO_VINCULO[l.vinculo]].join(' ')).indexOf(q) >= 0;
     });
-    if (!v.length) { tbody.innerHTML = '<tr><td colspan="13" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
+    if (!v.length) { tbody.innerHTML = '<tr><td colspan="15" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
     tbody.innerHTML = v.map(function (l) {
       return '<tr' + (l.visto_em ? '' : ' class="vpn-nova"') + '><td>' + esc(seq(l)) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + (l.visto_em ? '' : '<button type="button" class="vpn-selo-novo" data-visto="' + esc(l.id) + '" title="Marcar como visto">Novo</button> ') + '<button type="button" class="vpn-nome-link" data-ver="' + esc(l.id) + '" title="Ver todas as informações">' + esc(l.nome) + '</button></td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
-        '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l.whatsapp) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td>' +
+        '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td>' +
+        '<td>' + celulaDoc(l.documento_path ? '<button type="button" class="vpn-doc-link" data-doc-abrir="' + esc(l.id) + '" title="' + esc(l.documento_nome || 'Abrir documento de identificação') + '">Abrir</button>' : '') + '</td>' +
+        '<td>' + celulaDoc(l.chamado_path ? '<button type="button" class="vpn-doc-link" data-chamado-abrir="' + esc(l.id) + '" title="' + esc((l.chamado_nome || 'Chamado') + ' · ' + dataHoraBr(l.chamado_em)) + '">Abrir</button>' : '') + '</td>' +
+        '<td>' + celulaDoc(l.termos_n ? '<button type="button" class="vpn-doc-link vpn-doc-ok" ' + (l.termos_n === 1 && l.termos_path ? 'data-termo-abrir="' + esc(l.id) + '"' : 'data-ver="' + esc(l.id) + '"') + ' title="Enviado em ' + esc(dataHoraBr(l.termos_em)) + '">Abrir' + (l.termos_n > 1 ? ' (' + l.termos_n + ')' : '') + '</button>' : '') + '</td>' +
         '<td class="vpn-acoes"><button type="button" class="vpn-acao" data-ver="' + esc(l.id) + '" title="Visualizar" aria-label="Visualizar">' + ICONE.ver + '</button>' +
         '<button type="button" class="vpn-acao" data-edit="' + esc(l.id) + '" title="Editar" aria-label="Editar">' + ICONE.editar + '</button>' +
         '<button type="button" class="vpn-acao vpn-excluir" data-del="' + esc(l.id) + '" title="Excluir" aria-label="Excluir">' + ICONE.excluir + '</button></td></tr>';
@@ -174,13 +205,22 @@
       if (r.status === 401 || r.status === 403) throw new Error('Esta conta não tem acesso às solicitações de VPN.');
       if (!r.ok) throw new Error('Não foi possível carregar (' + r.status + ').');
       var nova = await r.json();
+      // termos assinados enviados pelas pessoas (vpn_anexos): quantidade e data do último, para o selo na linha
+      try {
+        var ra = await fetch(base() + '/rest/v1/vpn_anexos?select=solicitacao_id,arquivo_path,criado_em&order=criado_em.asc&limit=5000', { headers: cab() });
+        if (ra.ok) {
+          var mapa = {};
+          (await ra.json()).forEach(function (a) { var m = mapa[a.solicitacao_id] || (mapa[a.solicitacao_id] = { n: 0, em: null }); m.n++; m.em = a.criado_em; m.path = a.arquivo_path; });
+          nova.forEach(function (l) { if (mapa[l.id]) { l.termos_n = mapa[l.id].n; l.termos_em = mapa[l.id].em; l.termos_path = mapa[l.id].path; } });
+        }
+      } catch (x) { /* sem selo nesta leitura */ }
       ultima = new Date();
       if (silencioso && JSON.stringify(nova) === JSON.stringify(lista)) return;
       lista = nova;
       desenhar();
     } catch (e) {
       if (silencioso) return;
-      tbody.innerHTML = '<tr><td colspan="13" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="15" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
     } finally { carregando = false; restante = INTERVALO; mostrarAtualizacao(); }
   }
 
@@ -210,7 +250,7 @@
   // abre um arquivo do bucket privado numa nova aba, com link assinado de 5 minutos
   async function abrirArquivo(caminho, botao, bucket, baixarComo) {
     var texto = botao.textContent; botao.disabled = true; botao.textContent = 'Abrindo…';
-    var janela = window.open('', '_blank');   // abre já no clique, para o navegador não bloquear
+    var janela = baixarComo ? null : window.open('', '_blank');   // abre já no clique, para o navegador não bloquear; com nome de download, baixa direto na própria página
     try {
       var r = await fetch(base() + '/storage/v1/object/sign/' + (bucket || 'vpn-documentos') + '/' + caminho.split('/').map(encodeURIComponent).join('/'), {
         method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ expiresIn: 300 })
@@ -218,7 +258,9 @@
       var c = await r.json();
       if (!r.ok || !c.signedURL) throw new Error('Não foi possível abrir o documento.');
       var url = base() + '/storage/v1' + c.signedURL + (baixarComo ? '&download=' + encodeURIComponent(baixarComo) : '');
-      if (janela) janela.location.href = url; else location.href = url;
+      if (janela) janela.location.href = url;
+      else if (baixarComo) { var ancora = document.createElement('a'); ancora.href = url; ancora.download = baixarComo; document.body.appendChild(ancora); ancora.click(); ancora.remove(); }
+      else location.href = url;
     } catch (e) {
       if (janela) janela.close();
       alert(e.message || 'Não foi possível abrir o documento.');
@@ -233,11 +275,15 @@
     catch (e) { alert(e.message || 'Não foi possível gerar o termo.'); }
     finally { botao.disabled = false; botao.textContent = texto; }
   }
+  function nomeDownload(tipo, l, caminho) {
+    var ext = (String(caminho || '').match(/\.([A-Za-z0-9]{2,5})$/) || [])[1];
+    return tipo + ' - ' + String(l.nome || '').replace(/[\\/:*?"<>|]/g, '') + (ext ? '.' + ext.toLowerCase() : '');
+  }
   function abrirDocumento(id, botao) {
     var l = lista.filter(function (x) { return x.id === id; })[0];
     if (!l) return;
     marcarVisto(id);
-    return abrirArquivo(l.documento_path, botao);
+    return abrirArquivo(l.documento_path, botao, null, nomeDownload('Documento de identificação', l, l.documento_path));
   }
   // ---- documento de abertura de chamado: qualquer um da equipe VPN anexa, troca ou remove (PDF até 2 MB)
   var CHAMADO_MAX = 2 * 1024 * 1024;
@@ -309,9 +355,62 @@
 
   // arquivos que a pessoa enviou depois do cadastro (vpn_anexos)
   async function buscarAnexos(id) {
-    var r = await fetch(base() + '/rest/v1/vpn_anexos?select=id,arquivo_path,arquivo_nome,criado_em&solicitacao_id=eq.' + encodeURIComponent(id) + '&order=criado_em.asc', { headers: cab() });
+    var q = '&solicitacao_id=eq.' + encodeURIComponent(id) + '&order=criado_em.asc';
+    var r = await fetch(base() + '/rest/v1/vpn_anexos?select=id,arquivo_path,arquivo_nome,criado_em,origem,enviado_por' + q, { headers: cab() });
+    if (!r.ok) r = await fetch(base() + '/rest/v1/vpn_anexos?select=id,arquivo_path,arquivo_nome,criado_em' + q, { headers: cab() });   // banco ainda sem as colunas novas
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
+  }
+  // ---- termo assinado recebido por fora do sistema: o operador anexa (a pessoa deixa de poder enviar pelo link público)
+  var TERMO_MAX = 3 * 1024 * 1024;
+  function tipoPeloConteudo(b) {
+    if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return 'pdf';
+    if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return 'jpg';
+    if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return 'png';
+    return '';
+  }
+  function listaAnexosHtml(anexos) {
+    return anexos.length ? anexos.map(function (a) {
+      return '<span class="vpn-anexo-item"><button type="button" class="vpn-acao vpn-anexo" data-anexo="' + esc(a.arquivo_path) + '">' + esc(a.arquivo_nome || 'arquivo') + ' · ' + esc(dataHoraBr(a.criado_em)) + (a.origem === 'equipe' ? ' · anexado pela equipe' + (a.enviado_por ? ' (' + esc(a.enviado_por) + ')' : '') : '') + '</button>' +
+        (ehRoot() ? '<button type="button" class="vpn-acao vpn-excluir vpn-anexo-del" data-anexo-del="' + esc(a.id) + '" title="Apagar este arquivo (só o responsável)" aria-label="Apagar este arquivo">' + ICONE.excluir + '</button>' : '') + '</span>';
+    }).join(' ') : 'Nenhum termo enviado.';
+  }
+  async function recarregarAnexos(id) {
+    var anexos = await buscarAnexos(id);
+    var alvo = document.getElementById('vpnVerAnexos');
+    if (alvo && verId === id) alvo.innerHTML = listaAnexosHtml(anexos);
+    return anexos;
+  }
+  async function anexarTermoEquipe(id, arquivo, input) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l || !arquivo) return;
+    var botao = input.parentNode.querySelector('[data-termo-equipe-enviar]'), texto = botao.textContent;
+    try {
+      var tipo = tipoPeloConteudo(new Uint8Array(await arquivo.slice(0, 8).arrayBuffer()));
+      if (!tipo) throw new Error('Use um arquivo PDF, JPG ou PNG.');
+      if (!arquivo.size) throw new Error('O arquivo está vazio.');
+      if (arquivo.size > TERMO_MAX) throw new Error('O arquivo passa de 3 MB.');
+      if (!confirm('Anexar o termo de ' + l.nome + '?\n\nConfirme que ele está assinado pelo servidor e pela secretaria.\nDepois disso, a pessoa não poderá mais enviar o termo pelo link público.')) { input.value = ''; return; }
+      botao.disabled = true; botao.textContent = 'Enviando…';
+      var caminho = id + '/termo-equipe-' + Date.now() + '.' + tipo;
+      var up = await fetch(base() + '/storage/v1/object/vpn-documentos/' + caminho.split('/').map(encodeURIComponent).join('/'), {
+        method: 'POST', headers: cab({ 'Content-Type': { pdf: 'application/pdf', jpg: 'image/jpeg', png: 'image/png' }[tipo], 'x-upsert': 'false' }), body: arquivo
+      });
+      if (!up.ok) throw new Error(up.status === 403 || up.status === 400 ? 'O envio pela equipe ainda não foi ativado no banco. Rode database/vpn.sql.' : 'Não foi possível enviar o arquivo (' + up.status + ').');
+      var r = await fetch(base() + '/rest/v1/rpc/vpn_anexar_termo_equipe', {
+        method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id, p_path: caminho, p_nome: arquivo.name })
+      });
+      if (!r.ok) {
+        await fetch(base() + '/storage/v1/object/vpn-documentos/' + caminho.split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+        var c = null; try { c = await r.json(); } catch (x) { /* sem corpo */ }
+        throw new Error(r.status === 404 || (c && c.code === 'PGRST202') ? 'O envio pela equipe ainda não foi ativado no banco. Rode database/vpn.sql.' : (c && c.message && r.status === 400) ? c.message : 'Não foi possível registrar o termo (' + r.status + ').');
+      }
+      var anexos = await recarregarAnexos(id);
+      l.termos_n = anexos.length; l.termos_em = new Date().toISOString(); l.termos_path = caminho;
+      desenhar();
+    } catch (e) {
+      alert(e.message || 'Não foi possível anexar o termo.');
+    } finally { botao.disabled = false; botao.textContent = texto; input.value = ''; }
   }
 
   async function mudarStatus(id, status, sel) {
@@ -400,7 +499,7 @@
     var itens = [
       ['Nº', seq(l)], ['Recebida em', dataHoraBr(l.criado_em)], ['Nome completo', l.nome, 1], ['CPF', cpfBr(l.cpf)], ['RG', l.rg],
       ['Data de nascimento', dataBr(l.data_nascimento)], ['Vínculo', ROTULO_VINCULO[l.vinculo]], ['Matrícula', l.matricula], ['Cargo/Função', l.vinculo === 'efetivo' ? l.cargo : 'CAS'],
-      ['E-mail funcional', l.email_funcional, 1], ['WhatsApp', zapLink(l.whatsapp), 0, true], ['Setor', l.setor, 1],
+      ['E-mail funcional', l.email_funcional, 1], ['WhatsApp', '<span id="vpnVerZap">' + zapLink(l) + '</span>', 0, true], ['Setor', l.setor, 1],
       ['Situação', ROTULO[l.status]], ['Última atualização', l.atualizado_em ? dataHoraBr(l.atualizado_em) + (l.atualizado_por ? ' por ' + l.atualizado_por : '') : ''],
       ['Observações', l.observacoes, 1],
       ['Documentos', '<div class="vpn-docs">' +
@@ -409,7 +508,7 @@
         '<div class="vpn-doc"><span class="vpn-doc-nome">Termo para assinatura</span><span class="vpn-doc-arqs">' +
         '<button type="button" class="vpn-acao vpn-anexo" data-termo-gerar="' + esc(l.id) + '">Baixar termo (PDF)</button></span></div>' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Abertura de chamado (PDF, até 2 MB)</span><span class="vpn-doc-arqs" id="vpnVerChamado">' + chamadoHtml(l) + '</span></div>' +
-        '<div class="vpn-doc"><span class="vpn-doc-nome">Termo preenchido e assinado</span><span class="vpn-doc-arqs" id="vpnVerAnexos">Carregando…</span></div>' +
+        '<div class="vpn-doc"><span class="vpn-doc-nome">Termo preenchido e assinado</span><span class="vpn-doc-arqs"><span id="vpnVerAnexos">Carregando…</span> <button type="button" class="vpn-acao" data-termo-equipe-enviar="' + esc(l.id) + '" title="Termo assinado recebido por fora do sistema (PDF, JPG ou PNG, até 3 MB)">Anexar termo assinado</button><input type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" hidden data-termo-equipe-arq="' + esc(l.id) + '"></span></div>' +
         '</div>', 1, true]
     ];
     document.getElementById('vpnVerDados').innerHTML = itens.map(function (i) {
@@ -417,18 +516,13 @@
       return '<div' + (i[2] ? ' class="vpn-largo"' : '') + '><dt>' + i[0] + '</dt><dd>' + (v || '—') + '</dd></div>';
     }).join('');
     dlgVer.showModal();
-    buscarAnexos(id).then(function (anexos) {
-      var alvo = document.getElementById('vpnVerAnexos');
-      if (!alvo || verId !== id) return;
-      alvo.innerHTML = anexos.length ? anexos.map(function (a) {
-        return '<span class="vpn-anexo-item"><button type="button" class="vpn-acao vpn-anexo" data-anexo="' + esc(a.arquivo_path) + '">' + esc(a.arquivo_nome || 'arquivo') + ' · ' + esc(dataHoraBr(a.criado_em)) + '</button>' +
-          (ehRoot() ? '<button type="button" class="vpn-acao vpn-excluir vpn-anexo-del" data-anexo-del="' + esc(a.id) + '" title="Apagar este arquivo (só o responsável)" aria-label="Apagar este arquivo">' + ICONE.excluir + '</button>' : '') + '</span>';
-      }).join(' ') : 'Nenhum termo enviado.';
-    }).catch(function () {
+    recarregarAnexos(id).catch(function () {
       var alvo = document.getElementById('vpnVerAnexos'); if (alvo) alvo.textContent = 'Não foi possível carregar os arquivos.';
     });
   }
   document.getElementById('vpnVerDados').addEventListener('click', function (e) {
+    var te = e.target.closest('[data-termo-equipe-enviar]');
+    if (te) { var it = te.parentNode.querySelector('[data-termo-equipe-arq]'); it.value = ''; it.click(); return; }
     var ce = e.target.closest('[data-chamado-enviar]');
     if (ce) { var inp = ce.parentNode.querySelector('[data-chamado-arq]'); inp.value = ''; inp.click(); return; }
     var cd = e.target.closest('[data-chamado-del]');
@@ -447,6 +541,8 @@
   document.getElementById('vpnVerDados').addEventListener('change', function (e) {
     var i = e.target.closest('[data-chamado-arq]');
     if (i && i.files && i.files[0]) enviarChamado(i.getAttribute('data-chamado-arq'), i.files[0], i);
+    var it = e.target.closest('[data-termo-equipe-arq]');
+    if (it && it.files && it.files[0]) anexarTermoEquipe(it.getAttribute('data-termo-equipe-arq'), it.files[0], it);
   });
   // só o root apaga um arquivo enviado na segunda fase: primeiro o registro (o banco confere quem é), depois o arquivo
   async function apagarAnexo(idAnexo, botao) {
@@ -590,6 +686,12 @@
     if (b) abrirVisualizacao(b.getAttribute('data-ver'));
     var ed = e.target.closest('[data-edit]');
     if (ed) abrirEdicao(ed.getAttribute('data-edit'));
+    var d1 = e.target.closest('[data-doc-abrir]');
+    if (d1) abrirDocumento(d1.getAttribute('data-doc-abrir'), d1);
+    var d2 = e.target.closest('[data-chamado-abrir]');
+    if (d2) { var lc = lista.filter(function (y) { return y.id === d2.getAttribute('data-chamado-abrir'); })[0]; if (lc && lc.chamado_path) abrirArquivo(lc.chamado_path, d2, 'vpn-chamados', nomeDownload('Chamado', lc, lc.chamado_path)); }
+    var d3 = e.target.closest('[data-termo-abrir]');
+    if (d3) { var lt = lista.filter(function (y) { return y.id === d3.getAttribute('data-termo-abrir'); })[0]; if (lt && lt.termos_path) { marcarVisto(lt.id); abrirArquivo(lt.termos_path, d3, null, nomeDownload('Termo assinado', lt, lt.termos_path)); } }
   });
   tbody.addEventListener('change', function (e) {
     var s = e.target.closest('[data-st]');
