@@ -407,7 +407,7 @@
         '<div class="vpn-doc"><span class="vpn-doc-nome">Documento de identificação</span><span class="vpn-doc-arqs">' +
         (l.documento_path ? '<button type="button" class="vpn-acao vpn-anexo" data-anexo="' + esc(l.documento_path) + '">' + esc(l.documento_nome || 'Abrir documento') + '</button>' : 'Não enviado.') + '</span></div>' +
         (ehRoot() ? '<div class="vpn-doc"><span class="vpn-doc-nome">Termo para assinatura</span><span class="vpn-doc-arqs">' +
-        (l.termo_path ? '<button type="button" class="vpn-acao vpn-anexo" data-termo="' + esc(l.termo_path) + '" data-nome="' + esc('Termo VPN - ' + l.nome + '.pdf') + '">Baixar termo (PDF)</button>' : '<button type="button" class="vpn-acao vpn-anexo" data-termo-gerar="' + esc(l.id) + '">Gerar termo preenchido</button>') + '</span></div>' : '') +
+        '<button type="button" class="vpn-acao vpn-anexo" data-termo-gerar="' + esc(l.id) + '">Baixar termo (PDF)</button>' + '</span></div>' : '') +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Abertura de chamado (PDF, até 2 MB)</span><span class="vpn-doc-arqs" id="vpnVerChamado">' + chamadoHtml(l) + '</span></div>' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Termo preenchido e assinado</span><span class="vpn-doc-arqs" id="vpnVerAnexos">Carregando…</span></div>' +
         '</div>', 1, true]
@@ -540,7 +540,7 @@
   document.getElementById('vpnTermosTodos').addEventListener('click', async function () {
     var b = this, texto = b.textContent; b.disabled = true; b.textContent = 'Gerando…';
     try {
-      var r = await window.vpnTermo.baixarTodos(lista.filter(function (x) { return !x.termo_path; }));
+      var r = await window.vpnTermo.baixarTodos(lista);
       alert(r.gerados + ' termo(s) gerado(s).' + (r.pendentes.length ? '\n\nNão saíram por cadastro incompleto (' + r.pendentes.length + '):\n' + r.pendentes.join('\n') : ''));
     } catch (e) { alert(e.message || 'Não foi possível gerar os termos.'); }
     finally { b.disabled = false; b.textContent = texto; }
