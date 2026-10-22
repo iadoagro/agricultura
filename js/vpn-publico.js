@@ -8,7 +8,7 @@
   var botao = document.getElementById('vpnEnviar');
   var aviso = document.getElementById('vpnAviso');
   var enviando = false;
-  var TIPOS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' };
+  var TIPOS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'application/pdf': 'pdf' };
   var MAX = 3 * 1024 * 1024;
 
   function base() { return String(cfg.url || '').replace(/\/$/, ''); }
@@ -164,7 +164,7 @@
     if (!d.matricula && d.vinculo !== 'terceirizado') marcar('matricula', 'Informe a matrícula.');
     if (!d.setor) marcar('setor', 'Selecione o setor.');
     if (!d.arquivo) marcar('documento', 'Anexe o documento de identificação com foto.');
-    else if (!TIPOS[d.arquivo.type]) marcar('documento', 'Use uma imagem (JPG, PNG, WEBP) ou PDF.');
+    else if (!TIPOS[d.arquivo.type]) marcar('documento', 'Use um arquivo JPG, PNG ou PDF.');
     else if (d.arquivo.size > MAX) marcar('documento', 'O arquivo passa de 3 MB.');
     if (primeiro) {
       var c = form.querySelector('[data-campo="' + primeiro + '"]');
@@ -258,8 +258,7 @@
       var caminho = await subirDocumento(d.arquivo);
       var res = await gravar(d, caminho);
       document.getElementById('vpnNumero').textContent = '#' + (res && res.numero);
-      form.hidden = true;
-      document.getElementById('vpnOk').hidden = false;
+      mostrarTela('ok');
       document.getElementById('vpnPopupNumero').textContent = '#' + (res && res.numero);
       var popup = document.getElementById('vpnPopup');
       if (popup.showModal) popup.showModal();
@@ -291,20 +290,29 @@
     document.body.style.cssText = 'background:#fff;margin:0';
     document.body.classList.remove('vpn-carregando');
   }
-  function mostrarFormulario() { caixaSenha.hidden = true; form.hidden = false; }
-  function pedirSenha() { form.hidden = true; caixaSenha.hidden = false; setTimeout(function () { document.getElementById('vpnSenha').focus(); }, 50); }
+  // telas: senha, escolha (cadastrar ou já cadastrado), identificação, envio de arquivo e o formulário de cadastro
+  var TELAS = { senha: caixaSenha, escolha: document.getElementById('vpnEscolha'), ident: document.getElementById('vpnIdent'), anexo: document.getElementById('vpnAnexo'), form: form, ok: document.getElementById('vpnOk') };
+  var SUBTITULO = { senha: 'Informe a senha para continuar.', escolha: 'Escolha uma opção para continuar.', ident: 'Identifique-se para enviar o termo assinado.', anexo: 'Envie o termo assinado para a equipe responsável.', form: 'Preencha todos os campos e anexe um documento de identificação com foto.', ok: '' };
+  function mostrarTela(nome) {
+    Object.keys(TELAS).forEach(function (k) { TELAS[k].hidden = k !== nome; });
+    if (SUBTITULO[nome]) document.getElementById('vpnSub').textContent = SUBTITULO[nome];
+    window.scrollTo({ top: 0 });
+  }
+  function mostrarFormulario() { mostrarTela('form'); }
+  function mostrarEscolha() { mostrarTela('escolha'); }
+  function pedirSenha() { mostrarTela('senha'); setTimeout(function () { document.getElementById('vpnSenha').focus(); }, 50); }
   async function iniciar() {
-    form.hidden = true;
+    Object.keys(TELAS).forEach(function (k) { TELAS[k].hidden = true; });
     try {
       var c = await rpcPublica('vpn_config_publica');
       if (c && c.ativo === false) { paginaEmBranco(); return; }
       if (c && c.senha) {
         var guardada = senhaGuardada();
         var ok = guardada && await rpcPublica('vpn_verificar_senha', { p_senha: guardada }).catch(function () { return false; });
-        if (ok === true) mostrarFormulario(); else pedirSenha();
-      } else mostrarFormulario();
+        if (ok === true) mostrarEscolha(); else pedirSenha();
+      } else mostrarEscolha();
     } catch (e) {
-      mostrarFormulario();   // configuração ainda não instalada no banco: abre normalmente
+      mostrarEscolha();   // configuração ainda não instalada no banco: abre normalmente
     }
     document.body.classList.remove('vpn-carregando');
   }
@@ -317,16 +325,89 @@
     b.disabled = true;
     try {
       var ok = await rpcPublica('vpn_verificar_senha', { p_senha: v });
-      if (ok === true) { guardarSenha(v); campo.value = ''; mostrarFormulario(); }
+      if (ok === true) { guardarSenha(v); campo.value = ''; mostrarEscolha(); }
       else { erro.textContent = 'Senha incorreta.'; erro.hidden = false; campo.select(); }
     } catch (x) { erro.textContent = 'Não foi possível conferir a senha. Tente de novo.'; erro.hidden = false; }
     b.disabled = false;
   });
+  // ---- quem já se cadastrou: identifica (CPF + nascimento) e envia outro arquivo
+  var identCpf = document.getElementById('identCpf'), identNasc = document.getElementById('identNasc');
+  var identErro = document.getElementById('vpnIdentErro'), identCad = document.getElementById('vpnIdentCadastrar');
+  var anexoErro = document.getElementById('vpnAnexoErro'), pessoa = null;
+  var anexoForm = document.getElementById('vpnAnexoForm'), anexoAviso = document.getElementById('vpnAnexoAviso'), anexoCampo = document.getElementById('vpnAnexoCampo'), anexoBtn = document.getElementById('vpnAnexoEnviar');
+  function respostaAssinatura(nome) { var m = anexoForm.querySelector('input[name="' + nome + '"]:checked'); return m ? m.value : ''; }
+  // o envio só abre quando as duas respostas são "Sim": assinado pelo servidor e pela secretaria
+  function atualizarAssinaturas() {
+    var a = respostaAssinatura('assServidor'), b = respostaAssinatura('assSecretaria'), liberado = a === 'sim' && b === 'sim';
+    anexoCampo.classList.toggle('bloqueado', !liberado);
+    document.getElementById('anexoArquivo').disabled = !liberado; anexoBtn.disabled = !liberado;
+    if (!liberado) document.getElementById('anexoArquivo').value = '';
+    anexoAviso.hidden = !(a === 'nao' || b === 'nao');
+    anexoErro.hidden = true;
+  }
+  anexoForm.querySelectorAll('input[type="radio"]').forEach(function (r) { r.addEventListener('change', atualizarAssinaturas); });
+  function paraIdent(cpf) {
+    identErro.hidden = true; identCad.hidden = true;
+    if (cpf) identCpf.value = cpf;
+    mostrarTela('ident');
+    setTimeout(function () { (identCpf.value ? identNasc : identCpf).focus(); }, 50);
+  }
+  identCpf.addEventListener('input', function (e) {
+    var d = e.target.value.replace(/\D/g, '').slice(0, 11);
+    e.target.value = d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  });
+  document.getElementById('vpnEscCadastrar').addEventListener('click', mostrarFormulario);
+  document.getElementById('vpnEscEnviar').addEventListener('click', function () { paraIdent(''); });
+  document.getElementById('vpnIdentVoltar').addEventListener('click', mostrarEscolha);
+  identCad.addEventListener('click', mostrarFormulario);
+  document.getElementById('vpnAnexoVoltar').addEventListener('click', mostrarEscolha);
+  document.getElementById('vpnDupEnviar').addEventListener('click', function () { dlgDup.close(); paraIdent(form.elements.cpf.value); });
+  document.getElementById('vpnIdentForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var b = document.getElementById('vpnIdentContinuar');
+    identErro.hidden = true; identCad.hidden = true;
+    if (!cpfValido(identCpf.value) || !identNasc.value) { identErro.textContent = 'Informe um CPF válido e a data de nascimento.'; identErro.hidden = false; return; }
+    b.disabled = true;
+    try {
+      var r = await rpcPublica('vpn_identificar', { p: { cpf: identCpf.value, data_nascimento: identNasc.value, senha: senhaGuardada() } });
+      if (r && r.encontrado) {
+        pessoa = { cpf: identCpf.value, data_nascimento: identNasc.value };
+        document.getElementById('vpnAnexoTitulo').textContent = 'Olá, ' + r.nome + '!';
+        document.getElementById('anexoArquivo').value = ''; anexoForm.reset(); atualizarAssinaturas();
+        mostrarTela('anexo');
+      } else {
+        identErro.textContent = 'Não encontramos um cadastro com estes dados. Confira o CPF e a data de nascimento ou faça o cadastro.'; identErro.hidden = false; identCad.hidden = false;
+      }
+    } catch (x) { identErro.textContent = 'Não foi possível conferir agora. Tente de novo.'; identErro.hidden = false; }
+    b.disabled = false;
+  });
+  document.getElementById('vpnAnexoForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var arq = document.getElementById('anexoArquivo').files[0], b = document.getElementById('vpnAnexoEnviar');
+    anexoErro.hidden = true;
+    if (respostaAssinatura('assServidor') !== 'sim' || respostaAssinatura('assSecretaria') !== 'sim') { atualizarAssinaturas(); return; }
+    var msg = !arq ? 'Anexe o termo assinado.' : !TIPOS[arq.type] ? 'Use um arquivo JPG, PNG ou PDF.' : arq.size > MAX ? 'O arquivo passa de 3 MB.' : '';
+    if (msg) { anexoErro.textContent = msg; anexoErro.hidden = false; return; }
+    if (!pessoa) { mostrarEscolha(); return; }
+    b.disabled = true; b.textContent = 'Enviando…';
+    try {
+      var caminho = await subirDocumento(arq);
+      await rpcPublica('vpn_enviar_anexo', { p: { cpf: pessoa.cpf, data_nascimento: pessoa.data_nascimento, senha: senhaGuardada(), arquivo: caminho, arquivo_nome: arq.name, assinado_servidor: 'true', assinado_secretaria: 'true' } });
+      document.getElementById('anexoArquivo').value = '';
+      var pp = document.getElementById('vpnAnexoPopup'); if (pp.showModal) pp.showModal();
+      mostrarEscolha();
+    } catch (x) {
+      anexoErro.textContent = /Senha incorreta/.test(x.message) ? 'A senha mudou. Recarregue a página.' : 'Não foi possível enviar o termo. Tente de novo.'; anexoErro.hidden = false;
+    }
+    b.textContent = 'Enviar termo'; atualizarAssinaturas();
+  });
+  document.getElementById('vpnAnexoPopupOk').addEventListener('click', function () { document.getElementById('vpnAnexoPopup').close(); });
+
   setTimeout(function () { document.body.classList.remove('vpn-carregando'); }, 5000);   // rede lenta: não deixa a tela escondida
   iniciar();
 
   document.getElementById('vpnPopupOk').addEventListener('click', function () { document.getElementById('vpnPopup').close(); });
   document.getElementById('vpnOutra').addEventListener('click', function () {
-    form.reset(); busca.value = ''; oculto.value = ''; atualizarVinculo(); form.hidden = false; document.getElementById('vpnOk').hidden = true;
+    form.reset(); busca.value = ''; oculto.value = ''; atualizarVinculo(); mostrarTela('form');
   });
 })();

@@ -70,10 +70,10 @@ create policy "Equipe le vpn" on public.vpn_solicitacoes
 -- Bucket privado: 3 MB por arquivo, só imagem ou PDF.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('vpn-documentos', 'vpn-documentos', false, 3145728,
-        array['image/jpeg','image/png','image/webp','application/pdf'])
+        array['image/jpeg','image/png','application/pdf'])
 on conflict (id) do update
   set public = false, file_size_limit = 3145728,
-      allowed_mime_types = array['image/jpeg','image/png','image/webp','application/pdf'];
+      allowed_mime_types = array['image/jpeg','image/png','application/pdf'];
 
 -- O público só ENVIA (insert); não lista nem baixa. A equipe lê.
 drop policy if exists "Equipe le documento vpn" on storage.objects;
@@ -346,6 +346,124 @@ end;
 $$;
 revoke all on function public.vpn_editar(uuid, jsonb) from public;
 grant execute on function public.vpn_editar(uuid, jsonb) to authenticated;
+
+-- ------------------------------------------- arquivos enviados depois do cadastro
+-- Quem já se cadastrou volta ao link, se identifica (CPF + data de nascimento) e envia outro arquivo.
+create table if not exists public.vpn_anexos (
+  id uuid primary key default gen_random_uuid(),
+  solicitacao_id uuid not null references public.vpn_solicitacoes (id) on delete cascade,
+  arquivo_path text not null,
+  arquivo_nome text,
+  criado_em timestamptz not null default now()
+);
+alter table public.vpn_anexos add column if not exists assinado_servidor boolean;
+alter table public.vpn_anexos add column if not exists assinado_secretaria boolean;
+create index if not exists vpn_anexos_solicitacao_idx on public.vpn_anexos (solicitacao_id, criado_em);
+alter table public.vpn_anexos enable row level security;
+revoke all on public.vpn_anexos from anon, authenticated;
+grant select on public.vpn_anexos to authenticated;
+drop policy if exists "Equipe le anexos vpn" on public.vpn_anexos;
+create policy "Equipe le anexos vpn" on public.vpn_anexos for select to authenticated using (public.pode_vpn());
+
+-- link ativo e senha (quando exigida) valem para toda chamada pública
+create or replace function public.vpn_exige_acesso(p_senha text)
+returns void
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if not public.vpn_link_ativo() then raise exception 'Este formulário está desativado.'; end if;
+  if exists (select 1 from public.vpn_config where id = 1 and senha_ativa and senha <> coalesce(p_senha, '')) then
+    raise exception 'Senha incorreta.';
+  end if;
+end;
+$$;
+
+-- "Quem é você?": CPF + data de nascimento. Devolve só o primeiro nome (nenhum outro dado).
+create or replace function public.vpn_identificar(p jsonb)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_cpf text := regexp_replace(coalesce(p->>'cpf', ''), '\D', '', 'g');
+  v_nasc date;
+  v_nome text;
+begin
+  perform public.vpn_exige_acesso(p->>'senha');
+  begin
+    v_nasc := (p->>'data_nascimento')::date;
+  exception when others then
+    return jsonb_build_object('encontrado', false);
+  end;
+  select split_part(nome, ' ', 1) into v_nome from public.vpn_solicitacoes
+   where cpf = v_cpf and data_nascimento = v_nasc order by criado_em limit 1;
+  if v_nome is null then return jsonb_build_object('encontrado', false); end if;
+  return jsonb_build_object('encontrado', true, 'nome', v_nome);
+end;
+$$;
+revoke all on function public.vpn_identificar(jsonb) from public;
+grant execute on function public.vpn_identificar(jsonb) to anon, authenticated;
+
+create or replace function public.vpn_enviar_anexo(p jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_cpf text := regexp_replace(coalesce(p->>'cpf', ''), '\D', '', 'g');
+  v_doc text := coalesce(p->>'arquivo', '');
+  v_nasc date;
+  v_id uuid;
+begin
+  perform public.vpn_exige_acesso(p->>'senha');
+  begin
+    v_nasc := (p->>'data_nascimento')::date;
+  exception when others then
+    raise exception 'Não encontramos cadastro com estes dados.';
+  end;
+  select id into v_id from public.vpn_solicitacoes where cpf = v_cpf and data_nascimento = v_nasc order by criado_em limit 1;
+  if v_id is null then raise exception 'Não encontramos cadastro com estes dados.'; end if;
+  if coalesce(p->>'assinado_servidor', '') <> 'true' or coalesce(p->>'assinado_secretaria', '') <> 'true' then
+    raise exception 'O termo precisa estar assinado pelo servidor e pela secretaria.';
+  end if;
+  if not exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = v_doc) then
+    raise exception 'Envie o arquivo.';
+  end if;
+  if exists (select 1 from public.vpn_anexos where arquivo_path = v_doc) or exists (select 1 from public.vpn_solicitacoes where documento_path = v_doc) then
+    raise exception 'Este envio já foi registrado.';
+  end if;
+  insert into public.vpn_anexos (solicitacao_id, arquivo_path, arquivo_nome, assinado_servidor, assinado_secretaria)
+  values (v_id, v_doc, nullif(left(btrim(coalesce(p->>'arquivo_nome', '')), 160), ''), true, true);
+  update public.vpn_solicitacoes set visto_em = null, visto_por = null where id = v_id;   -- volta a aparecer como "Novo"
+  return jsonb_build_object('ok', true);
+end;
+$$;
+revoke all on function public.vpn_enviar_anexo(jsonb) from public;
+grant execute on function public.vpn_enviar_anexo(jsonb) to anon, authenticated;
+
+-- Só o responsável (root) apaga um arquivo enviado na segunda fase; o arquivo em si sai pela API de Storage.
+create or replace function public.vpn_excluir_anexo(p_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_path text;
+begin
+  if lower(trim(coalesce((select auth.jwt() ->> 'email'), ''))) <> 'root@root.com' then raise exception 'Só o responsável apaga arquivos enviados.'; end if;
+  delete from public.vpn_anexos where id = p_id returning arquivo_path into v_path;
+  return v_path;
+end;
+$$;
+revoke all on function public.vpn_excluir_anexo(uuid) from public;
+grant execute on function public.vpn_excluir_anexo(uuid) to authenticated;
 
 -- ------------------------------------------------------------ "Novo" até alguém da equipe ver
 create or replace function public.vpn_marcar_visto(p_id uuid)

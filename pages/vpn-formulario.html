@@ -9,10 +9,10 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102118">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102126">
 </head>
 <body class="vpn-publica vpn-carregando">
-<header class="vpn-topo"><div class="vpn-topo-in"><b>Solicitação de acesso à VPN</b><small>Preencha todos os campos e anexe um documento de identificação com foto.</small></div></header>
+<header class="vpn-topo"><div class="vpn-topo-in"><b>Solicitação de acesso à VPN</b><small id="vpnSub">Escolha uma opção para continuar.</small></div></header>
 
 <main class="vpn-main">
   <div class="vpn-ok" id="vpnOk" hidden>
@@ -28,6 +28,65 @@
       <input id="vpnSenha" type="password" inputmode="numeric" autocomplete="off" maxlength="30" aria-label="Senha de acesso">
       <p class="vpn-aviso erro" id="vpnSenhaErro" role="alert" hidden></p>
       <button class="vpn-btn" type="submit" id="vpnSenhaEntrar">Entrar</button>
+    </form>
+  </section>
+
+  <section class="vpn-cartao vpn-escolha" id="vpnEscolha" hidden>
+    <h2>O que você quer fazer?</h2>
+    <div class="vpn-escolhas">
+      <button type="button" class="vpn-escolha-op" id="vpnEscCadastrar">
+        <b>Quero me cadastrar</b><span>Primeira solicitação de acesso à VPN, com os seus dados e o documento de identificação.</span>
+      </button>
+      <button type="button" class="vpn-escolha-op" id="vpnEscEnviar">
+        <b>Quero enviar o termo preenchido</b><span>Para quem já se cadastrou: envie o termo preenchido e assinado pelo servidor e pela secretaria.</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="vpn-cartao" id="vpnIdent" hidden>
+    <h2>Quem é você?</h2>
+    <p class="vpn-sub">Informe o CPF e a data de nascimento usados no cadastro.</p>
+    <form id="vpnIdentForm" novalidate>
+      <div class="vpn-grade">
+        <div class="vpn-campo"><label for="identCpf">CPF</label><input id="identCpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off"></div>
+        <div class="vpn-campo"><label for="identNasc">Data de nascimento</label><input id="identNasc" type="date" autocomplete="off"></div>
+      </div>
+      <p class="vpn-aviso erro" id="vpnIdentErro" role="alert" hidden></p>
+      <div class="vpn-linha-acoes">
+        <button class="vpn-acao vpn-voltar" type="button" id="vpnIdentVoltar">Voltar</button>
+        <button class="vpn-btn" type="submit" id="vpnIdentContinuar">Continuar</button>
+      </div>
+      <button class="vpn-link-btn" type="button" id="vpnIdentCadastrar" hidden>Não tenho cadastro: quero me cadastrar</button>
+    </form>
+  </section>
+
+  <section class="vpn-cartao" id="vpnAnexo" hidden>
+    <h2 id="vpnAnexoTitulo">Olá!</h2>
+    <p class="vpn-sub">Envie o termo preenchido e assinado. Antes, confirme as assinaturas:</p>
+    <form id="vpnAnexoForm" novalidate>
+      <div class="vpn-perguntas">
+        <div class="vpn-pergunta" role="radiogroup" aria-labelledby="perguntaServidor">
+          <span id="perguntaServidor">O termo está assinado por você (servidor)?</span>
+          <label class="vpn-opcao"><input type="radio" name="assServidor" value="sim"><span>Sim</span></label>
+          <label class="vpn-opcao"><input type="radio" name="assServidor" value="nao"><span>Não</span></label>
+        </div>
+        <div class="vpn-pergunta" role="radiogroup" aria-labelledby="perguntaSecretaria">
+          <span id="perguntaSecretaria">O termo está assinado pela secretaria?</span>
+          <label class="vpn-opcao"><input type="radio" name="assSecretaria" value="sim"><span>Sim</span></label>
+          <label class="vpn-opcao"><input type="radio" name="assSecretaria" value="nao"><span>Não</span></label>
+        </div>
+      </div>
+      <p class="vpn-aviso" id="vpnAnexoAviso" role="status" hidden>Só é possível enviar o termo depois de assinado por você e pela secretaria. Colete as assinaturas e volte aqui.</p>
+      <div class="vpn-campo" id="vpnAnexoCampo">
+        <label for="anexoArquivo">Termo preenchido e assinado</label>
+        <input id="anexoArquivo" type="file" accept="image/jpeg,image/png,application/pdf" disabled>
+        <small class="vpn-dica">Somente JPG, PNG ou PDF, até 3 MB. Fica liberado quando as duas respostas acima forem Sim.</small>
+      </div>
+      <p class="vpn-aviso erro" id="vpnAnexoErro" role="alert" hidden></p>
+      <div class="vpn-linha-acoes">
+        <button class="vpn-acao vpn-voltar" type="button" id="vpnAnexoVoltar">Voltar</button>
+        <button class="vpn-btn" type="submit" id="vpnAnexoEnviar" disabled>Enviar termo</button>
+      </div>
     </form>
   </section>
 
@@ -88,8 +147,8 @@
       </div>
       <div class="vpn-campo vpn-largo" data-campo="documento">
         <label for="documento">Documento de identificação com foto</label>
-        <input id="documento" name="documento" type="file" accept="image/jpeg,image/png,image/webp,application/pdf">
-        <small class="vpn-dica">RG ou CNH, frente e verso legíveis. Imagem (JPG, PNG, WEBP) ou PDF, até 3 MB.</small>
+        <input id="documento" name="documento" type="file" accept="image/jpeg,image/png,application/pdf">
+        <small class="vpn-dica">RG ou CNH, frente e verso legíveis. Somente JPG, PNG ou PDF, até 3 MB.</small>
         <span class="vpn-erro" role="alert"></span>
       </div>
     </div>
@@ -108,8 +167,18 @@
     <div class="vpn-dialogo-acoes vpn-dup-acoes">
       <button type="button" class="vpn-btn" id="vpnDupCpf" hidden>Editar o CPF</button>
       <button type="button" class="vpn-btn" id="vpnDupNome" hidden>Editar o nome</button>
+      <button type="button" class="vpn-btn" id="vpnDupEnviar">Já sou cadastrado: enviar o termo assinado</button>
       <button type="button" class="vpn-acao" id="vpnDupFechar">Fechar</button>
     </div>
+  </div>
+</dialog>
+
+<dialog class="vpn-dialogo vpn-dialogo-ok" id="vpnAnexoPopup" aria-labelledby="vpnAnexoPopupTitulo">
+  <div class="vpn-dialogo-corpo">
+    <div class="vpn-popup-icone" aria-hidden="true">✓</div>
+    <h2 id="vpnAnexoPopupTitulo">Termo recebido</h2>
+    <p>O termo assinado foi enviado e já está com a equipe responsável.</p>
+    <div class="vpn-dialogo-acoes"><button type="button" class="vpn-btn" id="vpnAnexoPopupOk">Entendi</button></div>
   </div>
 </dialog>
 
@@ -123,6 +192,6 @@
   </div>
 </dialog>
 <script src="../js/contatos-organograma.js?v=2026102101"></script>
-<script src="../js/vpn-publico.js?v=2026102112"></script>
+<script src="../js/vpn-publico.js?v=2026102117"></script>
 </body>
 </html>
