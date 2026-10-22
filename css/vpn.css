@@ -271,3 +271,10 @@ html[data-tema="escuro"] .vpn-equipe .vpn-selo.pendente{background:#3d3210;color
 html[data-tema="escuro"] .vpn-equipe .vpn-selo.atendida{background:#12301f;color:#86efac}
 html[data-tema="escuro"] .vpn-equipe .vpn-selo.recusada{background:#3a1717;color:#fca5a5}
 html[data-tema="escuro"] .vpn-equipe .vpn-aviso.erro{background:#3a1717;color:#fca5a5}
+
+.vpn-termo-dl{display:block;margin-top:2px;max-width:110px;white-space:normal;font-size:10px;line-height:1.25;font-weight:400;color:#6b7280}
+.vpn-termo-dl-lista{display:block;margin-top:6px}
+.vpn-termo-dl-item{font-size:12.5px;color:#6b7280;line-height:1.5}
+.vpn-termo-dl-item b{color:#374151;font-weight:600}
+html[data-tema="escuro"] .vpn-equipe .vpn-termo-dl,html[data-tema="escuro"] .vpn-equipe .vpn-termo-dl-item{color:#9aa9bf}
+html[data-tema="escuro"] .vpn-equipe .vpn-termo-dl-item b{color:#dbe4f2}

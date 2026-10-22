@@ -204,7 +204,7 @@
     });
     if (!v.length) { tbody.innerHTML = '<tr><td colspan="15" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
     tbody.innerHTML = v.map(function (l) {
-      return '<tr' + (l.visto_em ? '' : ' class="vpn-nova"') + '><td>' + esc(seq(l)) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + (l.visto_em ? '' : '<button type="button" class="vpn-selo-novo" data-visto="' + esc(l.id) + '" title="Marcar como visto">Novo</button> ') + '<button type="button" class="vpn-nome-link" data-ver="' + esc(l.id) + '" title="Ver todas as informações">' + esc(l.nome) + '</button></td>' +
+      return '<tr' + (l.visto_em ? '' : ' class="vpn-nova"') + '><td>' + esc(seq(l)) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + (l.visto_em ? '' : '<button type="button" class="vpn-selo-novo" data-visto="' + esc(l.id) + '" title="Marcar como visto">Novo</button> ') + '<button type="button" class="vpn-nome-link" data-ver="' + esc(l.id) + '" title="Ver todas as informações">' + esc(l.nome) + '</button>' + termoDlHtml(l) + '</td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
         '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td>' +
         '<td>' + celulaDoc(l.documento_path ? '<button type="button" class="vpn-doc-link" data-doc-abrir="' + esc(l.id) + '" title="' + esc(l.documento_nome || 'Abrir documento de identificação') + '">Abrir</button>' : '') + '</td>' +
@@ -236,6 +236,14 @@
           nova.forEach(function (l) { if (mapa[l.id]) { l.termos_n = mapa[l.id].n; l.termos_em = mapa[l.id].em; l.termos_path = mapa[l.id].path; } });
         }
       } catch (x) { /* sem selo nesta leitura */ }
+      try {
+        var rd = await fetch(base() + '/rest/v1/vpn_termo_downloads?select=solicitacao_id,baixado_por,baixado_em&order=baixado_em.asc&limit=10000', { headers: cab() });
+        if (rd.ok) {
+          var md = {};
+          (await rd.json()).forEach(function (x) { var m = md[x.solicitacao_id] || (md[x.solicitacao_id] = { n: 0 }); m.n++; m.por = x.baixado_por; m.em = x.baixado_em; });
+          nova.forEach(function (l) { if (md[l.id]) { l.termo_dl_n = md[l.id].n; l.termo_dl_por = md[l.id].por; l.termo_dl_em = md[l.id].em; } });
+        }
+      } catch (x) { /* sem o histórico de downloads nesta leitura */ }
       ultima = new Date();
       if (silencioso && JSON.stringify(nova) === JSON.stringify(lista)) return;
       lista = nova;
@@ -288,12 +296,47 @@
       alert(e.message || 'Não foi possível abrir o documento.');
     } finally { botao.disabled = false; botao.textContent = texto; }
   }
+  // ---- downloads do termo: quem baixou e quando (vpn_termo_downloads)
+  function termoDlHtml(l) {
+    if (!l.termo_dl_n) return '';
+    return '<span class="vpn-termo-dl" title="Último download do termo para assinatura' + (l.termo_dl_n > 1 ? ' (' + l.termo_dl_n + ' downloads)' : '') + '">Termo baixado por ' + esc(l.termo_dl_por) + ' · ' + esc(dataCurtaHoraBr(l.termo_dl_em)) + (l.termo_dl_n > 1 ? ' (' + l.termo_dl_n + 'x)' : '') + '</span>';
+  }
+  function registrarDownloads(ids, forma) {
+    var s = auth && auth.sessaoAtual && auth.sessaoAtual();
+    var quem = nomeProprio(String((s && s.user && s.user.email) || '').split('@')[0].replace(/\./g, ' '));
+    return fetch(base() + '/rest/v1/rpc/vpn_registrar_download_termo', {
+      method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_ids: ids, p_forma: forma })
+    }).then(function (r) {
+      if (!r.ok) throw new Error();
+      var agora = new Date().toISOString();
+      ids.forEach(function (id) {
+        var l = lista.filter(function (x) { return x.id === id; })[0];
+        if (l) { l.termo_dl_n = (l.termo_dl_n || 0) + 1; l.termo_dl_por = quem; l.termo_dl_em = agora; }
+      });
+      desenhar();
+      if (verId && ids.indexOf(verId) >= 0) mostrarDownloadsDoTermo(verId);
+    }).catch(function () { /* o arquivo já foi baixado; sem registro (banco ainda sem vpn_termo_downloads) */ });
+  }
+  async function mostrarDownloadsDoTermo(id) {
+    var alvo = document.getElementById('vpnVerTermoDl');
+    if (!alvo) return;
+    try {
+      var r = await fetch(base() + '/rest/v1/vpn_termo_downloads?select=baixado_por,baixado_em,forma&solicitacao_id=eq.' + encodeURIComponent(id) + '&order=baixado_em.desc&limit=10', { headers: cab() });
+      if (!r.ok) throw new Error();
+      var d = await r.json();
+      if (verId !== id) return;
+      alvo.innerHTML = d.length ? d.map(function (x) {
+        return '<div class="vpn-termo-dl-item">Baixado por <b>' + esc(x.baixado_por || '—') + '</b> em ' + esc(dataHoraBr(x.baixado_em)) + (x.forma === 'lote' ? ' (download em lote)' : '') + '</div>';
+      }).join('') : '<div class="vpn-termo-dl-item">Ainda não foi baixado.</div>';
+    } catch (e) { alvo.innerHTML = ''; }
+  }
+
   // termo para quem ainda não tem PDF: montado na hora, com a data de hoje (a do download)
   async function gerarTermo(id, botao) {
     var l = lista.filter(function (x) { return x.id === id; })[0];
     if (!l) return;
     var texto = botao.textContent; botao.disabled = true; botao.textContent = 'Gerando…';
-    try { await window.vpnTermo.baixar(l); }
+    try { await window.vpnTermo.baixar(l); registrarDownloads([l.id], 'individual'); }
     catch (e) { alert(e.message || 'Não foi possível gerar o termo.'); }
     finally { botao.disabled = false; botao.textContent = texto; }
   }
@@ -528,7 +571,7 @@
         '<div class="vpn-doc"><span class="vpn-doc-nome">Documento de identificação</span><span class="vpn-doc-arqs">' +
         (l.documento_path ? '<button type="button" class="vpn-acao vpn-anexo" data-anexo="' + esc(l.documento_path) + '">' + esc(l.documento_nome || 'Abrir documento') + '</button>' : 'Não enviado.') + '</span></div>' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Termo para assinatura</span><span class="vpn-doc-arqs">' +
-        '<button type="button" class="vpn-acao vpn-anexo" data-termo-gerar="' + esc(l.id) + '">Baixar termo (PDF)</button></span></div>' +
+        '<button type="button" class="vpn-acao vpn-anexo" data-termo-gerar="' + esc(l.id) + '">Baixar termo (PDF)</button><span id="vpnVerTermoDl" class="vpn-termo-dl-lista"></span></span></div>' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Abertura de chamado (PDF, até 2 MB)</span><span class="vpn-doc-arqs" id="vpnVerChamado">' + chamadoHtml(l) + '</span></div>' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Termo preenchido e assinado</span><span class="vpn-doc-arqs"><span id="vpnVerAnexos">Carregando…</span> <button type="button" class="vpn-acao" data-termo-equipe-enviar="' + esc(l.id) + '" title="Termo assinado recebido por fora do sistema (PDF, JPG ou PNG, até 3 MB)">Anexar termo assinado</button><input type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" hidden data-termo-equipe-arq="' + esc(l.id) + '"></span></div>' +
         '</div>', 1, true]
@@ -538,6 +581,7 @@
       return '<div' + (i[2] ? ' class="vpn-largo"' : '') + '><dt>' + i[0] + '</dt><dd>' + (v || '—') + '</dd></div>';
     }).join('');
     dlgVer.showModal();
+    mostrarDownloadsDoTermo(id);
     recarregarAnexos(id).catch(function () {
       var alvo = document.getElementById('vpnVerAnexos'); if (alvo) alvo.textContent = 'Não foi possível carregar os arquivos.';
     });
@@ -659,6 +703,7 @@
     var b = this, texto = b.textContent; b.disabled = true; b.textContent = 'Gerando…';
     try {
       var r = await window.vpnTermo.baixarTodos(lista);
+      if (r.ids && r.ids.length) registrarDownloads(r.ids, 'lote');
       alert(r.gerados + ' termo(s) gerado(s).' + (r.pendentes.length ? '\n\nNão saíram por cadastro incompleto (' + r.pendentes.length + '):\n' + r.pendentes.join('\n') : ''));
     } catch (e) { alert(e.message || 'Não foi possível gerar os termos.'); }
     finally { b.disabled = false; b.textContent = texto; }

@@ -313,18 +313,18 @@
     if (!lista.length) throw new Error('Não há solicitações sem termo em PDF.');
     await Promise.all([carregarPdf(), carregarZip()]);
     var r = await Promise.all([carregarBrasao(caminhoBrasao), carregarSetores()]), hoje = new Date();
-    var pacote = new raiz.JSZip(), usados = {}, sem = [], feitos = 0;
+    var pacote = new raiz.JSZip(), usados = {}, sem = [], feitos = 0, ids = [];
     lista.forEach(function (l) {
       var falta = pendencias(l);
       if (falta.length) { sem.push(l.nome + ' (faltam: ' + falta.join(', ') + ')'); return; }
       var nome = nomeArquivo(l);
       if (usados[nome]) nome = nome.replace(/\.pdf$/, ' (' + (++usados[nome]) + ').pdf'); else usados[nome] = 1;
       pacote.file(nome, montar(l, hoje, r[0], r[1]).output('arraybuffer'));
-      feitos++;
+      feitos++; ids.push(l.id);
     });
     if (sem.length) pacote.file('LEIA-ME.txt', 'Termos não gerados por cadastro incompleto:\r\n\r\n' + sem.join('\r\n') + '\r\n');
     salvar(await pacote.generateAsync({ type: 'blob' }), 'Termos VPN - ' + dataNum(hoje).replace(/\//g, '-') + '.zip');
-    return { gerados: feitos, pendentes: sem };
+    return { gerados: feitos, pendentes: sem, ids: ids };
   }
 
   raiz.vpnTermo = { baixar: baixar, baixarTodos: baixarTodos, pendencias: pendencias, montar: montar };

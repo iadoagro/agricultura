@@ -628,6 +628,40 @@ $$;
 revoke all on function public.vpn_anexar_termo_equipe(uuid, text, text) from public;
 grant execute on function public.vpn_anexar_termo_equipe(uuid, text, text) to authenticated;
 
+-- ------------------------------------------------ downloads do termo para assinatura
+-- Cada vez que alguém da equipe baixa o termo (individual ou em lote), grava quem, quando e como.
+create table if not exists public.vpn_termo_downloads (
+  id uuid primary key default gen_random_uuid(),
+  solicitacao_id uuid not null references public.vpn_solicitacoes (id) on delete cascade,
+  baixado_por text,
+  baixado_em timestamptz not null default now(),
+  forma text not null default 'individual' check (forma in ('individual','lote'))
+);
+create index if not exists vpn_termo_downloads_idx on public.vpn_termo_downloads (solicitacao_id, baixado_em desc);
+alter table public.vpn_termo_downloads enable row level security;
+revoke all on public.vpn_termo_downloads from anon, authenticated;
+grant select on public.vpn_termo_downloads to authenticated;
+drop policy if exists "Equipe le downloads de termo vpn" on public.vpn_termo_downloads;
+create policy "Equipe le downloads de termo vpn" on public.vpn_termo_downloads for select to authenticated using (public.pode_vpn());
+
+create or replace function public.vpn_registrar_download_termo(p_ids uuid[], p_forma text default 'individual')
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_por text := initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' '));
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  insert into public.vpn_termo_downloads (solicitacao_id, baixado_por, forma)
+  select s.id, v_por, case when p_forma = 'lote' then 'lote' else 'individual' end
+    from public.vpn_solicitacoes s where s.id = any (coalesce(p_ids, '{}'));
+end;
+$$;
+revoke all on function public.vpn_registrar_download_termo(uuid[], text) from public;
+grant execute on function public.vpn_registrar_download_termo(uuid[], text) to authenticated;
+
 -- ------------------------------------------------ quem chamou no WhatsApp
 -- Cada clique no número do WhatsApp (página VPN) grava quem foi e quando; vale o último clique.
 alter table public.vpn_solicitacoes add column if not exists whatsapp_por text;
