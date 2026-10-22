@@ -34,9 +34,15 @@
   function zapLink(l) {
     var d = String(l.whatsapp || '').replace(/\D/g, '');
     if (!d) return '';
-    // abaixo do número: quem clicou por último (responsável pelo contato) e quando
-    var quem = l.whatsapp_por ? '<span class="vpn-zap-quem" title="Último a abrir a conversa no WhatsApp">Chamado por ' + esc(l.whatsapp_por) + ' · ' + esc(dataCurtaHoraBr(l.whatsapp_em)) + '</span>' : '';
-    return '<a class="vpn-zap" data-zap="' + esc(l.id) + '" href="https://wa.me/55' + esc(d) + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">' + esc(zapBr(d)) + '</a>' + quem;
+    return '<a class="vpn-zap" data-zap="' + esc(l.id) + '" href="https://wa.me/55' + esc(d) + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">' + esc(zapBr(d)) + '</a>';
+  }
+  // atendente = quem clicou por último no número do WhatsApp (responsável pelo contato)
+  function atendenteHtml(l) {
+    if (!l.whatsapp_por) return '<span class="vpn-doc-vazio" title="Ninguém chamou ainda">—</span>';
+    return '<span class="vpn-atendente" title="Último a abrir a conversa no WhatsApp">' + esc(l.whatsapp_por) + '</span><small class="vpn-atendente-em">' + esc(dataCurtaHoraBr(l.whatsapp_em)) + '</small>';
+  }
+  function atendenteHtmlDialogo(l) {
+    return l.whatsapp_por ? esc(l.whatsapp_por) + ' · ' + esc(dataHoraBr(l.whatsapp_em)) : '';
   }
   function dataCurtaHoraBr(t) {
     var d = new Date(t); if (isNaN(d)) return '';
@@ -56,8 +62,9 @@
       .catch(function () { l.whatsapp_por = antes.por; l.whatsapp_em = antes.em; desenhar(); atualizarZapNoDialogo(l); });
   }
   function atualizarZapNoDialogo(l) {
-    var alvo = document.getElementById('vpnVerZap');
+    var alvo = document.getElementById('vpnVerZap'), at = document.getElementById('vpnVerAtendente');
     if (alvo && verId === l.id) alvo.innerHTML = zapLink(l);
+    if (at && verId === l.id) at.innerHTML = atendenteHtmlDialogo(l);
   }
   document.addEventListener('click', function (e) {
     var z = e.target.closest && e.target.closest('a[data-zap]');
@@ -202,11 +209,11 @@
       if (st && l.status !== st) return false;
       return !q || semAcento([l.nome, l.cpf, cpfBr(l.cpf), l.matricula, l.email_funcional, l.setor, l.rg, l.whatsapp, l.observacoes, ROTULO_VINCULO[l.vinculo]].join(' ')).indexOf(q) >= 0;
     });
-    if (!v.length) { tbody.innerHTML = '<tr><td colspan="15" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
+    if (!v.length) { tbody.innerHTML = '<tr><td colspan="16" class="vpn-vazio">Nenhuma solicitação encontrada.</td></tr>'; return; }
     tbody.innerHTML = v.map(function (l) {
       return '<tr' + (l.visto_em ? '' : ' class="vpn-nova"') + '><td>' + esc(seq(l)) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + (l.visto_em ? '' : '<button type="button" class="vpn-selo-novo" data-visto="' + esc(l.id) + '" title="Marcar como visto">Novo</button> ') + '<button type="button" class="vpn-nome-link" data-ver="' + esc(l.id) + '" title="Ver todas as informações">' + esc(l.nome) + '</button>' + termoDlHtml(l) + '</td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
-        '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td>' +
+        '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l) + '</td><td>' + atendenteHtml(l) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td>' +
         '<td>' + celulaDoc(l.documento_path ? '<button type="button" class="vpn-doc-link" data-doc-abrir="' + esc(l.id) + '" title="' + esc(l.documento_nome || 'Abrir documento de identificação') + '">Abrir</button>' : '') + '</td>' +
         '<td>' + celulaDoc(l.chamado_path ? '<button type="button" class="vpn-doc-link" data-chamado-abrir="' + esc(l.id) + '" title="' + esc((l.chamado_nome || 'Chamado') + ' · ' + dataHoraBr(l.chamado_em)) + '">Abrir</button>' : '') + '</td>' +
         '<td>' + celulaDoc(l.termos_n ? '<button type="button" class="vpn-doc-link vpn-doc-ok" ' + (l.termos_n === 1 && l.termos_path ? 'data-termo-abrir="' + esc(l.id) + '"' : 'data-ver="' + esc(l.id) + '"') + ' title="Enviado em ' + esc(dataHoraBr(l.termos_em)) + '">Abrir' + (l.termos_n > 1 ? ' (' + l.termos_n + ')' : '') + '</button>' : '') + '</td>' +
@@ -250,7 +257,7 @@
       desenhar();
     } catch (e) {
       if (silencioso) return;
-      tbody.innerHTML = '<tr><td colspan="15" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="16" class="vpn-vazio">' + esc(e.message || 'Erro ao carregar.') + '</td></tr>';
     } finally { carregando = false; restante = INTERVALO; mostrarAtualizacao(); }
   }
 
@@ -564,7 +571,7 @@
     var itens = [
       ['Nº', seq(l)], ['Recebida em', dataHoraBr(l.criado_em)], ['Nome completo', l.nome, 1], ['CPF', cpfBr(l.cpf)], ['RG', l.rg],
       ['Data de nascimento', dataBr(l.data_nascimento)], ['Vínculo', ROTULO_VINCULO[l.vinculo]], ['Matrícula', l.matricula], ['Cargo/Função', l.cargo || (l.vinculo === 'comissionado' ? 'CAS' : l.vinculo === 'terceirizado' ? 'Terceirizado' : '')],
-      ['E-mail funcional', l.email_funcional, 1], ['WhatsApp', '<span id="vpnVerZap">' + zapLink(l) + '</span>', 0, true], ['Setor', l.setor, 1],
+      ['E-mail funcional', l.email_funcional, 1], ['WhatsApp', '<span id="vpnVerZap">' + zapLink(l) + '</span>', 0, true], ['Atendente', '<span id="vpnVerAtendente">' + atendenteHtmlDialogo(l) + '</span>', 0, true], ['Setor', l.setor, 1],
       ['Situação', ROTULO[l.status]], ['Última atualização', l.atualizado_em ? dataHoraBr(l.atualizado_em) + (l.atualizado_por ? ' por ' + l.atualizado_por : '') : ''],
       ['Observações', l.observacoes, 1],
       ['Documentos', '<div class="vpn-docs">' +

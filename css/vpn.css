@@ -208,10 +208,11 @@ body.vpn-carregando{visibility:hidden}
 .vpn-equipe .vpn-tab td{padding:7px 5px;line-height:1.3}
 .vpn-equipe .vpn-tab td:nth-child(2){width:74px}
 .vpn-equipe .vpn-tab td:nth-child(3){min-width:105px}
-.vpn-equipe .vpn-tab td:nth-child(4),.vpn-equipe .vpn-tab td:nth-child(5),.vpn-equipe .vpn-tab td:nth-child(6),.vpn-equipe .vpn-tab td:nth-child(8),.vpn-equipe .vpn-tab td:nth-child(10){white-space:nowrap}
+.vpn-equipe .vpn-tab td:nth-child(4),.vpn-equipe .vpn-tab td:nth-child(5),.vpn-equipe .vpn-tab td:nth-child(6),.vpn-equipe .vpn-tab td:nth-child(8),.vpn-equipe .vpn-tab td:nth-child(11){white-space:nowrap}
 .vpn-equipe .vpn-tab td:nth-child(7){overflow-wrap:anywhere}
 .vpn-equipe .vpn-tab td:nth-child(7){min-width:110px}
-.vpn-equipe .vpn-tab td:nth-child(11){min-width:90px}
+.vpn-equipe .vpn-tab td:nth-child(12){min-width:90px}
+.vpn-equipe .vpn-tab td:nth-child(9){min-width:72px}
 .vpn-equipe .vpn-doc-link{padding:1px 7px;font-size:11.5px}
 .vpn-equipe .vpn-acoes .vpn-acao{width:28px;height:28px}
 .vpn-equipe .vpn-acoes .vpn-acao svg{width:15px;height:15px}
@@ -224,7 +225,8 @@ body.vpn-carregando{visibility:hidden}
   .vpn-equipe .vpn-tab td:nth-child(2){width:60px}
   .vpn-equipe .vpn-tab td:nth-child(3){min-width:90px}
   .vpn-equipe .vpn-tab td:nth-child(7){min-width:95px}
-  .vpn-equipe .vpn-tab td:nth-child(11){min-width:75px}
+  .vpn-equipe .vpn-tab td:nth-child(12){min-width:75px}
+  .vpn-equipe .vpn-tab td:nth-child(9){min-width:60px}
   .vpn-equipe .vpn-doc-link{padding:1px 5px;font-size:10.5px}
   .vpn-equipe .vpn-acoes .vpn-acao{width:24px;height:24px}
   .vpn-equipe .vpn-acoes .vpn-acao svg{width:13px;height:13px}
@@ -235,7 +237,6 @@ body.vpn-carregando{visibility:hidden}
   .vpn-equipe .vpn-tab th{padding:7px 2px}
 }
 
-.vpn-zap-quem{display:block;margin-top:2px;max-width:96px;white-space:normal;font-size:10px;line-height:1.25;color:#6b7280}
 
 /* ---- tema claro/escuro da equipe (html[data-tema="escuro"], o mesmo dos painéis; botão #temaBtn no topo e no menu) ---- */
 .vpn-tema-btn{position:absolute;top:50%;right:16px;transform:translateY(-50%);display:inline-flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
@@ -246,7 +247,7 @@ html[data-tema="escuro"]{color-scheme:dark}
 html[data-tema="escuro"] body.vpn-equipe{background:#0d1420;color:#e6edf7;--linha:#26344a;--texto:#e6edf7;--cinza:#9aa9bf;--verde:#8ab8ff;--verde2:#7fb0ff;--sombra:0 2px 10px rgba(0,0,0,.5)}
 html[data-tema="escuro"] .vpn-equipe .vpn-link,html[data-tema="escuro"] .vpn-equipe .vpn-config,html[data-tema="escuro"] .vpn-equipe .vpn-tab-wrap{background:#131c2b}
 html[data-tema="escuro"] .vpn-equipe .vpn-link span,html[data-tema="escuro"] .vpn-equipe .vpn-config>span,html[data-tema="escuro"] .vpn-equipe .vpn-atualiza b,html[data-tema="escuro"] .vpn-equipe .vpn-doc-nome,html[data-tema="escuro"] .vpn-equipe .vpn-obs,html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit label{color:#cbd5e6}
-html[data-tema="escuro"] .vpn-equipe .vpn-config small,html[data-tema="escuro"] .vpn-equipe .vpn-atualiza,html[data-tema="escuro"] .vpn-equipe .vpn-tab th,html[data-tema="escuro"] .vpn-equipe .vpn-dados dt,html[data-tema="escuro"] .vpn-equipe .vpn-doc-arqs,html[data-tema="escuro"] .vpn-equipe .vpn-zap-quem{color:#9aa9bf}
+html[data-tema="escuro"] .vpn-equipe .vpn-config small,html[data-tema="escuro"] .vpn-equipe .vpn-atualiza,html[data-tema="escuro"] .vpn-equipe .vpn-tab th,html[data-tema="escuro"] .vpn-equipe .vpn-dados dt,html[data-tema="escuro"] .vpn-equipe .vpn-doc-arqs{color:#9aa9bf}
 html[data-tema="escuro"] .vpn-equipe .vpn-link input,html[data-tema="escuro"] .vpn-equipe .vpn-barra input,html[data-tema="escuro"] .vpn-equipe .vpn-barra select,html[data-tema="escuro"] .vpn-equipe .vpn-tab select,html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit input,html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit select,html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit textarea{background:#0e1622;border-color:#33445f;color:#e6edf7}
 html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit input:disabled{background:#161f2e;color:#6b7a90}
 html[data-tema="escuro"] .vpn-equipe .vpn-barra input::placeholder{color:#7d8aa0}
@@ -278,3 +279,18 @@ html[data-tema="escuro"] .vpn-equipe .vpn-aviso.erro{background:#3a1717;color:#f
 .vpn-termo-dl-item b{color:#374151;font-weight:600}
 html[data-tema="escuro"] .vpn-equipe .vpn-termo-dl,html[data-tema="escuro"] .vpn-equipe .vpn-termo-dl-item{color:#9aa9bf}
 html[data-tema="escuro"] .vpn-equipe .vpn-termo-dl-item b{color:#dbe4f2}
+
+.vpn-atendente{display:block;font-weight:600;line-height:1.25}
+.vpn-atendente-em{display:block;font-size:10.5px;color:#6b7280;line-height:1.25}
+html[data-tema="escuro"] .vpn-equipe .vpn-atendente-em{color:#9aa9bf}
+@media(max-width:1300px){
+  .vpn-equipe .vpn-tab td:nth-child(3){min-width:80px}
+  .vpn-equipe .vpn-tab td:nth-child(7){min-width:86px}
+  .vpn-equipe .vpn-tab td:nth-child(8){font-size:10.8px}
+  .vpn-equipe .vpn-tab td:nth-child(10){font-size:10.5px}
+  .vpn-equipe .vpn-tab td:nth-child(12){min-width:66px}
+  .vpn-equipe .vpn-acoes .vpn-acao{width:22px;height:22px}
+  .vpn-equipe .vpn-acoes .vpn-acao svg{width:12px;height:12px}
+  .vpn-termo-dl{max-width:90px}
+}
+
