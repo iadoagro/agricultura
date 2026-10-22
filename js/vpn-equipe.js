@@ -498,7 +498,7 @@
     marcarVisto(id);
     var itens = [
       ['Nº', seq(l)], ['Recebida em', dataHoraBr(l.criado_em)], ['Nome completo', l.nome, 1], ['CPF', cpfBr(l.cpf)], ['RG', l.rg],
-      ['Data de nascimento', dataBr(l.data_nascimento)], ['Vínculo', ROTULO_VINCULO[l.vinculo]], ['Matrícula', l.matricula], ['Cargo/Função', l.vinculo === 'efetivo' ? l.cargo : 'CAS'],
+      ['Data de nascimento', dataBr(l.data_nascimento)], ['Vínculo', ROTULO_VINCULO[l.vinculo]], ['Matrícula', l.matricula], ['Cargo/Função', l.cargo || (l.vinculo === 'comissionado' ? 'CAS' : l.vinculo === 'terceirizado' ? 'Terceirizado' : '')],
       ['E-mail funcional', l.email_funcional, 1], ['WhatsApp', '<span id="vpnVerZap">' + zapLink(l) + '</span>', 0, true], ['Setor', l.setor, 1],
       ['Situação', ROTULO[l.status]], ['Última atualização', l.atualizado_em ? dataHoraBr(l.atualizado_em) + (l.atualizado_por ? ' por ' + l.atualizado_por : '') : ''],
       ['Observações', l.observacoes, 1],

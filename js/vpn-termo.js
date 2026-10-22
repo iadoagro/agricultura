@@ -20,6 +20,12 @@
     var d = String(v || '').replace(/\D/g, '');
     return d.length === 11 ? d.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') : d.length === 10 ? d.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3') : d;
   }
+  // Cargo/função conforme o cadastro: o cargo informado; sem cargo, comissionado sai como CAS e terceirizado como "Terceirizado".
+  function cargoFuncao(l) {
+    var c = String(l.cargo || '').trim();
+    if (c) return c;
+    return l.vinculo === 'comissionado' ? 'CAS' : l.vinculo === 'terceirizado' ? 'Terceirizado' : '';
+  }
   function dataNum(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
   function dataExtenso(d) { return d.getDate() + ' de ' + MESES[d.getMonth()] + ' de ' + d.getFullYear(); }
 
@@ -171,7 +177,7 @@
 
   function desenhar(doc, l, hoje, brasao, T, nos) {
     var ef = l.vinculo === 'efetivo', mat = String(l.matricula || '').trim();
-    var cargo = ef ? l.cargo : 'CAS', tel = zapBr(l.whatsapp), unidade = rotuloSetor(l.setor, nos);
+    var cargo = cargoFuncao(l), tel = zapBr(l.whatsapp), unidade = rotuloSetor(l.setor, nos);
     var y = cabecalho(doc, brasao) + 7;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
     var tt = 'Formulário de Solicitação de Acesso VPN', tw = doc.getTextWidth(tt);
