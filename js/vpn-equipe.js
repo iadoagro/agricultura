@@ -55,6 +55,7 @@
     return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '');
   }
   // ---- atendimento pelo WhatsApp: um atendente de cada vez (3 minutos); outro só assume se o primeiro não atender nesse prazo
+  var ATENDIMENTO_EXCLUSIVO = false;   // true = um atendente de cada vez (liga junto com v_exclusivo no banco); false = qualquer operador assume, vale o último
   var PRAZO_ATENDIMENTO = 180;   // segundos; a regra de verdade está no banco (vpn_registrar_whatsapp)
   function meuEmail() {
     var s = auth && auth.sessaoAtual && auth.sessaoAtual();
@@ -62,7 +63,7 @@
   }
   // quem está com o atendimento agora (ainda dentro dos 3 minutos); null = livre
   function atendimentoAtivo(l) {
-    if (!l.whatsapp_por || !l.whatsapp_em) return null;
+    if (!ATENDIMENTO_EXCLUSIVO || !l.whatsapp_por || !l.whatsapp_em) return null;
     var resta = PRAZO_ATENDIMENTO - (Date.now() - new Date(l.whatsapp_em).getTime()) / 1000;
     if (!(resta > 0)) return null;
     return { por: l.whatsapp_por, resta: Math.ceil(resta), meu: Boolean(l.whatsapp_email) && l.whatsapp_email === meuEmail() };
@@ -93,7 +94,7 @@
       var r = await fetch(base() + '/rest/v1/rpc/vpn_registrar_whatsapp', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: l.id }) });
       if (!r.ok) throw new Error('indisponivel');
       var res = await r.json();
-      if (res && res.ok === false) {
+      if (ATENDIMENTO_EXCLUSIVO && res && res.ok === false) {
         aplicarAtendimento(l, res.por, res.em);
         avisoOcupado(res.por, res.restante);
         return { ok: false };

@@ -669,6 +669,7 @@ alter table public.vpn_solicitacoes add column if not exists whatsapp_em timesta
 
 alter table public.vpn_solicitacoes add column if not exists whatsapp_email text;   -- quem está com o atendimento (para comparar com quem clica)
 
+-- (DESLIGADO por enquanto: v_exclusivo = false abaixo; o último operador a clicar/baixar fica como atendente.)
 -- Um atendente de cada vez: o primeiro que clica no número assume o atendimento por 3 minutos.
 -- Outro operador só consegue assumir depois desse prazo sem o primeiro atender; quem já é o atendente renova o prazo.
 -- Devolve {ok, por, em, restante}: ok=false quando outra pessoa está com o atendimento (restante = segundos até liberar).
@@ -682,12 +683,13 @@ as $$
 declare
   v_email text := lower(trim(coalesce((select auth.jwt() ->> 'email'), '')));
   v_por text := initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' '));
+  v_exclusivo constant boolean := false;   -- false = regra de um atendente por vez DESLIGADA (qualquer operador assume; vale o último); true = bloqueia por 3 minutos
   r record;
 begin
   if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
   select whatsapp_email, whatsapp_por, whatsapp_em into r from public.vpn_solicitacoes where id = p_id for update;
   if not found then raise exception 'Solicitação não encontrada.'; end if;
-  if r.whatsapp_em is not null and r.whatsapp_por is not null
+  if v_exclusivo and r.whatsapp_em is not null and r.whatsapp_por is not null
      and r.whatsapp_em > now() - interval '3 minutes'
      and coalesce(r.whatsapp_email, '') <> v_email then
     return jsonb_build_object('ok', false, 'por', r.whatsapp_por, 'em', r.whatsapp_em,
