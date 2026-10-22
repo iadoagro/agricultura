@@ -519,4 +519,73 @@ $$;
 revoke all on function public.vpn_excluir(uuid) from public;
 grant execute on function public.vpn_excluir(uuid) to authenticated;
 
+-- ------------------------------------------------ documento de abertura de chamado
+-- Qualquer pessoa com "vpn" liberado em Acessos (pode_vpn) anexa, troca ou remove o PDF do chamado
+-- (até 2 MB) na solicitação de uma pessoa. Um documento por solicitação; um novo substitui o anterior.
+alter table public.vpn_solicitacoes add column if not exists chamado_path text;
+alter table public.vpn_solicitacoes add column if not exists chamado_nome text;
+alter table public.vpn_solicitacoes add column if not exists chamado_em timestamptz;
+alter table public.vpn_solicitacoes add column if not exists chamado_por text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('vpn-chamados', 'vpn-chamados', false, 2097152, array['application/pdf'])
+on conflict (id) do update set public = false, file_size_limit = 2097152, allowed_mime_types = array['application/pdf'];
+
+drop policy if exists "Equipe le chamado vpn" on storage.objects;
+create policy "Equipe le chamado vpn" on storage.objects
+  for select to authenticated using (bucket_id = 'vpn-chamados' and public.pode_vpn());
+drop policy if exists "Equipe envia chamado vpn" on storage.objects;
+create policy "Equipe envia chamado vpn" on storage.objects
+  for insert to authenticated with check (bucket_id = 'vpn-chamados' and public.pode_vpn());
+drop policy if exists "Equipe exclui chamado vpn" on storage.objects;
+create policy "Equipe exclui chamado vpn" on storage.objects
+  for delete to authenticated using (bucket_id = 'vpn-chamados' and public.pode_vpn());
+
+-- Registra o arquivo já enviado ao bucket; devolve o caminho do anterior (a página apaga o arquivo antigo).
+create or replace function public.vpn_registrar_chamado(p_id uuid, p_path text, p_nome text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_antigo text;
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  if not exists (select 1 from public.vpn_solicitacoes where id = p_id) then raise exception 'Solicitação não encontrada.'; end if;
+  if coalesce(p_path, '') !~ ('^' || p_id::text || '/') then raise exception 'Arquivo inválido.'; end if;
+  if not exists (select 1 from storage.objects where bucket_id = 'vpn-chamados' and name = p_path) then
+    raise exception 'Envie o arquivo do chamado.';
+  end if;
+  select chamado_path into v_antigo from public.vpn_solicitacoes where id = p_id;
+  update public.vpn_solicitacoes
+     set chamado_path = p_path, chamado_nome = nullif(left(btrim(coalesce(p_nome, '')), 160), ''),
+         chamado_em = now(),
+         chamado_por = initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' '))
+   where id = p_id;
+  return case when v_antigo is distinct from p_path then v_antigo end;
+end;
+$$;
+revoke all on function public.vpn_registrar_chamado(uuid, text, text) from public;
+grant execute on function public.vpn_registrar_chamado(uuid, text, text) to authenticated;
+
+-- Remove o vínculo; devolve o caminho para a página apagar o arquivo.
+create or replace function public.vpn_remover_chamado(p_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_antigo text;
+begin
+  if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
+  select chamado_path into v_antigo from public.vpn_solicitacoes where id = p_id;
+  update public.vpn_solicitacoes set chamado_path = null, chamado_nome = null, chamado_em = null, chamado_por = null where id = p_id;
+  return v_antigo;
+end;
+$$;
+revoke all on function public.vpn_remover_chamado(uuid) from public;
+grant execute on function public.vpn_remover_chamado(uuid) to authenticated;
+
 commit;
