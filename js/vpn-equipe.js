@@ -106,6 +106,7 @@
     var root = ehRoot();
     document.getElementById('vpnLinkLocalBox').hidden = !root;
     document.getElementById('vpnConfigBox').hidden = !root;
+    document.getElementById('vpnTermosTodos').hidden = !root;
     if (root) carregarConfig();
     document.getElementById('vpnLinkLocal').value = LINK_LOCAL;
     document.getElementById('vpnAbrirLocal').href = LINK_LOCAL;
@@ -223,6 +224,15 @@
       alert(e.message || 'Não foi possível abrir o documento.');
     } finally { botao.disabled = false; botao.textContent = texto; }
   }
+  // termo para quem ainda não tem PDF: montado na hora, com a data de hoje (a do download)
+  async function gerarTermo(id, botao) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l) return;
+    var texto = botao.textContent; botao.disabled = true; botao.textContent = 'Gerando…';
+    try { await window.vpnTermo.baixar(l); }
+    catch (e) { alert(e.message || 'Não foi possível gerar o termo.'); }
+    finally { botao.disabled = false; botao.textContent = texto; }
+  }
   function abrirDocumento(id, botao) {
     var l = lista.filter(function (x) { return x.id === id; })[0];
     if (!l) return;
@@ -329,7 +339,7 @@
         '<div class="vpn-doc"><span class="vpn-doc-nome">Documento de identificação</span><span class="vpn-doc-arqs">' +
         (l.documento_path ? '<button type="button" class="vpn-acao vpn-anexo" data-anexo="' + esc(l.documento_path) + '">' + esc(l.documento_nome || 'Abrir documento') + '</button>' : 'Não enviado.') + '</span></div>' +
         (ehRoot() ? '<div class="vpn-doc"><span class="vpn-doc-nome">Termo para assinatura</span><span class="vpn-doc-arqs">' +
-        (l.termo_path ? '<button type="button" class="vpn-acao vpn-anexo" data-termo="' + esc(l.termo_path) + '" data-nome="' + esc('Termo VPN - ' + l.nome + '.pdf') + '">Baixar termo (PDF)</button>' : 'Ainda não gerado.') + '</span></div>' : '') +
+        (l.termo_path ? '<button type="button" class="vpn-acao vpn-anexo" data-termo="' + esc(l.termo_path) + '" data-nome="' + esc('Termo VPN - ' + l.nome + '.pdf') + '">Baixar termo (PDF)</button>' : '<button type="button" class="vpn-acao vpn-anexo" data-termo-gerar="' + esc(l.id) + '">Gerar termo preenchido</button>') + '</span></div>' : '') +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Termo preenchido e assinado</span><span class="vpn-doc-arqs" id="vpnVerAnexos">Carregando…</span></div>' +
         '</div>', 1, true]
     ];
@@ -350,6 +360,8 @@
     });
   }
   document.getElementById('vpnVerDados').addEventListener('click', function (e) {
+    var g = e.target.closest('[data-termo-gerar]');
+    if (g) { gerarTermo(g.getAttribute('data-termo-gerar'), g); return; }
     var t = e.target.closest('[data-termo]');
     if (t) { abrirArquivo(t.getAttribute('data-termo'), t, 'vpn-termos', t.getAttribute('data-nome')); return; }
     var d = e.target.closest('[data-anexo-del]');
@@ -445,6 +457,15 @@
       alert('Não foi possível gerar o PDF. Confira a conexão com a internet e tente de novo.');
     } finally { botao.disabled = false; botao.innerHTML = rotulo; }
   }
+  // gera de uma vez o termo de todos que ainda não têm PDF (ZIP, com a data de hoje)
+  document.getElementById('vpnTermosTodos').addEventListener('click', async function () {
+    var b = this, texto = b.textContent; b.disabled = true; b.textContent = 'Gerando…';
+    try {
+      var r = await window.vpnTermo.baixarTodos(lista.filter(function (x) { return !x.termo_path; }));
+      alert(r.gerados + ' termo(s) gerado(s).' + (r.pendentes.length ? '\n\nNão saíram por cadastro incompleto (' + r.pendentes.length + '):\n' + r.pendentes.join('\n') : ''));
+    } catch (e) { alert(e.message || 'Não foi possível gerar os termos.'); }
+    finally { b.disabled = false; b.textContent = texto; }
+  });
   document.getElementById('vpnExportar').addEventListener('click', function () { exportarPdf(this); });
 
   // ---- excluir: pede confirmação, apaga o arquivo do documento e depois o registro
