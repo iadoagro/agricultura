@@ -305,3 +305,11 @@ html[data-tema="escuro"] .vpn-equipe .vpn-copiado{color:#6ee7a0!important;border
   .vpn-equipe .vpn-tab td:nth-child(8){font-size:10px}
   .vpn-equipe .vpn-tab td:nth-child(9){font-size:10px}
 }
+
+.vpn-atend-vivo{display:block;margin-top:2px;font-size:10px;font-weight:700;line-height:1.25;color:#b45309}
+.vpn-atend-vivo.meu{color:#15803d}
+.vpn-zap-bloq{color:#9ca3af;text-decoration:line-through;cursor:not-allowed}
+.vpn-zap-bloq:hover{text-decoration:line-through}
+html[data-tema="escuro"] .vpn-equipe .vpn-atend-vivo{color:#fbbf24}
+html[data-tema="escuro"] .vpn-equipe .vpn-atend-vivo.meu{color:#6ee7a0}
+html[data-tema="escuro"] .vpn-equipe .vpn-zap-bloq{color:#6b7a90}

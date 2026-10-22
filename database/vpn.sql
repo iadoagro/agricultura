@@ -663,22 +663,38 @@ revoke all on function public.vpn_registrar_download_termo(uuid[], text) from pu
 grant execute on function public.vpn_registrar_download_termo(uuid[], text) to authenticated;
 
 -- ------------------------------------------------ quem chamou no WhatsApp
--- Cada clique no número do WhatsApp (página VPN) grava quem foi e quando; vale o último clique.
+-- O clique no número do WhatsApp (página VPN) assume o atendimento: grava quem foi e quando (ver a regra dos 3 minutos abaixo).
 alter table public.vpn_solicitacoes add column if not exists whatsapp_por text;
 alter table public.vpn_solicitacoes add column if not exists whatsapp_em timestamptz;
 
+alter table public.vpn_solicitacoes add column if not exists whatsapp_email text;   -- quem está com o atendimento (para comparar com quem clica)
+
+-- Um atendente de cada vez: o primeiro que clica no número assume o atendimento por 3 minutos.
+-- Outro operador só consegue assumir depois desse prazo sem o primeiro atender; quem já é o atendente renova o prazo.
+-- Devolve {ok, por, em, restante}: ok=false quando outra pessoa está com o atendimento (restante = segundos até liberar).
+drop function if exists public.vpn_registrar_whatsapp(uuid);
 create or replace function public.vpn_registrar_whatsapp(p_id uuid)
-returns void
+returns jsonb
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_email text := lower(trim(coalesce((select auth.jwt() ->> 'email'), '')));
+  v_por text := initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' '));
+  r record;
 begin
   if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
-  update public.vpn_solicitacoes
-     set whatsapp_por = initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' ')),
-         whatsapp_em = now()
-   where id = p_id;
+  select whatsapp_email, whatsapp_por, whatsapp_em into r from public.vpn_solicitacoes where id = p_id for update;
+  if not found then raise exception 'Solicitação não encontrada.'; end if;
+  if r.whatsapp_em is not null and r.whatsapp_por is not null
+     and r.whatsapp_em > now() - interval '3 minutes'
+     and coalesce(r.whatsapp_email, '') <> v_email then
+    return jsonb_build_object('ok', false, 'por', r.whatsapp_por, 'em', r.whatsapp_em,
+      'restante', greatest(1, ceil(extract(epoch from (r.whatsapp_em + interval '3 minutes' - now())))::int));
+  end if;
+  update public.vpn_solicitacoes set whatsapp_por = v_por, whatsapp_em = now(), whatsapp_email = v_email where id = p_id;
+  return jsonb_build_object('ok', true, 'por', v_por, 'em', now());
 end;
 $$;
 revoke all on function public.vpn_registrar_whatsapp(uuid) from public;

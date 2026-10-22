@@ -34,12 +34,18 @@
   function zapLink(l) {
     var d = String(l.whatsapp || '').replace(/\D/g, '');
     if (!d) return '';
-    return '<a class="vpn-zap" data-zap="' + esc(l.id) + '" href="https://wa.me/55' + esc(d) + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">' + esc(zapBr(d)) + '</a>';
+    var at = atendimentoAtivo(l), bloq = Boolean(at && !at.meu);
+    return '<a class="vpn-zap' + (bloq ? ' vpn-zap-bloq' : '') + '" data-zap="' + esc(l.id) + '" href="https://wa.me/55' + esc(d) + '" target="_blank" rel="noopener" title="' + (bloq ? 'Em atendimento por ' + esc(at.por) + ': libera em até 3 minutos' : 'Abrir conversa no WhatsApp e assumir o atendimento') + '">' + esc(zapBr(d)) + '</a>';
   }
   // atendente = quem clicou por último no número do WhatsApp (responsável pelo contato)
   function atendenteHtml(l) {
     if (!l.whatsapp_por) return '<span class="vpn-doc-vazio" title="Ninguém chamou ainda">—</span>';
-    return '<span class="vpn-atendente" title="Último a abrir a conversa no WhatsApp">' + esc(l.whatsapp_por) + '</span><small class="vpn-atendente-em">' + esc(dataCurtaHoraBr(l.whatsapp_em)) + '</small>';
+    return '<span class="vpn-atendente" title="Último a assumir o atendimento pelo WhatsApp">' + esc(l.whatsapp_por) + '</span><small class="vpn-atendente-em">' + esc(dataCurtaHoraBr(l.whatsapp_em)) + '</small>' + aoVivoHtml(l);
+  }
+  // enquanto o atendente está dentro dos 3 minutos: "Em atendimento · 2:41" (a contagem anda sozinha)
+  function aoVivoHtml(l) {
+    var at = atendimentoAtivo(l);
+    return at ? '<small class="vpn-atend-vivo' + (at.meu ? ' meu' : '') + '" data-ate="' + esc(l.id) + '">' + (at.meu ? 'Você está atendendo' : 'Em atendimento') + ' · ' + relogio(at.resta) + '</small>' : '';
   }
   function atendenteHtmlDialogo(l) {
     return l.whatsapp_por ? esc(l.whatsapp_por) + ' · ' + esc(dataHoraBr(l.whatsapp_em)) : '';
@@ -48,28 +54,75 @@
     var d = new Date(t); if (isNaN(d)) return '';
     return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '');
   }
-  // clicou no número: grava quem foi (o link abre normalmente, a gravação segue em paralelo)
-  function registrarZap(id) {
-    var l = lista.filter(function (x) { return x.id === id; })[0];
-    if (!l) return;
+  // ---- atendimento pelo WhatsApp: um atendente de cada vez (3 minutos); outro só assume se o primeiro não atender nesse prazo
+  var PRAZO_ATENDIMENTO = 180;   // segundos; a regra de verdade está no banco (vpn_registrar_whatsapp)
+  function meuEmail() {
     var s = auth && auth.sessaoAtual && auth.sessaoAtual();
-    var email = String((s && s.user && s.user.email) || '').split('@')[0].replace(/\./g, ' ');
-    var antes = { por: l.whatsapp_por, em: l.whatsapp_em };
-    l.whatsapp_por = nomeProprio(email); l.whatsapp_em = new Date().toISOString();
-    desenhar(); atualizarZapNoDialogo(l);
-    fetch(base() + '/rest/v1/rpc/vpn_registrar_whatsapp', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id }) })
-      .then(function (r) { if (!r.ok) throw new Error(); })
-      .catch(function () { l.whatsapp_por = antes.por; l.whatsapp_em = antes.em; desenhar(); atualizarZapNoDialogo(l); });
+    return String((s && s.user && s.user.email) || '').trim().toLowerCase();
   }
+  // quem está com o atendimento agora (ainda dentro dos 3 minutos); null = livre
+  function atendimentoAtivo(l) {
+    if (!l.whatsapp_por || !l.whatsapp_em) return null;
+    var resta = PRAZO_ATENDIMENTO - (Date.now() - new Date(l.whatsapp_em).getTime()) / 1000;
+    if (!(resta > 0)) return null;
+    return { por: l.whatsapp_por, resta: Math.ceil(resta), meu: Boolean(l.whatsapp_email) && l.whatsapp_email === meuEmail() };
+  }
+  function relogio(seg) { return Math.floor(seg / 60) + ':' + ('0' + (seg % 60)).slice(-2); }
   function atualizarZapNoDialogo(l) {
     var alvo = document.getElementById('vpnVerZap'), at = document.getElementById('vpnVerAtendente');
     if (alvo && verId === l.id) alvo.innerHTML = zapLink(l);
     if (at && verId === l.id) at.innerHTML = atendenteHtmlDialogo(l);
   }
+  function aplicarAtendimento(l, por, em, email) {
+    l.whatsapp_por = por; l.whatsapp_em = em;
+    if (email !== undefined) l.whatsapp_email = email;
+    desenhar(); atualizarZapNoDialogo(l);
+  }
+  // clicou no número: o banco decide se assume o atendimento; só então a conversa do WhatsApp abre
+  async function assumirAtendimento(id, url) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l) return;
+    var at = atendimentoAtivo(l);
+    if (at && !at.meu) { alert('Este atendimento está com ' + at.por + '. Você poderá assumir em ' + relogio(at.resta) + ' se ele não atender.'); return; }
+    var janela = window.open('', '_blank');   // abre já no clique, para o navegador não bloquear
+    try {
+      var r = await fetch(base() + '/rest/v1/rpc/vpn_registrar_whatsapp', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id }) });
+      if (!r.ok) throw new Error('indisponivel');
+      var res = await r.json();
+      if (res && res.ok === false) {
+        if (janela) janela.close();
+        aplicarAtendimento(l, res.por, res.em);
+        alert('Este atendimento está com ' + res.por + '. Você poderá assumir em ' + relogio(res.restante) + ' se ele não atender.');
+        return;
+      }
+      aplicarAtendimento(l, (res && res.por) || nomeProprio(meuEmail().split('@')[0].replace(/\./g, ' ')), (res && res.em) || new Date().toISOString(), meuEmail());
+      if (janela) janela.location.href = url; else window.open(url, '_blank');
+    } catch (e) {
+      // sem como registrar (banco sem a função nova): não trava o contato, mas avisa
+      if (janela) janela.location.href = url; else window.open(url, '_blank');
+      alert('Atenção: não foi possível registrar o atendimento. Rode database/vpn.sql no Supabase para ativar o controle de atendente.');
+    }
+  }
   document.addEventListener('click', function (e) {
     var z = e.target.closest && e.target.closest('a[data-zap]');
-    if (z) { var zid = z.getAttribute('data-zap'); setTimeout(function () { registrarZap(zid); }, 0); }   // depois do clique, para o link abrir antes de a tabela ser redesenhada
+    if (!z) return;
+    e.preventDefault();
+    assumirAtendimento(z.getAttribute('data-zap'), z.href);
   });
+  // contagem regressiva do atendimento em andamento (atualiza só os textos; redesenha uma vez quando o prazo acaba)
+  setInterval(function () {
+    var vencido = false;
+    document.querySelectorAll('[data-ate]').forEach(function (el) {
+      var l = lista.filter(function (x) { return x.id === el.getAttribute('data-ate'); })[0];
+      var at = l && atendimentoAtivo(l);
+      if (!at) vencido = true; else el.textContent = (at.meu ? 'Você está atendendo' : 'Em atendimento') + ' · ' + relogio(at.resta);
+    });
+    if (vencido) {
+      desenhar();
+      var d = lista.filter(function (x) { return x.id === verId; })[0];
+      if (d) atualizarZapNoDialogo(d);
+    }
+  }, 1000);
   function nomeProprio(s) {
     return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase().split(' ').map(function (p, i) {
       if (i > 0 && /^(de|da|do|das|dos|e)$/.test(p)) return p;
