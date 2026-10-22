@@ -207,16 +207,16 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden && carregado) carregar(true); });
 
   // abre um arquivo do bucket privado numa nova aba, com link assinado de 5 minutos
-  async function abrirArquivo(caminho, botao) {
+  async function abrirArquivo(caminho, botao, bucket, baixarComo) {
     var texto = botao.textContent; botao.disabled = true; botao.textContent = 'Abrindo…';
     var janela = window.open('', '_blank');   // abre já no clique, para o navegador não bloquear
     try {
-      var r = await fetch(base() + '/storage/v1/object/sign/vpn-documentos/' + caminho.split('/').map(encodeURIComponent).join('/'), {
+      var r = await fetch(base() + '/storage/v1/object/sign/' + (bucket || 'vpn-documentos') + '/' + caminho.split('/').map(encodeURIComponent).join('/'), {
         method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ expiresIn: 300 })
       });
       var c = await r.json();
       if (!r.ok || !c.signedURL) throw new Error('Não foi possível abrir o documento.');
-      var url = base() + '/storage/v1' + c.signedURL;
+      var url = base() + '/storage/v1' + c.signedURL + (baixarComo ? '&download=' + encodeURIComponent(baixarComo) : '');
       if (janela) janela.location.href = url; else location.href = url;
     } catch (e) {
       if (janela) janela.close();
@@ -264,6 +264,13 @@
   }
   fe.elements.cpf.addEventListener('input', function (e) { e.target.value = maskCpf(e.target.value); });
   fe.elements.whatsapp.addEventListener('input', function (e) { e.target.value = maskZap(e.target.value); });
+  // cargo/função: visível, mas só libera quando o vínculo é efetivo
+  function cargoLiberado() {
+    var ef = fe.elements.vinculo.value === 'efetivo';
+    fe.elements.cargo.disabled = !ef;
+    if (!ef) fe.elements.cargo.value = '';
+  }
+  fe.elements.vinculo.addEventListener('change', cargoLiberado);
   function abrirEdicao(id) {
     var l = lista.filter(function (x) { return x.id === id; })[0];
     if (!l) return;
@@ -273,7 +280,7 @@
     f.nome.value = l.nome || ''; f.cpf.value = maskCpf(l.cpf || ''); f.rg.value = l.rg || '';
     f.data_nascimento.value = String(l.data_nascimento || '').slice(0, 10);
     f.whatsapp.value = maskZap(l.whatsapp || ''); f.email_funcional.value = l.email_funcional || '';
-    f.vinculo.value = l.vinculo || 'efetivo'; f.matricula.value = l.matricula || '';
+    f.vinculo.value = l.vinculo || 'efetivo'; f.matricula.value = l.matricula || ''; f.cargo.value = l.cargo || ''; cargoLiberado();
     f.setor.value = l.setor || ''; f.observacoes.value = l.observacoes || '';
     dlg.showModal();
   }
@@ -285,7 +292,7 @@
     var dados = {
       nome: nomeProprio(f.nome.value), cpf: f.cpf.value, rg: f.rg.value.trim(), data_nascimento: f.data_nascimento.value,
       email_funcional: f.email_funcional.value.trim().toLowerCase(), whatsapp: f.whatsapp.value, vinculo: f.vinculo.value,
-      matricula: f.matricula.value.trim(), setor: f.setor.value.trim().replace(/\s+/g, ' '), observacoes: f.observacoes.value
+      matricula: f.matricula.value.trim(), cargo: f.cargo.value.trim().replace(/\s+/g, ' '), setor: f.setor.value.trim().replace(/\s+/g, ' '), observacoes: f.observacoes.value
     };
     salvarEd.disabled = true; salvarEd.textContent = 'Salvando…'; erroEd.hidden = true;
     try {
@@ -314,13 +321,15 @@
     marcarVisto(id);
     var itens = [
       ['Nº', seq(l)], ['Recebida em', dataHoraBr(l.criado_em)], ['Nome completo', l.nome, 1], ['CPF', cpfBr(l.cpf)], ['RG', l.rg],
-      ['Data de nascimento', dataBr(l.data_nascimento)], ['Vínculo', ROTULO_VINCULO[l.vinculo]], ['Matrícula', l.matricula],
+      ['Data de nascimento', dataBr(l.data_nascimento)], ['Vínculo', ROTULO_VINCULO[l.vinculo]], ['Matrícula', l.matricula], ['Cargo/Função', l.vinculo === 'efetivo' ? l.cargo : 'CAS'],
       ['E-mail funcional', l.email_funcional, 1], ['WhatsApp', zapLink(l.whatsapp), 0, true], ['Setor', l.setor, 1],
       ['Situação', ROTULO[l.status]], ['Última atualização', l.atualizado_em ? dataHoraBr(l.atualizado_em) + (l.atualizado_por ? ' por ' + l.atualizado_por : '') : ''],
       ['Observações', l.observacoes, 1],
       ['Documentos', '<div class="vpn-docs">' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Documento de identificação</span><span class="vpn-doc-arqs">' +
         (l.documento_path ? '<button type="button" class="vpn-acao vpn-anexo" data-anexo="' + esc(l.documento_path) + '">' + esc(l.documento_nome || 'Abrir documento') + '</button>' : 'Não enviado.') + '</span></div>' +
+        (ehRoot() ? '<div class="vpn-doc"><span class="vpn-doc-nome">Termo para assinatura</span><span class="vpn-doc-arqs">' +
+        (l.termo_path ? '<button type="button" class="vpn-acao vpn-anexo" data-termo="' + esc(l.termo_path) + '" data-nome="' + esc('Termo VPN - ' + l.nome + '.pdf') + '">Baixar termo (PDF)</button>' : 'Ainda não gerado.') + '</span></div>' : '') +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Termo preenchido e assinado</span><span class="vpn-doc-arqs" id="vpnVerAnexos">Carregando…</span></div>' +
         '</div>', 1, true]
     ];
@@ -341,6 +350,8 @@
     });
   }
   document.getElementById('vpnVerDados').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-termo]');
+    if (t) { abrirArquivo(t.getAttribute('data-termo'), t, 'vpn-termos', t.getAttribute('data-nome')); return; }
     var d = e.target.closest('[data-anexo-del]');
     if (d) { apagarAnexo(d.getAttribute('data-anexo-del'), d); return; }
     var b = e.target.closest('[data-anexo]');

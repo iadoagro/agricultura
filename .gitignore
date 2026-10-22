@@ -22,3 +22,6 @@ admin_config.php
 
 # Cache local da Supabase CLI
 /supabase/.temp/
+
+# Termos de VPN gerados (PDFs com CPF, telefone e e-mail das pessoas) — nunca publicar.
+/termos-vpn/

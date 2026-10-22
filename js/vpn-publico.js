@@ -56,12 +56,36 @@
   }
   form.elements.nome.addEventListener('blur', function (e) { e.target.value = nomeProprio(e.target.value); });
 
+  // visual do envio de arquivo: caixa de escolher/arrastar e, depois, o nome e o tamanho com botão para remover
+  function tamanhoLegivel(n) { return n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+  function atualizarUpload(input) {
+    var caixa = input.closest('.vpn-upload'), arq = input.files && input.files[0];
+    caixa.classList.toggle('com-arquivo', Boolean(arq));
+    var det = caixa.querySelector('.vpn-upload-arq'); det.hidden = !arq;
+    if (arq) { caixa.querySelector('.vpn-upload-nome').textContent = arq.name; caixa.querySelector('.vpn-upload-tam').textContent = tamanhoLegivel(arq.size); }
+  }
+  document.querySelectorAll('.vpn-upload').forEach(function (caixa) {
+    var input = caixa.querySelector('input[type="file"]');
+    input.addEventListener('change', function () { atualizarUpload(input); });
+    caixa.querySelector('.vpn-upload-remover').addEventListener('click', function () { input.value = ''; atualizarUpload(input); input.dispatchEvent(new Event('change', { bubbles: true })); });
+    ['dragenter', 'dragover'].forEach(function (ev) { caixa.addEventListener(ev, function (e) { if (input.disabled) return; e.preventDefault(); caixa.classList.add('arrastando'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { caixa.addEventListener(ev, function () { caixa.classList.remove('arrastando'); }); });
+    caixa.addEventListener('drop', function (e) {
+      if (input.disabled) return;
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        try { input.files = e.dataTransfer.files; } catch (x) { return; }
+        atualizarUpload(input); input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  });
+
   function ler() {
     var f = form.elements;
     return {
       nome: nomeProprio(f.nome.value), cpf: f.cpf.value, rg: f.rg.value.trim(),
       data_nascimento: f.data_nascimento.value, email_funcional: f.email_funcional.value.trim().toLowerCase(),
-      whatsapp: f.whatsapp.value, vinculo: vinculoAtual(), matricula: f.matricula.value.trim(), setor: f.setor.value, arquivo: f.documento.files[0] || null
+      whatsapp: f.whatsapp.value, vinculo: vinculoAtual(), matricula: f.matricula.value.trim(), cargo: f.cargo.value.trim().replace(/\s+/g, ' '), setor: f.setor.value, arquivo: f.documento.files[0] || null
     };
   }
 
@@ -143,6 +167,11 @@
     mat.disabled = terc;   // terceirizado não tem matrícula: o campo fica bloqueado e vazio
     if (terc) { mat.value = ''; erroCampo('matricula', ''); }
     mat.placeholder = terc ? 'Não se aplica a terceirizado' : '';
+    // cargo: o campo fica à vista, mas só libera para efetivo
+    var cg = form.elements.cargo, efetivo = vinculoAtual() === 'efetivo';
+    cg.disabled = !efetivo;
+    if (!efetivo) { cg.value = ''; erroCampo('cargo', ''); }
+    cg.placeholder = efetivo ? 'Informe o seu cargo' : 'Disponível só para efetivo';
     if (vinculoAtual()) erroCampo('vinculo', '');
   }
   form.querySelectorAll('input[name="vinculo"]').forEach(function (r) { r.addEventListener('change', atualizarVinculo); });
@@ -150,7 +179,7 @@
   function validar(d) {
     var primeiro = null;
     function marcar(n, m) { erroCampo(n, m); if (!primeiro) primeiro = n; }
-    ['nome', 'cpf', 'rg', 'data_nascimento', 'email_funcional', 'whatsapp', 'vinculo', 'matricula', 'setor', 'documento'].forEach(function (n) { erroCampo(n, ''); });
+    ['nome', 'cpf', 'rg', 'data_nascimento', 'email_funcional', 'whatsapp', 'vinculo', 'matricula', 'cargo', 'setor', 'documento'].forEach(function (n) { erroCampo(n, ''); });
     if (d.nome.length < 5 || d.nome.indexOf(' ') < 0) marcar('nome', 'Informe o nome completo.');
     if (!cpfValido(d.cpf)) marcar('cpf', 'CPF inválido.');
     if (d.rg.length < 3) marcar('rg', 'Informe o RG.');
@@ -162,6 +191,7 @@
     if (zap.length < 10 || zap.length > 11 || (zap.length === 11 && zap[2] !== '9')) marcar('whatsapp', 'Informe o WhatsApp com DDD.');
     if (!d.vinculo) marcar('vinculo', 'Informe se é efetivo, comissionado ou terceirizado.');
     if (!d.matricula && d.vinculo !== 'terceirizado') marcar('matricula', 'Informe a matrícula.');
+    if (d.vinculo === 'efetivo' && d.cargo.length < 2) marcar('cargo', 'Informe o cargo.');
     if (!d.setor) marcar('setor', 'Selecione o setor.');
     if (!d.arquivo) marcar('documento', 'Anexe o documento de identificação com foto.');
     else if (!TIPOS[d.arquivo.type]) marcar('documento', 'Use um arquivo JPG, PNG ou PDF.');
@@ -232,7 +262,7 @@
       method: 'POST', headers: cabecalhos({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ p: {
         nome: d.nome, cpf: d.cpf, rg: d.rg, data_nascimento: d.data_nascimento, email_funcional: d.email_funcional,
-        whatsapp: d.whatsapp, vinculo: d.vinculo, matricula: d.matricula, setor: d.setor, senha: senhaGuardada(), documento: caminho, documento_nome: d.arquivo.name
+        whatsapp: d.whatsapp, vinculo: d.vinculo, matricula: d.matricula, cargo: d.cargo, setor: d.setor, senha: senhaGuardada(), documento: caminho, documento_nome: d.arquivo.name
       } })
     });
     var corpo = null;
@@ -341,7 +371,7 @@
     var a = respostaAssinatura('assServidor'), b = respostaAssinatura('assSecretaria'), liberado = a === 'sim' && b === 'sim';
     anexoCampo.classList.toggle('bloqueado', !liberado);
     document.getElementById('anexoArquivo').disabled = !liberado; anexoBtn.disabled = !liberado;
-    if (!liberado) document.getElementById('anexoArquivo').value = '';
+    if (!liberado) { document.getElementById('anexoArquivo').value = ''; atualizarUpload(document.getElementById('anexoArquivo')); }
     anexoAviso.hidden = !(a === 'nao' || b === 'nao');
     anexoErro.hidden = true;
   }
@@ -373,7 +403,7 @@
       if (r && r.encontrado) {
         pessoa = { cpf: identCpf.value, data_nascimento: identNasc.value };
         document.getElementById('vpnAnexoTitulo').textContent = 'Olá, ' + r.nome + '!';
-        document.getElementById('anexoArquivo').value = ''; anexoForm.reset(); atualizarAssinaturas();
+        document.getElementById('anexoArquivo').value = ''; anexoForm.reset(); atualizarAssinaturas(); atualizarUpload(document.getElementById('anexoArquivo'));
         mostrarTela('anexo');
       } else {
         identErro.textContent = 'Não encontramos um cadastro com estes dados. Confira o CPF e a data de nascimento ou faça o cadastro.'; identErro.hidden = false; identCad.hidden = false;
@@ -393,7 +423,7 @@
     try {
       var caminho = await subirDocumento(arq);
       await rpcPublica('vpn_enviar_anexo', { p: { cpf: pessoa.cpf, data_nascimento: pessoa.data_nascimento, senha: senhaGuardada(), arquivo: caminho, arquivo_nome: arq.name, assinado_servidor: 'true', assinado_secretaria: 'true' } });
-      document.getElementById('anexoArquivo').value = '';
+      document.getElementById('anexoArquivo').value = ''; atualizarUpload(document.getElementById('anexoArquivo'));
       var pp = document.getElementById('vpnAnexoPopup'); if (pp.showModal) pp.showModal();
       mostrarEscolha();
     } catch (x) {
@@ -408,6 +438,6 @@
 
   document.getElementById('vpnPopupOk').addEventListener('click', function () { document.getElementById('vpnPopup').close(); });
   document.getElementById('vpnOutra').addEventListener('click', function () {
-    form.reset(); busca.value = ''; oculto.value = ''; atualizarVinculo(); mostrarTela('form');
+    form.reset(); busca.value = ''; oculto.value = ''; atualizarVinculo(); atualizarUpload(document.getElementById('documento')); mostrarTela('form');
   });
 })();

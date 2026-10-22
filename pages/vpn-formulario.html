@@ -9,7 +9,7 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <script src="../js/banco-config.js?v=2026091406"></script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102126">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102131">
 </head>
 <body class="vpn-publica vpn-carregando">
 <header class="vpn-topo"><div class="vpn-topo-in"><b>Solicitação de acesso à VPN</b><small id="vpnSub">Escolha uma opção para continuar.</small></div></header>
@@ -79,7 +79,19 @@
       <p class="vpn-aviso" id="vpnAnexoAviso" role="status" hidden>Só é possível enviar o termo depois de assinado por você e pela secretaria. Colete as assinaturas e volte aqui.</p>
       <div class="vpn-campo" id="vpnAnexoCampo">
         <label for="anexoArquivo">Termo preenchido e assinado</label>
-        <input id="anexoArquivo" type="file" accept="image/jpeg,image/png,application/pdf" disabled>
+        <div class="vpn-upload">
+          <input id="anexoArquivo" class="vpn-upload-input" type="file" accept="image/jpeg,image/png,application/pdf" disabled>
+          <label for="anexoArquivo" class="vpn-upload-zona">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+            <b>Escolher arquivo</b>
+            <span>ou arraste e solte aqui</span>
+          </label>
+          <div class="vpn-upload-arq" hidden>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>
+            <span class="vpn-upload-nome"></span><small class="vpn-upload-tam"></small>
+            <button type="button" class="vpn-upload-remover" aria-label="Remover arquivo" title="Remover arquivo">&times;</button>
+          </div>
+        </div>
         <small class="vpn-dica">Somente JPG, PNG ou PDF, até 3 MB. Fica liberado quando as duas respostas acima forem Sim.</small>
       </div>
       <p class="vpn-aviso erro" id="vpnAnexoErro" role="alert" hidden></p>
@@ -145,9 +157,26 @@
         </div>
         <span class="vpn-erro" role="alert"></span>
       </div>
+      <div class="vpn-campo vpn-largo" data-campo="cargo">
+        <label for="cargo">Cargo/Função <small>(somente para efetivo)</small></label>
+        <input id="cargo" name="cargo" type="text" maxlength="120" autocomplete="off" disabled placeholder="Disponível só para efetivo">
+        <span class="vpn-erro" role="alert"></span>
+      </div>
       <div class="vpn-campo vpn-largo" data-campo="documento">
         <label for="documento">Documento de identificação com foto</label>
-        <input id="documento" name="documento" type="file" accept="image/jpeg,image/png,application/pdf">
+        <div class="vpn-upload">
+          <input id="documento" class="vpn-upload-input" name="documento" type="file" accept="image/jpeg,image/png,application/pdf">
+          <label for="documento" class="vpn-upload-zona">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+            <b>Escolher arquivo</b>
+            <span>ou arraste e solte aqui</span>
+          </label>
+          <div class="vpn-upload-arq" hidden>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>
+            <span class="vpn-upload-nome"></span><small class="vpn-upload-tam"></small>
+            <button type="button" class="vpn-upload-remover" aria-label="Remover arquivo" title="Remover arquivo">&times;</button>
+          </div>
+        </div>
         <small class="vpn-dica">RG ou CNH, frente e verso legíveis. Somente JPG, PNG ou PDF, até 3 MB.</small>
         <span class="vpn-erro" role="alert"></span>
       </div>
@@ -192,6 +221,6 @@
   </div>
 </dialog>
 <script src="../js/contatos-organograma.js?v=2026102101"></script>
-<script src="../js/vpn-publico.js?v=2026102117"></script>
+<script src="../js/vpn-publico.js?v=2026102121"></script>
 </body>
 </html>

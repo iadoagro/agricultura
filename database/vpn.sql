@@ -30,6 +30,8 @@ alter table public.vpn_solicitacoes add column if not exists whatsapp text;
 alter table public.vpn_solicitacoes add column if not exists observacoes text;
 alter table public.vpn_solicitacoes add column if not exists visto_em timestamptz;   -- null = "Novo" (ninguém da equipe abriu ainda)
 alter table public.vpn_solicitacoes add column if not exists visto_por text;
+alter table public.vpn_solicitacoes add column if not exists cargo text;   -- cargo/função: só para efetivo (os demais saem como CAS no termo)
+alter table public.vpn_solicitacoes add column if not exists termo_path text;   -- termo preenchido (PDF) para a pessoa baixar, no bucket vpn-termos
 alter table public.vpn_solicitacoes add column if not exists vinculo text;
 alter table public.vpn_solicitacoes drop constraint if exists vpn_solicitacoes_vinculo_check;
 alter table public.vpn_solicitacoes add constraint vpn_solicitacoes_vinculo_check
@@ -233,6 +235,7 @@ declare
   v_rg text := btrim(coalesce(p->>'rg', ''));
   v_email text := lower(btrim(coalesce(p->>'email_funcional', '')));
   v_mat text := btrim(coalesce(p->>'matricula', ''));
+  v_cargo text := btrim(coalesce(p->>'cargo', ''));
   v_setor text := btrim(coalesce(p->>'setor', ''));
   v_zap text := regexp_replace(coalesce(p->>'whatsapp', ''), '\D', '', 'g');
   v_vinculo text := lower(btrim(coalesce(p->>'vinculo', '')));
@@ -262,6 +265,7 @@ begin
   if v_zap !~ '^\d{2}9?\d{8}$' then raise exception 'Informe o WhatsApp com DDD.'; end if;
   if v_vinculo not in ('efetivo','comissionado','terceirizado') then raise exception 'Informe se é efetivo, comissionado ou terceirizado.'; end if;
   if char_length(v_mat) > 30 or (v_vinculo in ('efetivo','comissionado') and char_length(v_mat) < 1) then raise exception 'Informe a matrícula.'; end if;
+  if v_vinculo = 'efetivo' and (char_length(v_cargo) < 2 or char_length(v_cargo) > 120) then raise exception 'Informe o cargo.'; end if;
   if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;
   if not exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = v_doc) then
     raise exception 'Envie o documento de identificação com foto.';
@@ -270,8 +274,8 @@ begin
     raise exception 'Este envio já foi registrado.';
   end if;
 
-  insert into public.vpn_solicitacoes (nome, cpf, rg, data_nascimento, email_funcional, whatsapp, vinculo, matricula, setor, documento_path, documento_nome)
-  values (v_nome, v_cpf, v_rg, v_nasc, v_email, v_zap, v_vinculo, v_mat, v_setor, v_doc, nullif(left(btrim(coalesce(p->>'documento_nome', '')), 160), ''))
+  insert into public.vpn_solicitacoes (nome, cpf, rg, data_nascimento, email_funcional, whatsapp, vinculo, matricula, cargo, setor, documento_path, documento_nome)
+  values (v_nome, v_cpf, v_rg, v_nasc, v_email, v_zap, v_vinculo, v_mat, case when v_vinculo = 'efetivo' then v_cargo end, v_setor, v_doc, nullif(left(btrim(coalesce(p->>'documento_nome', '')), 160), ''))
   returning id, numero into v_id, v_num;
   return jsonb_build_object('numero', v_num);
 end;
@@ -313,6 +317,7 @@ declare
   v_email text := lower(btrim(coalesce(p->>'email_funcional', '')));
   v_zap text := regexp_replace(coalesce(p->>'whatsapp', ''), '\D', '', 'g');
   v_mat text := btrim(coalesce(p->>'matricula', ''));
+  v_cargo text := btrim(coalesce(p->>'cargo', ''));
   v_setor text := btrim(coalesce(p->>'setor', ''));
   v_vinculo text := lower(btrim(coalesce(p->>'vinculo', '')));
   v_obs text := nullif(left(btrim(coalesce(p->>'observacoes', '')), 2000), '');
@@ -335,10 +340,11 @@ begin
   if v_vinculo not in ('efetivo','comissionado','terceirizado') then raise exception 'Informe o vínculo.'; end if;
   if v_vinculo in ('efetivo','comissionado') and char_length(v_mat) < 1 then raise exception 'Informe a matrícula.'; end if;
   if char_length(v_mat) > 30 then raise exception 'Matrícula muito longa.'; end if;
+  if v_vinculo = 'efetivo' and (char_length(v_cargo) < 2 or char_length(v_cargo) > 120) then raise exception 'Informe o cargo.'; end if;
   if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;
   update public.vpn_solicitacoes
      set nome = v_nome, cpf = v_cpf, rg = v_rg, data_nascimento = v_nasc, email_funcional = v_email,
-         whatsapp = v_zap, vinculo = v_vinculo, matricula = v_mat, setor = v_setor, observacoes = v_obs,
+         whatsapp = v_zap, vinculo = v_vinculo, matricula = v_mat, cargo = case when v_vinculo = 'efetivo' then v_cargo end, setor = v_setor, observacoes = v_obs,
          atualizado_por = initcap(replace(split_part(coalesce((select auth.jwt() ->> 'email'), ''), '@', 1), '.', ' ')),
          atualizado_em = now()
    where id = p_id;
@@ -364,6 +370,16 @@ revoke all on public.vpn_anexos from anon, authenticated;
 grant select on public.vpn_anexos to authenticated;
 drop policy if exists "Equipe le anexos vpn" on public.vpn_anexos;
 create policy "Equipe le anexos vpn" on public.vpn_anexos for select to authenticated using (public.pode_vpn());
+
+-- Termos preenchidos (PDF): bucket PRIVADO. Só o responsável (root) baixa, pela página VPN (link assinado).
+-- Quem grava os arquivos é a equipe técnica, com a chave de serviço.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('vpn-termos', 'vpn-termos', false, 5242880, array['application/pdf'])
+on conflict (id) do update set public = false, file_size_limit = 5242880, allowed_mime_types = array['application/pdf'];
+drop policy if exists "Root le termos vpn" on storage.objects;
+create policy "Root le termos vpn" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'vpn-termos' and lower(trim(coalesce((select auth.jwt() ->> 'email'), ''))) = 'root@root.com');
 
 -- link ativo e senha (quando exigida) valem para toda chamada pública
 create or replace function public.vpn_exige_acesso(p_senha text)
