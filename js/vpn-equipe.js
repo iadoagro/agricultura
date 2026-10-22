@@ -179,6 +179,7 @@
   var SVG = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
   var ICONE = {
     ver: SVG + '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    copiar: SVG + '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1"/></svg>',
     editar: SVG + '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
     excluir: SVG + '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
   };
@@ -213,11 +214,12 @@
     tbody.innerHTML = v.map(function (l) {
       return '<tr' + (l.visto_em ? '' : ' class="vpn-nova"') + '><td>' + esc(seq(l)) + '</td><td>' + esc(dataHoraBr(l.criado_em)) + '</td><td>' + (l.visto_em ? '' : '<button type="button" class="vpn-selo-novo" data-visto="' + esc(l.id) + '" title="Marcar como visto">Novo</button> ') + '<button type="button" class="vpn-nome-link" data-ver="' + esc(l.id) + '" title="Ver todas as informações">' + esc(l.nome) + '</button>' + termoDlHtml(l) + '</td>' +
         '<td>' + esc(cpfBr(l.cpf)) + '</td><td>' + esc(l.rg) + '</td><td>' + esc(dataBr(l.data_nascimento)) + '</td>' +
-        '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l) + '</td><td>' + atendenteHtml(l) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td>' +
+        '<td>' + esc(l.email_funcional) + '</td><td>' + zapLink(l) + '</td><td>' + esc(ROTULO_VINCULO[l.vinculo] || '') + '</td><td>' + esc(l.matricula) + '</td><td>' + esc(setorComSigla(l.setor)) + '</td><td>' + atendenteHtml(l) + '</td>' +
         '<td>' + celulaDoc(l.documento_path ? '<button type="button" class="vpn-doc-link" data-doc-abrir="' + esc(l.id) + '" title="' + esc(l.documento_nome || 'Abrir documento de identificação') + '">Abrir</button>' : '') + '</td>' +
         '<td>' + celulaDoc(l.chamado_path ? '<button type="button" class="vpn-doc-link" data-chamado-abrir="' + esc(l.id) + '" title="' + esc((l.chamado_nome || 'Chamado') + ' · ' + dataHoraBr(l.chamado_em)) + '">Abrir</button>' : '') + '</td>' +
         '<td>' + celulaDoc(l.termos_n ? '<button type="button" class="vpn-doc-link vpn-doc-ok" ' + (l.termos_n === 1 && l.termos_path ? 'data-termo-abrir="' + esc(l.id) + '"' : 'data-ver="' + esc(l.id) + '"') + ' title="Enviado em ' + esc(dataHoraBr(l.termos_em)) + '">Abrir' + (l.termos_n > 1 ? ' (' + l.termos_n + ')' : '') + '</button>' : '') + '</td>' +
         '<td class="vpn-acoes"><button type="button" class="vpn-acao" data-ver="' + esc(l.id) + '" title="Visualizar" aria-label="Visualizar">' + ICONE.ver + '</button>' +
+        '<button type="button" class="vpn-acao" data-copiar="' + esc(l.id) + '" title="Copiar dados (nome até setor)" aria-label="Copiar dados">' + ICONE.copiar + '</button>' +
         '<button type="button" class="vpn-acao" data-edit="' + esc(l.id) + '" title="Editar" aria-label="Editar">' + ICONE.editar + '</button>' +
         '<button type="button" class="vpn-acao vpn-excluir" data-del="' + esc(l.id) + '" title="Excluir" aria-label="Excluir">' + ICONE.excluir + '</button></td></tr>';
     }).join('');
@@ -303,6 +305,31 @@
       alert(e.message || 'Não foi possível abrir o documento.');
     } finally { botao.disabled = false; botao.textContent = texto; }
   }
+  // ---- copiar os dados da pessoa (nome até setor) para colar em chamado, e-mail ou mensagem
+  function textoDados(l) {
+    return ['Nome: ' + (l.nome || ''), 'CPF: ' + cpfBr(l.cpf), 'RG: ' + (l.rg || ''), 'Data de nascimento: ' + dataBr(l.data_nascimento),
+      'E-mail funcional: ' + (l.email_funcional || ''),
+      'Vínculo: ' + (ROTULO_VINCULO[l.vinculo] || ''), 'Matrícula: ' + (l.matricula || ''), 'Setor: ' + setorComSigla(l.setor)].join('\n');
+  }
+  function copiarTexto(texto) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(texto);
+    return new Promise(function (ok, no) {
+      var t = document.createElement('textarea'); t.value = texto; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:-1000px';
+      document.body.appendChild(t); t.select();
+      try { document.execCommand('copy') ? ok() : no(); } catch (e) { no(e); } finally { t.remove(); }
+    });
+  }
+  function copiarDados(id, botao) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l) return;
+    var html = botao.innerHTML, titulo = botao.title;
+    copiarTexto(textoDados(l)).then(function () {
+      botao.classList.add('vpn-copiado'); botao.title = 'Copiado!';
+      if (botao.id !== 'vpnVerCopiar') botao.innerHTML = SVG + '<path d="M5 12l5 5L20 7"/></svg>'; else botao.textContent = 'Copiado!';
+      setTimeout(function () { botao.classList.remove('vpn-copiado'); botao.innerHTML = html; botao.title = titulo; }, 1600);
+    }).catch(function () { alert('Não foi possível copiar. Selecione e copie manualmente:\n\n' + textoDados(l)); });
+  }
+
   // ---- downloads do termo: quem baixou e quando (vpn_termo_downloads)
   function termoDlHtml(l) {
     if (!l.termo_dl_n) return '';
@@ -640,6 +667,7 @@
     }
   }
   document.getElementById('vpnVerFechar').addEventListener('click', function () { dlgVer.close(); });
+  document.getElementById('vpnVerCopiar').addEventListener('click', function () { copiarDados(verId, this); });
   document.getElementById('vpnVerEditar').addEventListener('click', function () { dlgVer.close(); abrirEdicao(verId); });
 
   // ---- exportar: PDF com todos os cadastros (jsPDF + autoTable, baixados só no clique)
@@ -760,6 +788,8 @@
     if (b) abrirVisualizacao(b.getAttribute('data-ver'));
     var ed = e.target.closest('[data-edit]');
     if (ed) abrirEdicao(ed.getAttribute('data-edit'));
+    var cp = e.target.closest('[data-copiar]');
+    if (cp) copiarDados(cp.getAttribute('data-copiar'), cp);
     var d1 = e.target.closest('[data-doc-abrir]');
     if (d1) abrirDocumento(d1.getAttribute('data-doc-abrir'), d1);
     var d2 = e.target.closest('[data-chamado-abrir]');
