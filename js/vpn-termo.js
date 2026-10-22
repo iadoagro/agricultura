@@ -39,7 +39,7 @@
     if (String(l.whatsapp || '').replace(/\D/g, '').length < 10) f.push('telefone');
     if (!String(l.setor || '').trim()) f.push('setor');
     if (l.vinculo !== 'terceirizado' && !String(l.matricula || '').trim()) f.push('matrícula');
-    if (ef && !String(l.cargo || '').trim()) f.push('cargo');
+    if (!cargoFuncao(l)) f.push(ef ? 'cargo' : 'vínculo');   // cadastro antigo sem vínculo: não sai termo com cargo em branco
     return f;
   }
 
