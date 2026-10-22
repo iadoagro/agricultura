@@ -78,36 +78,49 @@
     if (email !== undefined) l.whatsapp_email = email;
     desenhar(); atualizarZapNoDialogo(l);
   }
-  // clicou no número: o banco decide se assume o atendimento; só então a conversa do WhatsApp abre
-  async function assumirAtendimento(id, url) {
-    var l = lista.filter(function (x) { return x.id === id; })[0];
-    if (!l) return;
+  // Assumir o atendimento (vale para o clique no WhatsApp e para baixar o termo): o banco decide.
+  // Devolve { ok: true } quando o atendimento é seu (ou o banco ainda não tem a função: não trava o trabalho, só avisa);
+  // { ok: false } quando outra pessoa está com ele dentro dos 3 minutos (o aviso já foi mostrado aqui).
+  function avisoOcupado(por, seg) {
+    alert('Este atendimento está com ' + por + '. Você poderá assumir em ' + relogio(seg) + ' se ele não atender.');
+  }
+  function ocupadoLocal(l) {
     var at = atendimentoAtivo(l);
-    if (at && !at.meu) { alert('Este atendimento está com ' + at.por + '. Você poderá assumir em ' + relogio(at.resta) + ' se ele não atender.'); return; }
-    var janela = window.open('', '_blank');   // abre já no clique, para o navegador não bloquear
+    return at && !at.meu ? at : null;
+  }
+  async function assumirAtendimento(l) {
     try {
-      var r = await fetch(base() + '/rest/v1/rpc/vpn_registrar_whatsapp', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id }) });
+      var r = await fetch(base() + '/rest/v1/rpc/vpn_registrar_whatsapp', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: l.id }) });
       if (!r.ok) throw new Error('indisponivel');
       var res = await r.json();
       if (res && res.ok === false) {
-        if (janela) janela.close();
         aplicarAtendimento(l, res.por, res.em);
-        alert('Este atendimento está com ' + res.por + '. Você poderá assumir em ' + relogio(res.restante) + ' se ele não atender.');
-        return;
+        avisoOcupado(res.por, res.restante);
+        return { ok: false };
       }
       aplicarAtendimento(l, (res && res.por) || nomeProprio(meuEmail().split('@')[0].replace(/\./g, ' ')), (res && res.em) || new Date().toISOString(), meuEmail());
-      if (janela) janela.location.href = url; else window.open(url, '_blank');
+      return { ok: true };
     } catch (e) {
-      // sem como registrar (banco sem a função nova): não trava o contato, mas avisa
-      if (janela) janela.location.href = url; else window.open(url, '_blank');
       alert('Atenção: não foi possível registrar o atendimento. Rode database/vpn.sql no Supabase para ativar o controle de atendente.');
+      return { ok: true, semRegistro: true };
     }
+  }
+  // clicou no número: assume o atendimento e, só então, abre a conversa do WhatsApp
+  async function abrirWhatsapp(id, url) {
+    var l = lista.filter(function (x) { return x.id === id; })[0];
+    if (!l) return;
+    var oc = ocupadoLocal(l);
+    if (oc) { avisoOcupado(oc.por, oc.resta); return; }
+    var janela = window.open('', '_blank');   // abre já no clique, para o navegador não bloquear
+    var r = await assumirAtendimento(l);
+    if (!r.ok) { if (janela) janela.close(); return; }
+    if (janela) janela.location.href = url; else window.open(url, '_blank');
   }
   document.addEventListener('click', function (e) {
     var z = e.target.closest && e.target.closest('a[data-zap]');
     if (!z) return;
     e.preventDefault();
-    assumirAtendimento(z.getAttribute('data-zap'), z.href);
+    abrirWhatsapp(z.getAttribute('data-zap'), z.href);
   });
   // contagem regressiva do atendimento em andamento (atualiza só os textos; redesenha uma vez quando o prazo acaba)
   setInterval(function () {
@@ -423,7 +436,13 @@
     var l = lista.filter(function (x) { return x.id === id; })[0];
     if (!l) return;
     var texto = botao.textContent; botao.disabled = true; botao.textContent = 'Gerando…';
-    try { await window.vpnTermo.baixar(l); registrarDownloads([l.id], 'individual'); }
+    try {
+      var oc = ocupadoLocal(l);
+      if (oc) { avisoOcupado(oc.por, oc.resta); return; }
+      var as = await assumirAtendimento(l);   // baixar o termo assume o atendimento (um atendente de cada vez)
+      if (!as.ok) return;
+      await window.vpnTermo.baixar(l); registrarDownloads([l.id], 'individual');
+    }
     catch (e) { alert(e.message || 'Não foi possível gerar o termo.'); }
     finally { botao.disabled = false; botao.textContent = texto; }
   }
@@ -790,9 +809,10 @@
   document.getElementById('vpnTermosTodos').addEventListener('click', async function () {
     var b = this, texto = b.textContent; b.disabled = true; b.textContent = 'Gerando…';
     try {
-      var r = await window.vpnTermo.baixarTodos(lista);
+      var ocupados = lista.filter(function (x) { return ocupadoLocal(x); });
+      var r = await window.vpnTermo.baixarTodos(lista.filter(function (x) { return !ocupadoLocal(x); }));
       if (r.ids && r.ids.length) registrarDownloads(r.ids, 'lote');
-      alert(r.gerados + ' termo(s) gerado(s).' + (r.pendentes.length ? '\n\nNão saíram por cadastro incompleto (' + r.pendentes.length + '):\n' + r.pendentes.join('\n') : ''));
+      alert(r.gerados + ' termo(s) gerado(s).' + (ocupados.length ? '\n\nFicaram de fora por estarem em atendimento por outra pessoa (' + ocupados.length + '): ' + ocupados.map(function (x) { return x.nome + ' (' + x.whatsapp_por + ')'; }).join(', ') + '.' : '') + (r.pendentes.length ? '\n\nNão saíram por cadastro incompleto (' + r.pendentes.length + '):\n' + r.pendentes.join('\n') : ''));
     } catch (e) { alert(e.message || 'Não foi possível gerar os termos.'); }
     finally { b.disabled = false; b.textContent = texto; }
   });
