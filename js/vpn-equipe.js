@@ -106,7 +106,7 @@
     var root = ehRoot();
     document.getElementById('vpnLinkLocalBox').hidden = !root;
     document.getElementById('vpnConfigBox').hidden = !root;
-    document.getElementById('vpnTermosTodos').hidden = !root;
+    document.getElementById('vpnTermosTodos').hidden = false;
     if (root) carregarConfig();
     document.getElementById('vpnLinkLocal').value = LINK_LOCAL;
     document.getElementById('vpnAbrirLocal').href = LINK_LOCAL;
@@ -406,8 +406,8 @@
       ['Documentos', '<div class="vpn-docs">' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Documento de identificação</span><span class="vpn-doc-arqs">' +
         (l.documento_path ? '<button type="button" class="vpn-acao vpn-anexo" data-anexo="' + esc(l.documento_path) + '">' + esc(l.documento_nome || 'Abrir documento') + '</button>' : 'Não enviado.') + '</span></div>' +
-        (ehRoot() ? '<div class="vpn-doc"><span class="vpn-doc-nome">Termo para assinatura</span><span class="vpn-doc-arqs">' +
-        '<button type="button" class="vpn-acao vpn-anexo" data-termo-gerar="' + esc(l.id) + '">Baixar termo (PDF)</button>' + '</span></div>' : '') +
+        '<div class="vpn-doc"><span class="vpn-doc-nome">Termo para assinatura</span><span class="vpn-doc-arqs">' +
+        '<button type="button" class="vpn-acao vpn-anexo" data-termo-gerar="' + esc(l.id) + '">Baixar termo (PDF)</button></span></div>' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Abertura de chamado (PDF, até 2 MB)</span><span class="vpn-doc-arqs" id="vpnVerChamado">' + chamadoHtml(l) + '</span></div>' +
         '<div class="vpn-doc"><span class="vpn-doc-nome">Termo preenchido e assinado</span><span class="vpn-doc-arqs" id="vpnVerAnexos">Carregando…</span></div>' +
         '</div>', 1, true]
