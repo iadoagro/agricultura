@@ -147,6 +147,28 @@
     else { campo.select(); try { document.execCommand('copy'); ok(); } catch (e) { /* seleção fica à vista */ } }
   });
 
+  // ---- tema claro/escuro (mesmo data-tema e mesma preferência 'seagri_tema' dos painéis; o menu lateral aciona este botão)
+  var btnTema = document.getElementById('temaBtn');
+  function temaAtual() { return document.documentElement.getAttribute('data-tema') || 'claro'; }
+  function pintarTema() {
+    if (!btnTema) return;
+    var escuro = temaAtual() === 'escuro';
+    btnTema.innerHTML = (escuro
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>') +
+      '<span>' + (escuro ? 'Tema claro' : 'Tema escuro') + '</span>';
+    btnTema.setAttribute('aria-label', escuro ? 'Mudar para o tema claro' : 'Mudar para o tema escuro');
+  }
+  if (btnTema) {
+    pintarTema();
+    btnTema.addEventListener('click', function () {
+      var novo = temaAtual() === 'escuro' ? 'claro' : 'escuro';
+      document.documentElement.setAttribute('data-tema', novo);
+      try { localStorage.setItem('seagri_tema', novo); } catch (e) { /* modo privado */ }
+      pintarTema();
+    });
+  }
+
   var SVG = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
   var ICONE = {
     ver: SVG + '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',

@@ -11,16 +11,26 @@
 <script src="../js/admin-gate.js?v=2026102101"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
 <script src="../js/nav.js?v=2026102101"></script>
+<script>
+  /* aplica o tema antes da pintura para não piscar branco */
+  (function () {
+    try {
+      var t = localStorage.getItem('seagri_tema');
+      if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro';
+      document.documentElement.setAttribute('data-tema', t);
+    } catch (e) { document.documentElement.setAttribute('data-tema', 'claro'); }
+  })();
+</script>
 <link rel="stylesheet" href="../css/base.css?v=2026091501">
 <link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
 <link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
 <link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
 <link rel="stylesheet" href="../css/nav.css?v=2026101201">
 <link rel="stylesheet" href="../css/padrao.css?v=2026101701">
-<link rel="stylesheet" href="../css/vpn.css?v=2026102210">
+<link rel="stylesheet" href="../css/vpn.css?v=2026102215">
 </head>
 <body class="vpn-equipe">
-<header class="cab-padrao"><h1>SISTEMA</h1><p>VPN</p></header>
+<header class="cab-padrao"><h1>SISTEMA</h1><p>VPN</p><button class="vpn-tema-btn" id="temaBtn" type="button" aria-label="Alternar tema"></button></header>
 
 <main class="vpn-main">
   <section class="vpn-link" aria-label="Link público do formulário">
@@ -98,6 +108,6 @@
 <script src="../js/contatos-organograma.js?v=2026102101"></script>
 <script src="../js/vpn-termo-texto.js?v=2026102203"></script>
 <script src="../js/vpn-termo.js?v=2026102214"></script>
-<script src="../js/vpn-equipe.js?v=2026102213"></script>
+<script src="../js/vpn-equipe.js?v=2026102215"></script>
 </body>
 </html>

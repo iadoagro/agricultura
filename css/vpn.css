@@ -236,3 +236,38 @@ body.vpn-carregando{visibility:hidden}
 }
 
 .vpn-zap-quem{display:block;margin-top:2px;max-width:96px;white-space:normal;font-size:10px;line-height:1.25;color:#6b7280}
+
+/* ---- tema claro/escuro da equipe (html[data-tema="escuro"], o mesmo dos painéis; botão #temaBtn no topo e no menu) ---- */
+.vpn-tema-btn{position:absolute;top:50%;right:16px;transform:translateY(-50%);display:inline-flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.vpn-tema-btn:hover{background:rgba(255,255,255,.3)}
+.vpn-tema-btn svg{width:15px;height:15px}
+@media(max-width:600px){.vpn-tema-btn span{display:none}.vpn-tema-btn{padding:7px 9px;right:10px}}
+html[data-tema="escuro"]{color-scheme:dark}
+html[data-tema="escuro"] body.vpn-equipe{background:#0d1420;color:#e6edf7;--linha:#26344a;--texto:#e6edf7;--cinza:#9aa9bf;--verde:#8ab8ff;--verde2:#7fb0ff;--sombra:0 2px 10px rgba(0,0,0,.5)}
+html[data-tema="escuro"] .vpn-equipe .vpn-link,html[data-tema="escuro"] .vpn-equipe .vpn-config,html[data-tema="escuro"] .vpn-equipe .vpn-tab-wrap{background:#131c2b}
+html[data-tema="escuro"] .vpn-equipe .vpn-link span,html[data-tema="escuro"] .vpn-equipe .vpn-config>span,html[data-tema="escuro"] .vpn-equipe .vpn-atualiza b,html[data-tema="escuro"] .vpn-equipe .vpn-doc-nome,html[data-tema="escuro"] .vpn-equipe .vpn-obs,html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit label{color:#cbd5e6}
+html[data-tema="escuro"] .vpn-equipe .vpn-config small,html[data-tema="escuro"] .vpn-equipe .vpn-atualiza,html[data-tema="escuro"] .vpn-equipe .vpn-tab th,html[data-tema="escuro"] .vpn-equipe .vpn-dados dt,html[data-tema="escuro"] .vpn-equipe .vpn-doc-arqs,html[data-tema="escuro"] .vpn-equipe .vpn-zap-quem{color:#9aa9bf}
+html[data-tema="escuro"] .vpn-equipe .vpn-link input,html[data-tema="escuro"] .vpn-equipe .vpn-barra input,html[data-tema="escuro"] .vpn-equipe .vpn-barra select,html[data-tema="escuro"] .vpn-equipe .vpn-tab select,html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit input,html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit select,html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit textarea{background:#0e1622;border-color:#33445f;color:#e6edf7}
+html[data-tema="escuro"] .vpn-equipe .vpn-grade-edit input:disabled{background:#161f2e;color:#6b7a90}
+html[data-tema="escuro"] .vpn-equipe .vpn-barra input::placeholder{color:#7d8aa0}
+html[data-tema="escuro"] .vpn-equipe .vpn-tab td{border-bottom-color:#1d2a3f;color:#dbe4f2}
+html[data-tema="escuro"] .vpn-equipe .vpn-tab th{border-bottom-color:#26344a}
+html[data-tema="escuro"] .vpn-equipe .vpn-tab tr.vpn-nova td{background:#10281d}
+html[data-tema="escuro"] .vpn-equipe .vpn-acao,html[data-tema="escuro"] .vpn-equipe .vpn-doc-link{background:#18243a;border-color:#33445f;color:#dbe4f2}
+html[data-tema="escuro"] .vpn-equipe .vpn-doc-link{color:#8ab8ff}
+html[data-tema="escuro"] .vpn-equipe .vpn-acao:hover,html[data-tema="escuro"] .vpn-equipe .vpn-doc-link:hover{background:#1f2f4a}
+html[data-tema="escuro"] .vpn-equipe .vpn-doc-ok{background:#12301f;border-color:#256b43;color:#6ee7a0}
+html[data-tema="escuro"] .vpn-equipe .vpn-doc-ok:hover{background:#174028}
+html[data-tema="escuro"] .vpn-equipe .vpn-excluir{color:#fca5a5;border-color:#7f2a2a}
+html[data-tema="escuro"] .vpn-equipe .vpn-excluir:hover{background:#3a1717}
+html[data-tema="escuro"] .vpn-equipe .vpn-zap{color:#6ee7a0}
+html[data-tema="escuro"] .vpn-equipe .vpn-doc-vazio{color:#6b7a90}
+html[data-tema="escuro"] .vpn-equipe .vpn-dialogo{background:#131c2b;color:#e6edf7;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+html[data-tema="escuro"] .vpn-equipe .vpn-dialogo::backdrop{background:rgba(0,0,0,.65)}
+html[data-tema="escuro"] .vpn-equipe .vpn-doc{background:#0f1827;border-color:#26344a}
+html[data-tema="escuro"] .vpn-equipe .vpn-dados dd{color:#e6edf7}
+html[data-tema="escuro"] .vpn-equipe .vpn-vazio{color:#9aa9bf}
+html[data-tema="escuro"] .vpn-equipe .vpn-selo.pendente{background:#3d3210;color:#fcd34d}
+html[data-tema="escuro"] .vpn-equipe .vpn-selo.atendida{background:#12301f;color:#86efac}
+html[data-tema="escuro"] .vpn-equipe .vpn-selo.recusada{background:#3a1717;color:#fca5a5}
+html[data-tema="escuro"] .vpn-equipe .vpn-aviso.erro{background:#3a1717;color:#fca5a5}
