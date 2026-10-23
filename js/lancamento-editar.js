@@ -478,13 +478,35 @@
         if (registroOriginal.pdf_arquivo) {
           var b = document.createElement('a');
           b.href = '#'; b.textContent = ' Abrir PDF anexado ↗';
+          if (window.AgroDrive) {
+            window.AgroDrive.aquecer();
+            var pre = function () { window.AgroDrive.preaquecer(registroOriginal.pdf_arquivo, (sessaoSite() || {}).access_token || '', 150); };
+            b.addEventListener('mouseover', pre); b.addEventListener('touchstart', pre, { passive: true });
+          }
           b.addEventListener('click', function (ev) {
             ev.preventDefault();
+            var janela = window.open('', '_blank');   // abre já no clique, para o navegador não bloquear
+            // PDF no Drive: a ficha já trouxe a referência, então vai direto na ponte (sem a volta pelo servidor)
+            if (window.AgroDrive && window.AgroDrive.ehDrive(registroOriginal.pdf_arquivo)) {
+              window.AgroDrive.abrir(registroOriginal.pdf_arquivo, { token: (sessaoSite() || {}).access_token || '', janela: janela }).catch(function (e) {
+                if (janela) janela.close();
+                aviso('lancEditarAviso', 'erro', esc((e && e.message) || 'Não foi possível abrir o PDF.'));
+              });
+              return;
+            }
             var f = new FormData();
             f.append('acao', 'pdf'); f.append('token', (sessaoSite() || {}).access_token || ''); f.append('id', id);
             window.LANCAMENTO_CAMPOS.enviar(f).then(function (r) {
-              if (r.corpo.ok && r.corpo.url) window.open(r.corpo.url, '_blank', 'noopener');
-              else aviso('lancEditarAviso', 'erro', esc(r.corpo.erro || 'Não foi possível abrir o PDF.'));
+              if (r.corpo.ok && r.corpo.drive && window.AgroDrive) {
+                // PDF na pasta privada do Drive: a ponte confere a sessão e devolve o arquivo
+                return window.AgroDrive.abrir(r.corpo.drive, { token: (sessaoSite() || {}).access_token || '', janela: janela });
+              }
+              if (r.corpo.ok && r.corpo.url) { if (janela) janela.location.href = r.corpo.url; else window.open(r.corpo.url, '_blank', 'noopener'); return; }
+              if (janela) janela.close();
+              aviso('lancEditarAviso', 'erro', esc(r.corpo.erro || 'Não foi possível abrir o PDF.'));
+            }).catch(function (e) {
+              if (janela) janela.close();
+              aviso('lancEditarAviso', 'erro', esc((e && e.message) || 'Não foi possível abrir o PDF.'));
             });
           });
           el('lancEditarContexto').appendChild(b);

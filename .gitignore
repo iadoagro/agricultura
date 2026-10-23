@@ -25,3 +25,6 @@ admin_config.php
 
 # Termos de VPN gerados (PDFs com CPF, telefone e e-mail das pessoas) — nunca publicar.
 /termos-vpn/
+
+# Ponte do Drive com o segredo preenchido (gerada a partir de drive/upload-drive.gs) — nunca publicar.
+/drive/*.local.gs

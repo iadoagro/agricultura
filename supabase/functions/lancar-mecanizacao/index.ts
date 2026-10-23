@@ -77,7 +77,31 @@ async function lerPdf(fd: FormData): Promise<Uint8Array | null> {
   return bytes;
 }
 
+/** URL do web app drive/upload-drive.gs (segredo DRIVE_URL). Vazio = PDFs seguem no Storage do Supabase. */
+const DRIVE_URL = Deno.env.get('DRIVE_URL') ?? '';
+const DRIVE_SEGREDO = Deno.env.get('DRIVE_SEGREDO') ?? '';
+
+function paraBase64(bytes: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+/** Guarda o PDF e devolve a referência para pdf_arquivo: "drive:<id>" ou o caminho no Storage (ano/uuid.pdf). */
 async function enviarPdf(bytes: Uint8Array): Promise<string> {
+  if (DRIVE_URL !== '') {
+    const nome = `ficha-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}-${crypto.randomUUID().slice(0, 8)}.pdf`;
+    const r = await fetch(DRIVE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ acao: 'enviar', segredo: DRIVE_SEGREDO, pasta: 'Mecanização/Fichas em PDF', nome, base64: paraBase64(bytes) }),
+    });
+    const c = await r.json().catch(() => null) as Record<string, unknown> | null;
+    if (!r.ok || !c || c.ok !== true || !c.id) {
+      responder(502, { ok: false, erro: 'Não foi possível guardar o PDF no Drive: ' + String(c?.erro ?? 'sem resposta') + '.' });
+    }
+    return `drive:${c.id}`;
+  }
   const caminho = `${new Date().getFullYear()}/${crypto.randomUUID().replace(/-/g, '')}.pdf`;
   const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET_PDF}/${caminho}`, {
     method: 'POST',
@@ -712,7 +736,7 @@ async function tratar(fd: FormData): Promise<never> {
     const [status, corpo] = await chamarSupabase('POST', TABELA, registro, { Prefer: 'return=representation' });
     if (status >= 200 && status < 300) responder(200, { ok: true, registro: Array.isArray(corpo) ? corpo[0] ?? registro : registro });
     // o lançamento não entrou: não deixa o PDF órfão no Storage
-    if (registro.pdf_arquivo) await chamarSupabase('DELETE', `/storage/v1/object/${BUCKET_PDF}/${registro.pdf_arquivo}`);
+    if (registro.pdf_arquivo && !String(registro.pdf_arquivo).startsWith('drive:')) await chamarSupabase('DELETE', `/storage/v1/object/${BUCKET_PDF}/${registro.pdf_arquivo}`);
     responder(502, { ok: false, erro: mensagem(corpo, 'O banco não aceitou o lançamento.') });
   }
 
@@ -832,6 +856,7 @@ async function tratar(fd: FormData): Promise<never> {
     const linha = await buscarLancamento(id, 'id,pdf_arquivo');
     const arquivo = String(linha.pdf_arquivo ?? '');
     if (arquivo === '') responder(404, { ok: false, erro: 'Este lançamento não tem PDF anexado.' });
+    if (arquivo.startsWith('drive:')) responder(200, { ok: true, drive: arquivo });   // a página busca o arquivo na ponte, com a sessão
     // link temporário (5 min): o bucket é privado
     const [st, corpo] = await chamarSupabase('POST', `/storage/v1/object/sign/${BUCKET_PDF}/${arquivo}`, { expiresIn: 300 });
     const c = (corpo && typeof corpo === 'object' ? corpo : {}) as Record<string, unknown>;

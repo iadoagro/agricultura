@@ -283,9 +283,40 @@ function lerPdfDoPost(): ?string
     return $conteudo;
 }
 
-/** Envia o PDF para o Storage e devolve o caminho gravado (ano/uuid.pdf). */
+/** Manda um pedido JSON para a ponte do Drive (drive/upload-drive.gs). Devolve a resposta decodificada ou null. */
+function chamarDrive(string $driveUrl, array $corpo): ?array
+{
+    $ch = curl_init($driveUrl);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,   // o Apps Script responde com redirecionamento
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_HTTPHEADER => ['Content-Type: text/plain;charset=utf-8'],
+        CURLOPT_POSTFIELDS => json_encode($corpo, JSON_UNESCAPED_UNICODE),
+        CURLOPT_TIMEOUT => 60,
+    ]);
+    $resposta = curl_exec($ch);
+    curl_close($ch);
+    $json = $resposta === false ? null : json_decode((string) $resposta, true);
+    return is_array($json) ? $json : null;
+}
+
+/** Guarda o PDF e devolve a referência a gravar em pdf_arquivo: "drive:<id>" na pasta do Drive
+ *  (drive_url em admin_config.php) ou, sem isso, o caminho no Storage (ano/uuid.pdf). */
 function enviarPdf(string $supabaseUrl, string $serviceRole, string $conteudo): string
 {
+    global $config;
+    $driveUrl = (string) ($config['drive_url'] ?? '');
+    if ($driveUrl !== '') {
+        $r = chamarDrive($driveUrl, [
+            'acao' => 'enviar', 'segredo' => (string) ($config['drive_segredo'] ?? ''), 'pasta' => 'Mecanização/Fichas em PDF',
+            'nome' => 'ficha-' . date('Ymd-His') . '-' . bin2hex(random_bytes(4)) . '.pdf', 'base64' => base64_encode($conteudo),
+        ]);
+        if (!$r || empty($r['ok']) || empty($r['id'])) {
+            responder(502, ['ok' => false, 'erro' => 'Não foi possível guardar o PDF no Drive: ' . (string) ($r['erro'] ?? 'sem resposta') . '.']);
+        }
+        return 'drive:' . $r['id'];
+    }
     $caminho = date('Y') . '/' . bin2hex(random_bytes(16)) . '.pdf';
     [$status, $corpo] = chamarSupabase(
         $supabaseUrl, $serviceRole, 'POST',
@@ -296,6 +327,16 @@ function enviarPdf(string $supabaseUrl, string $serviceRole, string $conteudo): 
         responder(502, ['ok' => false, 'erro' => 'Não foi possível guardar o PDF: ' . (string) ($corpo['message'] ?? $corpo['error'] ?? 'erro no armazenamento') . '.']);
     }
     return $caminho;
+}
+
+/** Remove um PDF já enviado (lançamento que não entrou): lixeira do Drive ou Storage. */
+function descartarPdf(string $supabaseUrl, string $serviceRole, string $ref): void
+{
+    // a ponte só apaga com sessão do sistema; um PDF órfão no Drive fica lá (a pasta é só de arquivos soltos)
+    if (strpos($ref, 'drive:') === 0) {
+        return;
+    }
+    chamarSupabase($supabaseUrl, $serviceRole, 'DELETE', '/storage/v1/object/' . BUCKET_PDF . '/' . $ref);
 }
 
 /** Já existe lançamento do mesmo CPF, do mesmo serviço e na mesma data de
@@ -881,7 +922,7 @@ if ($acao === 'salvar') {
     }
     // o lançamento não entrou: não deixa o PDF órfão no Storage
     if (isset($registro['pdf_arquivo'])) {
-        chamarSupabase($supabaseUrl, $serviceRole, 'DELETE', '/storage/v1/object/' . BUCKET_PDF . '/' . $registro['pdf_arquivo']);
+        descartarPdf($supabaseUrl, $serviceRole, (string) $registro['pdf_arquivo']);
     }
     responder(502, ['ok' => false, 'erro' => (string) ($corpo['message'] ?? $corpo['msg'] ?? 'O banco não aceitou o lançamento.')]);
 }
@@ -1041,6 +1082,9 @@ if ($acao === 'pdf') {
     $arquivo = (string) ($linha['pdf_arquivo'] ?? '');
     if ($arquivo === '') {
         responder(404, ['ok' => false, 'erro' => 'Este lançamento não tem PDF anexado.']);
+    }
+    if (strpos($arquivo, 'drive:') === 0) {
+        responder(200, ['ok' => true, 'drive' => $arquivo]);   // a página busca o arquivo na ponte, com a sessão
     }
     // link temporário (5 min): o bucket é privado
     [$st, $corpo] = chamarSupabase(

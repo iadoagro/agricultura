@@ -267,7 +267,7 @@ begin
   if char_length(v_mat) > 30 or (v_vinculo in ('efetivo','comissionado') and char_length(v_mat) < 1) then raise exception 'Informe a matrícula.'; end if;
   if v_vinculo = 'efetivo' and (char_length(v_cargo) < 2 or char_length(v_cargo) > 120) then raise exception 'Informe o cargo.'; end if;
   if char_length(v_setor) < 2 or char_length(v_setor) > 120 then raise exception 'Informe o setor.'; end if;
-  if not exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = v_doc) then
+  if not (v_doc ~ '^drive:[A-Za-z0-9_-]{10,}$' or exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = v_doc)) then
     raise exception 'Envie o documento de identificação com foto.';
   end if;
   if exists (select 1 from public.vpn_solicitacoes where documento_path = v_doc) then
@@ -458,7 +458,7 @@ begin
   if coalesce(p->>'assinado_servidor', '') <> 'true' or coalesce(p->>'assinado_secretaria', '') <> 'true' then
     raise exception 'O termo precisa estar assinado pelo servidor e pela secretaria.';
   end if;
-  if not exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = v_doc) then
+  if not (v_doc ~ '^drive:[A-Za-z0-9_-]{10,}$' or exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = v_doc)) then
     raise exception 'Envie o arquivo.';
   end if;
   if exists (select 1 from public.vpn_anexos where arquivo_path = v_doc) or exists (select 1 from public.vpn_solicitacoes where documento_path = v_doc) then
@@ -563,8 +563,8 @@ declare
 begin
   if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
   if not exists (select 1 from public.vpn_solicitacoes where id = p_id) then raise exception 'Solicitação não encontrada.'; end if;
-  if coalesce(p_path, '') !~ ('^' || p_id::text || '/') then raise exception 'Arquivo inválido.'; end if;
-  if not exists (select 1 from storage.objects where bucket_id = 'vpn-chamados' and name = p_path) then
+  if coalesce(p_path, '') !~ ('^(' || p_id::text || '/|drive:[A-Za-z0-9_-]{10,}$)') then raise exception 'Arquivo inválido.'; end if;   -- 'drive:<id>' = arquivo na pasta do Drive
+  if not (p_path ~ '^drive:' or exists (select 1 from storage.objects where bucket_id = 'vpn-chamados' and name = p_path)) then
     raise exception 'Envie o arquivo do chamado.';
   end if;
   select chamado_path into v_antigo from public.vpn_solicitacoes where id = p_id;
@@ -614,7 +614,7 @@ as $$
 begin
   if not public.pode_vpn() then raise exception 'Sem autorização.'; end if;
   if not exists (select 1 from public.vpn_solicitacoes where id = p_id) then raise exception 'Solicitação não encontrada.'; end if;
-  if not exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = p_path) then
+  if not (coalesce(p_path, '') ~ '^drive:[A-Za-z0-9_-]{10,}$' or exists (select 1 from storage.objects where bucket_id = 'vpn-documentos' and name = p_path)) then
     raise exception 'Envie o arquivo.';
   end if;
   if exists (select 1 from public.vpn_anexos where arquivo_path = p_path) or exists (select 1 from public.vpn_solicitacoes where documento_path = p_path) then
@@ -703,3 +703,10 @@ revoke all on function public.vpn_registrar_whatsapp(uuid) from public;
 grant execute on function public.vpn_registrar_whatsapp(uuid) to authenticated;
 
 commit;
+
+-- ------------------------------------------------ arquivos na pasta do Drive
+-- Os caminhos guardados (documento_path, chamado_path, termo_path, vpn_anexos.arquivo_path) passam a aceitar
+-- "drive:<id>" (arquivo na pasta do Drive, ver drive/CONFIGURAR.md); caminhos antigos seguem no Storage.
+-- tools/migrar_para_drive.cjs (chave de serviço) troca os caminhos antigos pelos do Drive.
+grant select, update on public.vpn_solicitacoes to service_role;
+grant select, update on public.vpn_anexos to service_role;

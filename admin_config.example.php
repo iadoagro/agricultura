@@ -12,4 +12,8 @@ return [
     'service_role' => 'COLE_AQUI_A_CHAVE_SERVICE_ROLE',
     // PIN pedido pelo cadeado da tela de usuários (admin-usuarios.html)
     'pin_ver_senha' => '',
+    // URL (termina em /exec) do web app drive/upload-drive.gs. Em branco = PDFs seguem no Storage do Supabase
+    'drive_url' => '',
+    // mesmo SEGREDO de drive/upload-drive.local.gs (a ponte só aceita o servidor com ele)
+    'drive_segredo' => '',
 ];

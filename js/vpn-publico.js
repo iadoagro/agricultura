@@ -1,5 +1,5 @@
 /* Formulário público de solicitação de VPN (pages/vpn-formulario.html). Sem login: usa só a chave
-   publicável. O documento vai para o bucket privado "vpn-documentos" (o público só envia, não lê) e
+   publicável. O documento vai para a pasta do Drive (ou, sem driveUrl, para o bucket "vpn-documentos") e
    depois a função enviar_vpn_solicitacao grava os dados (database/vpn.sql). */
 (function () {
   'use strict';
@@ -248,7 +248,8 @@
     return { cpf: /CPF/.test(m), nome: /nome/.test(m) };
   }
 
-  async function subirDocumento(arquivo) {
+  async function subirDocumento(arquivo, pasta) {
+    if (window.AgroDrive && AgroDrive.ativo()) return AgroDrive.enviar(arquivo, arquivo.name, pasta || 'VPN/Documentos', { senha: senhaGuardada() });   // pasta privada do Drive (js/drive-arquivos.js)
     var caminho = uuid() + '/documento.' + TIPOS[arquivo.type];
     var r = await fetch(base() + '/storage/v1/object/vpn-documentos/' + caminho, {
       method: 'POST', headers: cabecalhos({ 'Content-Type': arquivo.type, 'x-upsert': 'false' }), body: arquivo
@@ -426,7 +427,7 @@
     if (!pessoa) { mostrarEscolha(); return; }
     b.disabled = true; b.textContent = 'Enviando…';
     try {
-      var caminho = await subirDocumento(arq);
+      var caminho = await subirDocumento(arq, 'VPN/Termos assinados');
       await rpcPublica('vpn_enviar_anexo', { p: { cpf: pessoa.cpf, data_nascimento: pessoa.data_nascimento, senha: senhaGuardada(), arquivo: caminho, arquivo_nome: arq.name, assinado_servidor: 'true', assinado_secretaria: 'true' } });
       document.getElementById('anexoArquivo').value = ''; atualizarUpload(document.getElementById('anexoArquivo'));
       var pp = document.getElementById('vpnAnexoPopup'); if (pp.showModal) pp.showModal();

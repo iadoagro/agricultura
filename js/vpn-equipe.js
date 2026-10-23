@@ -353,11 +353,55 @@
   }, 1000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && carregado) carregar(true); });
 
-  // abre um arquivo do bucket privado numa nova aba, com link assinado de 5 minutos
+  // apaga um arquivo: "drive:<id>" vai para a lixeira do Drive; caminho antigo sai do bucket do Supabase
+  async function apagarArquivo(caminho, bucket) {
+    if (window.AgroDrive && AgroDrive.ehDrive(caminho)) { await AgroDrive.excluir(caminho, token()); return { ok: true, status: 200 }; }
+    return fetch(base() + '/storage/v1/object/' + bucket + '/' + String(caminho).split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+  }
+  // envia o arquivo: pasta do Drive quando configurada; senão, bucket do Supabase. Devolve o caminho a gravar no banco
+  async function guardarArquivo(arquivo, caminho, bucket, tipoMime, pastaDrive) {
+    if (window.AgroDrive && AgroDrive.ativo()) return AgroDrive.enviar(arquivo, arquivo.name, pastaDrive, { token: token() });
+    var up = await fetch(base() + '/storage/v1/object/' + bucket + '/' + caminho.split('/').map(encodeURIComponent).join('/'), {
+      method: 'POST', headers: cab({ 'Content-Type': tipoMime, 'x-upsert': 'false' }), body: arquivo
+    });
+    if (!up.ok) {
+      var e = new Error('Não foi possível enviar o arquivo (' + up.status + ').'); e.status = up.status; throw e;
+    }
+    return caminho;
+  }
+
+  // arquivo (caminho no banco) que cada botão de "abrir" mostra; serve para buscar no Drive antes do clique
+  function caminhoDoBotao(el) {
+    function da(id) { return lista.filter(function (x) { return x.id === id; })[0]; }
+    var b = el.closest && el.closest('[data-doc-abrir],[data-chamado-abrir],[data-termo-abrir],[data-chamado],[data-termo],[data-anexo]');
+    if (!b) return '';
+    var l;
+    if (b.hasAttribute('data-doc-abrir')) { l = da(b.getAttribute('data-doc-abrir')); return l ? l.documento_path : ''; }
+    if (b.hasAttribute('data-chamado-abrir')) { l = da(b.getAttribute('data-chamado-abrir')); return l ? l.chamado_path : ''; }
+    if (b.hasAttribute('data-termo-abrir')) { l = da(b.getAttribute('data-termo-abrir')); return l ? l.termos_path : ''; }
+    if (b.hasAttribute('data-chamado')) { l = da(b.getAttribute('data-chamado')); return l ? l.chamado_path : ''; }
+    return b.getAttribute('data-termo') || b.getAttribute('data-anexo') || '';
+  }
+  function preBuscar(e) {
+    if (!window.AgroDrive) return;
+    var caminho = caminhoDoBotao(e.target);
+    if (!caminho || !AgroDrive.ehDrive(caminho)) return;
+    try { AgroDrive.preaquecer(caminho, token(), e.type === 'touchstart' ? 0 : 200); } catch (x) { /* sessão expirada: o clique avisa */ }
+  }
+  document.addEventListener('mouseover', preBuscar);
+  document.addEventListener('touchstart', preBuscar, { passive: true });
+  if (window.AgroDrive) AgroDrive.aquecer();
+
+  // abre um arquivo numa nova aba: do Drive direto; do bucket privado, com link assinado de 5 minutos
   async function abrirArquivo(caminho, botao, bucket, baixarComo) {
     var texto = botao.textContent; botao.disabled = true; botao.textContent = 'Abrindo…';
     var janela = baixarComo ? null : window.open('', '_blank');   // abre já no clique, para o navegador não bloquear; com nome de download, baixa direto na própria página
     try {
+      if (window.AgroDrive && AgroDrive.ehDrive(caminho)) {
+        try { await AgroDrive.abrir(caminho, { token: token(), janela: janela, baixarComo: baixarComo }); }
+        catch (x) { if (janela) janela.close(); throw x; }
+        return;
+      }
       var r = await fetch(base() + '/storage/v1/object/sign/' + (bucket || 'vpn-documentos') + '/' + caminho.split('/').map(encodeURIComponent).join('/'), {
         method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ expiresIn: 300 })
       });
@@ -489,19 +533,17 @@
       if (!arquivo.size) throw new Error('O arquivo está vazio.');
       botao.disabled = true; botao.textContent = 'Enviando…';
       var caminho = id + '/' + Date.now() + '-chamado.pdf';
-      var up = await fetch(base() + '/storage/v1/object/vpn-chamados/' + caminho.split('/').map(encodeURIComponent).join('/'), {
-        method: 'POST', headers: cab({ 'Content-Type': 'application/pdf', 'x-upsert': 'false' }), body: arquivo
-      });
-      if (!up.ok) throw new Error(up.status === 404 || up.status === 400 ? 'O envio de chamado ainda não foi ativado no banco. Rode database/vpn.sql.' : 'Não foi possível enviar o arquivo (' + up.status + ').');
+      try { caminho = await guardarArquivo(arquivo, caminho, 'vpn-chamados', 'application/pdf', 'VPN/Chamados'); }
+      catch (x) { throw x.status === 404 || x.status === 400 ? new Error('O envio de chamado ainda não foi ativado no banco. Rode database/vpn.sql.') : x; }
       var r = await fetch(base() + '/rest/v1/rpc/vpn_registrar_chamado', {
         method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id, p_path: caminho, p_nome: arquivo.name })
       });
       if (!r.ok) {
-        await fetch(base() + '/storage/v1/object/vpn-chamados/' + caminho.split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+        await apagarArquivo(caminho, 'vpn-chamados');
         throw new Error(await erroApi(r, 'Não foi possível registrar o chamado'));
       }
       var antigo = await r.json();
-      if (antigo) await fetch(base() + '/storage/v1/object/vpn-chamados/' + String(antigo).split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+      if (antigo) await apagarArquivo(String(antigo), 'vpn-chamados');
       l.chamado_path = caminho; l.chamado_nome = arquivo.name; l.chamado_em = new Date().toISOString();
       l.chamado_por = nomeProprio(String(((auth.sessaoAtual() || {}).user || {}).email || '').split('@')[0].replace(/\./g, ' '));
       redesenharChamado(l);
@@ -519,7 +561,7 @@
       var r = await fetch(base() + '/rest/v1/rpc/vpn_remover_chamado', { method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id }) });
       if (!r.ok) throw new Error(await erroApi(r, 'Não foi possível remover'));
       var caminho = await r.json();
-      if (caminho) await fetch(base() + '/storage/v1/object/vpn-chamados/' + String(caminho).split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+      if (caminho) await apagarArquivo(String(caminho), 'vpn-chamados');
       l.chamado_path = l.chamado_nome = l.chamado_em = l.chamado_por = null;
       redesenharChamado(l);
     } catch (e) { alert(e.message || 'Não foi possível remover.'); botao.disabled = false; }
@@ -565,15 +607,13 @@
       if (!confirm('Anexar o termo de ' + l.nome + '?\n\nConfirme que ele está assinado pelo servidor e pela secretaria.\nDepois disso, a pessoa não poderá mais enviar o termo pelo link público.')) { input.value = ''; return; }
       botao.disabled = true; botao.textContent = 'Enviando…';
       var caminho = id + '/termo-equipe-' + Date.now() + '.' + tipo;
-      var up = await fetch(base() + '/storage/v1/object/vpn-documentos/' + caminho.split('/').map(encodeURIComponent).join('/'), {
-        method: 'POST', headers: cab({ 'Content-Type': { pdf: 'application/pdf', jpg: 'image/jpeg', png: 'image/png' }[tipo], 'x-upsert': 'false' }), body: arquivo
-      });
-      if (!up.ok) throw new Error(up.status === 403 || up.status === 400 ? 'O envio pela equipe ainda não foi ativado no banco. Rode database/vpn.sql.' : 'Não foi possível enviar o arquivo (' + up.status + ').');
+      try { caminho = await guardarArquivo(arquivo, caminho, 'vpn-documentos', { pdf: 'application/pdf', jpg: 'image/jpeg', png: 'image/png' }[tipo], 'VPN/Termos assinados'); }
+      catch (x) { throw x.status === 403 || x.status === 400 ? new Error('O envio pela equipe ainda não foi ativado no banco. Rode database/vpn.sql.') : x; }
       var r = await fetch(base() + '/rest/v1/rpc/vpn_anexar_termo_equipe', {
         method: 'POST', headers: cab({ 'Content-Type': 'application/json' }), body: JSON.stringify({ p_id: id, p_path: caminho, p_nome: arquivo.name })
       });
       if (!r.ok) {
-        await fetch(base() + '/storage/v1/object/vpn-documentos/' + caminho.split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+        await apagarArquivo(caminho, 'vpn-documentos');
         var c = null; try { c = await r.json(); } catch (x) { /* sem corpo */ }
         throw new Error(r.status === 404 || (c && c.code === 'PGRST202') ? 'O envio pela equipe ainda não foi ativado no banco. Rode database/vpn.sql.' : (c && c.message && r.status === 400) ? c.message : 'Não foi possível registrar o termo (' + r.status + ').');
       }
@@ -730,7 +770,7 @@
         throw new Error(r.status === 404 || (c && c.code === 'PGRST202') ? 'A exclusão de arquivos ainda não foi ativada no banco. Rode database/vpn.sql.' : (c && c.message) || 'Não foi possível apagar (' + r.status + ').');
       }
       var caminho = await r.json();
-      if (caminho) await fetch(base() + '/storage/v1/object/vpn-documentos/' + String(caminho).split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+      if (caminho) await apagarArquivo(String(caminho), 'vpn-documentos');
       if (item) item.remove();
       var alvo = document.getElementById('vpnVerAnexos');
       if (alvo && !alvo.querySelector('.vpn-anexo-item')) alvo.textContent = 'Nenhum termo enviado.';
@@ -829,12 +869,12 @@
       try {
         var extras = await buscarAnexos(id);
         for (var ix = 0; ix < extras.length; ix++) {
-          await fetch(base() + '/storage/v1/object/vpn-documentos/' + extras[ix].arquivo_path.split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+          await apagarArquivo(extras[ix].arquivo_path, 'vpn-documentos');
         }
       } catch (x) { /* sem anexos legíveis: segue com o documento principal */ }
-      if (l.chamado_path) await fetch(base() + '/storage/v1/object/vpn-chamados/' + l.chamado_path.split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+      if (l.chamado_path) await apagarArquivo(l.chamado_path, 'vpn-chamados');
       if (l.documento_path) {
-        var d = await fetch(base() + '/storage/v1/object/vpn-documentos/' + l.documento_path.split('/').map(encodeURIComponent).join('/'), { method: 'DELETE', headers: cab() });
+        var d = await apagarArquivo(l.documento_path, 'vpn-documentos');
         if (!d.ok && d.status !== 404) throw new Error('Não foi possível apagar o documento (' + d.status + ').');
       }
       var r = await fetch(base() + '/rest/v1/rpc/vpn_excluir', {
