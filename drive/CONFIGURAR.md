@@ -18,7 +18,7 @@ como o dono e só atende pedidos do sistema:
 
 | Quem pede | Pode |
 |---|---|
-| Servidor (PHP / função do Supabase / script de migração), com o SEGREDO | enviar, ler, excluir |
+| Servidor (função do Supabase / script de migração), com o SEGREDO | enviar, ler, excluir |
 | Equipe logada (token da sessão, conferido no Supabase) | enviar, ler; excluir só na área VPN, que exige a permissão de VPN (`pode_vpn`) |
 | Formulário público da VPN | só **enviar** documento e termo da VPN, e só com o link ativo e a senha certa |
 
@@ -34,8 +34,7 @@ Ao mudar o código depois: **Implantar > Gerenciar implantações > Editar > Nov
 
 ## 2. Ligar o sistema à URL
 - `js/banco-config.js`: `driveUrl: 'https://script.google.com/macros/s/.../exec'`.
-- `admin_config.php`: `'drive_url' => '...'` e `'drive_segredo' => '<SEGREDO>'` (PDF da Mecanização no servidor PHP).
-- Função do Supabase: `npx supabase secrets set DRIVE_URL=<URL>` (o `DRIVE_SEGREDO` já foi cadastrado) e
+- Função do Supabase (PDF da Mecanização): `npx supabase secrets set DRIVE_URL=<URL> DRIVE_SEGREDO=<SEGREDO>` e
   `npx supabase functions deploy lancar-mecanizacao`.
 
 ## 3. Migrar o que já existe

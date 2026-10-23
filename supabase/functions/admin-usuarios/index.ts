@@ -1,4 +1,4 @@
-// Edge Function do Supabase — mesma lógica de admin_usuarios.php, mas roda
+// Edge Function do Supabase — substitui o antigo admin_usuarios.php (removido): roda
 // no próprio Supabase, então funciona com o site publicado no GitHub Pages
 // (que não executa PHP). A chave service_role vem do ambiente da função
 // (SUPABASE_SERVICE_ROLE_KEY, preenchida automaticamente pelo Supabase) e

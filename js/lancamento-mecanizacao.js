@@ -1,7 +1,7 @@
 /* Aba "Lançamento" do painel de mecanização — digitação de uma vistoria por
    vez, a partir da ficha em papel, gravando direto em mecanizacao_lancamentos
-   no Supabase via lancar_mecanizacao.php (nunca com a chave service_role no
-   navegador — ver esse arquivo). O comportamento do formulário em si
+   no Supabase pela função lancar-mecanizacao (nunca com a chave service_role no
+   navegador — ver supabase/functions/lancar-mecanizacao/index.ts). O comportamento do formulário em si
    (linhas de cultura/DAE, máquinas/implementos, município↔escritório etc.)
    é compartilhado com a página de edição em js/lancamento-campos.js — aqui
    fica só o que é específico desta aba: a lista de lançamentos e salvar
@@ -45,7 +45,7 @@
   }
 
   /** Sessão do login do site (admin-auth.js) — é ela que o servidor confirma
-      de verdade no Supabase (ver emailAutenticado() em lancar_mecanizacao.php)
+      de verdade no Supabase (ver a função lancar-mecanizacao do Supabase)
       para saber quem está lançando e filtrar a lista pela própria pessoa. */
   function sessaoSite() {
     try {
@@ -248,7 +248,7 @@
 
   /* Pop-up de motivo (pedido de exclusão ou de edição) — quem não é o
      responsável não exclui nem edita direto: o pedido fica pendente até
-     root@root.com aprovar (ver lancar_mecanizacao.php). Promise com o motivo
+     root@root.com aprovar (ver a função lancar-mecanizacao). Promise com o motivo
      digitado, ou null se cancelou. */
   function pedirMotivo(tipo, nome) {
     var dlg = el('lancMotivoDialogo'), campo = el('lancMotivoTexto');

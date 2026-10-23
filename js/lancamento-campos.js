@@ -945,10 +945,8 @@
   }
 
   /** Manda o FormData (acao salvar/listar/carregar/editar/excluir) pro
-      servidor e devolve {status, corpo}. Primeiro na Edge Function
-      lancar-mecanizacao do Supabase — o GitHub Pages não executa PHP (o POST
-      pro .php volta 405 sem JSON e nada era gravado); se ela ainda não foi
-      publicada (404), cai pro lancar_mecanizacao.php (só no XAMPP). Mesmo
+      servidor e devolve {status, corpo}. Vai para a Edge Function
+      lancar-mecanizacao do Supabase (o GitHub Pages não executa PHP). Mesmo
       esquema de chamarServidor() em js/admin-auth.js. */
   function enviar(fd) {
     function lerJson(r) {
@@ -1056,13 +1054,9 @@
   }
 
   function enviarAgora(fd, cfg, lerJson) {
-    var edge = cfg.url
-      ? fetch(cfg.url.replace(/\/$/, '') + '/functions/v1/lancar-mecanizacao', {
-          method: 'POST', headers: { apikey: cfg.chavePublica }, body: fd
-        }).then(function (r) { return r.status === 404 ? null : r; }, function () { return null; })
-      : Promise.resolve(null);
-    return edge.then(function (r) {
-      return r || fetch('../lancar_mecanizacao.php', { method: 'POST', body: fd });
+    if (!cfg.url) return Promise.reject(new Error('banco não configurado'));
+    return fetch(cfg.url.replace(/\/$/, '') + '/functions/v1/lancar-mecanizacao', {
+      method: 'POST', headers: { apikey: cfg.chavePublica }, body: fd
     }).then(lerJson);
   }
 

@@ -16,10 +16,6 @@ DEAGRO.xlsx
 mecanizacao26.xlsx
 *.xlsx
 
-# Chave service_role do Supabase (acesso total ao banco) — só existe no
-# servidor. Veja admin_config.example.php e database/CONFIGURAR-ADMIN.md.
-admin_config.php
-
 # Cache local da Supabase CLI
 /supabase/.temp/
 
@@ -28,3 +24,6 @@ admin_config.php
 
 # Ponte do Drive com o segredo preenchido (gerada a partir de drive/upload-drive.gs) — nunca publicar.
 /drive/*.local.gs
+
+# Mapa arquivo -> id no Drive gerado por tools/migrar_para_drive.cjs (tem nomes de pessoas dos termos da VPN) — nunca publicar.
+/data/drive-repositorio.json

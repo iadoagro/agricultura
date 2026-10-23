@@ -33,12 +33,10 @@ antes ficavam escondidas na tela inicial.
 3. O módulo **Usuários** e o autocadastro pela tela de login criam contas
    pela API administrativa do Supabase (pra não depender de e-mail de
    confirmação, já que `nome.sobrenome` não recebe e-mail nenhum), então
-   `admin_config.php` é obrigatório pro cadastro funcionar, não só pra
-   Excluir/Editar login. Copie `admin_config.example.php` para
-   `admin_config.php` (mesma pasta) e preencha com a Project URL e a chave
-   **service_role** do seu projeto (Project Settings > API — é a chave de
-   acesso total, bem diferente da publishable). `admin_config.php` já está
-   no `.gitignore`: nunca vai pro git, fica só no seu servidor.
+   a função `admin-usuarios` do Supabase (ver a seção "Cadastrar/editar/
+   excluir usuários" abaixo) é obrigatória pro cadastro funcionar, não só pra
+   Excluir/Editar login. A chave **service_role** já fica no ambiente da
+   função e nunca vai pro navegador nem pro git.
 4. **Configure um SMTP próprio antes de usar de verdade** (ver seção
    "E-mail (SMTP)" abaixo) — vale só pra conta do responsável, que usa
    e-mail de verdade; ainda assim evita esbarrar em **"429: email rate
@@ -111,8 +109,8 @@ destinatário, não só pra você mesmo.
   baixo dos panos. Só luansobraldourado5@gmail.com usa o e-mail de verdade.
 - **Cadastrar** (autocadastro e o formulário em Usuários), **Excluir** e
   **Editar login** mexem direto no Supabase Authentication e por isso
-  passam pelo servidor (`admin_usuarios.php`, com a service_role guardada
-  em `admin_config.php`) — nunca pelo navegador. O autocadastro só aceita
+  passam pelo servidor (a função `admin-usuarios` do Supabase, com a
+  service_role guardada no ambiente dela) — nunca pelo navegador. O autocadastro só aceita
   logins no formato `nome.sobrenome@sistema.local` (o domínio fixo que o
   app usa por baixo dos panos) — não dá pra usar essa rota pra criar conta
   com e-mail arbitrário.
@@ -138,11 +136,10 @@ destinatário, não só pra você mesmo.
 
 ## Cadastrar/editar/excluir usuários no GitHub Pages (Edge Function)
 
-O GitHub Pages não executa PHP, então no site publicado as ações que exigem
-a chave service_role (cadastrar usuário, autocadastro, editar login,
-excluir) rodam na Edge Function `admin-usuarios` do Supabase — código em
-`supabase/functions/admin-usuarios/index.ts`. O site tenta ela primeiro e,
-se ainda não foi publicada, cai pro `admin_usuarios.php` (só no XAMPP).
+O GitHub Pages não executa PHP, então as ações que exigem a chave
+service_role (cadastrar usuário, autocadastro, editar login, excluir) rodam
+na Edge Function `admin-usuarios` do Supabase — código em
+`supabase/functions/admin-usuarios/index.ts`. Não existe mais versão em PHP.
 
 Publicar pelo painel (não precisa instalar nada):
 
@@ -166,11 +163,10 @@ Pela CLI, alternativamente: `npx supabase login`, depois
 
 Mesma situação: a aba **Lançamento** do painel de mecanização (salvar,
 listar, editar, excluir) grava em `mecanizacao_lancamentos` com a
-service_role. No site publicado isso roda na Edge Function
-`lancar-mecanizacao` — código em
-`supabase/functions/lancar-mecanizacao/index.ts`. Sem ela publicada, o site
-cai pro `lancar_mecanizacao.php`, que só funciona no XAMPP (com
-`admin_config.php`); no GitHub Pages o lançamento **não é salvo**.
+service_role. Isso roda na Edge Function `lancar-mecanizacao` — código em
+`supabase/functions/lancar-mecanizacao/index.ts`. Sem ela publicada, o
+lançamento **não é salvo**. Os PDFs das fichas vão para a pasta do Drive
+(ver `drive/CONFIGURAR.md`; segredos `DRIVE_URL` e `DRIVE_SEGREDO`).
 
 Publique do mesmo jeito da `admin-usuarios` acima: nome da função
 **lancar-mecanizacao**, cole o conteúdo do `index.ts`, **Deploy** e

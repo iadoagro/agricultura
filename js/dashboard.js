@@ -53,7 +53,7 @@
     'Bujari': '2 tratores de pneu',
     'Rio Branco': '3 escavadeiras · 5 tratores de pneu · 2 pás carregadeiras'
   };
-  /* Não há hash de senha aqui: quem confere é salvar_mecanizacao.php. Um hash
+  /* Não há hash de senha aqui: quem confere é o Supabase (login do root). Um hash
      neste arquivo seria baixado por qualquer visitante e quebrado offline. */
   var CHAVE_LOCAL = 'seagri_mecanizacao';
   /* Preferências de apresentação. Ficam no navegador porque são de quem olha,
@@ -5199,43 +5199,30 @@
     el('admOverlay').classList.add('show');
     setTimeout(function () { el('admSenha').focus(); }, 60);
   }
-  /** Quem confere a senha é o servidor: não há hash nenhum neste arquivo para
-      alguém baixar e quebrar offline. A senha vai por POST e o PHP responde
-      só ok/não — e demora de propósito a cada erro.
-
-      Sem PHP (GitHub Pages, abrir o arquivo direto) a aba abre em modo local:
-      lá só dá para carregar uma planilha no próprio navegador, que não altera
-      nada para ninguém. Publicar continua exigindo a senha no servidor. */
-  var ADMIN_LOCAL = false;   // liberado sem servidor: publicar fica desativado
+  /** Quem confere a senha é o Supabase: ela é a do login root@root.com, então não há hash nenhum neste
+      arquivo para alguém baixar e quebrar offline. O Supabase limita as tentativas erradas por conta.
+      Sem conexão com o banco, a aba abre em modo local: lá só dá para carregar uma planilha no próprio
+      navegador, que não altera nada para ninguém. */
+  var ADMIN_LOCAL = false;   // liberado sem banco: publicar fica desativado
   var MOTIVO_LOCAL = '';     // por que caiu no modo local, para explicar na aba
 
-  /** Confere a senha no PHP e distingue "senha errada" de "não há PHP do outro
-      lado". A diferença importa: um servidor de arquivos estático
-      (python -m http.server, GitHub Pages) ou um diretório bloqueado no Apache
-      respondem 501/403/404 com HTML — o painel tratava 403 como senha errada e
-      qualquer outro código como sucesso em modo local, então o admin ou tentava
-      a senha certa para sempre ou entrava sem entender por que não dava para
-      publicar. Só quem responde {ok:booleano} é o nosso endpoint; qualquer
-      outra coisa é o servidor falando no lugar dele. */
+  /** Confere a senha entrando no Supabase como root e distingue "senha errada" de "sem conexão". */
   function conferirSenha(senha) {
-    return fetch('../salvar_mecanizacao.php', {
+    var cfg = window.BANCO_CONFIG || {};
+    function semBanco(motivo) { return { ok: false, semServidor: true, motivo: motivo }; }
+    if (!cfg.url || !cfg.chavePublica) return Promise.resolve(semBanco('O banco de dados não está configurado (<code>js/banco-config.js</code>).'));
+    return fetch(String(cfg.url).replace(/\/$/, '') + '/auth/v1/token?grant_type=password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'login', senha: senha })
+      headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'root@root.com', password: String(senha || '') })
     }).then(function (r) {
-      return r.text().then(function (corpo) {
-        var j = null;
-        try { j = JSON.parse(corpo); } catch (e) { /* não é resposta do endpoint */ }
-        if (!j || typeof j.ok !== 'boolean') {
-          return { ok: false, semServidor: true, motivo: 'O servidor respondeu <b>HTTP ' +
-            r.status + '</b> em <code>salvar_mecanizacao.php</code> em vez de executar o PHP.' };
-        }
-        return { ok: j.ok, semServidor: false, motivo: '' };
+      return r.json().catch(function () { return null; }).then(function (j) {
+        if (r.status === 200 && j && j.access_token) return { ok: true, semServidor: false, motivo: '' };
+        if (r.status === 400 || r.status === 401 || r.status === 422) return { ok: false, semServidor: false, motivo: '' };
+        return semBanco('O banco respondeu <b>HTTP ' + r.status + '</b> ao conferir a senha.');
       });
     }).catch(function () {
-      return { ok: false, semServidor: true, motivo: 'Não foi possível falar com ' +
-        '<code>salvar_mecanizacao.php</code> (servidor fora do ar, ou a página foi ' +
-        'aberta direto do disco, sem <code>http://</code>).' };
+      return semBanco('Não foi possível falar com o banco de dados (sem conexão?).');
     });
   }
 

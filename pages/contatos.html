@@ -10,7 +10,7 @@
 <meta property="og:type" content="website">
 <script src="../js/banco-config.js?v=2026102303"></script>
 <script src="../js/ambiente-cliente.js?v=2026092302"></script>
-<script src="../js/admin-auth.js?v=2026102001"></script>
+<script src="../js/admin-auth.js?v=2026102306"></script>
 <script src="../js/admin-gate.js?v=2026092530"></script>
 <script src="../js/rastreio.js?v=2026092530"></script>
 <script src="../js/nav.js?v=2026101201"></script>
@@ -49,20 +49,25 @@
 
 <script>
 const LS_KEY='seagri_contatos';
-const API_SAVE='../salvar_contatos.php';
-const API_READ='../data/contatos.json';
+const BANCO=window.BANCO_CONFIG||{};
+const API_BASE=String(BANCO.url||'').replace(/\/$/,'');
 const PENCIL_ICON='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>';
 
 function loadLocal(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}')}catch(e){return{}}}
 function mirrorLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(contatos))}catch(e){}}
 
-// Salva via PHP (só funciona em servidor local com XAMPP)
+// Salva no Supabase (função contatos_salvar_telefone, database/contatos-telefones.sql): exige a página Contatos liberada
 function salvarServidor(id,tel){
-  return fetch(API_SAVE,{
+  const sessao=window.ADMIN_AUTH&&ADMIN_AUTH.sessaoAtual&&ADMIN_AUTH.sessaoAtual();
+  if(!sessao)return Promise.reject(new Error('sem sessão'));
+  return fetch(API_BASE+'/rest/v1/rpc/contatos_salvar_telefone',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({id:id,telefone:tel})
-  }).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});
+    headers:{apikey:BANCO.chavePublica,Authorization:'Bearer '+sessao.access_token,'Content-Type':'application/json'},
+    body:JSON.stringify({p_id:id,p_telefone:tel})
+  }).then(r=>r.json().catch(()=>null).then(c=>{
+    if(r.ok)return{ok:true,telefone:c};
+    return{ok:false,erro:(c&&c.message&&r.status===400)?c.message:'HTTP '+r.status};
+  }));
 }
 
 // QR Code
@@ -213,7 +218,7 @@ function renderCard(n){
         showToast('Erro ao salvar: '+((res&&res.erro)||'tente novamente'));
       }
     }).catch(()=>{
-      // PHP indisponível (ex: GitHub Pages) — salva apenas localmente
+      // sem conexão com o banco — salva apenas neste navegador
       if(digitos)contatos[n.id]=digitos;else delete contatos[n.id];
       mirrorLocal();atualizarStats();
       showToast(digitos?'Salvo localmente (sem servidor)':'Removido localmente');
@@ -361,14 +366,15 @@ document.addEventListener('visibilitychange',()=>{
   if(Date.now()-orgUltima>20000)atualizarOrg();
 });
 
-// Abre com a última leitura guardada (se houver) e confere com o banco; telefones vêm do contatos.json
+// Abre com a última leitura guardada (se houver) e confere com o banco; telefones vêm da tabela contatos_telefones
 const lido=OrgContatos.doCache();
 if(lido)ORG=lido;
 montarFiltros();
 render();
 atualizarOrg();
-fetch(API_READ,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{
-  if(d&&typeof d==='object'&&Object.keys(d).length>0){
+fetch(API_BASE+'/rest/v1/contatos_telefones?select=id,telefone',{headers:{apikey:BANCO.chavePublica},cache:'no-store'}).then(r=>r.ok?r.json():null).then(l=>{
+  if(Array.isArray(l)&&l.length>0){
+    const d={};l.forEach(x=>{d[x.id]=x.telefone});
     contatos=d;mirrorLocal();render();
   }
 }).catch(()=>{/* mantém dados do localStorage */});

@@ -525,12 +525,10 @@
     });
   }
 
-  // Ações que exigem a service_role rodam no servidor: primeiro na Edge
-  // Function admin-usuarios do Supabase (funciona no GitHub Pages); se ela
-  // ainda não foi publicada, cai pro admin_usuarios.php (só no XAMPP).
+  // Ações que exigem a service_role rodam na Edge Function admin-usuarios do Supabase.
   async function chamarServidor(acao, dados, token) {
     const corpoEnvio = JSON.stringify({ acao, ...dados });
-    let resposta = null;
+    let resposta;
     try {
       configurar();
       resposta = await fetch(cfg.url.replace(/\/$/, '') + '/functions/v1/admin-usuarios', {
@@ -538,17 +536,7 @@
         headers: { apikey: cfg.chavePublica, 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
         body: corpoEnvio
       });
-      if (resposta.status === 404) resposta = null;
-    } catch (e) { resposta = null; }
-    if (!resposta) {
-      try {
-        resposta = await fetch('../admin_usuarios.php', {
-          method: 'POST', signal: sinalTimeout(20000),
-          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-          body: corpoEnvio
-        });
-      } catch (e) { throw new Error('Sem conexão com o servidor. Tente novamente.'); }
-    }
+    } catch (e) { throw new Error('Sem conexão com o servidor. Tente novamente.'); }
     let corpo = null;
     try { corpo = await resposta.json(); } catch (e) {}
     if (!resposta.ok || !corpo || corpo.ok !== true) {

@@ -1,4 +1,4 @@
-// Edge Function do Supabase — mesma lógica de lancar_mecanizacao.php, mas roda
+// Edge Function do Supabase — substitui o antigo lancar_mecanizacao.php (removido): roda
 // no próprio Supabase, então funciona com o site publicado no GitHub Pages
 // (que não executa PHP: lá o POST pro .php volta 405 e o lançamento nunca
 // chegava ao banco). A chave service_role vem do ambiente da função
