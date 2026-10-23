@@ -1154,6 +1154,12 @@
         if (simulado) meusEmails = verComo.split(',').map(function (e) { return e.trim().toLowerCase(); });
         var comPoder = ehResponsavel && !simulado;   // root de verdade (fora do "Ver como")
         if (!eraResponsavel) carregarSolicitacoes();   // primeira carga; depois, só quando resolve um pedido
+        // o sino de pedidos é só do root de verdade: quem lança (ou o root em "Ver como") vê no lugar o botão do PDF
+        var sino = el('lancAbaSolic');
+        if (sino) {
+          sino.hidden = !comPoder;
+          if (!comPoder && abaAtual === 'solicitacoes') mostrarAba('lancamentos');
+        }
         // sem a frase "Mostrando lançamentos de…": o filtro "Lançado por" já diz de quem é a lista
         var nota = '';
         if (!linhas.length) { el('lancRecentes').innerHTML = nota + '<p class="nota">Nenhum lançamento encontrado com esses filtros.</p>'; return; }
@@ -1235,6 +1241,57 @@
         botao.classList.remove('lanc-carregando');
         botao.innerHTML = original;
       });
+  }
+
+  /* ------------------------------------- PDF de todos os relatórios da pessoa */
+  /** Baixa tudo o que a pessoa lançou (sem os filtros da tela), pagina de 100 em 100 e monta o PDF por dia e por mês.
+      No "Ver como" do root é a pessoa escolhida; senão, os lançamentos de quem está logado. */
+  function baixarPdfPessoa() {
+    var botao = el('lancPdfPessoaBtn');
+    if (botao.disabled) return;
+    var rotulo = botao.querySelector('span'), textoOriginal = rotulo.textContent;
+    var verComo = ehResponsavel ? el('lancVerComo').value : '';
+    // root: segue o filtro "Lançado por" da tela ("Todas as pessoas" gera o PDF de todo mundo)
+    var filtroPessoa = ehResponsavel && !verComo ? el('lancFiltroPessoa').value : '';
+    var pessoa = '';
+    if (filtroPessoa === 'todos') {
+      pessoa = 'Todas as pessoas';
+    } else if (verComo) {
+      var op = el('lancVerComo').selectedOptions[0];
+      pessoa = op ? op.textContent.replace(/\s*\(.*$/, '').trim() : '';
+    } else {
+      var sessao = sessaoSite();
+      pessoa = nomeDeEmail(sessao && sessao.user && sessao.user.email);
+    }
+    botao.disabled = true;
+    var registros = [];
+    function pagina(n) {
+      rotulo.textContent = 'Buscando… ' + registros.length;
+      var campos = { acao: 'listar', limite: '100', pagina: String(n), ordem: 'criado_em', dir: 'asc' };
+      if (verComo || filtroPessoa) campos.f_pessoa = verComo || filtroPessoa;
+      return enviarAcao(campos).then(function (res) {
+        if (!res.corpo.ok) throw new Error(res.corpo.erro || 'Não foi possível buscar os lançamentos.');
+        var linhas = res.corpo.lancamentos || [];
+        registros = registros.concat(linhas);
+        var total = +res.corpo.total || 0;
+        if (linhas.length && registros.length < total && n < 200) return pagina(n + 1);
+      });
+    }
+    pagina(1)
+      .then(function () {
+        if (!registros.length) throw new Error(ehResponsavel && !verComo && !filtroPessoa ? 'Você ainda não lançou nenhum relatório. Em "Lançado por", escolha "Todas as pessoas" (ou use "Ver como") e baixe de novo.' : 'Não há relatórios lançados para gerar o PDF.');
+        rotulo.textContent = 'Gerando PDF…';
+        return window.LANCAMENTO_PDF.porDia(registros, { pessoa: pessoa || 'Lançador', nomeDe: nomeDeEmail }).then(function (mesAberto) {
+          if (mesAberto) {
+            aviso('lancListaAviso', 'erro', '<b>Atenção:</b> ' + esc(mesAberto) + ' ainda não terminou. O PDF foi gerado, mas o relatório desse mês é <b>parcial</b> e <b>não é válido</b> como relatório mensal. Gere de novo depois do último dia do mês.');
+          }
+        });
+      })
+      .catch(function (e) {
+        if (e === null) return;   // sessão expirada: enviarAcao já avisou
+        aviso('lancListaAviso', 'erro', esc((e && e.message) || 'Não foi possível gerar o PDF.'));
+      })
+      .then(function () { botao.disabled = false; rotulo.textContent = textoOriginal; });
   }
 
   /* ------------------------------------------------- depois de salvar */
@@ -1362,6 +1419,7 @@
     el('lancSimSair').addEventListener('click', function () { limparFormulario(false); aviso('lancSalvarStatus', '', ''); if (ux) ux.atualizar(); });
     el('lancDiffFechar').addEventListener('click', function () { el('lancDiffDialogo').close(); });
     ligarPessoas();
+    el('lancPdfPessoaBtn').addEventListener('click', baixarPdfPessoa);
     var esperaRedimensionar;
     window.addEventListener('resize', function () {
       clearTimeout(esperaRedimensionar);

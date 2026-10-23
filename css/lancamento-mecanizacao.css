@@ -560,6 +560,12 @@
 .lanc-novo-bloco #lancNovoBtn{flex:none;border-color:#15803d;background:linear-gradient(180deg,#22c55e,#16a34a);box-shadow:0 6px 16px -8px rgba(22,163,74,.9)}
 .lanc-novo-bloco #lancNovoBtn:hover{background:linear-gradient(180deg,#34d170,#1fb355)}
 .lanc-abas-tabs{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+/* PDF dos relatórios da pessoa: pílula verde discreta, no lugar onde o lançador não vê o sino */
+.lanc-pdf-pessoa{display:inline-flex;align-items:center;gap:8px;margin:0;padding:8px 16px;border:1px solid #16a34a;border-radius:999px;
+  background:rgba(34,197,94,.12);color:var(--tinta);font:inherit;font-weight:700;cursor:pointer;transition:background .15s}
+.lanc-pdf-pessoa:hover{background:rgba(34,197,94,.24)}
+.lanc-pdf-pessoa svg{width:18px;height:18px;flex:none}
+.lanc-pdf-pessoa:disabled{opacity:.6;cursor:progress}
 .lanc-ind svg{width:18px;height:18px;flex:none}
 /* indicador de solicitações pendentes (só root): pílula âmbar com o contador */
 .lanc-aba.lanc-ind{display:inline-flex;align-items:center;gap:8px;margin:0;padding:6px 8px 6px 12px;border:1px solid #f59e0b;border-radius:999px;

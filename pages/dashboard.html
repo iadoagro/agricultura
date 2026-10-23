@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="../css/dashboard.css?v=2026102143">
 <link rel="stylesheet" href="../css/icones-agro.css?v=2026102101">
 <link rel="stylesheet" href="../css/assistente-dados.css?v=04476821">
-<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026102149">
+<link rel="stylesheet" href="../css/lancamento-mecanizacao.css?v=2026102307">
 <script src="../js/banco-config.js?v=2026102303"></script>
 <script>
   /* Versão pública (pages/mecanizacao-publico.html leva para cá com ?publico=1):
@@ -1323,7 +1323,12 @@
               <div class="lanc-novo-txt"><h2>Novo relat&oacute;rio</h2><p class="sub">Digite uma vistoria a partir da ficha em papel.</p></div>
             </div>
             <div class="lanc-abas-tabs">
-              <!-- indicador (só root): ícone + quantos pedidos esperam aprovação; clicar alterna com a tabela de lançamentos -->
+              <!-- PDF dos relatórios lançados pela pessoa (separados por dia, com um resumo por mês): aparece para todos -->
+              <button type="button" class="lanc-pdf-pessoa" id="lancPdfPessoaBtn" title="Exportar em PDF todas as suas inserções (formulários lançados por você), separadas por dia, com um resumo de cada mês" aria-label="Exportar minhas inserções em PDF">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+                <span>Exportar minhas inserções</span>
+              </button>
+              <!-- indicador (só root, fora do "Ver como"): ícone + quantos pedidos esperam aprovação; clicar alterna com a tabela de lançamentos -->
               <button type="button" class="lanc-aba lanc-ind" data-aba="solicitacoes" id="lancAbaSolic" aria-pressed="false" title="Solicitações pendentes" aria-label="Solicitações pendentes" hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
                 <span class="lanc-ind-num" id="lancSolicitacoesQtd">0</span>
@@ -1713,8 +1718,8 @@
 <script src="../js/lancamento-nomes.js?v=560082b9"></script>
 <script src="../js/lancamento-ux.js?v=2026102149"></script>
 <script src="../js/lancamento-validacao.js?v=653eebb8"></script>
-<script src="../js/lancamento-pdf.js?v=2026102148"></script>
-<script src="../js/lancamento-mecanizacao.js?v=2026102306"></script>
+<script src="../js/lancamento-pdf.js?v=2026102312"></script>
+<script src="../js/lancamento-mecanizacao.js?v=2026102312"></script>
 <script src="../js/painel-calculos.js?v=2026102034"></script>
 <script src="../js/tabela-ferramentas.js?v=2fd63664"></script>
 <script src="../js/painel-publico.js?v=2026102030"></script>
