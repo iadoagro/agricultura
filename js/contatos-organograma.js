@@ -41,7 +41,7 @@
   function caixa(id, pai, tipo, cor, titulo, holder, ordem) {
     return {
       id: id, parent: pai || null, kind: tipo, color: cor, title: titulo, holder: holder || '',
-      sigla: String(id).toUpperCase(), corTitulo: '', corTexto: '', telefone: '', ordem: ordem || 0
+      sigla: String(id).toUpperCase(), corTitulo: '', corTexto: '', telefone: '', matricula: '', ordem: ordem || 0
     };
   }
 
@@ -52,7 +52,9 @@
     ajustes.forEach(function (l) { ov[l.id] = l; });
 
     var nos = (cru.setores || []).map(function (s) {
-      return caixa(s.id, s.parent_id, s.tipo, s.cor, s.titulo, s.holder, s.ordem);
+      var c = caixa(s.id, s.parent_id, s.tipo, s.cor, s.titulo, s.holder, s.ordem);
+      c.matricula = s.matricula || '';
+      return c;
     });
     // caixas novas: entram depois das originais, ligadas ao pai escolhido (sem pai, à secretaria)
     ajustes.forEach(function (l) {
@@ -74,6 +76,7 @@
       if (l.cor_titulo) n.corTitulo = l.cor_titulo;
       if (l.cor_texto) n.corTexto = l.cor_texto;
       if (l.telefone) n.telefone = l.telefone;
+      if (l.matricula) n.matricula = l.matricula;
     });
 
     // caixas removidas: quem estava ligado a elas passa para o pai delas

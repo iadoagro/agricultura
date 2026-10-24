@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RH | SISTEMA</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<script src="../js/banco-config.js?v=2026102303"></script>
+<script src="../js/ambiente-cliente.js?v=2026092302"></script>
+<script src="../js/admin-auth.js?v=2026102306"></script>
+<script src="../js/admin-gate.js?v=2026102313"></script>
+<script src="../js/rastreio.js?v=2026092530"></script>
+<script src="../js/nav.js?v=2026102313"></script>
+<link rel="stylesheet" href="../css/base.css?v=2026091501">
+<link rel="stylesheet" href="../css/chamados-comum.css?v=2026091930">
+<link rel="stylesheet" href="../css/chamados.css?v=2026092540">
+<link rel="stylesheet" href="../css/motion-ui.css?v=2026091904">
+<link rel="stylesheet" href="../css/ui-upgrade.css?v=2026100901">
+<link rel="stylesheet" href="../css/fx-ui.css?v=2026100901">
+<link rel="stylesheet" href="../css/nav.css?v=2026101201">
+<link rel="stylesheet" href="../css/select-app.css?v=2026092603">
+<script src="../js/select-app.js?v=2026092603" defer></script>
+<link rel="stylesheet" href="../css/modal-ui.css?v=2026092527">
+<script src="../js/modal-ui.js?v=2026092527"></script>
+<link rel="stylesheet" href="../css/rh.css?v=2026102314">
+</head>
+<body class="ch-fila-pagina">
+<header class="cab-padrao"><h1>SISTEMA</h1><p>RH — setores e pessoas <span id="rhResumo"></span></p></header>
+
+<main class="ch-fila">
+  <div class="ch-aux-grade">
+    <section class="ch-cartao-aux" aria-labelledby="rhTituloForm">
+      <h2 id="rhTituloForm">Nova pessoa</h2>
+      <p class="ch-dica" id="rhDicaForm">Os responsáveis dos setores já vêm do organograma. Aqui você adiciona as demais pessoas de cada setor.</p>
+      <form id="rhForm" novalidate>
+        <div class="ch-campo"><label for="rhSetor">Setor</label><select id="rhSetor"></select></div>
+        <div class="ch-campo"><label for="rhNome">Nome completo</label><input id="rhNome" type="text" maxlength="120" autocomplete="off"></div>
+        <div class="ch-campo"><label for="rhCargo">Cargo ou função <small>(opcional)</small></label><input id="rhCargo" type="text" maxlength="120" autocomplete="off"></div>
+        <div class="rh-par">
+          <div class="ch-campo"><label for="rhMatricula">Matrícula <small>(opcional)</small></label><input id="rhMatricula" type="text" maxlength="30" autocomplete="off"></div>
+          <div class="ch-campo"><label for="rhVinculo">Vínculo <small>(opcional)</small></label>
+            <select id="rhVinculo"><option value="">Não informado</option><option value="efetivo">Efetivo</option><option value="comissionado">Comissionado</option><option value="terceirizado">Terceirizado</option><option value="cedido">Cedido</option><option value="estagiario">Estagiário</option><option value="outro">Outro</option></select></div>
+        </div>
+        <div class="rh-par">
+          <div class="ch-campo"><label for="rhTelefone">Telefone <small>(opcional)</small></label><input id="rhTelefone" type="tel" maxlength="20" autocomplete="off" placeholder="(68) 99999-9999"></div>
+          <div class="ch-campo"><label for="rhEmail">E-mail <small>(opcional)</small></label><input id="rhEmail" type="email" maxlength="160" autocomplete="off"></div>
+        </div>
+        <div class="ch-campo"><label for="rhObs">Observação <small>(opcional)</small></label><textarea id="rhObs" maxlength="500" rows="3"></textarea></div>
+        <p class="ch-erro-msg" id="rhErro" role="alert"></p>
+        <div class="rh-botoes">
+          <button class="ch-btn primario" type="submit" id="rhSalvar">Adicionar</button>
+          <button class="ch-btn" type="button" id="rhCancelar" hidden>Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="ch-cartao-aux lista" aria-label="Setores e pessoas">
+      <div class="ch-aux-barra">
+        <div class="ch-busca-fila"><span id="rhIcoBusca"></span><input id="rhBusca" type="search" placeholder="Buscar pessoa, cargo, matrícula ou setor…" autocomplete="off" aria-label="Buscar"></div>
+        <select id="rhFiltroSetor" aria-label="Filtrar por setor"></select>
+        <div class="ch-seg" id="rhSeg" role="group" aria-label="Situação">
+          <button type="button" data-v="todos" class="on">Todos</button>
+          <button type="button" data-v="ativos">Ativos</button>
+          <button type="button" data-v="inativos">Inativos</button>
+        </div>
+      </div>
+      <p class="ch-status-fila" id="rhContagem" role="status"></p>
+      <div id="rhAviso"></div>
+      <div id="rhSetores" class="rh-setores"></div>
+    </section>
+  </div>
+</main>
+
+<script src="../js/contatos-organograma.js?v=2026102313"></script>
+<script src="../js/rh.js?v=2026102314"></script>
+<script src="../js/motion-ui.js?v=2026091904"></script>
+<script src="../js/motion-extras.js?v=2026100901"></script>
+<script src="../js/fx-ui.js?v=2026092102" defer></script>
+</body>
+</html>

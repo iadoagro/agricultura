@@ -1,0 +1,33 @@
+/* Módulo RH (pages/rh.html): setores do organograma com as pessoas de cada um. Reaproveita os cartões e botões ch-* dos Cadastros auxiliares. */
+.rh-par{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rh-botoes{display:flex;gap:10px;flex-wrap:wrap}
+.ch-busca-fila{position:relative;flex:1 1 220px;min-width:180px}
+.ch-busca-fila span{position:absolute;left:11px;top:50%;transform:translateY(-50%);line-height:0;color:#64748b;pointer-events:none}
+.ch-busca-fila span svg{width:16px;height:16px}
+.ch-busca-fila input{width:100%;min-height:38px;padding:7px 10px 7px 34px;border:1.5px solid var(--ch-linha-forte);border-radius:10px;background:#fff;font:inherit;font-size:13.5px}
+
+.rh-setores{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+/* cada setor é um cartão; a profundidade no organograma vira recuo, com a linha da hierarquia à esquerda */
+.rh-setor{border:1px solid var(--ch-linha);border-radius:12px;background:#fff;overflow:hidden}
+.rh-nivel{position:relative}
+.rh-nivel.n1{margin-left:18px}.rh-nivel.n2{margin-left:36px}.rh-nivel.n3{margin-left:54px}.rh-nivel.n4,.rh-nivel.n5,.rh-nivel.n6{margin-left:72px}
+.rh-nivel:not(.n0)::before{content:"";position:absolute;left:-10px;top:-6px;bottom:50%;width:10px;border-left:2px solid #cbd5e1;border-bottom:2px solid #cbd5e1;border-bottom-left-radius:8px}
+.rh-setor > summary{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;list-style:none;user-select:none}
+.rh-setor > summary::-webkit-details-marker{display:none}
+.rh-setor > summary::after{content:"\25BE";margin-left:auto;color:#64748b;font-size:12px;transition:transform .15s}
+.rh-setor:not([open]) > summary::after{transform:rotate(-90deg)}
+.rh-chip{flex:none;min-width:34px;padding:3px 8px;border-radius:7px;font-size:11.5px;font-weight:800;text-align:center;letter-spacing:.02em}
+.rh-titulo{font-weight:700;color:#0b1f3f;min-width:0}
+.rh-titulo small{display:block;font-weight:500;color:var(--ch-mudo);font-size:12px}
+.rh-conta{flex:none;font-size:12px;font-weight:700;color:#475569;background:#e2e8f0;border-radius:999px;padding:2px 9px}
+.rh-add{flex:none;border:1px solid var(--ch-linha-forte);background:#fff;border-radius:8px;padding:3px 9px;font:600 12px/1.4 inherit;font-family:inherit;color:#1d4ed8;cursor:pointer}
+.rh-add:hover{background:#eff6ff}
+.rh-corpo{border-top:1px solid var(--ch-linha)}
+.rh-vazio{padding:10px 14px;margin:0;font-size:13px;color:var(--ch-mudo)}
+.rh-corpo .ch-tabela td,.rh-corpo .ch-tabela th{padding:8px 12px}
+.rh-nome small{display:block;color:var(--ch-mudo);font-weight:500;font-size:12px;white-space:pre-line}
+.rh-origem{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#dbeafe;color:#1e40af}
+.rh-acoes{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+tr.rh-inativo td{color:#94a3b8}
+@media(max-width:900px){.rh-par{grid-template-columns:1fr}.rh-nivel.n1,.rh-nivel.n2,.rh-nivel.n3,.rh-nivel.n4,.rh-nivel.n5,.rh-nivel.n6{margin-left:10px}.rh-nivel:not(.n0)::before{display:none}}
+.rh-botoes .ch-btn[hidden]{display:none}

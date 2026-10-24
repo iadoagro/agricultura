@@ -33,7 +33,8 @@
     { href: 'chamados.html', chave: 'chamados' },
     { href: 'vpn.html', chave: 'vpn' },
     { href: 'dashboard.html', chave: 'dashboards' },
-    { href: 'contatos.html', chave: 'contatos' }
+    { href: 'contatos.html', chave: 'contatos' },
+    { href: 'rh.html', chave: 'rh' }
   ];
   function ehResponsavel() { return Boolean(auth) && auth.papel() === 'responsavel'; }
   function pode(chave) { return Boolean(auth) && auth.podeAcessar(chave); }
@@ -234,6 +235,7 @@
     if (pode('dashboards')) h += atalho('dashboard.html', 'Painel de Mecanização', 'painel', false) + atalho('deagro.html#geral', 'Painel do DEAGRO', 'painel', false);
     if (pode('portarias')) h += atalho('portarias.html', 'Portarias', 'doc', false);
     if (pode('organograma')) h += atalho('organograma.html', 'Organograma', 'org', false);
+    if (pode('rh')) h += atalho('rh.html', 'RH', 'org', false);
     if (!h) return;
     el('homeAtalhos').innerHTML = h;
     el('blocoAtalhos').hidden = false;

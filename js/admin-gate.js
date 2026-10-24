@@ -16,6 +16,7 @@
     'cadastros-chamados.html': 'chamados',
     'vpn.html': 'vpn',
     'contatos.html': 'contatos',
+    'rh.html': 'rh',
     'dashboards.html': 'dashboards',
     'dashboard.html': 'dashboards',
     'lancamento-editar.html': 'dashboards',
